@@ -1,0 +1,25 @@
+** sch_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-18/design/smoke_test.sch
+**.subckt smoke_test
+VDD vdd 0 dc 3.3
+VG vg 0 dc 1.5
+R1 vdd vout 10k m=1
+C1 vout 0 1p m=1
+**** begin user architecture code
+
+
+* pdk_include.spice is generated at run time by run_smoke_test.sh from
+* $PDK_ROOT / $PDK -- kept out of this schematic so it has no hardcoded,
+* machine-specific path (see docs/environment-setup.md).
+.include pdk_include.spice
+X1 vout vg 0 0 nfet_03v3_dss w=10u l=1u
+
+.control
+op
+print v(vdd) v(vg) v(vout)
+quit
+.endc
+
+
+**** end user architecture code
+**.ends
+.end

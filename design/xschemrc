@@ -1,0 +1,35 @@
+#### Project-local xschem configuration for gf180-bandgap (issue #18).
+####
+#### xschem's *default* library-path bootstrap (system xschemrc) already adds
+#### the generic devices/ library, but any local *user*-level
+#### ~/.xschem/xschemrc on a given machine can silently override
+#### XSCHEM_LIBRARY_PATH with unrelated, possibly-stale content (observed on
+#### the machine this issue audited -- a leftover dev-machine dotfile pointed
+#### at directories that no longer exist, which broke `l_s_d(): Symbol not
+#### found` for every generic device symbol). Resetting it explicitly here,
+#### in a *project-local* rc file, makes this repo's xschem invocations
+#### reproducible regardless of whatever is (or isn't) in any given
+#### machine's ~/.xschem/xschemrc.
+####
+#### Load this explicitly and unambiguously (independent of cwd) with:
+####   xschem --rcfile design/xschemrc ...
+#### (relying on xschem's cwd-relative "./xschemrc" auto-discovery is NOT
+#### sufficient here, since that only fires when xschem's cwd happens to be
+#### this directory -- see docs/environment-setup.md.)
+
+set XSCHEM_LIBRARY_PATH {}
+append XSCHEM_LIBRARY_PATH :${XSCHEM_SHAREDIR}/xschem_library/devices
+
+#### PDK_ROOT / PDK: pass through from the shell environment (see
+#### docs/environment-setup.md for the env convention). Not required for
+#### netlisting the smoke-test schematic itself -- design/smoke_test.sch
+#### references the PDK models indirectly via a generated
+#### sim/smoke_test/pdk_include.spice, not via these Tcl variables -- but
+#### set for convenience/consistency with the wider xschem+PDK ecosystem
+#### convention (see tutorial_xschem_libraries.html in the xschem docs).
+if {[info exists env(PDK_ROOT)]} {
+  set PDK_ROOT $env(PDK_ROOT)
+}
+if {[info exists env(PDK)]} {
+  set PDK $env(PDK)
+}
