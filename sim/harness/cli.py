@@ -15,8 +15,6 @@ from .runner import NgspiceMissing
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SIM_DIR = REPO_ROOT / "sim"
-TB_DIR = SIM_DIR / "tb"
-RESULTS_DIR = SIM_DIR / "results"
 WORK_DIR = SIM_DIR / ".work"
 
 EXIT_OK = 0
@@ -25,18 +23,25 @@ EXIT_SIM_ERROR = 2
 EXIT_ENVIRONMENT = 3
 
 
+def _has_manifest(candidate: Path) -> bool:
+    if candidate.is_file() and candidate.name == tb_mod.MANIFEST_NAME:
+        return True
+    if (candidate / tb_mod.MANIFEST_NAME).is_file():
+        return True
+    return (candidate / tb_mod.TESTBENCH_DIRNAME / tb_mod.MANIFEST_NAME).is_file()
+
+
 def _resolve_tb_path(argument: str) -> Path:
-    candidates = [Path(argument), TB_DIR / argument, SIM_DIR / argument]
+    """Accept an experiment slug, an experiment dir, or a testbench dir."""
+    candidates = [Path(argument), SIM_DIR / argument]
     for candidate in candidates:
-        if (candidate / tb_mod.MANIFEST_NAME).is_file() or (
-            candidate.is_file() and candidate.name == tb_mod.MANIFEST_NAME
-        ):
+        if _has_manifest(candidate):
             return candidate
     raise FileNotFoundError(
-        f"no testbench {argument!r}; tried: "
+        f"no experiment {argument!r}; tried: "
         + ", ".join(str(c) for c in candidates)
         + ".\nAvailable: "
-        + ", ".join(p.name for p in tb_mod.discover(TB_DIR))
+        + ", ".join(p.name for p in tb_mod.discover(SIM_DIR))
     )
 
 
@@ -47,14 +52,20 @@ def build_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
             "Examples:\n"
-            "  python3 sim/run_corners.py smoke_bias\n"
-            "  python3 sim/run_corners.py smoke_bias --corners tt --temps 27\n"
-            "  python3 sim/run_corners.py smoke_bias --corner-set full -j 8\n"
+            "  python3 sim/run_corners.py smoke-bias\n"
+            "  python3 sim/run_corners.py smoke-bias --corners tt --temps 27 \\\n"
+            "      --subset-reason 'debugging convergence, not evidence'\n"
+            "  python3 sim/run_corners.py smoke-bias --corner-set full -j 8\n"
             "  python3 sim/run_corners.py --list\n"
             "  python3 sim/run_corners.py --check-env\n"
         ),
     )
-    parser.add_argument("testbench", nargs="?", help="testbench dir or name under sim/tb/")
+    parser.add_argument(
+        "testbench",
+        nargs="?",
+        metavar="EXPERIMENT",
+        help="experiment slug under sim/ (i.e. sim/<slug>/testbench/tb.json)",
+    )
     parser.add_argument("--list", action="store_true", help="list testbenches and corners")
     parser.add_argument(
         "--check-env",
@@ -104,9 +115,29 @@ def build_parser() -> argparse.ArgumentParser:
         help="per-point ngspice timeout in seconds",
     )
     parser.add_argument(
-        "--results-dir",
-        default=str(RESULTS_DIR),
-        help="where to write the append-only result files",
+        "--claim",
+        default="",
+        help="spec line this run substantiates, e.g. 'spec/bandgap.md#output-voltage-tc' "
+        "(overrides the manifest's 'claim')",
+    )
+    parser.add_argument(
+        "--supersedes",
+        default="",
+        metavar="RECORD_ID",
+        help="prior record-id this record corrects or replaces",
+    )
+    parser.add_argument(
+        "--statistical-convention",
+        default="",
+        metavar="TEXT",
+        help="N samples / sigma level, for distribution (Monte Carlo) claims",
+    )
+    parser.add_argument(
+        "--subset-reason",
+        default="",
+        metavar="TEXT",
+        help="why this run is not the full mandated PVT matrix; required before "
+        "a subset run may be recorded as evidence",
     )
     parser.add_argument(
         "--no-write",
@@ -119,8 +150,8 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def cmd_list() -> int:
-    print("Testbenches (sim/tb):")
-    for directory in tb_mod.discover(TB_DIR):
+    print("Experiments (sim/<slug>/testbench/tb.json):")
+    for directory in tb_mod.discover(SIM_DIR):
         try:
             tb = tb_mod.load(directory)
             print(f"  {directory.name:<20} {tb.description or tb.name}")
@@ -163,7 +194,9 @@ def cmd_print_env() -> int:
         print(f"# gf180mcu PDK not found\n# {exc.args[0].splitlines()[0]}", file=sys.stderr)
         return EXIT_ENVIRONMENT
     library_path = ":".join(
-        str(p) for p in (REPO_ROOT / "design", REPO_ROOT / "sim" / "tb")
+        str(p)
+        for p in [REPO_ROOT / "design"]
+        + [d / tb_mod.TESTBENCH_DIRNAME for d in tb_mod.discover(SIM_DIR)]
     )
     print(f'export PDK_ROOT="{pdk.path.parent}"')
     print(f'export PDK="{pdk.variant}"')
@@ -202,13 +235,36 @@ def run(args: argparse.Namespace) -> int:
     supplies = corners_mod.supply_points(nominal, tolerance)
     points = corners_mod.build_grid(corner_list, temperatures, supplies)
 
+    # sim/README.md: an evidence record must cover the full mandated PVT
+    # matrix unless it states why a subset was used. Refuse to record a thin
+    # run without that justification rather than quietly banking weak evidence.
+    conformance = report.matrix_conformance(tb, points)
+    if not args.no_write and not conformance["full"] and not args.subset_reason:
+        print(
+            "error: this run is a subset of the PVT matrix CLAUDE.md mandates:\n  - "
+            + "\n  - ".join(conformance["missing"])
+            + "\nRecord it with --subset-reason '<why>', or re-run the full matrix,"
+            "\nor use --no-write if this is just a debugging run.",
+            file=sys.stderr,
+        )
+        return EXIT_ENVIRONMENT
+
+    experiment_dir = tb.experiment_dir
+    records_dir = experiment_dir / report.RECORDS_DIR
+
     jobs = args.jobs or min(8, (os.cpu_count() or 2))
-    run_id = report.make_run_id(REPO_ROOT)
     started = _dt.datetime.now(_dt.timezone.utc)
-    workdir = WORK_DIR / tb.name / run_id
+    # Sample git state *before* the run: the harness writes its own per-corner
+    # logs into the tracked evidence tree, so sampling afterwards would mark
+    # every record as taken against a dirty tree.
+    git = report.git_provenance(REPO_ROOT)
+    record_id = report.allocate_record_id(REPO_ROOT, records_dir, started, git=git)
+    workdir = WORK_DIR / tb.experiment / record_id
+    log_dir = None if args.no_write else experiment_dir / report.CORNERS_DIR / record_id
 
     if not args.quiet:
-        print(f"testbench : {tb.name}  ({tb.description})" if tb.description else f"testbench : {tb.name}")
+        print(f"experiment: {tb.experiment}"
+              + (f"  ({tb.description})" if tb.description else ""))
         print(f"pdk       : {pdk.variant} @ {pdk.version}  ({pdk.path})")
         print(f"ngspice   : {ngspice}")
         print(f"corners   : {', '.join(c.name for c in corner_list)}")
@@ -216,7 +272,7 @@ def run(args: argparse.Namespace) -> int:
         print(f"supply (V): {', '.join(_fmt(v) for v in supplies)} "
               f"(nominal {_fmt(nominal)} +/-{tolerance * 100:g}%)")
         print(f"points    : {len(points)}  (jobs={jobs})")
-        print(f"run_id    : {run_id}")
+        print(f"record id : {record_id}")
         print()
 
     completed = 0
@@ -235,12 +291,19 @@ def run(args: argparse.Namespace) -> int:
             )
         else:
             detail = result.message
-        print(f"[{completed:>3}/{len(points)}] {flag} {result.point.label:<26} {detail}")
+        print(f"[{completed:>3}/{len(points)}] {flag} {result.point.corner_id:<26} {detail}")
 
     wall_start = time.monotonic()
     try:
         results = runner.run_grid(
-            tb, pdk, points, workdir, jobs=jobs, timeout_s=args.timeout, on_result=progress
+            tb,
+            pdk,
+            points,
+            workdir,
+            jobs=jobs,
+            timeout_s=args.timeout,
+            on_result=progress,
+            log_dir=log_dir,
         )
     except NgspiceMissing as exc:
         print(f"error: {exc}", file=sys.stderr)
@@ -254,9 +317,14 @@ def run(args: argparse.Namespace) -> int:
         results=results,
         ngspice=ngspice,
         repo_root=REPO_ROOT,
-        run_id=run_id,
+        record_id=record_id,
         started_utc=started.isoformat(timespec="seconds"),
         wall_seconds=wall,
+        claim=args.claim,
+        supersedes=args.supersedes,
+        statistical_convention=args.statistical_convention,
+        subset_reason=args.subset_reason,
+        git=git,
     )
 
     print()
@@ -279,10 +347,15 @@ def run(args: argparse.Namespace) -> int:
         )
 
     if not args.no_write:
-        paths = report.write_results(record, Path(args.results_dir), tb.name, run_id)
+        snapshot = report.write_netlist_snapshot(tb, experiment_dir, record_id)
+        record_path = report.write_record(record, experiment_dir)
         print()
-        print(f"evidence  : {paths['json']}")
-        print(f"            {paths['csv']}")
+        print(f"record    : {record_path}")
+        print(f"snapshot  : {snapshot}")
+        print(f"raw logs  : {log_dir}")
+    else:
+        print()
+        print("evidence  : not recorded (--no-write)")
     print(f"work dir  : {workdir}")
     print(f"status    : {record['status'].upper()}")
 
@@ -308,6 +381,6 @@ def main(argv: list[str] | None = None) -> int:
         return EXIT_ENVIRONMENT
     try:
         return run(args)
-    except (FileNotFoundError, ValueError, KeyError) as exc:
+    except (FileNotFoundError, ValueError, KeyError, report.RecordExists) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return EXIT_ENVIRONMENT

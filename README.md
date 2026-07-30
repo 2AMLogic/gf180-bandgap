@@ -55,10 +55,12 @@ volare enable --pdk gf180mcu <version-hash>   # volare ls-remote --pdk gf180mcu
 
 python3 sim/run_corners.py --check-env        # confirm ngspice + PDK are visible
 bash sim/selftest.sh                          # prove the harness runs end to end
-python3 sim/run_corners.py smoke_bias         # 81-point PVT sweep, records evidence
+python3 sim/run_corners.py smoke-bias         # 81-point PVT sweep, records evidence
 ```
 
 The harness is stdlib python3 — no virtualenv, no packages. It never hardcodes
-a PDK path; see [`sim/README.md`](sim/README.md) for PDK resolution, the corner
-definitions, how to write a testbench, and the append-only evidence format.
-For schematic capture see [`design/README.md`](design/README.md).
+a PDK path. See [`sim/README.md`](sim/README.md) for the ratified evidence
+record format (directory layout, record ids, the append-only rule), and
+[`sim/harness/README.md`](sim/harness/README.md) for PDK resolution, the corner
+definitions and how to write a testbench. For schematic capture see
+[`design/README.md`](design/README.md).

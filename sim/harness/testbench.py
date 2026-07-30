@@ -1,9 +1,11 @@
 """Testbench manifests.
 
-A testbench lives in its own directory under ``sim/tb/`` and consists of:
+Testbenches follow the directory convention ratified in ``sim/README.md``:
+each experiment gets ``sim/<experiment-slug>/`` and its testbench lives in
+that experiment's ``testbench/`` subdirectory:
 
-    tb.json            the manifest (this module)
-    <something>.spice  a *netlist fragment* -- devices and sources only
+    sim/<experiment-slug>/testbench/tb.json            the manifest (this module)
+    sim/<experiment-slug>/testbench/<something>.spice  a *netlist fragment*
 
 The fragment must NOT contain ``.include`` of models, ``.lib``, ``.temp``,
 ``.control`` or ``.end``: the harness owns all of those so that one netlist
@@ -33,6 +35,10 @@ from .corners import (
 
 MANIFEST_NAME = "tb.json"
 
+#: Name of the per-experiment subdirectory that holds the testbench, per
+#: the directory convention in ``sim/README.md``.
+TESTBENCH_DIRNAME = "testbench"
+
 FORBIDDEN_DIRECTIVES = (".control", ".endc", ".end", ".lib", ".temp", ".include")
 
 
@@ -42,6 +48,7 @@ class Testbench:
     name: str
     netlist: Path
     description: str = ""
+    claim: str = ""
     nominal_supply_v: float = DEFAULT_NOMINAL_SUPPLY_V
     supply_tolerance: float = DEFAULT_SUPPLY_TOLERANCE
     temperatures_c: tuple[float, ...] = DEFAULT_TEMPERATURES_C
@@ -51,6 +58,19 @@ class Testbench:
     params: dict[str, str | float] = field(default_factory=dict)
     checks: dict[str, dict] = field(default_factory=dict)
     options: tuple[str, ...] = ()
+
+    @property
+    def experiment(self) -> str:
+        """The ``<experiment-slug>`` this testbench belongs to.
+
+        ``sim/<experiment-slug>/testbench/tb.json`` -> ``<experiment-slug>``.
+        """
+        return self.directory.parent.name
+
+    @property
+    def experiment_dir(self) -> Path:
+        """``sim/<experiment-slug>/`` -- where records/corners/snapshots live."""
+        return self.directory.parent
 
     @property
     def netlist_sha256(self) -> str:
@@ -64,6 +84,8 @@ class Testbench:
         return {
             "name": self.name,
             "description": self.description,
+            "claim": self.claim,
+            "experiment": self.experiment,
             "directory": self.directory.name,
             "netlist": self.netlist.name,
             "netlist_sha256": self.netlist_sha256,
@@ -80,10 +102,16 @@ def _require(manifest: dict, key: str, path: Path):
 
 
 def load(directory: str | Path) -> Testbench:
-    """Load ``<directory>/tb.json`` into a :class:`Testbench`."""
+    """Load a testbench manifest into a :class:`Testbench`.
+
+    Accepts the experiment directory (``sim/<slug>/``), its ``testbench/``
+    subdirectory, or the ``tb.json`` path itself.
+    """
     directory = Path(directory).resolve()
     if directory.is_file() and directory.name == MANIFEST_NAME:
         directory = directory.parent
+    if (directory / TESTBENCH_DIRNAME / MANIFEST_NAME).is_file():
+        directory = directory / TESTBENCH_DIRNAME
     manifest_path = directory / MANIFEST_NAME
     if not manifest_path.is_file():
         raise FileNotFoundError(f"no {MANIFEST_NAME} in {directory}")
@@ -106,9 +134,10 @@ def load(directory: str | Path) -> Testbench:
 
     tb = Testbench(
         directory=directory,
-        name=manifest.get("name", directory.name),
+        name=manifest.get("name", directory.parent.name),
         netlist=netlist,
         description=manifest.get("description", ""),
+        claim=manifest.get("claim", ""),
         nominal_supply_v=float(manifest.get("nominal_supply_v", DEFAULT_NOMINAL_SUPPLY_V)),
         supply_tolerance=float(manifest.get("supply_tolerance", DEFAULT_SUPPLY_TOLERANCE)),
         temperatures_c=tuple(
@@ -149,6 +178,12 @@ def validate_netlist(tb: Testbench) -> None:
 
 
 def discover(root: str | Path) -> list[Path]:
-    """Every testbench directory under ``root``, sorted."""
+    """Every experiment directory under ``root`` that owns a testbench.
+
+    Looks for ``<root>/<experiment-slug>/testbench/tb.json`` and returns the
+    ``<experiment-slug>`` directories, sorted.
+    """
     root = Path(root)
-    return sorted(p.parent for p in root.glob("**/" + MANIFEST_NAME))
+    return sorted(
+        p.parent.parent for p in root.glob(f"*/{TESTBENCH_DIRNAME}/{MANIFEST_NAME}")
+    )

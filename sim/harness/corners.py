@@ -156,9 +156,14 @@ class PvtPoint:
     index: int = field(default=0, compare=False)
 
     @property
-    def label(self) -> str:
-        temp = f"{self.temp_c:g}".replace("-", "m")
-        return f"{self.corner.name}_{temp}C_{self.vdd:g}V".replace(".", "p")
+    def corner_id(self) -> str:
+        """The ``<process>_<temp>c_<supply>v`` id from ``sim/README.md``.
+
+        This is the ratified corner naming for evidence records: the raw log
+        for this point is ``corners/<record-id>/<corner-id>.log`` (e.g.
+        ``ss_-40c_2.97v.log``, ``tt_27c_3.30v.log``).
+        """
+        return f"{self.corner.name}_{self.temp_c:g}c_{self.vdd:.2f}v"
 
     def as_dict(self) -> dict:
         return {
@@ -166,7 +171,7 @@ class PvtPoint:
             "corner_sections": list(self.corner.sections),
             "temp_c": self.temp_c,
             "vdd": self.vdd,
-            "label": self.label,
+            "corner_id": self.corner_id,
         }
 
 

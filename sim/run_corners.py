@@ -3,7 +3,7 @@
 
     python3 sim/run_corners.py --check-env
     python3 sim/run_corners.py --list
-    python3 sim/run_corners.py smoke_bias
+    python3 sim/run_corners.py smoke-bias
 
 Stdlib only, no virtualenv required. See sim/README.md.
 """

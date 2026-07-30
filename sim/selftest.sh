@@ -3,7 +3,7 @@
 # Harness acceptance test.
 #
 #   sim/selftest.sh              unit tests + smoke PVT run (no evidence written)
-#   sim/selftest.sh --record     also record the run into sim/results/ as evidence
+#   sim/selftest.sh --record     also mint an evidence record under sim/smoke-bias/
 #   sim/selftest.sh --quick      unit tests + a single tt/27C/nominal point
 #   sim/selftest.sh --require-pdk  fail (instead of skipping) if the PDK is absent
 #
@@ -49,9 +49,14 @@ fi
 
 echo
 echo "== 3/3 end-to-end PVT smoke run =="
-args=(smoke_bias)
+args=(smoke-bias)
 [ "${QUICK}" -eq 1 ] && args+=(--corners tt --temps 27 --supply-tol 0)
 [ "${RECORD}" -eq 1 ] || args+=(--no-write)
+# --quick is deliberately a PVT subset; sim/README.md demands a written reason
+# before a subset run may be recorded as evidence.
+if [ "${QUICK}" -eq 1 ] && [ "${RECORD}" -eq 1 ]; then
+  args+=(--subset-reason "sim/selftest.sh --quick: single-point harness smoke test, not a spec claim")
+fi
 
 if ! python3 "${SIM_DIR}/run_corners.py" "${args[@]}"; then
   echo "FAIL: PVT smoke run"

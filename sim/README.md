@@ -16,6 +16,12 @@ need a concrete schema to be enforceable:
 - **`sim/` is append-only evidence.** Re-runs get new records; records are
   never edited or deleted.
 
+**This file is the authoritative convention.** The corner runner that produces
+records in this format — how to run it, how to write a testbench, PDK
+resolution, corner definitions — is documented in
+[`sim/harness/README.md`](harness/README.md). If the harness and this document
+ever disagree, this document wins and the harness is the thing that gets fixed.
+
 ## Directory / naming convention
 
 Each testbench topic gets its own experiment directory:

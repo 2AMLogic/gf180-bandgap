@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import datetime
 import json
 import sys
 import tempfile
@@ -55,8 +56,17 @@ class CornerTests(unittest.TestCase):
     def test_grid_is_full_factorial_and_ordered(self):
         grid = corners.build_grid(corners.resolve_corners(["mos"]), (-40, 27, 125), [2.97, 3.3, 3.63])
         self.assertEqual(len(grid), 5 * 3 * 3)
-        self.assertEqual(len({p.label for p in grid}), 45)
-        self.assertEqual(grid[0].label, "tt_m40C_2p97V")
+        self.assertEqual(len({p.corner_id for p in grid}), 45)
+
+    def test_corner_id_matches_the_ratified_naming(self):
+        """sim/README.md: <corner-id> is <process>_<temp>c_<supply>v."""
+        grid = corners.build_grid(
+            corners.resolve_corners(["tt", "ss", "ff"]), (-40, 27, 125), [2.97, 3.3, 3.63]
+        )
+        ids = {p.corner_id for p in grid}
+        self.assertIn("tt_27c_3.30v", ids)
+        self.assertIn("ss_-40c_2.97v", ids)
+        self.assertIn("ff_125c_3.63v", ids)
 
 
 class TestbenchTests(unittest.TestCase):
@@ -66,17 +76,34 @@ class TestbenchTests(unittest.TestCase):
         self.addCleanup(self.tmp.cleanup)
 
     def _write(self, netlist: str, manifest: dict | None = None) -> Path:
-        (self.dir / "x.spice").write_text(netlist)
+        """Lay out sim/<slug>/testbench/ the way sim/README.md specifies."""
+        tb_dir = self.dir / "an-experiment" / "testbench"
+        tb_dir.mkdir(parents=True, exist_ok=True)
+        (tb_dir / "x.spice").write_text(netlist)
         base = {"name": "x", "netlist": "x.spice", "measure": {"vout": "v(out)"}}
         base.update(manifest or {})
-        (self.dir / "tb.json").write_text(json.dumps(base))
-        return self.dir
+        (tb_dir / "tb.json").write_text(json.dumps(base))
+        return tb_dir
 
     def test_loads_a_valid_manifest(self):
         tb = testbench.load(self._write("v1 out 0 dc {vdd_val}\n"))
         self.assertEqual(tb.name, "x")
         self.assertEqual(tb.measure, {"vout": "v(out)"})
         self.assertEqual(tb.temperatures_c, (-40.0, 27.0, 125.0))
+
+    def test_experiment_slug_comes_from_the_directory_layout(self):
+        tb_dir = self._write("v1 out 0 dc {vdd_val}\n")
+        # Loadable by testbench dir *and* by experiment dir.
+        for target in (tb_dir, tb_dir.parent):
+            with self.subTest(target=target.name):
+                tb = testbench.load(target)
+                self.assertEqual(tb.experiment, "an-experiment")
+                self.assertEqual(tb.experiment_dir.name, "an-experiment")
+
+    def test_discover_finds_experiments_not_bare_manifest_dirs(self):
+        self._write("v1 out 0 dc {vdd_val}\n")
+        found = testbench.discover(self.dir)
+        self.assertEqual([p.name for p in found], ["an-experiment"])
 
     def test_rejects_netlists_that_pin_the_temperature(self):
         with self.assertRaises(ValueError) as ctx:
@@ -92,8 +119,9 @@ class TestbenchTests(unittest.TestCase):
             testbench.load(self._write("v1 out 0 dc 3.3\n", {"measure": {}}))
 
     def test_the_repo_smoke_testbench_is_valid(self):
-        tb = testbench.load(SIM_DIR / "tb" / "smoke_bias")
+        tb = testbench.load(SIM_DIR / "smoke-bias")
         self.assertEqual(tb.nominal_supply_v, 3.3)
+        self.assertEqual(tb.experiment, "smoke-bias")
         self.assertIn("vbe", tb.measure)
         self.assertIn("vbe", tb.checks)
 
@@ -163,13 +191,13 @@ class ParseTests(unittest.TestCase):
 
 
 class _StubPoint:
-    def __init__(self, label):
-        self.label = label
+    def __init__(self, corner_id):
+        self.corner_id = corner_id
 
 
 class _StubResult:
-    def __init__(self, label, measurements, status="ok"):
-        self.point = _StubPoint(label)
+    def __init__(self, corner_id, measurements, status="ok"):
+        self.point = _StubPoint(corner_id)
         self.measurements = measurements
         self.status = status
 
@@ -217,18 +245,182 @@ class ChecksTests(unittest.TestCase):
         )
 
 
-class EvidenceTests(unittest.TestCase):
-    def test_results_are_append_only(self):
+class RecordIdTests(unittest.TestCase):
+    def test_record_id_matches_the_ratified_shape(self):
+        """sim/README.md: <record-id> is <YYYYMMDD>-<HHMMSS>-<short-git-sha>."""
+        when = datetime.datetime(2026, 7, 29, 15, 30, 0, tzinfo=datetime.timezone.utc)
+        self.assertEqual(report.format_record_id("1a7ef75", when), "20260729-153000-1a7ef75")
+        self.assertRegex(
+            report.format_record_id("1a7ef75", when), r"^\d{8}-\d{6}-[0-9a-f]{7}$"
+        )
+
+    def test_allocation_never_reuses_an_existing_record_id(self):
+        when = datetime.datetime(2026, 7, 29, 15, 30, 0, tzinfo=datetime.timezone.utc)
         with tempfile.TemporaryDirectory() as tmp:
-            path = Path(tmp) / "run.json"
-            self.assertEqual(report._next_free(path), path)
-            path.write_text("{}")
-            second = report._next_free(path)
-            self.assertEqual(second.name, "run.2.json")
-            second.write_text("{}")
-            self.assertEqual(report._next_free(path).name, "run.3.json")
-            # nothing was clobbered
-            self.assertEqual(path.read_text(), "{}")
+            records = Path(tmp)
+            first = report.allocate_record_id(SIM_DIR, records, when)
+            (records / f"{first}.md").write_text("# first\n")
+            second = report.allocate_record_id(SIM_DIR, records, when)
+            self.assertNotEqual(first, second)
+            self.assertRegex(second, r"^\d{8}-\d{6}-")
+            # the existing record was not touched
+            self.assertEqual((records / f"{first}.md").read_text(), "# first\n")
+
+    def test_write_record_refuses_to_overwrite(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            experiment = Path(tmp) / "an-experiment"
+            (experiment / report.RECORDS_DIR).mkdir(parents=True)
+            (experiment / report.RECORDS_DIR / "20260729-153000-abc1234.md").write_text("keep\n")
+            with self.assertRaises(report.RecordExists):
+                report.write_record(
+                    {"record_id": "20260729-153000-abc1234"}, experiment
+                )
+
+
+class MatrixConformanceTests(unittest.TestCase):
+    """sim/README.md requires the full mandated matrix, or a stated reason."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        tb_dir = Path(self.tmp.name) / "an-experiment" / "testbench"
+        tb_dir.mkdir(parents=True)
+        (tb_dir / "x.spice").write_text("v1 out 0 dc {vdd_val}\n")
+        (tb_dir / "tb.json").write_text(
+            json.dumps({"name": "x", "netlist": "x.spice", "measure": {"vout": "v(out)"}})
+        )
+        self.tb = testbench.load(tb_dir)
+
+    def _grid(self, corner_names, temps, supplies):
+        return corners.build_grid(corners.resolve_corners(corner_names), temps, supplies)
+
+    def test_full_matrix_is_recognised(self):
+        grid = self._grid(["mos"], (-40, 27, 125), corners.supply_points(3.3, 0.10))
+        self.assertEqual(report.matrix_conformance(self.tb, grid), {"full": True, "missing": []})
+
+    def test_missing_temperature_is_flagged(self):
+        grid = self._grid(["mos"], (27,), corners.supply_points(3.3, 0.10))
+        result = report.matrix_conformance(self.tb, grid)
+        self.assertFalse(result["full"])
+        self.assertTrue(any("temperature" in m for m in result["missing"]))
+
+    def test_missing_supply_and_process_are_flagged(self):
+        grid = self._grid(["tt"], (-40, 27, 125), [3.3])
+        result = report.matrix_conformance(self.tb, grid)
+        self.assertFalse(result["full"])
+        self.assertTrue(any("supply" in m for m in result["missing"]))
+        self.assertTrue(any("process" in m for m in result["missing"]))
+
+
+class RecordRenderingTests(unittest.TestCase):
+    """The rendered record carries exactly the fields sim/README.md lists."""
+
+    RATIFIED_FIELDS = (
+        "Record ID",
+        "Claim",
+        "Netlist provenance",
+        "Corner matrix run",
+        "Statistical convention",
+        "Result",
+        "Links",
+        "Timestamp / author",
+        "Supersedes",
+    )
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        root = Path(self.tmp.name)
+        tb_dir = root / "smoke-bias" / "testbench"
+        tb_dir.mkdir(parents=True)
+        (tb_dir / "x.spice").write_text("v1 out 0 dc {vdd_val}\n")
+        (tb_dir / "tb.json").write_text(
+            json.dumps(
+                {
+                    "name": "smoke-bias",
+                    "netlist": "x.spice",
+                    "measure": {"vout": "v(out)"},
+                    "checks": {"vout": {"min": 0.0, "max": 10.0}},
+                }
+            )
+        )
+        self.tb = testbench.load(tb_dir)
+        self.pdk = fake_pdk(root / "gf180mcuD")
+        self.points = corners.build_grid(
+            corners.resolve_corners(["mos"]), (-40, 27, 125), corners.supply_points(3.3, 0.10)
+        )
+        self.results = [
+            runner.PointResult(point=p, status="ok", measurements={"vout": 1.0 + i * 0.01})
+            for i, p in enumerate(self.points)
+        ]
+        self.record = report.build_record(
+            tb=self.tb,
+            pdk=self.pdk,
+            points=self.points,
+            results=self.results,
+            ngspice="ngspice-46",
+            repo_root=SIM_DIR,
+            record_id="20260729-153000-1a7ef75",
+            started_utc="2026-07-29T15:30:00+00:00",
+            wall_seconds=9.5,
+            claim="spec/bandgap.md#example",
+        )
+
+    def test_every_ratified_field_is_present_and_in_order(self):
+        text = report.render_record(self.record, "smoke-bias")
+        positions = []
+        for field in self.RATIFIED_FIELDS:
+            marker = f"**{field}**"
+            self.assertIn(marker, text, f"missing ratified field {field!r}")
+            positions.append(text.index(marker))
+        self.assertEqual(positions, sorted(positions), "fields are out of ratified order")
+
+    def test_links_point_at_the_ratified_paths(self):
+        text = report.render_record(self.record, "smoke-bias")
+        self.assertIn("sim/smoke-bias/testbench/x.spice", text)
+        self.assertIn("sim/smoke-bias/netlist-snapshots/20260729-153000-1a7ef75.spice", text)
+        self.assertIn("sim/smoke-bias/corners/20260729-153000-1a7ef75/", text)
+
+    def test_result_table_uses_corner_ids_and_reports_overall_verdict(self):
+        text = report.render_record(self.record, "smoke-bias")
+        self.assertIn("`tt_-40c_2.97v`", text)
+        self.assertIn("`ff_125c_3.63v`", text)
+        self.assertIn("**Overall: PASS**", text)
+
+    def test_a_full_matrix_run_says_so(self):
+        text = report.render_record(self.record, "smoke-bias")
+        self.assertIn("Full PVT matrix per CLAUDE.md", text)
+
+    def test_environment_section_names_the_real_pdk_provenance(self):
+        text = report.render_record(self.record, "smoke-bias")
+        provenance = self.pdk.provenance()
+        self.assertIn(str(provenance["open_pdks_version"]), text)
+        self.assertIn(provenance["variant"], text)
+        self.assertNotIn("open_pdks `None`", text)
+
+    def test_git_state_is_taken_from_the_caller_not_resampled(self):
+        """The harness dirties the tree by writing logs; provenance is pre-run."""
+        pre_run = {"commit": "f" * 40, "short": "fffffff", "branch": "main", "dirty": False}
+        env = report.environment(self.pdk, "ngspice-46", SIM_DIR, pre_run)
+        self.assertEqual(env["git"], pre_run)
+
+    def test_a_dirty_tree_is_called_out_in_netlist_provenance(self):
+        dirty = dict(self.record)
+        dirty["environment"] = dict(self.record["environment"])
+        dirty["environment"]["git"] = {
+            "commit": "f" * 40, "short": "fffffff", "branch": "main", "dirty": True,
+        }
+        text = report.render_record(dirty, "smoke-bias")
+        self.assertIn("dirty working tree", text)
+
+    def test_netlist_snapshot_is_frozen_and_append_only(self):
+        experiment = self.tb.experiment_dir
+        path = report.write_netlist_snapshot(self.tb, experiment, "20260729-153000-1a7ef75")
+        self.assertEqual(path.parent.name, report.SNAPSHOT_DIR)
+        self.assertIn("v1 out 0 dc {vdd_val}", path.read_text())
+        self.assertIn(self.tb.netlist_sha256, path.read_text())
+        with self.assertRaises(report.RecordExists):
+            report.write_netlist_snapshot(self.tb, experiment, "20260729-153000-1a7ef75")
 
 
 if __name__ == "__main__":

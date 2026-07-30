@@ -1,6 +1,7 @@
 {
-  "name": "smoke_bias",
+  "name": "smoke-bias",
   "description": "Harness acceptance test: ideal divider + PDK poly-R/nfet bias + diode-connected NPN. Not a bandgap.",
+  "claim": "None — harness self-verification, not a spec claim. Proves the PVT plumbing (parameter substitution, .lib corner sections, .temp) actually takes effect, so later records against ratified spec lines (#1) can be trusted.",
   "netlist": "smoke_bias.spice",
   "nominal_supply_v": 3.3,
   "supply_tolerance": 0.1,

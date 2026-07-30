@@ -10,7 +10,7 @@
     "test:unit": "python3 -m unittest discover -s sim/tests -t sim/tests -v",
     "sim:env": "python3 sim/run_corners.py --check-env",
     "sim:list": "python3 sim/run_corners.py --list",
-    "sim:smoke": "python3 sim/run_corners.py smoke_bias",
+    "sim:smoke": "python3 sim/run_corners.py smoke-bias",
     "lint": "echo 'No linter configured. Customize this script for your project.' && exit 0"
   }
 }
