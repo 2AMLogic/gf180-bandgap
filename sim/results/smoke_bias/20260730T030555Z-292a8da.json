@@ -1,0 +1,2180 @@
+{
+  "schema": "gf180-bandgap/sim-result/1",
+  "run_id": "20260730T030555Z-292a8da",
+  "status": "pass",
+  "started_utc": "2026-07-30T03:05:56+00:00",
+  "wall_seconds": 13.61,
+  "testbench": {
+    "name": "smoke_bias",
+    "description": "Harness acceptance test: ideal divider + PDK poly-R/nfet bias + diode-connected NPN. Not a bandgap.",
+    "directory": "smoke_bias",
+    "netlist": "smoke_bias.spice",
+    "netlist_sha256": "beb7685f5719b89fa1c7db5b30478679dc1a12ff325fcae0f7592bdc1d154bef",
+    "manifest_sha256": "901bd3c88137c762dc44dacc6b94966ced7d4284d639ecfb67bd1a5cab0cf705",
+    "nominal_supply_v": 3.3,
+    "supply_tolerance": 0.1
+  },
+  "environment": {
+    "harness_version": "0.1.0",
+    "ngspice": "ngspice-46 : Circuit level simulation program",
+    "python": "3.14.6",
+    "platform": "macOS-26.6-arm64-arm-64bit-Mach-O",
+    "host": "studio",
+    "user": "rwalters",
+    "pdk": {
+      "path": "/Users/rwalters/.volare/gf180mcuD",
+      "variant": "gf180mcuD",
+      "open_pdks_version": "c6d73a35f524070e85faff4a6a9eef49553ebc2b",
+      "discovered_via": "search_root:~/.volare"
+    },
+    "git": {
+      "commit": "292a8da18ddcd7693aea69716372cd4db66a6c12",
+      "short": "292a8da",
+      "branch": "feature/issue-2",
+      "dirty": false
+    }
+  },
+  "grid": {
+    "corners": [
+      {
+        "name": "tt",
+        "sections": [
+          "typical",
+          "res_typical",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ],
+        "description": "all device families typical"
+      },
+      {
+        "name": "ff",
+        "sections": [
+          "ff",
+          "res_ff",
+          "bjt_ff",
+          "diode_ff",
+          "moscap_ff",
+          "mimcap_ff"
+        ],
+        "description": "all device families fast"
+      },
+      {
+        "name": "ss",
+        "sections": [
+          "ss",
+          "res_ss",
+          "bjt_ss",
+          "diode_ss",
+          "moscap_ss",
+          "mimcap_ss"
+        ],
+        "description": "all device families slow"
+      },
+      {
+        "name": "fs",
+        "sections": [
+          "fs",
+          "res_typical",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ],
+        "description": "fast NMOS / slow PMOS, passives typical"
+      },
+      {
+        "name": "sf",
+        "sections": [
+          "sf",
+          "res_typical",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ],
+        "description": "slow NMOS / fast PMOS, passives typical"
+      },
+      {
+        "name": "res_ff",
+        "sections": [
+          "typical",
+          "res_ff",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ],
+        "description": "resistors fast (low rho), rest typical"
+      },
+      {
+        "name": "res_ss",
+        "sections": [
+          "typical",
+          "res_ss",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ],
+        "description": "resistors slow (high rho), rest typical"
+      },
+      {
+        "name": "bjt_ff",
+        "sections": [
+          "typical",
+          "res_typical",
+          "bjt_ff",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ],
+        "description": "BJTs fast, rest typical"
+      },
+      {
+        "name": "bjt_ss",
+        "sections": [
+          "typical",
+          "res_typical",
+          "bjt_ss",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ],
+        "description": "BJTs slow, rest typical"
+      }
+    ],
+    "temperatures_c": [
+      -40.0,
+      27.0,
+      125.0
+    ],
+    "supplies_v": [
+      2.97,
+      3.3,
+      3.63
+    ],
+    "points": 81,
+    "points_ok": 81
+  },
+  "measure": {
+    "vdiv_ratio": "v(ndiv)/v(vdd)",
+    "vbias": "v(nbias)",
+    "vbe": "v(nbe)",
+    "isup_ua": "-i(vsup)*1e6"
+  },
+  "checks": {
+    "spec": {
+      "vdiv_ratio": {
+        "min": 0.4999,
+        "max": 0.5001,
+        "max_spread_pct": 0.001,
+        "description": "ideal divider is exactly vdd/2 -- proves vdd_val plumbing and measurement parsing"
+      },
+      "vbias": {
+        "min": 0.6,
+        "max": 1.4,
+        "min_spread_pct": 5.0,
+        "description": "diode-connected nfet_03v3 Vgs; the spread floor proves the MOS/res .lib sections change between corners"
+      },
+      "vbe": {
+        "min": 0.35,
+        "max": 0.95,
+        "min_spread_pct": 20.0,
+        "description": "NPN Vbe at 10 uA over -40..125 C; the spread floor proves .temp is applied"
+      },
+      "isup_ua": {
+        "min": 20.0,
+        "max": 250.0,
+        "description": "total supply current stays sane at every corner"
+      }
+    },
+    "passed": true,
+    "failures": []
+  },
+  "summary": {
+    "vdiv_ratio": {
+      "n": 81,
+      "min": 0.5,
+      "min_at": "tt_m40C_2p97V",
+      "max": 0.5,
+      "max_at": "tt_m40C_2p97V",
+      "mean": 0.5,
+      "spread_pct": 0.0
+    },
+    "vbias": {
+      "n": 81,
+      "min": 0.83084204799,
+      "min_at": "fs_125C_2p97V",
+      "max": 1.0904561042,
+      "max_at": "ss_m40C_3p63V",
+      "mean": 0.964047324307037,
+      "spread_pct": 26.929596676865646
+    },
+    "vbe": {
+      "n": 81,
+      "min": 0.47988503295,
+      "min_at": "ff_125C_2p97V",
+      "max": 0.82566051711,
+      "max_at": "ss_m40C_2p97V",
+      "mean": 0.669449396167037,
+      "spread_pct": 51.65072761880931
+    },
+    "isup_ua": {
+      "n": 81,
+      "min": 57.591701265,
+      "min_at": "ss_m40C_2p97V",
+      "max": 110.7511987,
+      "max_at": "ff_125C_3p63V",
+      "mean": 80.70912261029629,
+      "spread_pct": 65.86553752006505
+    }
+  },
+  "points": [
+    {
+      "corner": "tt",
+      "corner_sections": [
+        "typical",
+        "res_typical",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": -40.0,
+      "vdd": 2.97,
+      "label": "tt_m40C_2p97V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.96567083894,
+        "vbe": 0.80952791545,
+        "isup_ua": 68.521032459
+      },
+      "seconds": 1.158,
+      "deck": "tt_m40C_2p97V.spice",
+      "log": "tt_m40C_2p97V.log"
+    },
+    {
+      "corner": "tt",
+      "corner_sections": [
+        "typical",
+        "res_typical",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": -40.0,
+      "vdd": 3.3,
+      "label": "tt_m40C_3p3V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.98397718916,
+        "vbe": 0.80952791545,
+        "isup_ua": 78.517426015
+      },
+      "seconds": 1.101,
+      "deck": "tt_m40C_3p3V.spice",
+      "log": "tt_m40C_3p3V.log"
+    },
+    {
+      "corner": "tt",
+      "corner_sections": [
+        "typical",
+        "res_typical",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": -40.0,
+      "vdd": 3.63,
+      "label": "tt_m40C_3p63V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 1.0011592802,
+        "vbe": 0.80952791545,
+        "isup_ua": 88.543924483
+      },
+      "seconds": 1.071,
+      "deck": "tt_m40C_3p63V.spice",
+      "log": "tt_m40C_3p63V.log"
+    },
+    {
+      "corner": "tt",
+      "corner_sections": [
+        "typical",
+        "res_typical",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": 27.0,
+      "vdd": 2.97,
+      "label": "tt_27C_2p97V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.94380990047,
+        "vbe": 0.69043645202,
+        "isup_ua": 69.611221477
+      },
+      "seconds": 1.113,
+      "deck": "tt_27C_2p97V.spice",
+      "log": "tt_27C_2p97V.log"
+    },
+    {
+      "corner": "tt",
+      "corner_sections": [
+        "typical",
+        "res_typical",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": 27.0,
+      "vdd": 3.3,
+      "label": "tt_27C_3p3V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.96579577283,
+        "vbe": 0.69043645202,
+        "isup_ua": 79.585825307
+      },
+      "seconds": 1.078,
+      "deck": "tt_27C_3p3V.spice",
+      "log": "tt_27C_3p3V.log"
+    },
+    {
+      "corner": "tt",
+      "corner_sections": [
+        "typical",
+        "res_typical",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": 27.0,
+      "vdd": 3.63,
+      "label": "tt_27C_3p63V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.98648562762,
+        "vbe": 0.69043645202,
+        "isup_ua": 89.595456207
+      },
+      "seconds": 0.991,
+      "deck": "tt_27C_3p63V.spice",
+      "log": "tt_27C_3p63V.log"
+    },
+    {
+      "corner": "tt",
+      "corner_sections": [
+        "typical",
+        "res_typical",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": 125.0,
+      "vdd": 2.97,
+      "label": "tt_125C_2p97V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.91117206205,
+        "vbe": 0.50733633818,
+        "isup_ua": 70.620539414
+      },
+      "seconds": 0.987,
+      "deck": "tt_125C_2p97V.spice",
+      "log": "tt_125C_2p97V.log"
+    },
+    {
+      "corner": "tt",
+      "corner_sections": [
+        "typical",
+        "res_typical",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": 125.0,
+      "vdd": 3.3,
+      "label": "tt_125C_3p3V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.93798894447,
+        "vbe": 0.50733633818,
+        "isup_ua": 80.483312175
+      },
+      "seconds": 0.941,
+      "deck": "tt_125C_3p3V.spice",
+      "log": "tt_125C_3p3V.log"
+    },
+    {
+      "corner": "tt",
+      "corner_sections": [
+        "typical",
+        "res_typical",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": 125.0,
+      "vdd": 3.63,
+      "label": "tt_125C_3p63V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.9633368784,
+        "vbe": 0.50733633818,
+        "isup_ua": 90.385876532
+      },
+      "seconds": 1.427,
+      "deck": "tt_125C_3p63V.spice",
+      "log": "tt_125C_3p63V.log"
+    },
+    {
+      "corner": "ff",
+      "corner_sections": [
+        "ff",
+        "res_ff",
+        "bjt_ff",
+        "diode_ff",
+        "moscap_ff",
+        "mimcap_ff"
+      ],
+      "temp_c": -40.0,
+      "vdd": 2.97,
+      "label": "ff_m40C_2p97V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.88150273052,
+        "vbe": 0.79409677304,
+        "isup_ua": 84.691086553
+      },
+      "seconds": 1.369,
+      "deck": "ff_m40C_2p97V.spice",
+      "log": "ff_m40C_2p97V.log"
+    },
+    {
+      "corner": "ff",
+      "corner_sections": [
+        "ff",
+        "res_ff",
+        "bjt_ff",
+        "diode_ff",
+        "moscap_ff",
+        "mimcap_ff"
+      ],
+      "temp_c": -40.0,
+      "vdd": 3.3,
+      "label": "ff_m40C_3p3V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.9006705995,
+        "vbe": 0.79409677304,
+        "isup_ua": 96.735571661
+      },
+      "seconds": 1.322,
+      "deck": "ff_m40C_3p3V.spice",
+      "log": "ff_m40C_3p3V.log"
+    },
+    {
+      "corner": "ff",
+      "corner_sections": [
+        "ff",
+        "res_ff",
+        "bjt_ff",
+        "diode_ff",
+        "moscap_ff",
+        "mimcap_ff"
+      ],
+      "temp_c": -40.0,
+      "vdd": 3.63,
+      "label": "ff_m40C_3p63V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.91874516483,
+        "vbe": 0.79409677304,
+        "isup_ua": 108.81661775
+      },
+      "seconds": 1.591,
+      "deck": "ff_m40C_3p63V.spice",
+      "log": "ff_m40C_3p63V.log"
+    },
+    {
+      "corner": "ff",
+      "corner_sections": [
+        "ff",
+        "res_ff",
+        "bjt_ff",
+        "diode_ff",
+        "moscap_ff",
+        "mimcap_ff"
+      ],
+      "temp_c": 27.0,
+      "vdd": 2.97,
+      "label": "ff_27C_2p97V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.86447668478,
+        "vbe": 0.67006993001,
+        "isup_ua": 85.921127113
+      },
+      "seconds": 1.342,
+      "deck": "ff_27C_2p97V.spice",
+      "log": "ff_27C_2p97V.log"
+    },
+    {
+      "corner": "ff",
+      "corner_sections": [
+        "ff",
+        "res_ff",
+        "bjt_ff",
+        "diode_ff",
+        "moscap_ff",
+        "mimcap_ff"
+      ],
+      "temp_c": 27.0,
+      "vdd": 3.3,
+      "label": "ff_27C_3p3V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.88754380431,
+        "vbe": 0.67006993001,
+        "isup_ua": 97.931528067
+      },
+      "seconds": 1.262,
+      "deck": "ff_27C_3p3V.spice",
+      "log": "ff_27C_3p3V.log"
+    },
+    {
+      "corner": "ff",
+      "corner_sections": [
+        "ff",
+        "res_ff",
+        "bjt_ff",
+        "diode_ff",
+        "moscap_ff",
+        "mimcap_ff"
+      ],
+      "temp_c": 27.0,
+      "vdd": 3.63,
+      "label": "ff_27C_3p63V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.9093384172,
+        "vbe": 0.67006993001,
+        "isup_ua": 109.98488199
+      },
+      "seconds": 1.294,
+      "deck": "ff_27C_3p63V.spice",
+      "log": "ff_27C_3p63V.log"
+    },
+    {
+      "corner": "ff",
+      "corner_sections": [
+        "ff",
+        "res_ff",
+        "bjt_ff",
+        "diode_ff",
+        "moscap_ff",
+        "mimcap_ff"
+      ],
+      "temp_c": 125.0,
+      "vdd": 2.97,
+      "label": "ff_125C_2p97V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.83817660345,
+        "vbe": 0.47988503295,
+        "isup_ua": 86.981650312
+      },
+      "seconds": 1.265,
+      "deck": "ff_125C_2p97V.spice",
+      "log": "ff_125C_2p97V.log"
+    },
+    {
+      "corner": "ff",
+      "corner_sections": [
+        "ff",
+        "res_ff",
+        "bjt_ff",
+        "diode_ff",
+        "moscap_ff",
+        "mimcap_ff"
+      ],
+      "temp_c": 125.0,
+      "vdd": 3.3,
+      "label": "ff_125C_3p3V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.86642132457,
+        "vbe": 0.47988503295,
+        "isup_ua": 98.841739145
+      },
+      "seconds": 1.498,
+      "deck": "ff_125C_3p3V.spice",
+      "log": "ff_125C_3p3V.log"
+    },
+    {
+      "corner": "ff",
+      "corner_sections": [
+        "ff",
+        "res_ff",
+        "bjt_ff",
+        "diode_ff",
+        "moscap_ff",
+        "mimcap_ff"
+      ],
+      "temp_c": 125.0,
+      "vdd": 3.63,
+      "label": "ff_125C_3p63V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.89320691273,
+        "vbe": 0.47988503295,
+        "isup_ua": 110.7511987
+      },
+      "seconds": 1.395,
+      "deck": "ff_125C_3p63V.spice",
+      "log": "ff_125C_3p63V.log"
+    },
+    {
+      "corner": "ss",
+      "corner_sections": [
+        "ss",
+        "res_ss",
+        "bjt_ss",
+        "diode_ss",
+        "moscap_ss",
+        "mimcap_ss"
+      ],
+      "temp_c": -40.0,
+      "vdd": 2.97,
+      "label": "ss_m40C_2p97V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 1.0557762117,
+        "vbe": 0.82566051711,
+        "isup_ua": 57.591701265
+      },
+      "seconds": 1.246,
+      "deck": "ss_m40C_2p97V.spice",
+      "log": "ss_m40C_2p97V.log"
+    },
+    {
+      "corner": "ss",
+      "corner_sections": [
+        "ss",
+        "res_ss",
+        "bjt_ss",
+        "diode_ss",
+        "moscap_ss",
+        "mimcap_ss"
+      ],
+      "temp_c": -40.0,
+      "vdd": 3.3,
+      "label": "ss_m40C_3p3V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 1.0737049047,
+        "vbe": 0.82566051711,
+        "isup_ua": 66.209778175
+      },
+      "seconds": 1.274,
+      "deck": "ss_m40C_3p3V.spice",
+      "log": "ss_m40C_3p3V.log"
+    },
+    {
+      "corner": "ss",
+      "corner_sections": [
+        "ss",
+        "res_ss",
+        "bjt_ss",
+        "diode_ss",
+        "moscap_ss",
+        "mimcap_ss"
+      ],
+      "temp_c": -40.0,
+      "vdd": 3.63,
+      "label": "ss_m40C_3p63V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 1.0904561042,
+        "vbe": 0.82566051711,
+        "isup_ua": 74.854146719
+      },
+      "seconds": 1.229,
+      "deck": "ss_m40C_3p63V.spice",
+      "log": "ss_m40C_3p63V.log"
+    },
+    {
+      "corner": "ss",
+      "corner_sections": [
+        "ss",
+        "res_ss",
+        "bjt_ss",
+        "diode_ss",
+        "moscap_ss",
+        "mimcap_ss"
+      ],
+      "temp_c": 27.0,
+      "vdd": 2.97,
+      "label": "ss_27C_2p97V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 1.0303263876,
+        "vbe": 0.71230393474,
+        "isup_ua": 58.560629352
+      },
+      "seconds": 1.269,
+      "deck": "ss_27C_2p97V.spice",
+      "log": "ss_27C_2p97V.log"
+    },
+    {
+      "corner": "ss",
+      "corner_sections": [
+        "ss",
+        "res_ss",
+        "bjt_ss",
+        "diode_ss",
+        "moscap_ss",
+        "mimcap_ss"
+      ],
+      "temp_c": 27.0,
+      "vdd": 3.3,
+      "label": "ss_27C_3p3V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 1.0517996462,
+        "vbe": 0.71230393474,
+        "isup_ua": 67.163292908
+      },
+      "seconds": 1.094,
+      "deck": "ss_27C_3p3V.spice",
+      "log": "ss_27C_3p3V.log"
+    },
+    {
+      "corner": "ss",
+      "corner_sections": [
+        "ss",
+        "res_ss",
+        "bjt_ss",
+        "diode_ss",
+        "moscap_ss",
+        "mimcap_ss"
+      ],
+      "temp_c": 27.0,
+      "vdd": 3.63,
+      "label": "ss_27C_3p63V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 1.0719280205,
+        "vbe": 0.71230393474,
+        "isup_ua": 75.796263492
+      },
+      "seconds": 1.424,
+      "deck": "ss_27C_3p63V.spice",
+      "log": "ss_27C_3p63V.log"
+    },
+    {
+      "corner": "ss",
+      "corner_sections": [
+        "ss",
+        "res_ss",
+        "bjt_ss",
+        "diode_ss",
+        "moscap_ss",
+        "mimcap_ss"
+      ],
+      "temp_c": 125.0,
+      "vdd": 2.97,
+      "label": "ss_125C_2p97V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.99304526753,
+        "vbe": 0.53729889628,
+        "isup_ua": 59.499216554
+      },
+      "seconds": 1.766,
+      "deck": "ss_125C_2p97V.spice",
+      "log": "ss_125C_2p97V.log"
+    },
+    {
+      "corner": "ss",
+      "corner_sections": [
+        "ss",
+        "res_ss",
+        "bjt_ss",
+        "diode_ss",
+        "moscap_ss",
+        "mimcap_ss"
+      ],
+      "temp_c": 125.0,
+      "vdd": 3.3,
+      "label": "ss_125C_3p3V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 1.0191294334,
+        "vbe": 0.53729889628,
+        "isup_ua": 68.013108615
+      },
+      "seconds": 1.633,
+      "deck": "ss_125C_3p3V.spice",
+      "log": "ss_125C_3p3V.log"
+    },
+    {
+      "corner": "ss",
+      "corner_sections": [
+        "ss",
+        "res_ss",
+        "bjt_ss",
+        "diode_ss",
+        "moscap_ss",
+        "mimcap_ss"
+      ],
+      "temp_c": 125.0,
+      "vdd": 3.63,
+      "label": "ss_125C_3p63V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 1.0437044028,
+        "vbe": 0.53729889628,
+        "isup_ua": 76.561085644
+      },
+      "seconds": 1.59,
+      "deck": "ss_125C_3p63V.spice",
+      "log": "ss_125C_3p63V.log"
+    },
+    {
+      "corner": "fs",
+      "corner_sections": [
+        "fs",
+        "res_typical",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": -40.0,
+      "vdd": 2.97,
+      "label": "fs_m40C_2p97V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.88607560228,
+        "vbe": 0.80952791545,
+        "isup_ua": 70.652398211
+      },
+      "seconds": 1.642,
+      "deck": "fs_m40C_2p97V.spice",
+      "log": "fs_m40C_2p97V.log"
+    },
+    {
+      "corner": "fs",
+      "corner_sections": [
+        "fs",
+        "res_typical",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": -40.0,
+      "vdd": 3.3,
+      "label": "fs_m40C_3p3V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.90362107231,
+        "vbe": 0.80952791545,
+        "isup_ua": 80.669166278
+      },
+      "seconds": 1.602,
+      "deck": "fs_m40C_3p3V.spice",
+      "log": "fs_m40C_3p3V.log"
+    },
+    {
+      "corner": "fs",
+      "corner_sections": [
+        "fs",
+        "res_typical",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": -40.0,
+      "vdd": 3.63,
+      "label": "fs_m40C_3p63V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.92011514402,
+        "vbe": 0.80952791545,
+        "isup_ua": 90.71408822
+      },
+      "seconds": 1.646,
+      "deck": "fs_m40C_3p63V.spice",
+      "log": "fs_m40C_3p63V.log"
+    },
+    {
+      "corner": "fs",
+      "corner_sections": [
+        "fs",
+        "res_typical",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": 27.0,
+      "vdd": 2.97,
+      "label": "fs_27C_2p97V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.8639675422,
+        "vbe": 0.69043645202,
+        "isup_ua": 71.769096528
+      },
+      "seconds": 1.644,
+      "deck": "fs_27C_2p97V.spice",
+      "log": "fs_27C_2p97V.log"
+    },
+    {
+      "corner": "fs",
+      "corner_sections": [
+        "fs",
+        "res_typical",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": 27.0,
+      "vdd": 3.3,
+      "label": "fs_27C_3p3V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.88506039667,
+        "vbe": 0.69043645202,
+        "isup_ua": 81.76783568
+      },
+      "seconds": 1.36,
+      "deck": "fs_27C_3p3V.spice",
+      "log": "fs_27C_3p3V.log"
+    },
+    {
+      "corner": "fs",
+      "corner_sections": [
+        "fs",
+        "res_typical",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": 27.0,
+      "vdd": 3.63,
+      "label": "fs_27C_3p63V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.90493929231,
+        "vbe": 0.69043645202,
+        "isup_ua": 91.799384126
+      },
+      "seconds": 1.638,
+      "deck": "fs_27C_3p63V.spice",
+      "log": "fs_27C_3p63V.log"
+    },
+    {
+      "corner": "fs",
+      "corner_sections": [
+        "fs",
+        "res_typical",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": 125.0,
+      "vdd": 2.97,
+      "label": "fs_125C_2p97V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.83084204799,
+        "vbe": 0.50733633818,
+        "isup_ua": 72.796558173
+      },
+      "seconds": 1.826,
+      "deck": "fs_125C_2p97V.spice",
+      "log": "fs_125C_2p97V.log"
+    },
+    {
+      "corner": "fs",
+      "corner_sections": [
+        "fs",
+        "res_typical",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": 125.0,
+      "vdd": 3.3,
+      "label": "fs_125C_3p3V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.85659790825,
+        "vbe": 0.50733633818,
+        "isup_ua": 82.688072422
+      },
+      "seconds": 1.684,
+      "deck": "fs_125C_3p3V.spice",
+      "log": "fs_125C_3p3V.log"
+    },
+    {
+      "corner": "fs",
+      "corner_sections": [
+        "fs",
+        "res_typical",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": 125.0,
+      "vdd": 3.63,
+      "label": "fs_125C_3p63V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.88097612056,
+        "vbe": 0.50733633818,
+        "isup_ua": 92.616905073
+      },
+      "seconds": 1.732,
+      "deck": "fs_125C_3p63V.spice",
+      "log": "fs_125C_3p63V.log"
+    },
+    {
+      "corner": "sf",
+      "corner_sections": [
+        "sf",
+        "res_typical",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": -40.0,
+      "vdd": 2.97,
+      "label": "sf_m40C_2p97V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 1.0452951315,
+        "vbe": 0.80952791545,
+        "isup_ua": 66.388888661
+      },
+      "seconds": 1.654,
+      "deck": "sf_m40C_2p97V.spice",
+      "log": "sf_m40C_2p97V.log"
+    },
+    {
+      "corner": "sf",
+      "corner_sections": [
+        "sf",
+        "res_typical",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": -40.0,
+      "vdd": 3.3,
+      "label": "sf_m40C_3p3V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 1.0644330048,
+        "vbe": 0.80952791545,
+        "isup_ua": 76.363016062
+      },
+      "seconds": 1.719,
+      "deck": "sf_m40C_3p3V.spice",
+      "log": "sf_m40C_3p3V.log"
+    },
+    {
+      "corner": "sf",
+      "corner_sections": [
+        "sf",
+        "res_typical",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": -40.0,
+      "vdd": 3.63,
+      "label": "sf_m40C_3p63V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 1.0823668971,
+        "vbe": 0.80952791545,
+        "isup_ua": 86.36938313
+      },
+      "seconds": 1.535,
+      "deck": "sf_m40C_3p63V.spice",
+      "log": "sf_m40C_3p63V.log"
+    },
+    {
+      "corner": "sf",
+      "corner_sections": [
+        "sf",
+        "res_typical",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": 27.0,
+      "vdd": 2.97,
+      "label": "sf_27C_2p97V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 1.0236443523,
+        "vbe": 0.69043645202,
+        "isup_ua": 67.453560112
+      },
+      "seconds": 1.766,
+      "deck": "sf_27C_2p97V.spice",
+      "log": "sf_27C_2p97V.log"
+    },
+    {
+      "corner": "sf",
+      "corner_sections": [
+        "sf",
+        "res_typical",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": 27.0,
+      "vdd": 3.3,
+      "label": "sf_27C_3p3V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 1.046600866,
+        "vbe": 0.69043645202,
+        "isup_ua": 77.401930712
+      },
+      "seconds": 1.408,
+      "deck": "sf_27C_3p3V.spice",
+      "log": "sf_27C_3p3V.log"
+    },
+    {
+      "corner": "sf",
+      "corner_sections": [
+        "sf",
+        "res_typical",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": 27.0,
+      "vdd": 3.63,
+      "label": "sf_27C_3p63V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 1.0681719851,
+        "vbe": 0.69043645202,
+        "isup_ua": 87.387743953
+      },
+      "seconds": 1.456,
+      "deck": "sf_27C_3p63V.spice",
+      "log": "sf_27C_3p63V.log"
+    },
+    {
+      "corner": "sf",
+      "corner_sections": [
+        "sf",
+        "res_typical",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": 125.0,
+      "vdd": 2.97,
+      "label": "sf_125C_2p97V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.99142283407,
+        "vbe": 0.50733633818,
+        "isup_ua": 68.446667201
+      },
+      "seconds": 1.101,
+      "deck": "sf_125C_2p97V.spice",
+      "log": "sf_125C_2p97V.log"
+    },
+    {
+      "corner": "sf",
+      "corner_sections": [
+        "sf",
+        "res_typical",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": 125.0,
+      "vdd": 3.3,
+      "label": "sf_125C_3p3V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 1.0193862294,
+        "vbe": 0.50733633818,
+        "isup_ua": 78.27838266
+      },
+      "seconds": 1.316,
+      "deck": "sf_125C_3p3V.spice",
+      "log": "sf_125C_3p3V.log"
+    },
+    {
+      "corner": "sf",
+      "corner_sections": [
+        "sf",
+        "res_typical",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": 125.0,
+      "vdd": 3.63,
+      "label": "sf_125C_3p63V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 1.0457820359,
+        "vbe": 0.50733633818,
+        "isup_ua": 88.152561731
+      },
+      "seconds": 1.637,
+      "deck": "sf_125C_3p63V.spice",
+      "log": "sf_125C_3p63V.log"
+    },
+    {
+      "corner": "res_ff",
+      "corner_sections": [
+        "typical",
+        "res_ff",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": -40.0,
+      "vdd": 2.97,
+      "label": "res_ff_m40C_2p97V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.99254137699,
+        "vbe": 0.80952791545,
+        "isup_ua": 80.977861818
+      },
+      "seconds": 1.569,
+      "deck": "res_ff_m40C_2p97V.spice",
+      "log": "res_ff_m40C_2p97V.log"
+    },
+    {
+      "corner": "res_ff",
+      "corner_sections": [
+        "typical",
+        "res_ff",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": -40.0,
+      "vdd": 3.3,
+      "label": "res_ff_m40C_3p3V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 1.0130266615,
+        "vbe": 0.80952791545,
+        "isup_ua": 92.978291454
+      },
+      "seconds": 1.425,
+      "deck": "res_ff_m40C_3p3V.spice",
+      "log": "res_ff_m40C_3p3V.log"
+    },
+    {
+      "corner": "res_ff",
+      "corner_sections": [
+        "typical",
+        "res_ff",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": -40.0,
+      "vdd": 3.63,
+      "label": "res_ff_m40C_3p63V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 1.0323056154,
+        "vbe": 0.80952791545,
+        "isup_ua": 105.01906179
+      },
+      "seconds": 1.245,
+      "deck": "res_ff_m40C_3p63V.spice",
+      "log": "res_ff_m40C_3p63V.log"
+    },
+    {
+      "corner": "res_ff",
+      "corner_sections": [
+        "typical",
+        "res_ff",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": 27.0,
+      "vdd": 2.97,
+      "label": "res_ff_27C_2p97V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.97636726154,
+        "vbe": 0.69043645202,
+        "isup_ua": 82.144303866
+      },
+      "seconds": 1.803,
+      "deck": "res_ff_27C_2p97V.spice",
+      "log": "res_ff_27C_2p97V.log"
+    },
+    {
+      "corner": "res_ff",
+      "corner_sections": [
+        "typical",
+        "res_ff",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": 27.0,
+      "vdd": 3.3,
+      "label": "res_ff_27C_3p3V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 1.0009882415,
+        "vbe": 0.69043645202,
+        "isup_ua": 94.10225486
+      },
+      "seconds": 1.869,
+      "deck": "res_ff_27C_3p3V.spice",
+      "log": "res_ff_27C_3p3V.log"
+    },
+    {
+      "corner": "res_ff",
+      "corner_sections": [
+        "typical",
+        "res_ff",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": 27.0,
+      "vdd": 3.63,
+      "label": "res_ff_27C_3p63V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 1.0242074337,
+        "vbe": 0.69043645202,
+        "isup_ua": 106.10752266
+      },
+      "seconds": 1.841,
+      "deck": "res_ff_27C_3p63V.spice",
+      "log": "res_ff_27C_3p63V.log"
+    },
+    {
+      "corner": "res_ff",
+      "corner_sections": [
+        "typical",
+        "res_ff",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": 125.0,
+      "vdd": 2.97,
+      "label": "res_ff_125C_2p97V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.95142687666,
+        "vbe": 0.50733633818,
+        "isup_ua": 83.149752642
+      },
+      "seconds": 1.723,
+      "deck": "res_ff_125C_2p97V.spice",
+      "log": "res_ff_125C_2p97V.log"
+    },
+    {
+      "corner": "res_ff",
+      "corner_sections": [
+        "typical",
+        "res_ff",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": 125.0,
+      "vdd": 3.3,
+      "label": "res_ff_125C_3p3V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.9815314357,
+        "vbe": 0.50733633818,
+        "isup_ua": 94.946912633
+      },
+      "seconds": 1.962,
+      "deck": "res_ff_125C_3p3V.spice",
+      "log": "res_ff_125C_3p3V.log"
+    },
+    {
+      "corner": "res_ff",
+      "corner_sections": [
+        "typical",
+        "res_ff",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": 125.0,
+      "vdd": 3.63,
+      "label": "res_ff_125C_3p63V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 1.0100301234,
+        "vbe": 0.50733633818,
+        "isup_ua": 106.79840834
+      },
+      "seconds": 1.722,
+      "deck": "res_ff_125C_3p63V.spice",
+      "log": "res_ff_125C_3p63V.log"
+    },
+    {
+      "corner": "res_ss",
+      "corner_sections": [
+        "typical",
+        "res_ss",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": -40.0,
+      "vdd": 2.97,
+      "label": "res_ss_m40C_2p97V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.94554237809,
+        "vbe": 0.80952791545,
+        "isup_ua": 60.053054851
+      },
+      "seconds": 1.662,
+      "deck": "res_ss_m40C_2p97V.spice",
+      "log": "res_ss_m40C_2p97V.log"
+    },
+    {
+      "corner": "res_ss",
+      "corner_sections": [
+        "typical",
+        "res_ss",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": -40.0,
+      "vdd": 3.3,
+      "label": "res_ss_m40C_3p3V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.96229276443,
+        "vbe": 0.80952791545,
+        "isup_ua": 68.697441552
+      },
+      "seconds": 1.734,
+      "deck": "res_ss_m40C_3p3V.spice",
+      "log": "res_ss_m40C_3p3V.log"
+    },
+    {
+      "corner": "res_ss",
+      "corner_sections": [
+        "typical",
+        "res_ss",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": -40.0,
+      "vdd": 3.63,
+      "label": "res_ss_m40C_3p63V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.97797785917,
+        "vbe": 0.80952791545,
+        "isup_ua": 77.365614592
+      },
+      "seconds": 1.469,
+      "deck": "res_ss_m40C_3p63V.spice",
+      "log": "res_ss_m40C_3p63V.log"
+    },
+    {
+      "corner": "res_ss",
+      "corner_sections": [
+        "typical",
+        "res_ss",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": 27.0,
+      "vdd": 2.97,
+      "label": "res_ss_27C_2p97V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.91939882722,
+        "vbe": 0.69043645202,
+        "isup_ua": 61.060386757
+      },
+      "seconds": 1.188,
+      "deck": "res_ss_27C_2p97V.spice",
+      "log": "res_ss_27C_2p97V.log"
+    },
+    {
+      "corner": "res_ss",
+      "corner_sections": [
+        "typical",
+        "res_ss",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": 27.0,
+      "vdd": 3.3,
+      "label": "res_ss_27C_3p3V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.93948928584,
+        "vbe": 0.69043645202,
+        "isup_ua": 69.694211772
+      },
+      "seconds": 1.197,
+      "deck": "res_ss_27C_3p3V.spice",
+      "log": "res_ss_27C_3p3V.log"
+    },
+    {
+      "corner": "res_ss",
+      "corner_sections": [
+        "typical",
+        "res_ss",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": 27.0,
+      "vdd": 3.63,
+      "label": "res_ss_27C_3p63V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.95836066206,
+        "vbe": 0.69043645202,
+        "isup_ua": 78.355508862
+      },
+      "seconds": 1.247,
+      "deck": "res_ss_27C_3p63V.spice",
+      "log": "res_ss_27C_3p63V.log"
+    },
+    {
+      "corner": "res_ss",
+      "corner_sections": [
+        "typical",
+        "res_ss",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": 125.0,
+      "vdd": 2.97,
+      "label": "res_ss_125C_2p97V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.88098900181,
+        "vbe": 0.50733633818,
+        "isup_ua": 62.029989967
+      },
+      "seconds": 1.063,
+      "deck": "res_ss_125C_2p97V.spice",
+      "log": "res_ss_125C_2p97V.log"
+    },
+    {
+      "corner": "res_ss",
+      "corner_sections": [
+        "typical",
+        "res_ss",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": 125.0,
+      "vdd": 3.3,
+      "label": "res_ss_125C_3p3V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.90542535853,
+        "vbe": 0.50733633818,
+        "isup_ua": 70.581097542
+      },
+      "seconds": 1.113,
+      "deck": "res_ss_125C_3p3V.spice",
+      "log": "res_ss_125C_3p3V.log"
+    },
+    {
+      "corner": "res_ss",
+      "corner_sections": [
+        "typical",
+        "res_ss",
+        "bjt_typical",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": 125.0,
+      "vdd": 3.63,
+      "label": "res_ss_125C_3p63V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.92849153963,
+        "vbe": 0.50733633818,
+        "isup_ua": 79.163150321
+      },
+      "seconds": 1.067,
+      "deck": "res_ss_125C_3p63V.spice",
+      "log": "res_ss_125C_3p63V.log"
+    },
+    {
+      "corner": "bjt_ff",
+      "corner_sections": [
+        "typical",
+        "res_typical",
+        "bjt_ff",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": -40.0,
+      "vdd": 2.97,
+      "label": "bjt_ff_m40C_2p97V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.96567083894,
+        "vbe": 0.79409677304,
+        "isup_ua": 68.521032459
+      },
+      "seconds": 1.007,
+      "deck": "bjt_ff_m40C_2p97V.spice",
+      "log": "bjt_ff_m40C_2p97V.log"
+    },
+    {
+      "corner": "bjt_ff",
+      "corner_sections": [
+        "typical",
+        "res_typical",
+        "bjt_ff",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": -40.0,
+      "vdd": 3.3,
+      "label": "bjt_ff_m40C_3p3V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.98397718916,
+        "vbe": 0.79409677304,
+        "isup_ua": 78.517426015
+      },
+      "seconds": 0.626,
+      "deck": "bjt_ff_m40C_3p3V.spice",
+      "log": "bjt_ff_m40C_3p3V.log"
+    },
+    {
+      "corner": "bjt_ff",
+      "corner_sections": [
+        "typical",
+        "res_typical",
+        "bjt_ff",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": -40.0,
+      "vdd": 3.63,
+      "label": "bjt_ff_m40C_3p63V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 1.0011592802,
+        "vbe": 0.79409677304,
+        "isup_ua": 88.543924483
+      },
+      "seconds": 0.641,
+      "deck": "bjt_ff_m40C_3p63V.spice",
+      "log": "bjt_ff_m40C_3p63V.log"
+    },
+    {
+      "corner": "bjt_ff",
+      "corner_sections": [
+        "typical",
+        "res_typical",
+        "bjt_ff",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": 27.0,
+      "vdd": 2.97,
+      "label": "bjt_ff_27C_2p97V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.94380990047,
+        "vbe": 0.67006993001,
+        "isup_ua": 69.611221477
+      },
+      "seconds": 0.744,
+      "deck": "bjt_ff_27C_2p97V.spice",
+      "log": "bjt_ff_27C_2p97V.log"
+    },
+    {
+      "corner": "bjt_ff",
+      "corner_sections": [
+        "typical",
+        "res_typical",
+        "bjt_ff",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": 27.0,
+      "vdd": 3.3,
+      "label": "bjt_ff_27C_3p3V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.96579577283,
+        "vbe": 0.67006993001,
+        "isup_ua": 79.585825307
+      },
+      "seconds": 0.763,
+      "deck": "bjt_ff_27C_3p3V.spice",
+      "log": "bjt_ff_27C_3p3V.log"
+    },
+    {
+      "corner": "bjt_ff",
+      "corner_sections": [
+        "typical",
+        "res_typical",
+        "bjt_ff",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": 27.0,
+      "vdd": 3.63,
+      "label": "bjt_ff_27C_3p63V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.98648562762,
+        "vbe": 0.67006993001,
+        "isup_ua": 89.595456207
+      },
+      "seconds": 0.988,
+      "deck": "bjt_ff_27C_3p63V.spice",
+      "log": "bjt_ff_27C_3p63V.log"
+    },
+    {
+      "corner": "bjt_ff",
+      "corner_sections": [
+        "typical",
+        "res_typical",
+        "bjt_ff",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": 125.0,
+      "vdd": 2.97,
+      "label": "bjt_ff_125C_2p97V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.91117206205,
+        "vbe": 0.47988503295,
+        "isup_ua": 70.620539414
+      },
+      "seconds": 0.936,
+      "deck": "bjt_ff_125C_2p97V.spice",
+      "log": "bjt_ff_125C_2p97V.log"
+    },
+    {
+      "corner": "bjt_ff",
+      "corner_sections": [
+        "typical",
+        "res_typical",
+        "bjt_ff",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": 125.0,
+      "vdd": 3.3,
+      "label": "bjt_ff_125C_3p3V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.93798894447,
+        "vbe": 0.47988503295,
+        "isup_ua": 80.483312175
+      },
+      "seconds": 0.861,
+      "deck": "bjt_ff_125C_3p3V.spice",
+      "log": "bjt_ff_125C_3p3V.log"
+    },
+    {
+      "corner": "bjt_ff",
+      "corner_sections": [
+        "typical",
+        "res_typical",
+        "bjt_ff",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": 125.0,
+      "vdd": 3.63,
+      "label": "bjt_ff_125C_3p63V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.9633368784,
+        "vbe": 0.47988503295,
+        "isup_ua": 90.385876532
+      },
+      "seconds": 0.85,
+      "deck": "bjt_ff_125C_3p63V.spice",
+      "log": "bjt_ff_125C_3p63V.log"
+    },
+    {
+      "corner": "bjt_ss",
+      "corner_sections": [
+        "typical",
+        "res_typical",
+        "bjt_ss",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": -40.0,
+      "vdd": 2.97,
+      "label": "bjt_ss_m40C_2p97V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.96567083894,
+        "vbe": 0.82566051711,
+        "isup_ua": 68.521032459
+      },
+      "seconds": 0.809,
+      "deck": "bjt_ss_m40C_2p97V.spice",
+      "log": "bjt_ss_m40C_2p97V.log"
+    },
+    {
+      "corner": "bjt_ss",
+      "corner_sections": [
+        "typical",
+        "res_typical",
+        "bjt_ss",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": -40.0,
+      "vdd": 3.3,
+      "label": "bjt_ss_m40C_3p3V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.98397718916,
+        "vbe": 0.82566051711,
+        "isup_ua": 78.517426015
+      },
+      "seconds": 0.661,
+      "deck": "bjt_ss_m40C_3p3V.spice",
+      "log": "bjt_ss_m40C_3p3V.log"
+    },
+    {
+      "corner": "bjt_ss",
+      "corner_sections": [
+        "typical",
+        "res_typical",
+        "bjt_ss",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": -40.0,
+      "vdd": 3.63,
+      "label": "bjt_ss_m40C_3p63V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 1.0011592802,
+        "vbe": 0.82566051711,
+        "isup_ua": 88.543924483
+      },
+      "seconds": 0.701,
+      "deck": "bjt_ss_m40C_3p63V.spice",
+      "log": "bjt_ss_m40C_3p63V.log"
+    },
+    {
+      "corner": "bjt_ss",
+      "corner_sections": [
+        "typical",
+        "res_typical",
+        "bjt_ss",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": 27.0,
+      "vdd": 2.97,
+      "label": "bjt_ss_27C_2p97V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.94380990047,
+        "vbe": 0.71230393474,
+        "isup_ua": 69.611221477
+      },
+      "seconds": 0.765,
+      "deck": "bjt_ss_27C_2p97V.spice",
+      "log": "bjt_ss_27C_2p97V.log"
+    },
+    {
+      "corner": "bjt_ss",
+      "corner_sections": [
+        "typical",
+        "res_typical",
+        "bjt_ss",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": 27.0,
+      "vdd": 3.3,
+      "label": "bjt_ss_27C_3p3V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.96579577283,
+        "vbe": 0.71230393474,
+        "isup_ua": 79.585825307
+      },
+      "seconds": 0.72,
+      "deck": "bjt_ss_27C_3p3V.spice",
+      "log": "bjt_ss_27C_3p3V.log"
+    },
+    {
+      "corner": "bjt_ss",
+      "corner_sections": [
+        "typical",
+        "res_typical",
+        "bjt_ss",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": 27.0,
+      "vdd": 3.63,
+      "label": "bjt_ss_27C_3p63V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.98648562762,
+        "vbe": 0.71230393474,
+        "isup_ua": 89.595456207
+      },
+      "seconds": 0.758,
+      "deck": "bjt_ss_27C_3p63V.spice",
+      "log": "bjt_ss_27C_3p63V.log"
+    },
+    {
+      "corner": "bjt_ss",
+      "corner_sections": [
+        "typical",
+        "res_typical",
+        "bjt_ss",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": 125.0,
+      "vdd": 2.97,
+      "label": "bjt_ss_125C_2p97V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.91117206205,
+        "vbe": 0.53729889628,
+        "isup_ua": 70.620539414
+      },
+      "seconds": 0.664,
+      "deck": "bjt_ss_125C_2p97V.spice",
+      "log": "bjt_ss_125C_2p97V.log"
+    },
+    {
+      "corner": "bjt_ss",
+      "corner_sections": [
+        "typical",
+        "res_typical",
+        "bjt_ss",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": 125.0,
+      "vdd": 3.3,
+      "label": "bjt_ss_125C_3p3V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.93798894447,
+        "vbe": 0.53729889628,
+        "isup_ua": 80.483312175
+      },
+      "seconds": 0.487,
+      "deck": "bjt_ss_125C_3p3V.spice",
+      "log": "bjt_ss_125C_3p3V.log"
+    },
+    {
+      "corner": "bjt_ss",
+      "corner_sections": [
+        "typical",
+        "res_typical",
+        "bjt_ss",
+        "diode_typical",
+        "moscap_typical",
+        "mimcap_typical"
+      ],
+      "temp_c": 125.0,
+      "vdd": 3.63,
+      "label": "bjt_ss_125C_3p63V",
+      "status": "ok",
+      "measurements": {
+        "vdiv_ratio": 0.5,
+        "vbias": 0.9633368784,
+        "vbe": 0.53729889628,
+        "isup_ua": 90.385876532
+      },
+      "seconds": 0.726,
+      "deck": "bjt_ss_125C_3p63V.spice",
+      "log": "bjt_ss_125C_3p63V.log"
+    }
+  ]
+}
