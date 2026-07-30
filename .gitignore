@@ -2,6 +2,18 @@
 *.log
 __pycache__/
 .DS_Store
+
+# Generated at smoke-test run time from $PDK_ROOT/$PDK (machine-specific
+# absolute path) by sim/smoke_test/run_smoke_test.sh -- not committed;
+# sim/smoke_test/smoke_test.log (force-added, see below) is the durable
+# evidence of a run.
+sim/smoke_test/pdk_include.spice
+sim/smoke_test/*.raw
+
+# smoke_test.log is force-added (git add -f) despite the blanket *.log
+# ignore above -- it is append-only evidence per CLAUDE.md, not a scratch
+# log.
+!sim/smoke_test/smoke_test.log
 # >>> loom-managed (do not edit) >>>
 # Loom runtime state (don't commit these)
 .loom-in-use

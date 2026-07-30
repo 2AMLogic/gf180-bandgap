@@ -37,3 +37,11 @@ sim/           testbenches + PVT corner results (ngspice)
 layout/        GDS + DRC/LVS reports (klayout-tools driven)
 measurements/  silicon characterization (empty until tape-out)
 ```
+
+## Environment Setup
+
+Before running xschem/ngspice against the gf180mcu PDK, follow
+[`docs/environment-setup.md`](docs/environment-setup.md) — xschem
+build-from-source steps (no Homebrew formula exists), the pinned gf180mcu
+PDK hash fetched via `volare`, the `PDK_ROOT`/`PDK` env convention, and an
+end-to-end smoke test (`sim/smoke_test/run_smoke_test.sh`).
