@@ -19,6 +19,13 @@ sim/smoke_test/*.raw
 # the evidence trail sim/README.md requires each record to link to -- they are
 # committed, not scratch, so they are exempted from the blanket *.log ignore.
 !sim/*/corners/**/*.log
+
+# Simulation harness scratch: generated ngspice decks. Disposable; the
+# evidence that is meant to survive lives in sim/<experiment-slug>/.
+sim/.work/
+
+# Machine-local PDK override (sim/pdk.json is the committed default).
+sim/pdk.local.json
 # >>> loom-managed (do not edit) >>>
 # Loom runtime state (don't commit these)
 .loom-in-use
