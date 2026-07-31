@@ -3,7 +3,7 @@
 Device-level evidence base for the Brokaw-core reference selected in
 [DR-0001](../spec/decision-records/0001-bandgap-topology-selection.md), at the
 3.3 V-only scope of
-[DR-0001-supply](../spec/decision-records/0001-supply-voltage-scope.md).
+[DR-0002-supply](../spec/decision-records/0002-supply-voltage-scope.md).
 
 Everything here is a **measured simulation number with a testbench behind it**.
 Nothing here is a pass/fail claim: the spec is not ratified (#1), so this

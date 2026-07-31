@@ -1,4 +1,4 @@
-# 0001: Supply voltage scope — 3.3V-only for wave 1
+# 0002: Supply voltage scope — 3.3V-only for wave 1
 
 - **Status**: proposed (input to spec ratification, see #1)
 - **Date**: 2026-07-29

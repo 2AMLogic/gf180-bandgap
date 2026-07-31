@@ -1,13 +1,19 @@
-# DR-000: <short title>
+# 0000: <short title>
 
 <!--
-Copy this file to spec/decision-records/DR-NNN-<slug>.md and fill it in.
-Use the next unused NNN. One decision per record; keep it to one page.
-A decision record is required for every spec change (see CLAUDE.md).
-Do not delete or rewrite a ratified record — supersede it with a new one.
+Copy this file to spec/decision-records/NNNN-<slug>.md and fill it in.
+Use the next unused NNNN (zero-padded 4 digits). One decision per record;
+keep it to one page. A decision record is required for every spec change
+(see CLAUDE.md). Do not delete or rewrite a ratified record — supersede it
+with a new one.
+
+Numbering rule: before picking NNNN, check every filename already in this
+directory on `main` (including superseded records) and use one greater than
+the highest number found — never guess or reuse a number, and re-check if
+another record may have landed concurrently, to avoid a collision.
 -->
 
-- **Status**: proposed | ratified | superseded by DR-NNN
+- **Status**: proposed | ratified | superseded by NNNN
 - **Date**: YYYY-MM-DD
 - **Decided by**: <name / role>
 

@@ -66,7 +66,7 @@ def build_record(record, stamp, pdk, results) -> str:
         "- **Claim**: gf180mcu 3.3 V MOS threshold characterization for the "
         "mirror / cascode / amplifier devices of the Brokaw core selected in "
         "DR-0001 (`spec/decision-records/0001-bandgap-topology-selection.md`) at "
-        "the 3.3 V-only supply scope of DR-0001-supply -- |Vth| and Vgs vs "
+        "the 3.3 V-only supply scope of DR-0002-supply -- |Vth| and Vgs vs "
         "temperature and process corner at microamp-scale bias. **This record "
         "makes no spec pass/fail claim**: no ratified spec exists yet (#1), so "
         "every entry below is a measured device number."
