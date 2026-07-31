@@ -10,6 +10,17 @@ design/
   netlist/     xschem-generated .spice netlists (created on first netlist)
 ```
 
+**Hierarchical schematic-cell symbols must live next to their `.sch`, not in
+`symbols/`.** xschem auto-descends into a child schematic only when the
+referencing symbol is found at the *same relative path* as a same-named
+`.sch` file (e.g. `design/bandgap_core.sym` next to `design/bandgap_core.sch`,
+both referenced bare as `{bandgap_core.sym}`). A symbol placed under
+`design/symbols/bandgap_core.sym` cannot find `design/bandgap_core.sch` next
+to it and instead netlists as an empty subcircuit — no error, just missing
+devices, which is easy to miss. `design/symbols/` remains the right place for
+symbols that are *not* schematic-derived (e.g. hand-authored device symbols
+with no matching `.sch`).
+
 ## Running xschem
 
 ```bash
