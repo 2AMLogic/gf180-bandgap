@@ -1,0 +1,96 @@
+name: Sim (PDK)
+
+# The half of the harness self-test that needs real tools: ngspice plus the
+# pinned gf180mcu PDK. Deliberately NOT on the pull_request path -- it installs
+# ngspice from apt and fetches the PDK, which no PR should have to wait on. The
+# PDK-free half of the same self-test gates every PR in ci.yml.
+#
+# Measured on PR #33 (run 30668039118): 1m30s cold -- ~45s of that the PDK
+# fetch, which the cache below removes on subsequent runs. Nightly at that cost
+# is a rounding error against the org's GitHub Free budget (2,000 private-repo
+# Actions minutes/month shared across all seven canary repos), and it keeps the
+# PDK cache warm inside GitHub's 7-day eviction window.
+#
+# It runs `sim/selftest.sh --require-pdk`: unit tests, then the full 81-point
+# PVT smoke run of sim/smoke-bias/ against the PDK. Without `--record` it
+# writes no evidence -- `sim/` records are append-only evidence minted
+# deliberately by a human or agent (CLAUDE.md), never by CI.
+#
+# What this catches that ci.yml cannot: PDK resolution, the per-corner
+# `.lib`/`.temp` shim actually taking effect, ngspice invocation and log
+# parsing, and the harness's own `min_spread_pct` integrity checks.
+
+on:
+  schedule:
+    # Nightly, 06:00 UTC.
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sim-pdk-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  # Pinned in docs/environment-setup.md §1 -- the same gf180mcu commit every
+  # gf180 canary repo uses. Bump here and there together, never separately.
+  GF180_PDK_VERSION: c6d73a35f524070e85faff4a6a9eef49553ebc2b
+  # The 3.3 V rule-deck variant this repo targets (CLAUDE.md).
+  PDK: gf180mcuD
+
+jobs:
+  sim:
+    name: Harness PVT smoke (ngspice + gf180mcu)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Install ngspice
+        # Distro package, not a Python dependency: the harness shells out to
+        # `ngspice -b`. The record it would write pins the exact version, so
+        # CI tracking the distro's ngspice rather than the 46 pinned in
+        # docs/environment-setup.md is fine for a smoke test.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ngspice
+          ngspice -v | head -1
+
+      - name: Cache the gf180mcu PDK
+        id: pdk-cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.volare
+          key: volare-gf180mcu-${{ env.GF180_PDK_VERSION }}
+
+      - name: Fetch the pinned gf180mcu PDK
+        if: steps.pdk-cache.outputs.cache-hit != 'true'
+        # volare is only needed to place the PDK; the harness itself never
+        # imports it (stdlib only) and finds ~/.volare via its built-in search
+        # roots, so nothing downstream depends on this venv.
+        run: |
+          python3 -m pip install --disable-pip-version-check volare
+          volare enable --pdk gf180mcu "${GF180_PDK_VERSION}"
+
+      - name: Show the resolved environment
+        # On a cache hit volare is never installed, hence the fallback: the
+        # cached tree is at the same ~/.volare path either way, and the harness
+        # would also find it unaided via its built-in search roots.
+        run: |
+          set -euo pipefail
+          PDK_ROOT="$(volare path 2>/dev/null || echo "${HOME}/.volare")"
+          export PDK_ROOT
+          echo "PDK_ROOT=${PDK_ROOT}" >> "$GITHUB_ENV"
+          python3 sim/run_corners.py --check-env
+
+      - name: Harness self-test (PDK required)
+        # --require-pdk turns the "no PDK, skip the simulation stage" escape
+        # hatch into a failure: on this workflow a missing PDK is the bug.
+        # No --record: CI must not mint evidence records.
+        run: bash sim/selftest.sh --require-pdk
