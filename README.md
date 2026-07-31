@@ -45,3 +45,22 @@ Before running xschem/ngspice against the gf180mcu PDK, follow
 build-from-source steps (no Homebrew formula exists), the pinned gf180mcu
 PDK hash fetched via `volare`, the `PDK_ROOT`/`PDK` env convention, and an
 end-to-end smoke test (`sim/smoke_test/run_smoke_test.sh`).
+
+## Getting set up
+
+```bash
+brew install ngspice                          # or apt-get install ngspice
+pip install volare
+volare enable --pdk gf180mcu <version-hash>   # volare ls-remote --pdk gf180mcu
+
+python3 sim/run_corners.py --check-env        # confirm ngspice + PDK are visible
+bash sim/selftest.sh                          # prove the harness runs end to end
+python3 sim/run_corners.py smoke-bias         # 81-point PVT sweep, records evidence
+```
+
+The harness is stdlib python3 — no virtualenv, no packages. It never hardcodes
+a PDK path. See [`sim/README.md`](sim/README.md) for the ratified evidence
+record format (directory layout, record ids, the append-only rule), and
+[`sim/harness/README.md`](sim/harness/README.md) for PDK resolution, the corner
+definitions and how to write a testbench. For schematic capture see
+[`design/README.md`](design/README.md).

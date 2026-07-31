@@ -185,3 +185,29 @@ ngspice-46 done
       shows as newest today."
 - [ ] Run `sim/smoke_test/run_smoke_test.sh` and confirm it exits 0 with no
       `Error:` lines in its output.
+
+## 7. Next: the PVT corner harness
+
+Everything above establishes the *install*. The evidence-producing harness
+sits on top of it and resolves the same PDK by a superset of the same rules
+(`GF180_PDK_PATH` -> `PDK_ROOT` + `PDK` -> `sim/pdk.local.json` ->
+`sim/pdk.json` -> the usual install prefixes, volare first), so the
+`PDK_ROOT`/`PDK` exports from §4 are all it needs:
+
+```bash
+python3 sim/run_corners.py --check-env   # what the harness resolved, or how to fix it
+python3 sim/run_corners.py --print-env   # shell exports for the resolved PDK
+source sim/env.sh                        # same exports, for xschem and ad-hoc ngspice
+bash sim/selftest.sh                     # unit tests + an 81-point PVT smoke run
+```
+
+`design/xschemrc` follows that same resolution order, so xschem and the
+corner runner never disagree about which PDK is in use; compare
+`sim/run_corners.py --print-env` against the path xschem reports if you ever
+suspect they have drifted apart.
+
+The full harness reference -- PDK resolution, corner definitions, how to
+write a testbench manifest, and why `sim/smoke_test/` (this document's
+install check) and `sim/smoke-bias/` (the harness's own acceptance test) are
+two different things -- is [`sim/harness/README.md`](../sim/harness/README.md).
+The record format it writes into is [`sim/README.md`](../sim/README.md).
