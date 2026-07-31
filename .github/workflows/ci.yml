@@ -1,0 +1,99 @@
+name: CI
+
+# Green/red gate for every PR and every push to main. Everything in this file
+# is headless and PDK-free: it runs on a bare ubuntu runner with nothing but
+# python3 (stdlib) and shellcheck, so a PR is never blocked on downloading a
+# ~1 GB PDK or on building xschem.
+#
+# What this repo can check, and where each check runs:
+#
+# | Self-check                                   | Needs        | Runs in            |
+# |----------------------------------------------|--------------|--------------------|
+# | `.github/scripts/lint.sh`                     | python3      | `lint` (here)      |
+# | harness unit tests (`sim/tests/`)             | python3      | `test` (here)      |
+# | `sim/run_corners.py --list` manifest load     | python3      | `test` (here)      |
+# | `sim/selftest.sh` stages 1-2                  | python3      | `test` (here)      |
+# | `sim/selftest.sh` stage 3 (81-point PVT run)  | ngspice+PDK  | `sim-pdk.yml`      |
+# | `sim/smoke_test/run_smoke_test.sh`            | xschem+PDK   | EXCLUDED (below)   |
+# | `sim/device-*/run_*.py`                       | ngspice+PDK  | EXCLUDED (below)   |
+#
+# Deliberate exclusions:
+#
+# - `sim/smoke_test/run_smoke_test.sh` is the *install* acceptance check from
+#   docs/environment-setup.md. It needs xschem, which has no binary package on
+#   the platforms this repo documents and must be built from source (~minutes
+#   per run), and it appends to committed evidence
+#   (`sim/smoke_test/smoke_test.log`). CI has no business minting evidence, so
+#   this stays a human/agent bootstrap step on a real machine.
+# - `sim/device-*/run_*.py` (the device-characterization runs) each write an
+#   append-only record under `sim/<slug>/records/`. Same reason: `sim/` results
+#   are evidence per CLAUDE.md, produced deliberately, not by a CI robot.
+# - Evidence-record *format* linting (the schema in sim/README.md) is not
+#   checked because no checker exists yet in this repo. When one lands it
+#   belongs in the `lint` job below.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint (shellcheck + syntax)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lint
+        # --require-shellcheck: shellcheck is preinstalled on GitHub's ubuntu
+        # runner images, so a missing binary here means the image changed and
+        # the shell scripts silently stopped being linted -- fail instead.
+        # Same script `npm run lint` runs locally.
+        run: .github/scripts/lint.sh --require-shellcheck
+
+  test:
+    name: Harness self-test (no PDK)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          # The harness is stdlib-only (sim/harness/README.md: python3 >= 3.9,
+          # no venv, no packages), so there is nothing to install and no
+          # dependency matrix to sweep -- one modern interpreter is the check.
+          python-version: '3.12'
+
+      - name: Testbench manifests load
+        # `--list` deliberately keeps listing after a bad manifest, printing
+        # `!!` instead of exiting non-zero, so grep for that marker: a malformed
+        # tb.json must fail the PR, not surface at simulation time.
+        run: |
+          set -euo pipefail
+          out="$(python3 sim/run_corners.py --list)"
+          echo "$out"
+          if grep -q '!!' <<<"$out"; then
+            echo "::error::a testbench manifest failed to load (see the '!!' line above)"
+            exit 1
+          fi
+
+      - name: Harness self-test
+        # Stage 1 (the 40 harness unit tests) always runs. Stage 2 probes for
+        # ngspice + the PDK and, finding neither on this runner, prints SKIP
+        # and exits 0 -- the 81-point PVT stage 3 is covered by sim-pdk.yml
+        # instead. The assertions below pin that contract so this job cannot go
+        # green by exiting early before the unit tests ran.
+        run: |
+          set -euo pipefail
+          log="${RUNNER_TEMP}/selftest.log"
+          bash sim/selftest.sh 2>&1 | tee "$log"
+          grep -q 'harness unit tests' "$log"
+          grep -q 'SKIP: simulation stage' "$log" \
+            || grep -q 'PASS: harness is functional end to end' "$log"

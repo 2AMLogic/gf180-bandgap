@@ -75,6 +75,24 @@ record format (directory layout, record ids, the append-only rule), and
 definitions and how to write a testbench. For schematic capture see
 [`design/README.md`](design/README.md).
 
+## Continuous integration
+
+Every PR and every push to `main` runs
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml): lint
+(shellcheck + python/json well-formedness) and the PDK-free half of the
+harness self-test (40 unit tests, testbench-manifest loading). It needs
+nothing but python3, so no PR waits on a PDK download.
+
+The PDK-dependent half — the 81-point PVT smoke run against ngspice and the
+pinned gf180mcu models — runs weekly and on demand in
+[`.github/workflows/sim-pdk.yml`](.github/workflows/sim-pdk.yml). Neither
+workflow writes evidence records; those are minted deliberately, never by CI.
+
+```bash
+npm run lint        # same lint the CI lint job runs
+npm run check:ci    # lint + harness self-test (the whole PR gate, locally)
+```
+
 ## License
 
 Apache License 2.0 — see [`LICENSE`](LICENSE).
