@@ -127,11 +127,12 @@ PMOS-stack headroom; that is #10's job.
 
 ## 3. Smoke-test result
 
-Nominal (27 °C, 3.3 V, `tt`) op-point, via `sim/bandgap-loop-smoke/`
-(harness record — see that experiment's `records/` directory for the
-current record ID; this document does not itself carry the append-only
-citation to avoid needing an edit here every time the smoke test is
-re-run):
+Nominal (27 °C, 3.3 V, `tt`) op-point, via `sim/bandgap-loop-smoke/`, record
+[`20260731-232056-d6e10b7`](../sim/bandgap-loop-smoke/records/20260731-232056-d6e10b7.md)
+(clean-tree run against this commit's parent). If the smoke test is
+re-run, the new record supersedes this one per `sim/README.md`'s
+append-only convention — check that experiment's `records/` directory for
+the latest ID rather than assuming this citation is current forever.
 
 | Node | Simulated value |
 |---|---|
