@@ -212,6 +212,29 @@ the plumbing:
 3. a diode-connected `npn_10p00x10p00` at 10 µA — Vbe is strongly CTAT, so it
    proves `.temp` and the BJT corner take effect.
 
+### `sim/smoke-bias/` vs `sim/smoke_test/` — two different jobs
+
+The repo has two things with "smoke" in the name. They are deliberately
+distinct and neither replaces the other:
+
+| | `sim/smoke_test/` (issue #24) | `sim/smoke-bias/` (issue #2) |
+|---|---|---|
+| Question it answers | "is my *install* correct?" | "is the *harness* correct?" |
+| Scope | one point (tt, 27 °C, nominal) | the full 81-point PVT grid |
+| Path exercised | xschem netlisting → `$PDK_ROOT/$PDK` shim → ngspice | `sim/run_corners.py` → corner shim → ngspice → record writer |
+| Run it | `sim/smoke_test/run_smoke_test.sh` | `bash sim/selftest.sh` |
+| Output | `sim/smoke_test/smoke_test.log` (evidence of an install) | an append-only record under `sim/smoke-bias/records/` |
+| Owns | `docs/environment-setup.md`'s acceptance step | this harness's acceptance criteria |
+
+`sim/smoke_test/` is the first thing to run on a fresh machine: it proves
+xschem, the PDK install and ngspice work together at all, and it is the
+acceptance check `docs/environment-setup.md` ends with. `sim/smoke-bias/` runs
+*after* that passes and proves this harness's own machinery — corner
+substitution, `.lib`/`.temp` plumbing, measurement parsing, the append-only
+record writer — actually does what it claims across every PVT point. A green
+`smoke_test` with a red `smoke-bias` means the harness is broken; the reverse
+cannot happen, because `smoke-bias` cannot run without a working install.
+
 ## xschem
 
 `design/xschemrc` resolves the PDK the same way the harness does and sources

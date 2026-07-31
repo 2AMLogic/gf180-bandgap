@@ -14,7 +14,8 @@ the four `sim/device-*/` experiments all need the same four things:
      produced the logs.
 
 Interim status: issue #2 (PR #23) is standing up a general PVT harness around
-`sim/run_corners.py` + `sim/tb/<slug>/` manifests. That harness had not merged to
+`sim/run_corners.py` + `sim/<experiment-slug>/testbench/tb.json` manifests. That
+harness had not merged to
 `origin/main` when these testbenches were written, so per the guidance on issue #4
 they are standalone decks conforming to the `sim/README.md` evidence format as it
 exists on main. When the harness lands, this module's job (corner shim + run +
