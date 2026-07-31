@@ -1,0 +1,204 @@
+#!/usr/bin/env python3
+"""Run the gf180mcu 3.3 V MOS local-mismatch Monte Carlo (issue #4).
+
+Executes `testbench/tb_mos_mismatch.spice` headlessly through ngspice at three
+temperatures on the `typical` corner, commits the raw per-point logs, freezes
+the netlist snapshot, and writes one append-only summary record under
+`records/` per `sim/README.md`.
+
+Usage:
+    PDK_ROOT=... PDK=gf180mcuD sim/device-mos-mismatch/run_mos_mismatch.py
+"""
+
+from __future__ import annotations
+
+import math
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parent / "tools"))
+
+import devchar as dc  # noqa: E402
+
+SECTION = "typical"
+TEMPS = [-40.0, 27.0, 125.0]
+N_SAMPLES = 300  # must match `let mc_runs` in the testbench
+SEED = 20260731  # must match `setseed` in the testbench
+
+# vector -> (label, W um, L um, bias A)
+PAIRS = {
+    "dn1": ("nfet_03v3 10/1", 10.0, 1.0, 1e-6),
+    "dn4": ("nfet_03v3 10/4", 10.0, 4.0, 1e-6),
+    "dp1": ("pfet_03v3 10/1", 10.0, 1.0, 1e-6),
+    "dp4": ("pfet_03v3 10/4", 10.0, 4.0, 1e-6),
+    "en1": ("nfet_03v3 10/1", 10.0, 1.0, 10e-6),
+    "en4": ("nfet_03v3 10/4", 10.0, 4.0, 10e-6),
+    "ep1": ("pfet_03v3 10/1", 10.0, 1.0, 10e-6),
+    "ep4": ("pfet_03v3 10/4", 10.0, 4.0, 10e-6),
+}
+
+
+def extract(log: str) -> dict[str, dict[str, float]]:
+    samples = dc.parse_op_series(log)
+    if len(samples) != N_SAMPLES:
+        raise RuntimeError(
+            f"expected {N_SAMPLES} Monte Carlo samples in the log, parsed "
+            f"{len(samples)} -- testbench `let mc_runs` and N_SAMPLES disagree?"
+        )
+    out: dict[str, dict[str, float]] = {}
+    for key in PAIRS:
+        values = [s[key] for s in samples]
+        out[key] = {
+            "mean": dc.mean(values),
+            "sigma": dc.stdev(values),
+            "max_abs": max(abs(v) for v in values),
+        }
+    return out
+
+
+def build_record(record, stamp, pdk, results) -> str:
+    lines: list[str] = []
+    add = lines.append
+
+    add(f"# Record {record}")
+    add("")
+    add(f"- **Record ID**: {record}")
+    add(
+        "- **Claim**: gf180mcu 3.3 V MOS **local mismatch** for the mirror and "
+        "amplifier-input devices of the Brokaw core selected in DR-0001 "
+        "(`spec/decision-records/0001-bandgap-topology-selection.md`) -- the "
+        "gate-referred offset of a nominally identical, equally biased device "
+        "pair. This is the anchor for the offset budget (#10) and the "
+        "circuit-level Monte Carlo (#13). **This record makes no spec pass/fail "
+        "claim**: no ratified spec exists yet (#1); it reports a measured "
+        "distribution, not a verdict."
+    )
+    add(
+        "- **Netlist provenance**: schematic-level device testbench "
+        "(`sim/device-mos-mismatch/testbench/tb_mos_mismatch.spice`) -- PDK "
+        "device models instantiated directly; no `design/` schematic, no "
+        "extracted layout."
+    )
+    add("- **Corner matrix run**:")
+    add(
+        f"  - Process: `{SECTION}` only. Local mismatch is intra-die variation and "
+        "is deliberately decoupled from the global corner axis: the run sets "
+        "`sw_stat_mismatch = 1` with `sw_stat_global = 0`, which is the gf180mcu "
+        "convention documented in `design.ngspice`. Running mismatch on top of "
+        "each process corner would double-count the global spread already "
+        "recorded in the `sim/device-mos-vth/` corner matrix."
+    )
+    add(
+        "  - Temperature: "
+        + ", ".join(f"{t:g} C" for t in TEMPS)
+        + " (full CLAUDE.md temperature axis -- mismatch is temperature-dependent"
+        " because the same threshold spread refers to the gate differently as the"
+        " inversion level moves)"
+    )
+    add(
+        "  - Supply: **not applicable** -- every DUT is referred to its own source "
+        "node at ground and driven by an ideal current source; there is no supply "
+        "rail, so the +/-10% supply axis of the CLAUDE.md PVT matrix has nothing "
+        "to sweep. This is the explicit subset justification `sim/README.md` "
+        "requires; the log filenames carry `nosupply` in the supply field."
+    )
+    add(f"  - {len(TEMPS)} Monte Carlo points ({SECTION} x {len(TEMPS)} temperatures)")
+    add(
+        f"- **Statistical convention**: **N = {N_SAMPLES}** Monte Carlo samples per "
+        "temperature, mismatch-only (`sw_stat_mismatch = 1`, `sw_stat_global = 0`). "
+        "Spread is reported as **1 sigma** of the pair's gate-voltage difference, "
+        "with the 3 sigma value given alongside; sigma is the sample standard "
+        f"deviation (N-1 normalisation), so its own relative standard error is "
+        f"about {100 / math.sqrt(2 * (N_SAMPLES - 1)):.1f}%. Run is reproducible: "
+        f"`setseed {SEED}` in the testbench."
+    )
+    add("- **Result**: measured distribution (no spec comparison -- see Claim).")
+    add("")
+
+    add("### Pair gate-referred offset, 1 sigma (mV)")
+    add("")
+    add(
+        "`sigma(dVgs)` is the pair difference; the equivalent single-device sigma "
+        "is `sigma(dVgs)/sqrt(2)`. `A_pair` normalises to area as "
+        "`sigma(dVgs) x sqrt(W L) / sqrt(2)` (drawn area) so #8/#10 can scale to "
+        "other geometries -- it is a Pelgrom-style figure that lumps threshold and "
+        "current-factor mismatch together, not a pure A_VT."
+    )
+    add("")
+    add(
+        "| DUT | Id | T (C) | mean (mV) | sigma (mV) | 3 sigma (mV) | "
+        "worst sample, abs (mV) | 1-device sigma (mV) | A_pair (mV.um) |"
+    )
+    add("|---|---|---|---|---|---|---|---|---|")
+    for key, (label, w, length, bias) in PAIRS.items():
+        for temp in TEMPS:
+            st = results[temp][key]
+            sigma_mv = st["sigma"] * 1e3
+            add(
+                f"| `{label}` | {bias * 1e6:g} uA | {temp:g} | "
+                f"{st['mean'] * 1e3:+.4f} | {sigma_mv:.4f} | {3 * sigma_mv:.3f} | "
+                f"{st['max_abs'] * 1e3:.3f} | {sigma_mv / math.sqrt(2):.4f} | "
+                f"{sigma_mv * math.sqrt(w * length) / math.sqrt(2):.3f} |"
+            )
+    add("")
+    add(
+        "The sample mean should sit at zero to within `sigma / sqrt(N)`; a mean "
+        "materially larger than that would indicate the Monte Carlo draw is not "
+        "re-randomising and the numbers should not be trusted."
+    )
+    add("")
+    add(
+        "The three temperatures reuse the **same seed**, so they are the same 300 "
+        "device draws re-solved at a different temperature (common random "
+        "numbers). The small temperature trend in sigma is therefore a real "
+        "bias-point effect rather than sampling noise -- but it also means the "
+        "three rows for a given DUT are *not* independent estimates of sigma."
+    )
+    add("")
+
+    add("- **Links**:")
+    add("  - Testbench: `sim/device-mos-mismatch/testbench/tb_mos_mismatch.spice`")
+    add("  - Run script: `sim/device-mos-mismatch/run_mos_mismatch.py`")
+    add(
+        f"  - Netlist snapshot: `sim/device-mos-mismatch/netlist-snapshots/{record}.spice`"
+    )
+    add(f"  - Raw logs: `sim/device-mos-mismatch/corners/{record}/`")
+    add(f"  - PDK: {pdk.label}, ngspice {dc.ngspice_version()}")
+    add(f"- **Timestamp / author**: {stamp:%Y-%m-%dT%H:%M:%SZ}, agent-builder (issue #4)")
+    add("- **Supersedes**: (none -- first record for this claim)")
+    add("")
+    return "\n".join(lines)
+
+
+def main() -> int:
+    pdk = dc.resolve_pdk()
+    root = dc.repo_root(HERE)
+    record, stamp = dc.mint_record_id(root)
+    deck = HERE / "testbench" / "tb_mos_mismatch.spice"
+
+    print(f"record {record}: {len(TEMPS)} Monte Carlo points, N={N_SAMPLES} each")
+    results: dict[float, dict] = {}
+    for temp in TEMPS:
+        cid = dc.corner_id(SECTION, temp)
+        log = dc.run_corner(deck, pdk, SECTION, temp)
+        dc.write_log(
+            HERE / "corners",
+            record,
+            cid,
+            dc.log_header(pdk, deck, SECTION, temp, record, stamp),
+            log,
+        )
+        results[temp] = extract(log)
+        print(f"  {cid}: ok")
+
+    dc.snapshot_netlist(HERE / "netlist-snapshots", record, deck)
+    path = dc.write_record(
+        HERE / "records", record, build_record(record, stamp, pdk, results)
+    )
+    print(f"wrote {path}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

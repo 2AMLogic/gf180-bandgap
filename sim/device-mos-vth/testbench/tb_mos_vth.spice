@@ -1,0 +1,54 @@
+* tb_mos_vth.spice -- gf180mcu 3.3 V MOS threshold characterization
+*
+* nfet_03v3 / pfet_03v3 (the 3.3 V flavor fixed by DR-0001 and the wave-1
+* supply-scope decision) at the microamp-scale bias densities a reference core
+* uses for its mirrors, cascodes and amplifier input pair.
+*
+* Extraction method: **constant-current threshold**. Each DUT is
+* diode-connected (gate tied to drain, so Vds = Vgs and the device is in
+* saturation) with its bulk tied to its source (Vsb = 0), and driven by a
+* current source. Vth is read as |Vgs| at Id = 100 nA x (W/L) -- the usual
+* 0.18 um constant-current criterion. The full Vgs(Id) curve is swept 10 nA to
+* 1 mA so the sizing work downstream can read off overdrive at any bias, not
+* only at the extraction point.
+*
+* Two channel lengths per polarity: L = 1 um (a compact mirror) and L = 4 um
+* (a long-channel, better-matched mirror). Both at W = 10 um.
+*
+* Current is swept logarithmically by sweeping the exponent: a behavioural
+* source delivers 10^v(ctrl) A and v(ctrl) is swept linearly (ngspice .dc has
+* only linear increments).
+*
+* No supply rail: each DUT is referred to its own source node at ground, so
+* the +/-10% supply axis of the PVT matrix has nothing to sweep here.
+*
+* corner.spice is generated per corner point by the run script from
+* $PDK_ROOT / $PDK.
+*
+* Run via: sim/device-mos-vth/run_mos_vth.py
+
+.include corner.spice
+
+Vctrl ctrl 0 dc -6
+
+* ---- NMOS: current forced into the diode-connected gate/drain node ----
+Bn1 0 gn1 I = pow(10, v(ctrl))
+XN1 gn1 gn1 0 0 nfet_03v3 w=10u l=1u
+Bn4 0 gn4 I = pow(10, v(ctrl))
+XN4 gn4 gn4 0 0 nfet_03v3 w=10u l=4u
+
+* ---- PMOS: source/bulk at ground, gate/drain pulled negative ----
+Bp1 gp1 0 I = pow(10, v(ctrl))
+XP1 gp1 gp1 0 0 pfet_03v3 w=10u l=1u
+Bp4 gp4 0 I = pow(10, v(ctrl))
+XP4 gp4 gp4 0 0 pfet_03v3 w=10u l=4u
+
+.control
+set width  = 512
+set height = 100000
+dc Vctrl -8 -3 0.05
+print v(gn1) v(gn4) v(gp1) v(gp4)
+quit
+.endc
+
+.end

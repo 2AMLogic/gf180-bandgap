@@ -1,0 +1,37 @@
+* ====================================================================
+* record-id : 20260731-031750-8fb0ea6
+* testbench : tb_resistor_tc.spice
+* corner    : res_ss
+* temp      : 27 C
+* supply    : n/a (no supply rail in this device-level testbench)
+* pdk       : gf180mcuD (/Users/rwalters/.volare)
+* ngspice   : ngspice-46
+* run (UTC) : 2026-07-31T03:17:50Z
+* ====================================================================
+
+Note: Compatibility modes selected: hs a
+
+
+Circuit: * tb_resistor_tc.spice -- gf180mcu resistor flavor characterization
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+i(v_pu_w1) = -1.09866e-05
+i(v_pu_w5) = -1.17187e-05
+i(v_p1k_w1) = -3.99482e-06
+i(v_p1k_w5) = -4.13813e-06
+i(v_p2k_w1) = -1.95417e-06
+i(v_p2k_w5) = -2.06260e-06
+i(v_p3k_w1) = -1.25188e-06
+i(v_p3k_w5) = -1.32032e-06
+i(v_pp_w1) = -2.00563e-05
+i(v_pp_w5) = -2.17255e-05
+i(v_np_w1) = -6.96995e-05
+i(v_np_w5) = -6.71535e-05
+i(v_p1k_hv) = -3.99482e-05
+i(v_p2k_hv) = -1.95417e-05
+i(v_p3k_hv) = -1.25188e-05
+ngspice-46 done

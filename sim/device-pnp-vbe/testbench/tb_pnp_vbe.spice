@@ -1,0 +1,61 @@
+* tb_pnp_vbe.spice -- gf180mcu vertical (substrate) PNP characterization
+*
+* Device-level evidence base for the Brokaw core selected in DR-0001
+* (spec/decision-records/0001-bandgap-topology-selection.md): VBE(I,T),
+* dVBE/dT, dVBE between area-ratioed devices, ideality factor, forward beta
+* and the usable emitter-current window.
+*
+* All four gf180mcu vertical PNP geometries are instantiated diode-connected
+* in the configuration a bandgap core actually uses: the collector is the
+* p-substrate (hard ground) and the base is shorted to it, so the device is a
+* grounded-base diode driven from the emitter. A 0 V source in each base leg
+* senses the base current so forward beta can be reported from the same sweep.
+*
+* Emitter current is swept logarithmically 1 pA -> 1 mA by sweeping the
+* exponent: a behavioural source delivers 10^v(ctrl) A, and v(ctrl) is swept
+* linearly from -12 to -3 in 0.1-decade steps (91 points). ngspice's .dc only
+* supports linear increments, so this is how a decade sweep is expressed.
+* Issue #4 asks for at least 1 nA -> 1 mA; the sweep runs three decades lower
+* so the low-current recombination/leakage floor is actually inside the data
+* rather than sitting just off the bottom of it.
+*
+* Corner + temperature come from corner.spice, which the run script generates
+* per corner point from $PDK_ROOT / $PDK -- kept out of this deck so the
+* committed testbench has no machine-specific path and no hardcoded corner.
+* This testbench has no supply rail (see the record's corner-matrix note).
+*
+* Run via: sim/device-pnp-vbe/run_pnp_vbe.py
+
+.include corner.spice
+
+Vctrl ctrl 0 dc -6
+
+* ---- 5.00 um x 5.00 um emitter (Ae = 25 um^2) ----
+B5x5    0 e5x5 I = pow(10, v(ctrl))
+Vb5x5   b5x5 0 dc 0
+XQ5x5   0 b5x5 e5x5 pnp_05p00x05p00
+
+* ---- 10.00 um x 10.00 um emitter (Ae = 100 um^2; 4:1 drawn area vs 5x5) ----
+B10x10  0 e10x10 I = pow(10, v(ctrl))
+Vb10x10 b10x10 0 dc 0
+XQ10x10 0 b10x10 e10x10 pnp_10p00x10p00
+
+* ---- 5.00 um x 0.42 um emitter (Ae = 2.1 um^2) ----
+B5x042    0 e5x042 I = pow(10, v(ctrl))
+Vb5x042   b5x042 0 dc 0
+XQ5x042   0 b5x042 e5x042 pnp_05p00x00p42
+
+* ---- 10.00 um x 0.42 um emitter (Ae = 4.2 um^2) ----
+B10x042   0 e10x042 I = pow(10, v(ctrl))
+Vb10x042  b10x042 0 dc 0
+XQ10x042  0 b10x042 e10x042 pnp_10p00x00p42
+
+.control
+set width  = 512
+set height = 100000
+dc Vctrl -12 -3 0.1
+print v(e5x5) v(e10x10) v(e5x042) v(e10x042) i(vb5x5) i(vb10x10) i(vb5x042) i(vb10x042)
+quit
+.endc
+
+.end
