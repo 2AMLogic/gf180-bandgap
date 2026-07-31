@@ -84,7 +84,7 @@ harness self-test (40 unit tests, testbench-manifest loading). It needs
 nothing but python3, so no PR waits on a PDK download.
 
 The PDK-dependent half — the 81-point PVT smoke run against ngspice and the
-pinned gf180mcu models — runs weekly and on demand in
+pinned gf180mcu models — runs nightly and on demand in
 [`.github/workflows/sim-pdk.yml`](.github/workflows/sim-pdk.yml). Neither
 workflow writes evidence records; those are minted deliberately, never by CI.
 

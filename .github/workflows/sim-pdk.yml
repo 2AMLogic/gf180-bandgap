@@ -1,11 +1,15 @@
 name: Sim (PDK)
 
 # The half of the harness self-test that needs real tools: ngspice plus the
-# pinned gf180mcu PDK. Deliberately NOT on the pull_request path -- installing
-# the PDK costs a multi-hundred-MB download, and this org is on the GitHub Free
-# plan (2,000 private-repo Actions minutes/month, shared across all seven
-# canary repos), so this runs weekly and on demand instead of per PR. The
+# pinned gf180mcu PDK. Deliberately NOT on the pull_request path -- it installs
+# ngspice from apt and fetches the PDK, which no PR should have to wait on. The
 # PDK-free half of the same self-test gates every PR in ci.yml.
+#
+# Measured on PR #33 (run 30668039118): 1m30s cold -- ~45s of that the PDK
+# fetch, which the cache below removes on subsequent runs. Nightly at that cost
+# is a rounding error against the org's GitHub Free budget (2,000 private-repo
+# Actions minutes/month shared across all seven canary repos), and it keeps the
+# PDK cache warm inside GitHub's 7-day eviction window.
 #
 # It runs `sim/selftest.sh --require-pdk`: unit tests, then the full 81-point
 # PVT smoke run of sim/smoke-bias/ against the PDK. Without `--record` it
@@ -17,12 +21,9 @@ name: Sim (PDK)
 # parsing, and the harness's own `min_spread_pct` integrity checks.
 
 on:
-  # TEMPORARY (removed before merge): validate this workflow on PR #33, since
-  # workflow_dispatch is only available once the file is on the default branch.
-  pull_request:
   schedule:
-    # Mondays 06:00 UTC.
-    - cron: '0 6 * * 1'
+    # Nightly, 06:00 UTC.
+    - cron: '0 6 * * *'
   workflow_dispatch:
 
 permissions:
