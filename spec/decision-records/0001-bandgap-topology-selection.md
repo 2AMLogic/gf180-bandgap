@@ -1,7 +1,8 @@
 # DR-0001: Bandgap topology selection for gf180mcu 3.3V
 
-- **Status**: Proposed (recommended by survey below; pending engineering
-  ratification, same governance path as the target spec — see #1)
+- **Status**: Ratified (accepted by survey below; ratified alongside the
+  target spec — see #1, #35, and
+  [0003-target-spec-ratification.md](0003-target-spec-ratification.md))
 - **Date**: 2026-07-29
 - **Author**: Builder agent, issue #3
 - **Related**: #1 (spec ratification), #4 (device characterization, feeds

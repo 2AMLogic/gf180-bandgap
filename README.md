@@ -20,17 +20,35 @@ well understood at 180nm-class nodes and the gf180mcu PDK is uncontested —
 a good first target for proving out an agent-native, open-source-only path
 from spec to measured silicon.
 
-## Target specification (DRAFT — engineering to ratify, see issue #1)
+## Target specification (RATIFIED 2026-07-31, see issue #1 and #35)
 
-| Parameter | Target | Stretch |
-|---|---|---|
-| Output reference | 1.20 V ±1% untrimmed | ±0.5% with trim |
-| Temp coefficient (−40…125 °C) | < 50 ppm/°C | < 20 ppm/°C |
-| PSRR @ DC | > 60 dB | > 70 dB |
-| Supply | 3.3 V ±10% | also 5 V flavor |
-| Quiescent current | < 50 µA | < 20 µA |
-| Area | < 0.05 mm² | — |
-| Startup | self-starting, < 1 ms | — |
+Ratified by the operator conditional on the amendments in #35 (spec-review
+opinion, klayout-tools #124 — see
+[issue #1's ratification comment](https://github.com/2AMLogic/gf180-bandgap/issues/1#issuecomment-5147916639)).
+Recorded in
+[`spec/decision-records/0003-target-spec-ratification.md`](spec/decision-records/0003-target-spec-ratification.md);
+this table supersedes the prior DRAFT.
+
+| Parameter | Target | Stretch | Corner binding |
+|---|---|---|---|
+| Output reference | 1.20 V ±2% untrimmed (3σ, mismatch MC N≥300 + process corners, −40…125 °C) | ±0.5% trimmed (3σ, 1-point trim) | temperature extremes (−40…125 °C) + mismatch MC + process corners |
+| Trim | 1-point resistor trim (binary-weighted segments per DR-0001), range ≥ ±5%, resolution ≤ 0.25%/step (≥5 bits equiv.), magnitude only | — | performed at 27 °C |
+| Temp coefficient (−40…125 °C) | < 50 ppm/°C (box method, −40…125 °C) | < 20 ppm/°C (requires curvature correction) | full −40…125 °C box, process corners; PTAT-gain and trim resistor ratios must share one resistor flavor (`ppolyf_u` recommended, see `sim/device-resistor-tc/`) |
+| PSRR | > 60 dB DC–1 kHz | > 30 dB @ 1 MHz | load condition TBD — to be fixed when the output stage is designed (see DR-0001) |
+| Line regulation | < 1 mV/V (DC, 2.97–3.63 V) | — | full supply range, DC |
+| Output noise | not yet quantified — band: 0.1–10 Hz integrated µVrms (threshold TBD; add a spot-noise point if a later wave feeds an ADC) | — | n/a |
+| Supply | 3.3 V ±10% | also 5 V flavor | headroom binds at SS / −40 °C / 2.97 V (see `sim/device-pnp-vbe/`, `sim/device-mos-vth/`) |
+| Quiescent current | < 50 µA | < 20 µA | binds at FF / 125 °C / 3.63 V (leakage + fastest devices) |
+| Load | TBD — pending output-stage design (DR-0001): either max DC load + load regulation, or explicit unbuffered — high-Z load only | — | n/a |
+| Area | < 0.05 mm² | — | n/a (not a PVT line) |
+| Startup | self-starting at all corners (incl. SS / −40 °C / 2.97 V), < 1 ms to within 1% of final value | — | binds at SS / −40 °C / 2.97 V |
+| Long-term drift | not specified (canary block) | — | n/a |
+
+Rows marked TBD (PSRR load condition, output noise threshold, load-row option)
+are amendments A4/A6/A7 from #35 carried through verbatim as open items — the
+spec review proposed the row *shape* without a numeric decision, so no number
+is invented here; each will be closed out as its own future decision record
+when the relevant design work (output stage, #10) resolves it.
 
 **Status**: simulation-complete → layout DRC/LVS-clean → measured silicon
 over temperature. Currently in simulation: device characterization and PVT
