@@ -5,6 +5,9 @@
 #   .github/scripts/lint.sh                      run every check
 #   .github/scripts/lint.sh --require-shellcheck fail (instead of skipping) if
 #                                                the shellcheck binary is absent
+#   .github/scripts/lint.sh --require-append-only fail (instead of skipping) if
+#                                                the append-only evidence check
+#                                                cannot resolve its base ref
 #
 # Zero dependencies beyond python3 and (optionally) shellcheck, matching the
 # harness's stdlib-only rule -- there is no venv and no package manifest to
@@ -26,10 +29,12 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "${REPO_ROOT}" || exit 1
 
 REQUIRE_SHELLCHECK=0
+EVIDENCE_ARGS=()
 for arg in "$@"; do
   case "${arg}" in
     --require-shellcheck) REQUIRE_SHELLCHECK=1 ;;
-    -h|--help) sed -n '2,21p' "${BASH_SOURCE[0]}"; exit 0 ;;
+    --require-append-only) EVIDENCE_ARGS+=(--require-append-only) ;;
+    -h|--help) sed -n '2,24p' "${BASH_SOURCE[0]}"; exit 0 ;;
     *) echo "unknown option: ${arg}" >&2; exit 1 ;;
   esac
 done
@@ -46,7 +51,7 @@ collect() {
   done < <(git ls-files -z -- "$1" ':!:.loom/**' ':!:.claude/**' ':!:loom.sh')
 }
 
-echo "== 1/3 shellcheck (shell scripts) =="
+echo "== 1/4 shellcheck (shell scripts) =="
 collect '*.sh'
 if [ "${#files[@]}" -eq 0 ]; then
   echo "no shell scripts tracked"
@@ -64,7 +69,7 @@ else
 fi
 
 echo
-echo "== 2/3 python syntax =="
+echo "== 2/4 python syntax =="
 collect '*.py'
 if [ "${#files[@]}" -eq 0 ]; then
   echo "no python files tracked"
@@ -79,7 +84,7 @@ else
 fi
 
 echo
-echo "== 3/3 json well-formedness =="
+echo "== 3/4 json well-formedness =="
 collect '*.json'
 if [ "${#files[@]}" -eq 0 ]; then
   echo "no json files tracked"
@@ -105,6 +110,18 @@ sys.exit(1 if bad else 0)
     echo "FAIL: malformed json"
     status=1
   fi
+fi
+
+echo
+echo "== 4/4 evidence records (sim/*/records) =="
+# The schema in sim/README.md -- nine required fields, <record-id> naming, the
+# corner-id grammar, and the append-only rule -- enforced instead of merely
+# documented. Tracked files only, same as collect() above; the append-only half
+# diffs against the merge base with origin/main and SKIPs (unless
+# --require-append-only) where that ref does not resolve.
+if ! python3 sim/check_records.py ${EVIDENCE_ARGS[@]+"${EVIDENCE_ARGS[@]}"}; then
+  echo "FAIL: evidence records"
+  status=1
 fi
 
 echo
