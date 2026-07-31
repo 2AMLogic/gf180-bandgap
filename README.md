@@ -1,17 +1,24 @@
 # gf180-bandgap
 
-**PRIVATE — 2AM Logic proprietary IP. First canary block (wave 1, block 1).**
+**First canary block (wave 1, block 1) from 2AM Logic.**
 
-A bandgap voltage reference on GlobalFoundries gf180mcu (open PDK, 3.3V/5V
-flavor), designed by agents driving [klayout-tools](https://github.com/2AMLogic/klayout-tools)
-and the open-source analog flow. Dual purpose, per the canary model:
+A bandgap voltage reference on GlobalFoundries gf180mcu (open PDK, 3.3V
+primary flavor), designed end to end by AI agents driving
+[klayout-tools](https://github.com/2AMLogic/klayout-tools) and the
+open-source analog flow — xschem + ngspice for design and simulation,
+klayout-tools for layout. Every stage from spec decision records through
+PVT-swept simulation evidence is agent-authored and version-controlled in
+this repo; nothing here is hand-waved past a testbench.
 
-1. **Catalog inventory** — a licensable, eventually silicon-measured
-   bandgap for gf180mcu (chosen first because the analog-PMU category is
-   incumbent-validated at 180nm-class nodes, the node is uncontested, and
-   wafer.space gives the cheapest measured-silicon path of any open PDK).
-2. **Tool forcing-function** — every place the tools bind or fall short
-   becomes a friction issue filed on the public klayout-tools tracker.
+This block is also a **forcing function** for the open-source tooling it
+depends on: every place klayout-tools is awkward, missing a capability, or
+wrong for what an agent-driven analog flow needs becomes a friction issue
+filed generically on the public
+[klayout-tools tracker](https://github.com/2AMLogic/klayout-tools/issues).
+The bandgap topology was chosen first because the analog-PMU category is
+well understood at 180nm-class nodes and the gf180mcu PDK is uncontested —
+a good first target for proving out an agent-native, open-source-only path
+from spec to measured silicon.
 
 ## Target specification (DRAFT — engineering to ratify, see issue #1)
 
@@ -25,8 +32,11 @@ and the open-source analog flow. Dual purpose, per the canary model:
 | Area | < 0.05 mm² | — |
 | Startup | self-starting, < 1 ms | — |
 
-Maturity ladder for this block: simulation-complete → layout DRC/LVS-clean
-→ shuttle seat (wafer.space) → measured silicon over temperature.
+**Status**: simulation-complete → layout DRC/LVS-clean → measured silicon
+over temperature. Currently in simulation: device characterization and PVT
+corner sweeps are recorded as append-only evidence under `sim/` (see
+[`sim/README.md`](sim/README.md) for the record format). Layout has not
+started; tapeout is not yet scheduled.
 
 ## Layout
 
@@ -64,3 +74,7 @@ record format (directory layout, record ids, the append-only rule), and
 [`sim/harness/README.md`](sim/harness/README.md) for PDK resolution, the corner
 definitions and how to write a testbench. For schematic capture see
 [`design/README.md`](design/README.md).
+
+## License
+
+Apache License 2.0 — see [`LICENSE`](LICENSE).
