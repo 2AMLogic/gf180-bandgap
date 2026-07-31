@@ -22,8 +22,9 @@ cite the new record ID.
 | Resistors | `sim/device-resistor-tc/` | `20260731-031750-8fb0ea6` | 3 resistor corners × 3 temperatures (+2 well-bias) |
 | MOS threshold | `sim/device-mos-vth/` | `20260731-031337-8fb0ea6` | 5 MOS corners × 3 temperatures |
 | MOS mismatch | `sim/device-mos-mismatch/` | `20260731-031718-8fb0ea6` | `typical` × 3 temperatures, N = 300 each |
+| PNP mismatch | `sim/device-pnp-mismatch/` | `20260731-040850-187a336` | `bjt_typical` × 3 temperatures, N = 300 each |
 
-All four testbenches are two-terminal or source-referred device measurements
+All five testbenches are two-terminal or source-referred device measurements
 with no supply rail, so the ±10 % supply axis of the CLAUDE.md PVT matrix does
 not apply; each record states that explicitly, and the resistor record
 additionally sweeps the one non-ground node (the p+ resistor's n-well tie) over
@@ -242,18 +243,53 @@ offset of ~3.3 mV against a 33.4 mV PTAT signal — about 10 % error on the PTAT
 term.** Brute-force area buys 3 % at ~435 µm² per device and 1.5 % at
 ~1740 µm². Anything tighter than that is an argument for chopping, auto-zero,
 or trim rather than for more area — which is exactly the trade #10 has to
-settle. Note also that this is only the *MOS* contribution; PNP mismatch is not
-yet characterized (see below).
+settle.
+
+**MOS + PNP side by side** (both contributions now characterized — see §5 for
+the PNP campaign): at the representative 10 µA bias, the `pnp_05p00x05p00`
+core pair's own dVBE mismatch is 3σ ≈ 0.128 mV (27 °C, `bjt_typical`,
+`20260731-040850-187a336`) versus the MOS 10/4 pair's 3σ ≈ 3.37–3.66 mV
+(§4 table above). **The PNP pair's own mismatch is roughly 25–30× smaller
+than a plain 10/4 MOS pair's** and contributes well under 1 % of the 33.4 mV
+PTAT signal on its own — for this offset budget, the MOS mirror/amplifier
+pair, not the PNP core pair, is the term worth spending area on. #10 should
+carry both sigma figures (MOS from §4, PNP from §5) into the RSS offset
+budget rather than treating either as negligible without stating why.
+
+---
+
+## 5. PNP local mismatch — record `20260731-040850-187a336`
+
+N = 300 Monte Carlo samples per temperature, mismatch-only
+(`sw_stat_mismatch = 1`, `sw_stat_global = 0`, process fixed at the nominal
+`bjt_typical` point — deliberately not stacked on the `bjt_ss`/`bjt_typical`/
+`bjt_ff` corner axis §1 already sweeps, to avoid double-counting that spread),
+reported as 1σ of dVBE for (a) two identical `pnp_05p00x05p00` devices and
+(b) the area-ratioed `pnp_05p00x05p00` / `pnp_10p00x10p00` pair the Brokaw
+core actually uses, at equal emitter current.
+
+Values at 27 °C:
+
+| Pair | Id | σ(ΔVBE) | 3σ |
+|---|---|---|---|
+| `pnp_05p00x05p00` identical pair | 1 µA | 0.0469 mV | 0.141 mV |
+| `pnp_05p00x05p00` identical pair | 10 µA | 0.0463 mV | 0.139 mV |
+| `pnp_05p00x05p00` / `pnp_10p00x10p00` area-ratioed pair | 1 µA | 0.0424 mV | 0.127 mV |
+| `pnp_05p00x05p00` / `pnp_10p00x10p00` area-ratioed pair | 10 µA | 0.0426 mV | 0.128 mV |
+
+Both sigma figures are two to three orders of magnitude smaller than the
+33.4 mV PTAT signal (§1) and than the MOS pair sigmas in §4 — expected, since
+the PDK's per-instance `mis_is_pnp_*` / `mis_bf_pnp_*` agauss() sigmas
+(0.05–0.3 %) are themselves small relative to the `fets_mm` MOS mismatch
+parameters. This is a PDK-model artefact, not a claim that PNP devices are
+inherently better matched than MOS in silicon; see the record's plausibility
+note. Temperature dependence is weak (σ rises ~10–16 % from −40 °C to 125 °C,
+same common-random-numbers caveat as §4).
 
 ---
 
 ## Known gaps
 
-- **PNP mismatch is not characterized.** The `bjt_mc` subcircuits do carry
-  per-instance `agauss` mismatch on `is` and `bf`, so σ(ΔVBE) for the matched
-  pair is simulatable — it was simply out of scope for the campaign that
-  produced these records. It belongs in the offset budget alongside §4.
-  Tracked in #25.
 - **Resistor mismatch is not simulatable** in this PDK release (§2), so the
   matching argument for the PTAT/feedback pair is a layout-discipline argument,
   and any Monte Carlo that includes resistors will under-report spread.
