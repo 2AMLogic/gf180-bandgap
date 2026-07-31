@@ -17,6 +17,9 @@ name: Sim (PDK)
 # parsing, and the harness's own `min_spread_pct` integrity checks.
 
 on:
+  # TEMPORARY (removed before merge): validate this workflow on PR #33, since
+  # workflow_dispatch is only available once the file is on the default branch.
+  pull_request:
   schedule:
     # Mondays 06:00 UTC.
     - cron: '0 6 * * 1'
@@ -42,9 +45,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
 
@@ -60,7 +63,7 @@ jobs:
 
       - name: Cache the gf180mcu PDK
         id: pdk-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.volare
           key: volare-gf180mcu-${{ env.GF180_PDK_VERSION }}

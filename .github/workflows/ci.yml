@@ -49,7 +49,7 @@ jobs:
     name: Lint (shellcheck + syntax)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Lint
         # --require-shellcheck: shellcheck is preinstalled on GitHub's ubuntu
@@ -62,9 +62,9 @@ jobs:
     name: Harness self-test (no PDK)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           # The harness is stdlib-only (sim/harness/README.md: python3 >= 3.9,
           # no venv, no packages), so there is nothing to install and no
