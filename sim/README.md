@@ -48,8 +48,32 @@ sim/
   Re-runs simply mint a new `<record-id>`; nothing under `records/` is ever
   edited in place. The same `<record-id>` ties together the netlist snapshot,
   the raw per-corner logs, and the summary record for one run.
-- **`<corner-id>`** — `<process-corner>_<temp>c_<supply>v.log`, e.g.
-  `ss_-40c_2.97v.log`, `tt_27c_3.3v.log`, `ff_125c_3.63v.log`.
+- **`<corner-id>`** — `<process>_<temp>c_<supply>`, e.g. `ss_-40c_2.97v.log`,
+  `tt_27c_3.30v.log`, `ff_125c_3.63v.log`. The three fields are separated by
+  the **last two** underscores, so the process field may itself contain one:
+
+  - **`<process>`** — one or more lowercase alphanumeric tokens joined by
+    underscores. For a circuit-level run this is the harness corner name
+    (`tt`, `ss`, `ff`, `fs`, `sf`, and the passive-skew corners `res_ff`,
+    `bjt_ss`, ...). For a device-level testbench that exercises one device
+    family it is the gf180mcu model-section name that testbench selects
+    (`typical`, `bjt_typical`, `res_ff`, ...). The vocabulary is deliberately
+    **open**: gf180mcu ships a `.lib` section per device family (see
+    `sim/harness/corners.py`), so the set grows with the families a testbench
+    touches, and pinning it to `tt|ss|ff` would misname most device runs.
+  - **`<temp>`** — the junction temperature in °C, signed, suffixed `c`:
+    `-40c`, `27c`, `125c`. A record may add intermediate points (`-10c`,
+    `60c`, `90c`) but never fewer than the CLAUDE.md axis without a stated
+    reason.
+  - **`<supply>`** — one of:
+    - `<volts>v` — the swept supply, e.g. `2.97v`, `3.30v`, `3.63v`;
+    - `<node><volts>v` — when the swept rail is not the main supply and needs
+      naming, e.g. `nwell2p97v`. `p` stands in for the decimal point so the
+      field stays a single token with no underscore of its own;
+    - `nosupply` — the testbench has no supply rail to sweep (a device
+      testbench referred to its own source node and driven by an ideal
+      source). This is one of the subset justifications the record's **Corner
+      matrix run** field is required to spell out.
 - **`testbench/`** is not versioned per record — it holds the current
   testbench netlist(s)/xschem export(s) used to generate records. If the
   testbench itself changes in a way that could affect comparability across
@@ -97,6 +121,37 @@ corrects or replaces a prior result, it references that prior record via
 **Supersedes** rather than overwriting it. This applies even to typo fixes —
 the append-only guarantee is what makes `sim/` usable as an evidence trail;
 "fixing" an existing record in place would defeat that.
+
+## Enforcement
+
+This convention is checked, not merely documented. `sim/check_records.py`
+(implementation: `sim/harness/evidence_lint.py`) runs as step 4 of
+`.github/scripts/lint.sh`, so `npm run lint` and the CI `lint` job both
+execute it on every PR. It reads tracked files only, needs nothing but
+`python3` and `git`, and fails on:
+
+- a missing or empty one of the nine required fields above;
+- a filename that is not a well-formed `<record-id>`, or a **Record ID**
+  field that disagrees with its filename;
+- a record with no `netlist-snapshots/<record-id>.spice` or no
+  `corners/<record-id>/` logs — and, symmetrically, a snapshot or corner
+  directory with no summary record to cite it;
+- a `<corner-id>.log` name that does not parse under the grammar above;
+- a **Supersedes** value that names a `<record-id>` with no record in the
+  same experiment directory (write `(none)` when a record supersedes
+  nothing);
+- **append-only violations**: any file under `records/`,
+  `netlist-snapshots/` or `corners/` modified, renamed, or deleted relative
+  to the merge base with `origin/main`. Only additions are allowed.
+
+The append-only half needs real git history; where the base ref does not
+resolve (a shallow clone, say) it prints `SKIP` rather than passing silently,
+and `--require-append-only` turns that skip into a failure — which is how CI
+runs it.
+
+If the checker and this document ever disagree, this document wins and the
+checker is the thing that gets fixed. The evidence is never the thing that
+gets fixed.
 
 ## Worked example
 

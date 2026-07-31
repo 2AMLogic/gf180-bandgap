@@ -10,6 +10,7 @@ name: CI
 # | Self-check                                   | Needs        | Runs in            |
 # |----------------------------------------------|--------------|--------------------|
 # | `.github/scripts/lint.sh`                     | python3      | `lint` (here)      |
+# | evidence-record format + append-only          | python3+git  | `lint` (here)      |
 # | harness unit tests (`sim/tests/`)             | python3      | `test` (here)      |
 # | `sim/run_corners.py --list` manifest load     | python3      | `test` (here)      |
 # | `sim/selftest.sh` stages 1-2                  | python3      | `test` (here)      |
@@ -28,9 +29,11 @@ name: CI
 # - `sim/device-*/run_*.py` (the device-characterization runs) each write an
 #   append-only record under `sim/<slug>/records/`. Same reason: `sim/` results
 #   are evidence per CLAUDE.md, produced deliberately, not by a CI robot.
-# - Evidence-record *format* linting (the schema in sim/README.md) is not
-#   checked because no checker exists yet in this repo. When one lands it
-#   belongs in the `lint` job below.
+#
+# Evidence-record *format* linting (the schema in sim/README.md) is step 4 of
+# `.github/scripts/lint.sh` -- CI does not mint evidence, but it does check the
+# shape of the evidence a PR adds, and enforces the append-only rule against
+# the merge base.
 
 on:
   pull_request:
@@ -50,13 +53,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          # The append-only evidence check (lint step 4/4) diffs against
+          # `git merge-base origin/main HEAD`. The default depth-1 checkout has
+          # neither origin/main nor enough history for a merge base, which would
+          # silently downgrade that check to a SKIP -- hence full history.
+          fetch-depth: 0
 
       - name: Lint
         # --require-shellcheck: shellcheck is preinstalled on GitHub's ubuntu
         # runner images, so a missing binary here means the image changed and
         # the shell scripts silently stopped being linted -- fail instead.
+        # --require-append-only: same argument for the merge base -- if it stops
+        # resolving, fail loudly instead of passing on a skipped check.
         # Same script `npm run lint` runs locally.
-        run: .github/scripts/lint.sh --require-shellcheck
+        run: .github/scripts/lint.sh --require-shellcheck --require-append-only
 
   test:
     name: Harness self-test (no PDK)
