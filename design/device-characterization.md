@@ -253,6 +253,7 @@ yet characterized (see below).
   per-instance `agauss` mismatch on `is` and `bf`, so σ(ΔVBE) for the matched
   pair is simulatable — it was simply out of scope for the campaign that
   produced these records. It belongs in the offset budget alongside §4.
+  Tracked in #25.
 - **Resistor mismatch is not simulatable** in this PDK release (§2), so the
   matching argument for the PTAT/feedback pair is a layout-discipline argument,
   and any Monte Carlo that includes resistors will under-report spread.
