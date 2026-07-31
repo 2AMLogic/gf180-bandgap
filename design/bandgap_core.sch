@@ -1,0 +1,129 @@
+v {xschem version=3.4.7 file_version=1.2
+* bandgap_core -- Brokaw-cell core + current-mode bias/output stage (issue #8)
+*
+* Ratified topology: DR-0001 (spec/decision-records/0001-bandgap-topology-selection.md).
+* Device choices grounded in design/device-characterization.md (issue #4,
+* record IDs cited in design/bandgap_operating_point.md).
+*
+* Two vertical PNPs, diode-connected (base tied to collector tied to vss --
+* gf180mcu's vertical PNP collector is the substrate, which must be grounded;
+* see design/device-characterization.md section 1 and
+* sim/device-pnp-vbe/testbench/tb_pnp_vbe.spice for the same convention),
+* biased from four legs of a single PMOS mirror whose common gate ("fb") is
+* driven by the servo op-amp (bandgap_amp, external -- see bandgap_top.sch):
+*
+*   Q1 (pnp_05p00x05p00, unit)      -- branch 1, sensed at sns1
+*   Q2 (pnp_10p00x10p00, 4x drawn)  -- branch 2, through PTAT resistor R2,
+*                                      sensed at sns2
+*   Q3 (pnp_05p00x05p00, unit)      -- output branch, through R1, taps vref
+*
+* The amp forces sns1 = sns2, which forces the PTAT current
+* I = dVBE(Q1,Q2) / R2 through every mirror leg (Q1/Q2 branches by
+* construction; Q3/bias branches only as well as an uncascoded mirror's
+* output impedance allows -- see the operating-point doc's cascode-omission
+* caveat). vref = VEB(Q3) + I*R1, the classic Brokaw sum.
+*
+* Mp4 + Mn5 mirror a copy of the same bias current into a diode-connected
+* NMOS (ibias) that the external amp's tail transistor mirrors from --
+* self-biased, so that in the startup-less zero-current degenerate state
+* (fb ~ vdd, all PMOS off), ibias relaxes toward 0V and the amp's own tail
+* current (and therefore its loop gain) collapses right along with the
+* core's, rather than an independent bias artificially keeping the amp alive
+* in a state the real circuit cannot self-start out of (see
+* design/bandgap_operating_point.md, degenerate-state caveat; startup
+* circuit itself is #11's scope).
+*
+* Pins: vdd, vss, fb, sns1, sns2, vref, ibias
+}
+G {}
+K {}
+V {}
+S {}
+E {}
+C {symbols/pfet_03v3.sym} 0 300 0 0 {name=M1 model=pfet_03v3 W=20u L=2u nf=1 m=1}
+N 20 330 20 350 {}
+C {lab_pin.sym} 20 350 0 0 {name=l1 lab=sns1}
+N -20 300 -40 300 {}
+C {lab_pin.sym} -40 300 0 0 {name=l2 lab=fb}
+N 20 270 20 250 {}
+C {lab_pin.sym} 20 250 0 0 {name=l3 lab=vdd}
+N 20 300 40 300 {}
+C {lab_pin.sym} 40 300 0 0 {name=l4 lab=vdd}
+C {symbols/pnp_05p00x05p00.sym} 0 0 0 0 {name=Q1 model=pnp_05p00x05p00 m=1}
+N 20 30 20 50 {}
+C {lab_pin.sym} 20 50 0 0 {name=l5 lab=vss}
+N -20 0 -40 0 {}
+C {lab_pin.sym} -40 0 0 0 {name=l6 lab=vss}
+N 20 -30 20 -50 {}
+C {lab_pin.sym} 20 -50 0 0 {name=l7 lab=sns1}
+C {symbols/pfet_03v3.sym} 300 300 0 0 {name=M2 model=pfet_03v3 W=20u L=2u nf=1 m=1}
+N 320 330 320 350 {}
+C {lab_pin.sym} 320 350 0 0 {name=l8 lab=sns2}
+N 280 300 260 300 {}
+C {lab_pin.sym} 260 300 0 0 {name=l9 lab=fb}
+N 320 270 320 250 {}
+C {lab_pin.sym} 320 250 0 0 {name=l10 lab=vdd}
+N 320 300 340 300 {}
+C {lab_pin.sym} 340 300 0 0 {name=l11 lab=vdd}
+C {symbols/ppolyf_u.sym} 300 90 0 0 {name=R2 model=ppolyf_u W=2u L=18u m=1}
+N 300 60 300 40 {}
+C {lab_pin.sym} 300 40 0 0 {name=l12 lab=sns2}
+N 300 120 300 140 {}
+C {lab_pin.sym} 300 140 0 0 {name=l13 lab=e2}
+N 280 90 260 90 {}
+C {lab_pin.sym} 260 90 0 0 {name=l14 lab=vss}
+C {symbols/pnp_10p00x10p00.sym} 300 -60 0 0 {name=Q2 model=pnp_10p00x10p00 m=1}
+N 320 -30 320 -10 {}
+C {lab_pin.sym} 320 -10 0 0 {name=l15 lab=vss}
+N 280 -60 260 -60 {}
+C {lab_pin.sym} 260 -60 0 0 {name=l16 lab=vss}
+N 320 -90 320 -110 {}
+C {lab_pin.sym} 320 -110 0 0 {name=l17 lab=e2}
+C {symbols/pfet_03v3.sym} 600 300 0 0 {name=M3 model=pfet_03v3 W=20u L=2u nf=1 m=1}
+N 620 330 620 350 {}
+C {lab_pin.sym} 620 350 0 0 {name=l18 lab=vref}
+N 580 300 560 300 {}
+C {lab_pin.sym} 560 300 0 0 {name=l19 lab=fb}
+N 620 270 620 250 {}
+C {lab_pin.sym} 620 250 0 0 {name=l20 lab=vdd}
+N 620 300 640 300 {}
+C {lab_pin.sym} 640 300 0 0 {name=l21 lab=vdd}
+C {symbols/ppolyf_u.sym} 600 90 0 0 {name=R1 model=ppolyf_u W=2u L=280u m=1}
+N 600 60 600 40 {}
+C {lab_pin.sym} 600 40 0 0 {name=l22 lab=vref}
+N 600 120 600 140 {}
+C {lab_pin.sym} 600 140 0 0 {name=l23 lab=e3}
+N 580 90 560 90 {}
+C {lab_pin.sym} 560 90 0 0 {name=l24 lab=vss}
+C {symbols/pnp_05p00x05p00.sym} 600 -60 0 0 {name=Q3 model=pnp_05p00x05p00 m=1}
+N 620 -30 620 -10 {}
+C {lab_pin.sym} 620 -10 0 0 {name=l25 lab=vss}
+N 580 -60 560 -60 {}
+C {lab_pin.sym} 560 -60 0 0 {name=l26 lab=vss}
+N 620 -90 620 -110 {}
+C {lab_pin.sym} 620 -110 0 0 {name=l27 lab=e3}
+C {symbols/pfet_03v3.sym} 900 300 0 0 {name=M4 model=pfet_03v3 W=20u L=2u nf=1 m=1}
+N 920 330 920 350 {}
+C {lab_pin.sym} 920 350 0 0 {name=l28 lab=ibias}
+N 880 300 860 300 {}
+C {lab_pin.sym} 860 300 0 0 {name=l29 lab=fb}
+N 920 270 920 250 {}
+C {lab_pin.sym} 920 250 0 0 {name=l30 lab=vdd}
+N 920 300 940 300 {}
+C {lab_pin.sym} 940 300 0 0 {name=l31 lab=vdd}
+C {symbols/nfet_03v3.sym} 900 0 0 0 {name=M5 model=nfet_03v3 W=20u L=2u nf=1 m=1}
+N 920 -30 920 -50 {}
+C {lab_pin.sym} 920 -50 0 0 {name=l32 lab=ibias}
+N 880 0 860 0 {}
+C {lab_pin.sym} 860 0 0 0 {name=l33 lab=ibias}
+N 920 30 920 50 {}
+C {lab_pin.sym} 920 50 0 0 {name=l34 lab=vss}
+N 920 0 940 0 {}
+C {lab_pin.sym} 940 0 0 0 {name=l35 lab=vss}
+C {iopin.sym} -200 300 0 0 {name=p1 lab=vdd}
+C {iopin.sym} -200 -60 0 0 {name=p2 lab=vss}
+C {iopin.sym} -200 500 0 0 {name=p3 lab=fb}
+C {iopin.sym} -200 200 0 0 {name=p4 lab=sns1}
+C {iopin.sym} -200 100 0 0 {name=p5 lab=sns2}
+C {iopin.sym} 1100 300 0 0 {name=p6 lab=vref}
+C {iopin.sym} 1100 100 0 0 {name=p7 lab=ibias}

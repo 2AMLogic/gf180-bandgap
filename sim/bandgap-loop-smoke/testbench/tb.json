@@ -1,0 +1,35 @@
+{
+  "name": "bandgap-loop-smoke",
+  "description": "Issue #8 schematic-entry smoke test: bandgap_top (bandgap_core + provisional bandgap_amp) nets cleanly and its self-biased servo loop settles to a reference near the classic ~1.2V Brokaw sum at nominal PVT. NOT a spec-conformance claim -- amp sizing/offset budget is #10, startup is #11.",
+  "claim": "None -- schematic-entry existence proof (issue #8), not evaluated against README.md's ratified target-spec output-reference row (1.20V +/-2% untrimmed). The provisional amp has no offset budget and there is no startup circuit yet, so a spec pass/fail claim would be premature; see design/bandgap_operating_point.md.",
+  "netlist": "bandgap_loop_smoke.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0.0,
+  "temperatures_c": [27],
+  "corners": ["tt"],
+  "analyses": ["op"],
+  "measure": {
+    "vref": "v(vref)",
+    "fb": "v(xtop.fb)",
+    "sns1": "v(xtop.sns1)",
+    "sns2": "v(xtop.sns2)",
+    "iq_ua": "-i(vsup)*1e6"
+  },
+  "checks": {
+    "vref": {
+      "min": 1.15,
+      "max": 1.35,
+      "description": "sanity window for an untrimmed, hand-picked (not offset-budgeted) Brokaw sum -- wider than README.md's ratified +/-2% spec window on purpose; this is an existence-proof bound, not a spec-conformance check (see design/bandgap_operating_point.md)"
+    },
+    "sns1": {
+      "min": 0.5,
+      "max": 0.9,
+      "description": "Q1/Q3 VEB should land near the #4 device-characterization value at ~10uA (0.7227V, record 20260731-030932-8fb0ea6) -- sanity bound, not a spec check"
+    },
+    "iq_ua": {
+      "min": 1.0,
+      "max": 200.0,
+      "description": "total supply current stays in a plausible quiescent range for a 4-branch, ~10uA/branch core plus amp -- sanity bound only, not the README.md Iq<50uA spec line (untrimmed provisional sizing is not expected to hit that yet)"
+    }
+  }
+}
