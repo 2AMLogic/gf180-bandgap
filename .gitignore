@@ -14,6 +14,11 @@ sim/smoke_test/*.raw
 # ignore above -- it is append-only evidence per CLAUDE.md, not a scratch
 # log.
 !sim/smoke_test/smoke_test.log
+
+# Raw per-corner ngspice logs under sim/<experiment>/corners/<record-id>/ are
+# the evidence trail sim/README.md requires each record to link to -- they are
+# committed, not scratch, so they are exempted from the blanket *.log ignore.
+!sim/*/corners/**/*.log
 # >>> loom-managed (do not edit) >>>
 # Loom runtime state (don't commit these)
 .loom-in-use

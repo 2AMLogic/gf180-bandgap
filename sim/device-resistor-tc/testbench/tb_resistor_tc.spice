@@ -1,0 +1,91 @@
+* tb_resistor_tc.spice -- gf180mcu resistor flavor characterization
+*
+* Candidates for the PTAT / trim network of the Brokaw core selected in
+* DR-0001: the unsalicided p-poly family (ppolyf_u and the high-sheet
+* ppolyf_u_1k / _2k / _3k) plus two diffusion flavors (pplus_u, nplus_u) for
+* contrast. Note gf180mcu has no `rpolyh` -- that is a sky130 device name.
+*
+* Every DUT is drawn as 10 squares (L = 10 x W) at two widths, 1 um and 5 um,
+* so the drawn-vs-effective geometry bias (r_dw / r_dl in the PDK subcircuits)
+* shows up as a width-dependent effective sheet resistance rather than hiding
+* inside a single number.
+*
+* Bias: each resistor is driven from a 50 mV source, i.e. 50 mV across 10
+* squares. That is a low-field bias (50 V/cm at W = 1 um, 10 V/cm at W = 5 um)
+* and it is the same field for every flavor, so the extracted resistances are
+* directly comparable. Three extra high-sheet DUTs are biased at 500 mV to
+* probe the voltage coefficient.
+*
+* The p+ diffusion resistor sits in an n-well, which must be reverse-biased.
+* Its well tie is the only node in this deck above ground; corner.spice sets
+* v_nwell. It carries no signal current, and the run script sweeps it over
+* +/-10% of 3.3 V at one corner to demonstrate that.
+*
+* corner.spice is generated per corner point by the run script from
+* $PDK_ROOT / $PDK and must define v_nwell.
+*
+* Run via: sim/device-resistor-tc/run_resistor_tc.py
+
+.include corner.spice
+
+Vnw nw 0 dc 'v_nwell'
+
+* ---- unsalicided p-poly, ~350 ohm/sq nominal ----
+V_pu_w1  n_pu_w1 0 dc 50m
+X_pu_w1  n_pu_w1 0 0 ppolyf_u  r_width=1u r_length=10u
+V_pu_w5  n_pu_w5 0 dc 50m
+X_pu_w5  n_pu_w5 0 0 ppolyf_u  r_width=5u r_length=50u
+
+* ---- high-sheet unsalicided p-poly, 1 kohm/sq nominal ----
+V_p1k_w1 n_p1k_w1 0 dc 50m
+X_p1k_w1 n_p1k_w1 0 0 ppolyf_u_1k r_width=1u r_length=10u
+V_p1k_w5 n_p1k_w5 0 dc 50m
+X_p1k_w5 n_p1k_w5 0 0 ppolyf_u_1k r_width=5u r_length=50u
+
+* ---- high-sheet unsalicided p-poly, 2 kohm/sq nominal ----
+V_p2k_w1 n_p2k_w1 0 dc 50m
+X_p2k_w1 n_p2k_w1 0 0 ppolyf_u_2k r_width=1u r_length=10u
+V_p2k_w5 n_p2k_w5 0 dc 50m
+X_p2k_w5 n_p2k_w5 0 0 ppolyf_u_2k r_width=5u r_length=50u
+
+* ---- high-sheet unsalicided p-poly, 3 kohm/sq nominal ----
+V_p3k_w1 n_p3k_w1 0 dc 50m
+X_p3k_w1 n_p3k_w1 0 0 ppolyf_u_3k r_width=1u r_length=10u
+V_p3k_w5 n_p3k_w5 0 dc 50m
+X_p3k_w5 n_p3k_w5 0 0 ppolyf_u_3k r_width=5u r_length=50u
+
+* ---- unsalicided p+ diffusion (in n-well), ~185 ohm/sq nominal ----
+V_pp_w1  n_pp_w1 0 dc 50m
+X_pp_w1  n_pp_w1 0 nw pplus_u r_width=1u r_length=10u
+V_pp_w5  n_pp_w5 0 dc 50m
+X_pp_w5  n_pp_w5 0 nw pplus_u r_width=5u r_length=50u
+
+* ---- unsalicided n+ diffusion (in p-substrate), ~60 ohm/sq nominal ----
+V_np_w1  n_np_w1 0 dc 50m
+X_np_w1  n_np_w1 0 0 nplus_u r_width=1u r_length=10u
+V_np_w5  n_np_w5 0 dc 50m
+X_np_w5  n_np_w5 0 0 nplus_u r_width=5u r_length=50u
+
+* ---- voltage-coefficient probes: same devices at 10x the bias ----
+V_p1k_hv n_p1k_hv 0 dc 500m
+X_p1k_hv n_p1k_hv 0 0 ppolyf_u_1k r_width=1u r_length=10u
+V_p2k_hv n_p2k_hv 0 dc 500m
+X_p2k_hv n_p2k_hv 0 0 ppolyf_u_2k r_width=1u r_length=10u
+V_p3k_hv n_p3k_hv 0 dc 500m
+X_p3k_hv n_p3k_hv 0 0 ppolyf_u_3k r_width=1u r_length=10u
+
+.control
+set width  = 512
+set height = 100000
+op
+print i(v_pu_w1) i(v_pu_w5)
+print i(v_p1k_w1) i(v_p1k_w5)
+print i(v_p2k_w1) i(v_p2k_w5)
+print i(v_p3k_w1) i(v_p3k_w5)
+print i(v_pp_w1) i(v_pp_w5)
+print i(v_np_w1) i(v_np_w5)
+print i(v_p1k_hv) i(v_p2k_hv) i(v_p3k_hv)
+quit
+.endc
+
+.end
