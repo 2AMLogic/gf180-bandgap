@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "file": "layout/drc/fixtures/trivial_poly_res/trivial_poly_res.gds",
+  "deck": "gf180mcu",
+  "dbu_um": 0.001,
+  "status": "violations",
+  "violation_count": 1,
+  "rule_counts": {
+    "poly2.width.1": 1
+  },
+  "violations": [
+    {
+      "rule": "poly2.width.1",
+      "description": "minimum poly2 interconnect width (3.3V)",
+      "check": "width",
+      "layer": "Poly2",
+      "cell": "TRIVIAL_POLY_RES",
+      "bbox": {
+        "left": 1100,
+        "bottom": 0,
+        "right": 1200,
+        "top": 3000
+      },
+      "polygon": [
+        [
+          1100,
+          0
+        ],
+        [
+          1100,
+          3000
+        ],
+        [
+          1200,
+          3000
+        ],
+        [
+          1200,
+          0
+        ]
+      ]
+    }
+  ]
+}
