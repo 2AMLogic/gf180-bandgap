@@ -26,6 +26,10 @@ sim/.work/
 
 # Machine-local PDK override (sim/pdk.json is the committed default).
 sim/pdk.local.json
+
+# Agent session isolation worktrees (created inside the main checkout by the
+# harness's `isolation: worktree` mechanism, same role as .loom/worktrees/).
+.claude/worktrees/
 # >>> loom-managed (do not edit) >>>
 # Loom runtime state (don't commit these)
 .loom-in-use
