@@ -53,8 +53,12 @@ when the relevant design work (output stage, #10) resolves it.
 **Status**: simulation-complete → layout DRC/LVS-clean → measured silicon
 over temperature. Currently in simulation: device characterization and PVT
 corner sweeps are recorded as append-only evidence under `sim/` (see
-[`sim/README.md`](sim/README.md) for the record format). Layout has not
-started; tapeout is not yet scheduled.
+[`sim/README.md`](sim/README.md) for the record format). A full block layout
+is now drawn and verified — DRC-clean and LVS-matching against the schematic
+netlist, with committed reports under `layout/` (see
+[`layout/README.md`](layout/README.md), including what that LVS verdict does
+and does not cover). Post-layout extracted re-verification has not run yet;
+tapeout is not yet scheduled.
 
 ## Layout
 
