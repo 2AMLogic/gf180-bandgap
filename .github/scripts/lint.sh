@@ -51,7 +51,7 @@ collect() {
   done < <(git ls-files -z -- "$1" ':!:.loom/**' ':!:.claude/**' ':!:loom.sh')
 }
 
-echo "== 1/4 shellcheck (shell scripts) =="
+echo "== 1/5 shellcheck (shell scripts) =="
 collect '*.sh'
 if [ "${#files[@]}" -eq 0 ]; then
   echo "no shell scripts tracked"
@@ -69,7 +69,7 @@ else
 fi
 
 echo
-echo "== 2/4 python syntax =="
+echo "== 2/5 python syntax =="
 collect '*.py'
 if [ "${#files[@]}" -eq 0 ]; then
   echo "no python files tracked"
@@ -84,7 +84,7 @@ else
 fi
 
 echo
-echo "== 3/4 json well-formedness =="
+echo "== 3/5 json well-formedness =="
 collect '*.json'
 if [ "${#files[@]}" -eq 0 ]; then
   echo "no json files tracked"
@@ -113,7 +113,7 @@ sys.exit(1 if bad else 0)
 fi
 
 echo
-echo "== 4/4 evidence records (sim/*/records) =="
+echo "== 4/5 evidence records (sim/*/records) =="
 # The schema in sim/README.md -- nine required fields, <record-id> naming, the
 # corner-id grammar, and the append-only rule -- enforced instead of merely
 # documented. Tracked files only, same as collect() above; the append-only half
@@ -122,6 +122,25 @@ echo "== 4/4 evidence records (sim/*/records) =="
 if ! python3 sim/check_records.py ${EVIDENCE_ARGS[@]+"${EVIDENCE_ARGS[@]}"}; then
   echo "FAIL: evidence records"
   status=1
+fi
+
+echo
+echo "== 5/5 DUT freshness (sim/dut/bandgap_top.spice) =="
+# sim/dut/bandgap_top.spice is generated from design/netlist/bandgap_top.spice
+# (sim/dut/README.md) and every spec-line bench simulates it via each tb.json's
+# "dut" key. Nothing else re-derives it, so a schematic edit that lands
+# without regenerating this fragment is invisible until this check: the suite
+# would otherwise keep minting records -- silently -- against a netlist the
+# repo no longer contains (#51). Only runs when both files are tracked, so a
+# worktree missing either (e.g. a sparse checkout) SKIPs instead of failing.
+if [ -f design/netlist/bandgap_top.spice ] && [ -f sim/dut/bandgap_top.spice ]; then
+  if ! python3 sim/tools/mk_dut.py design/netlist/bandgap_top.spice sim/dut/bandgap_top.spice --check; then
+    echo "FAIL: sim/dut/bandgap_top.spice is stale -- regenerate with:"
+    echo "  python3 sim/tools/mk_dut.py design/netlist/bandgap_top.spice sim/dut/bandgap_top.spice"
+    status=1
+  fi
+else
+  echo "SKIP: design/netlist/bandgap_top.spice or sim/dut/bandgap_top.spice not present"
 fi
 
 echo
