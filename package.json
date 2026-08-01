@@ -11,6 +11,8 @@
     "sim:env": "python3 sim/run_corners.py --check-env",
     "sim:list": "python3 sim/run_corners.py --list",
     "sim:smoke": "python3 sim/run_corners.py smoke-bias",
+    "sim:suite": "python3 sim/run_suite.py",
+    "sim:suite:list": "python3 sim/run_suite.py --list",
     "lint": "bash .github/scripts/lint.sh"
   }
 }

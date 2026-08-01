@@ -22,6 +22,7 @@ from __future__ import annotations
 import datetime as _dt
 import getpass
 import platform
+import re
 import socket
 import subprocess
 import sys
@@ -58,14 +59,43 @@ def _git(*args: str, cwd: Path) -> str:
         return ""
 
 
+#: Paths whose git state says nothing about whether a run is reproducible:
+#: the append-only evidence tree, which runs *write into*, and the suite's
+#: own summaries. See :func:`working_tree_dirty`.
+_EVIDENCE_PATH_RE = re.compile(
+    r"^sim/(?:[^/]+/(?:%s|%s|%s)/|suite/summaries/)"
+    % (RECORDS_DIR, SNAPSHOT_DIR, CORNERS_DIR)
+)
+
+
+def working_tree_dirty(repo_root: Path) -> bool:
+    """Is the *input* tree dirty -- design, testbench, harness, docs?
+
+    "Dirty" exists on a record to answer one question: can this result be
+    reproduced from a commit? Uncommitted evidence cannot make it
+    unreproducible -- and evidence is exactly what a run leaves behind, so a
+    naive ``git status --porcelain`` check reports every run after the first
+    as dirty (the previous bench's own logs are sitting in the tree). Only
+    changes outside the append-only evidence directories count.
+    """
+    status = _git("status", "--porcelain", cwd=repo_root)
+    for line in status.splitlines():
+        path = line[3:].strip().strip('"')
+        # Renames read "old -> new"; the destination is what matters here.
+        if " -> " in path:
+            path = path.split(" -> ", 1)[1]
+        if path and not _EVIDENCE_PATH_RE.match(path):
+            return True
+    return False
+
+
 def git_provenance(repo_root: Path) -> dict:
     commit = _git("rev-parse", "HEAD", cwd=repo_root)
-    dirty = bool(_git("status", "--porcelain", cwd=repo_root))
     return {
         "commit": commit or "unknown",
         "short": (commit[:7] if commit else "unknown"),
         "branch": _git("rev-parse", "--abbrev-ref", "HEAD", cwd=repo_root) or "unknown",
-        "dirty": dirty,
+        "dirty": working_tree_dirty(repo_root),
     }
 
 
@@ -363,7 +393,25 @@ def write_netlist_snapshot(tb: Testbench, experiment_dir: Path, record_id: str) 
             "",
         ]
     )
-    path.write_text(header + tb.netlist.read_text())
+    body = tb.netlist.read_text()
+    if tb.dut is not None:
+        # The DUT is a separate file the testbench only .includes, so a
+        # testbench-only snapshot would not actually freeze the circuit this
+        # record measured. sim/README.md calls this file "the frozen DUT
+        # netlist used for this record", so the DUT belongs inside it.
+        body += "\n".join(
+            [
+                "",
+                "* ---------------------------------------------------------------",
+                f"* DUT netlist included by this testbench ({tb.dut_provenance_class})",
+                f"* source     : {tb.dut_path}",
+                f"* sha256     : {tb.dut_sha256}",
+                "* ---------------------------------------------------------------",
+                "",
+                tb.dut.read_text(),
+            ]
+        )
+    path.write_text(header + body)
     return path
 
 
@@ -457,7 +505,14 @@ def render_record(record: dict, experiment: str) -> str:
     git = env["git"]
     pdk = env["pdk"]
 
-    provenance = f"schematic (`sim/{experiment}/{TESTBENCH_DIR}/{tb['netlist']}`)"
+    if tb.get("dut"):
+        provenance = (
+            f"{tb['dut_provenance_class']} — DUT `{tb['dut']}` "
+            f"(sha256 `{tb['dut_sha256']}`), driven by "
+            f"`sim/{experiment}/{TESTBENCH_DIR}/{tb['netlist']}`"
+        )
+    else:
+        provenance = f"schematic (`sim/{experiment}/{TESTBENCH_DIR}/{tb['netlist']}`)"
     if git["dirty"]:
         provenance += (
             f" — **taken against a dirty working tree** at commit `{git['commit']}`; "
@@ -482,6 +537,10 @@ def render_record(record: dict, experiment: str) -> str:
         "- **Links**:",
         f"  - Testbench: `sim/{experiment}/{TESTBENCH_DIR}/{tb['netlist']}`, "
         f"`sim/{experiment}/{TESTBENCH_DIR}/tb.json`",
+    ]
+    if tb.get("dut"):
+        lines.append(f"  - DUT netlist: `{tb['dut']}`")
+    lines += [
         f"  - Netlist snapshot: `sim/{experiment}/{SNAPSHOT_DIR}/{record_id}.spice`",
         f"  - Raw logs: `sim/{experiment}/{CORNERS_DIR}/{record_id}/`",
         f"- **Timestamp / author**: {record['started_utc']}, {env['user']}",
@@ -498,6 +557,10 @@ def render_record(record: dict, experiment: str) -> str:
         f"- git: `{git['commit']}` on `{git['branch']}`"
         + (" (dirty)" if git["dirty"] else " (clean)"),
         f"- Testbench netlist sha256: `{tb['netlist_sha256']}`",
+    ]
+    if tb.get("dut"):
+        lines.append(f"- DUT netlist: `{tb['dut']}` sha256 `{tb['dut_sha256']}`")
+    lines += [
         f"- Manifest sha256: `{tb['manifest_sha256']}`",
         f"- Wall time: {record['wall_seconds']} s",
         "",

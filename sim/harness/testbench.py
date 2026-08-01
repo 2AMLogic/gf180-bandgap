@@ -17,6 +17,17 @@ the fragment these parameters:
     temp_c    the temperature for this PVT point (also set via .temp)
 
 plus anything in the manifest's ``params`` map.
+
+A manifest may also name a **device under test**::
+
+    sim/<experiment-slug>/testbench/tb.json   {"dut": "sim/dut/bandgap_top.spice"}
+
+The DUT is a second fragment holding nothing but ``.subckt`` definitions;
+the harness ``.include``s it ahead of the testbench so several testbenches
+share one netlist, and so the *same* testbench can be re-run against a
+different netlist (a frozen copy, or a post-layout extracted netlist) with
+``--dut <path>`` and no edit to the testbench at all. Which netlist a record
+was taken against is carried in its **Netlist provenance** field.
 """
 
 from __future__ import annotations
@@ -41,14 +52,26 @@ TESTBENCH_DIRNAME = "testbench"
 
 FORBIDDEN_DIRECTIVES = (".control", ".endc", ".end", ".lib", ".temp", ".include")
 
+#: A DUT fragment is allowed to pull in sub-netlists of its own (an extracted
+#: netlist routinely does), but it must not own the deck: a stray ``.end``
+#: would truncate every generated deck at the DUT, and ``.lib`` / ``.temp``
+#: would pin the corner the harness is sweeping.
+FORBIDDEN_DUT_DIRECTIVES = (".control", ".endc", ".end", ".lib", ".temp")
+
+#: Repository root -- ``sim/harness/testbench.py`` -> ``<repo>``. DUT paths in
+#: a manifest are written repo-relative so they read the same from anywhere.
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
 
 @dataclass
 class Testbench:
     directory: Path
     name: str
     netlist: Path
+    dut: Path | None = None
     description: str = ""
     claim: str = ""
+    subset_reason: str = ""
     nominal_supply_v: float = DEFAULT_NOMINAL_SUPPLY_V
     supply_tolerance: float = DEFAULT_SUPPLY_TOLERANCE
     temperatures_c: tuple[float, ...] = DEFAULT_TEMPERATURES_C
@@ -80,6 +103,36 @@ class Testbench:
     def manifest_sha256(self) -> str:
         return hashlib.sha256((self.directory / MANIFEST_NAME).read_bytes()).hexdigest()
 
+    @property
+    def dut_sha256(self) -> str:
+        return "" if self.dut is None else hashlib.sha256(self.dut.read_bytes()).hexdigest()
+
+    @property
+    def dut_path(self) -> str:
+        """The DUT netlist as a repo-relative path (absolute if outside the repo)."""
+        if self.dut is None:
+            return ""
+        return _repo_relative(self.dut)
+
+    @property
+    def dut_provenance_class(self) -> str:
+        """``schematic`` / ``extracted`` / ``frozen`` -- read off the DUT path.
+
+        ``sim/README.md`` requires every record to say whether it was taken
+        against the schematic netlist or a post-layout extracted one. The
+        classification follows the directory the DUT lives in so that a
+        post-layout re-run (#17) reports itself correctly with no flag to
+        forget: anything under ``layout/`` is extracted.
+        """
+        if self.dut is None:
+            return "schematic"
+        path = self.dut_path
+        if path.startswith("layout/"):
+            return "extracted"
+        if "/frozen/" in path:
+            return "frozen schematic"
+        return "schematic"
+
     def provenance(self) -> dict:
         return {
             "name": self.name,
@@ -90,6 +143,9 @@ class Testbench:
             "netlist": self.netlist.name,
             "netlist_sha256": self.netlist_sha256,
             "manifest_sha256": self.manifest_sha256,
+            "dut": self.dut_path,
+            "dut_sha256": self.dut_sha256,
+            "dut_provenance_class": self.dut_provenance_class,
             "nominal_supply_v": self.nominal_supply_v,
             "supply_tolerance": self.supply_tolerance,
         }
@@ -101,11 +157,39 @@ def _require(manifest: dict, key: str, path: Path):
     return manifest[key]
 
 
-def load(directory: str | Path) -> Testbench:
+def _repo_relative(path: Path) -> str:
+    try:
+        return str(path.resolve().relative_to(REPO_ROOT))
+    except ValueError:
+        return str(path.resolve())
+
+
+def resolve_dut(value: str | Path, manifest_dir: Path) -> Path:
+    """Locate a DUT netlist named by a manifest or by ``--dut``.
+
+    Repo-relative first (how manifests are written, so they read the same
+    from any working directory), then relative to the manifest, then as
+    given -- which covers an absolute path to a netlist outside the repo.
+    """
+    candidate = Path(value)
+    tried: list[Path] = []
+    for option in (REPO_ROOT / candidate, manifest_dir / candidate, candidate):
+        if option.is_file():
+            return option.resolve()
+        tried.append(option)
+    raise FileNotFoundError(
+        f"DUT netlist {str(value)!r} does not exist; tried: "
+        + ", ".join(str(t) for t in tried)
+    )
+
+
+def load(directory: str | Path, dut: str | Path | None = None) -> Testbench:
     """Load a testbench manifest into a :class:`Testbench`.
 
     Accepts the experiment directory (``sim/<slug>/``), its ``testbench/``
-    subdirectory, or the ``tb.json`` path itself.
+    subdirectory, or the ``tb.json`` path itself. ``dut`` overrides the
+    manifest's own ``dut`` key -- the swap point that lets one testbench run
+    unedited against a frozen or post-layout extracted netlist.
     """
     directory = Path(directory).resolve()
     if directory.is_file() and directory.name == MANIFEST_NAME:
@@ -132,12 +216,22 @@ def load(directory: str | Path) -> Testbench:
                 "(it becomes an ngspice vector name)"
             )
 
+    dut_value = dut if dut is not None else manifest.get("dut")
+    dut_path = resolve_dut(dut_value, directory) if dut_value else None
+
     tb = Testbench(
         directory=directory,
         name=manifest.get("name", directory.parent.name),
         netlist=netlist,
+        dut=dut_path,
         description=manifest.get("description", ""),
         claim=manifest.get("claim", ""),
+        # A manifest may pre-declare why its grid is a deliberate subset of
+        # the mandated PVT matrix (e.g. an axis the testbench sweeps
+        # internally). --subset-reason still overrides, and either way the
+        # text is copied verbatim into the record: sim/README.md wants the
+        # justification *on the record*, not merely in a shell history.
+        subset_reason=manifest.get("subset_reason", ""),
         nominal_supply_v=float(manifest.get("nominal_supply_v", DEFAULT_NOMINAL_SUPPLY_V)),
         supply_tolerance=float(manifest.get("supply_tolerance", DEFAULT_SUPPLY_TOLERANCE)),
         temperatures_c=tuple(
@@ -151,7 +245,39 @@ def load(directory: str | Path) -> Testbench:
         options=tuple(manifest.get("options", ())),
     )
     validate_netlist(tb)
+    validate_dut(tb)
     return tb
+
+
+def _offending_directives(path: Path, forbidden: tuple[str, ...]) -> list[str]:
+    problems: list[str] = []
+    for lineno, raw in enumerate(path.read_text().splitlines(), start=1):
+        line = raw.strip().lower()
+        if not line.startswith("."):
+            continue
+        if line.split()[0] in forbidden:
+            problems.append(f"  line {lineno}: {raw.strip()}")
+    return problems
+
+
+def validate_dut(tb: Testbench) -> None:
+    """Reject a DUT netlist that would take the deck over.
+
+    An xschem export ends in ``.end``; ``.include``-ing that verbatim would
+    truncate every generated deck right after the DUT, and the missing
+    measurements would look like a convergence failure rather than the
+    packaging mistake it is. ``.include`` *is* allowed here -- an extracted
+    netlist legitimately pulls in sub-netlists.
+    """
+    if tb.dut is None:
+        return
+    problems = _offending_directives(tb.dut, FORBIDDEN_DUT_DIRECTIVES)
+    if problems:
+        raise ValueError(
+            f"{tb.dut}: a DUT netlist must hold subcircuit definitions only, no "
+            f"{', '.join(FORBIDDEN_DUT_DIRECTIVES)} -- the harness supplies the "
+            "models, corner libs, temperature and control block:\n" + "\n".join(problems)
+        )
 
 
 def validate_netlist(tb: Testbench) -> None:
@@ -161,14 +287,7 @@ def validate_netlist(tb: Testbench) -> None:
     ``.end`` or a hardcoded ``.temp 27`` that silently pins every corner to
     room temperature.
     """
-    problems: list[str] = []
-    for lineno, raw in enumerate(tb.netlist.read_text().splitlines(), start=1):
-        line = raw.strip().lower()
-        if not line.startswith("."):
-            continue
-        directive = line.split()[0]
-        if directive in FORBIDDEN_DIRECTIVES:
-            problems.append(f"  line {lineno}: {raw.strip()}")
+    problems = _offending_directives(tb.netlist, FORBIDDEN_DIRECTIVES)
     if problems:
         raise ValueError(
             f"{tb.netlist}: netlist fragments must not contain "

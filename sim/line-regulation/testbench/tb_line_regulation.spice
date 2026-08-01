@@ -1,0 +1,40 @@
+* line-regulation -- Vref vs supply over the ratified 2.97..3.63 V range
+*
+* Netlist FRAGMENT for sim/harness (see sim/harness/README.md). The DUT is
+* .include-d from the manifest's "dut" key, so this testbench re-runs
+* unedited against a frozen or extracted netlist via `--dut <path>`.
+*
+* Measurement convention:
+*
+*   - The supply is swept CONTINUOUSLY inside the testbench --
+*     `dc vsup 2.97 3.63 0.005`, 133 points at 5 mV -- rather than visiting
+*     the harness's three outer supply rails. A three-point evaluation can
+*     step straight over a local nonmonotonicity (a mirror leaving
+*     saturation, a cascode losing headroom); the dense sweep cannot.
+*   - Line regulation is reported as the box over that range:
+*
+*        (Vref_max - Vref_min) / (3.63 V - 2.97 V)   [mV/V]
+*
+*     i.e. worst-case sensitivity across the whole range, not the chord
+*     between the two endpoints. vref_lo/vref_hi record the endpoints too,
+*     so the record shows both readings.
+*   - The same sweep also confirms the accuracy window: vref_min/vref_max
+*     must stay inside 1.176-1.224 V at every point of the supply range,
+*     which is the "supply 3.3 V +/-10%" aspect of the output-reference row.
+*
+* Because the supply axis is swept here, the harness's own supply axis is
+* collapsed to the nominal rail (supply_tolerance 0 in the manifest) -- the
+* manifest carries the written justification the record must state, and
+* re-running the outer axis would only repeat this identical sweep three
+* times. Process and temperature are still the full mandated axes.
+
+vsup vdd 0 dc {vdd_val}
+Xdut vdd 0 vref bandgap_top
+
+* Convergence seeding; see design/bandgap_operating_point.md 4.2 and #11.
+* The sweep starts at 2.97 V, the ratified worst-case headroom rail, so a
+* corner that cannot hold the intended state at the bottom of the supply
+* range shows up as a vref outside the window rather than as a flat,
+* suspiciously good regulation number.
+.ic v(xdut.fb)=1.0 v(xdut.sns1)=0.6 v(xdut.sns2)=0.6 v(vref)=1.2
++ v(xdut.ibias)=0.6 v(xdut.xx1.casc)=1.8

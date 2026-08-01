@@ -1,0 +1,46 @@
+* psrr-dc -- power-supply rejection of bandgap_top, DC figure + curve
+*
+* Netlist FRAGMENT for sim/harness (see sim/harness/README.md). The harness
+* supplies the models, corner .lib sections, .temp, the .control block and
+* .end. The DUT is .include-d from the manifest's "dut" key, so this
+* testbench re-runs unedited against a frozen or extracted netlist via
+* `--dut <path>` -- see sim/dut/README.md.
+*
+* Measurement convention (the part that is easy to get wrong):
+*
+*   - The perturbation is on the SUPPLY: vsup carries `ac 1`, so the AC
+*     source is a 1 V small-signal ripple on vdd at every frequency, on top
+*     of the DC operating point the harness set for this PVT point.
+*   - The output is vref, the block's actual output pin.
+*   - With a 1 V supply perturbation |v(vref)| *is* the supply-to-output
+*     gain, so PSRR(f) = -20*log10(|v(vref)|) = -db(v(vref)) dB. A positive
+*     number is rejection.
+*   - The DC figure claimed against the spec is the low-frequency
+*     asymptote, evaluated at 1 Hz (index 20 of `ac dec 20 0.1 10meg`).
+*     "DC" cannot be evaluated at exactly 0 Hz in an AC analysis, so the
+*     record states the frequency it used rather than implying a 0 Hz
+*     measurement.
+*   - The ratified row reads "> 60 dB DC-1 kHz", so 1 kHz is checked as
+*     well as 1 Hz: a part that rejects at 1 Hz but falls apart by 1 kHz
+*     does not meet that row.
+*   - The rest of the curve -- the 10 Hz ... 1 MHz spot columns in the
+*     record's per-corner table, and the full 161-point sweep printed into
+*     each raw corner log -- is REFERENCE DATA, not a pass/fail claim. The
+*     1 MHz column is the ratified table's *stretch* goal (> 30 dB @ 1 MHz):
+*     recorded, not gated.
+*
+* Load condition: none. The ratified PSRR row's load condition is an
+* explicit open item (amendment A4, README.md), to be fixed when the output
+* stage is designed (#10), so this bench measures the unloaded block and
+* says so. When A4 closes, add the load here and mint a new record set --
+* do not reinterpret these records as if they had carried a load.
+
+vsup vdd 0 dc {vdd_val} ac 1
+Xdut vdd 0 vref bandgap_top
+
+* Convergence seeding for the operating point the AC analysis linearizes
+* around; see design/bandgap_operating_point.md 4.2 and #11. vref_op is
+* measured so a corner that linearized around the degenerate state is
+* visible in the record instead of contributing a meaningless PSRR number.
+.ic v(xdut.fb)=1.0 v(xdut.sns1)=0.6 v(xdut.sns2)=0.6 v(vref)=1.2
++ v(xdut.ibias)=0.6 v(xdut.xx1.casc)=1.8

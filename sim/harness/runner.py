@@ -73,6 +73,14 @@ def compose_deck(tb: Testbench, pdk: Pdk, point: PvtPoint) -> str:
     for option in tb.options:
         lines.append(f".options {option}")
 
+    if tb.dut is not None:
+        lines += [
+            "",
+            "* ---- device under test ----------------------------------------------",
+            f"* provenance: {tb.dut_provenance_class}  sha256 {tb.dut_sha256}",
+            f'.include "{tb.dut}"',
+        ]
+
     lines += [
         "",
         "* ---- testbench ------------------------------------------------------",

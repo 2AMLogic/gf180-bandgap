@@ -11,10 +11,14 @@ this harness exists to produce records that conform to it.
 ```
 sim/
   run_corners.py            CLI entry point (stdlib python3, no venv)
+  run_suite.py              run every spec-line bench + per-spec-line summary
   env.sh                    `source sim/env.sh` to export the same PDK to your shell
   selftest.sh               harness acceptance test (unit tests + end-to-end PVT run)
   pdk.json                  committed PDK defaults (variant, extra search roots)
   harness/                  the runner itself (this directory)
+  suite/                    the spec-line suite -- see sim/suite/README.md
+  dut/                      swappable DUT netlists -- see sim/dut/README.md
+  tools/                    helper scripts (mk_dut.py, devchar.py)
   tests/                    harness unit tests (no PDK, no ngspice required)
   .work/                    generated ngspice decks (git-ignored, disposable)
 
@@ -32,7 +36,12 @@ python3 sim/run_corners.py --check-env     # is ngspice + the PDK present?
 python3 sim/run_corners.py --list          # experiments, corners, corner sets
 python3 sim/run_corners.py smoke-bias      # run the full PVT grid, mint a record
 bash sim/selftest.sh                       # prove the harness works (writes nothing)
+python3 sim/run_suite.py                   # every spec-line bench + pass/fail summary
 ```
+
+One experiment at a time is this runner's job; running *the whole spec-line
+suite* and judging each ratified spec row is
+[`sim/run_suite.py`](../suite/README.md), which drives this runner per slug.
 
 ## Prerequisites
 
@@ -127,6 +136,7 @@ distinct claim under test, kebab-case.
   "description": "one line, shows up in --list and in the record",
   "claim": "spec/bandgap.md#output-voltage-tc",
   "netlist": "my_tb.spice",
+  "dut": "sim/dut/bandgap_top.spice",
   "nominal_supply_v": 3.3,
   "supply_tolerance": 0.1,
   "temperatures_c": [-40, 27, 125],
@@ -141,6 +151,31 @@ distinct claim under test, kebab-case.
 
 `claim` is the default for the record's **Claim** field — the ratified spec
 line this experiment substantiates. `--claim` overrides it per run.
+
+`dut` (optional) names the **device under test**: a second fragment holding
+nothing but subcircuit definitions, `.include`d ahead of the testbench. That
+indirection is what lets several testbenches share one netlist, and what lets
+the *same* testbench re-run unedited against a different one:
+
+```bash
+python3 sim/run_corners.py iq --dut sim/dut/frozen/bandgap_top-20260801.spice
+python3 sim/run_corners.py iq --dut layout/netlist/bandgap_top_extracted.spice
+```
+
+The DUT path, its sha256 and its provenance class (`schematic` /
+`frozen schematic` / `extracted`, derived from the path) land in the record's
+**Netlist provenance** field, and its contents are copied into that record's
+frozen `netlist-snapshots/<record-id>.spice` — so a record identifies the
+exact circuit it measured, not just the stimulus around it. A DUT file may
+not carry `.end`, `.control`, `.endc`, `.temp` or `.lib` (an xschem export
+does: convert it with `sim/tools/mk_dut.py`); it *may* carry `.include`,
+which an extracted netlist needs. See [`sim/dut/README.md`](../dut/README.md).
+
+`subset_reason` (optional) pre-declares why this experiment's grid is a
+deliberate subset of the mandated PVT matrix — for a testbench that sweeps an
+axis internally, say. `--subset-reason` still overrides it, and either way the
+text is copied verbatim onto the record, which is where `sim/README.md` wants
+the justification to live.
 
 The netlist is a **fragment**, not a complete deck. It must not contain
 `.include`, `.lib`, `.temp`, `.control`, `.endc` or `.end` — the harness owns

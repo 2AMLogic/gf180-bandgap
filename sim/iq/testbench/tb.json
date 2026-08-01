@@ -1,0 +1,28 @@
+{
+  "name": "iq",
+  "description": "Quiescent supply current of bandgap_top at every PVT corner, against README.md's ratified Iq < 50 uA row (binds at ff/125C/3.63V).",
+  "claim": "README.md 'Target specification (RATIFIED 2026-07-31)' -> row 'Quiescent current': < 50 uA, corner binding 'binds at FF / 125 C / 3.63 V (leakage + fastest devices)'. Total supply current drawn by bandgap_top at its quiescent operating point, measured at every point of the full PVT grid; the reported figure is the worst (largest) corner.",
+  "netlist": "tb_iq.spice",
+  "dut": "sim/dut/bandgap_top.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0.1,
+  "temperatures_c": [-40, 27, 125],
+  "corners": ["full"],
+  "analyses": ["op"],
+  "measure": {
+    "iq_ua": "-i(vsup)*1e6",
+    "vref": "v(vref)"
+  },
+  "checks": {
+    "iq_ua": {
+      "max": 50.0,
+      "min": 1.0,
+      "description": "RATIFIED spec: quiescent current < 50 uA (README.md target-spec table). The min=1uA floor is not a spec line: it fails any corner that collapsed into the degenerate near-zero-current state (design/bandgap_operating_point.md 4.2) instead of recording the collapse as an excellent Iq."
+    },
+    "vref": {
+      "min": 0.9,
+      "max": 1.5,
+      "description": "Not a spec check -- the accuracy claim lives in sim/output-voltage-tc/. This wide sanity window only asserts the loop was in its intended operating state when Iq was measured; a corner outside it makes the Iq number uninterpretable."
+    }
+  }
+}

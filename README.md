@@ -93,6 +93,23 @@ record format (directory layout, record ids, the append-only rule), and
 definitions and how to write a testbench. For schematic capture see
 [`design/README.md`](design/README.md).
 
+## Verifying the spec
+
+```bash
+python3 sim/run_suite.py --list               # ratified spec row -> testbench index
+python3 sim/run_suite.py                      # every bench, full PVT, pass/fail per row
+```
+
+One testbench per sim-verifiable row of the ratified table above, each run
+through the PVT corner runner, each landing an append-only record. A run of
+`sim/run_suite.py` where every row of the summary reads PASS is the
+operational definition of **simulation-complete**; the summary also lists the
+rows the suite deliberately does not claim (mismatch Monte Carlo, trim, area,
+and the table's open items). See [`sim/suite/README.md`](sim/suite/README.md)
+for the index and the measurement conventions, and
+[`sim/dut/README.md`](sim/dut/README.md) for the swappable-DUT convention that
+lets the same benches re-run unedited against a post-layout extracted netlist.
+
 ## Continuous integration
 
 Every PR and every push to `main` runs
