@@ -128,7 +128,7 @@ change this sizing.
 
 ## 5. Coverage evidence
 
-**Record**: `sim/trim-coverage/records/`. Bench: `sim/trim-coverage/`,
+**Record**: `sim/trim-coverage/records/20260801-061650-083d402.md`. Bench: `sim/trim-coverage/`,
 81-point full PVT grid (−40/27/125 °C × 2.97/3.30/3.63 V × 9 process
 corners: `tt`, `ff`, `ss`, `fs`, `sf`, `res_ff`, `res_ss`, `bjt_ff`,
 `bjt_ss`). The bench sweeps 9 codes per corner (`0, 1, 2, 4, 8, 16, 32, 63`,
@@ -144,10 +144,8 @@ grid to report trimmed accuracy over PVT) and reports:
 | Binary weighting (`w5_lsb`, MSB group vs. 1 LSB) | 32.0 ± 0.1 | 31.94–32.01 | exact by construction, confirmed empirically |
 | Linearity residual (superposition check) | \|residual\| ≤ 1 mV | −0.020 … +0.010 mV | confirms the trim is magnitude-only, per §2's transfer-function argument, not assumed |
 
-**Overall: PASS**, all 81 corners. This is the append-only record
-`sim/trim-coverage/records/` produced by `python3 sim/run_corners.py
-trim-coverage`; see that record for the full per-corner table and exact
-record ID.
+**Overall: PASS**, all 81 corners. Record:
+`sim/trim-coverage/records/20260801-061650-083d402.md`.
 
 ## 6. No spec relaxation
 
