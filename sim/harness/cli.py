@@ -115,6 +115,13 @@ def build_parser() -> argparse.ArgumentParser:
         help="per-point ngspice timeout in seconds",
     )
     parser.add_argument(
+        "--dut",
+        default=None,
+        metavar="PATH",
+        help="DUT netlist to simulate, overriding the manifest's 'dut' (e.g. a "
+        "frozen copy, or a post-layout extracted netlist)",
+    )
+    parser.add_argument(
         "--claim",
         default="",
         help="spec line this run substantiates, e.g. 'spec/bandgap.md#output-voltage-tc' "
@@ -137,7 +144,8 @@ def build_parser() -> argparse.ArgumentParser:
         default="",
         metavar="TEXT",
         help="why this run is not the full mandated PVT matrix; required before "
-        "a subset run may be recorded as evidence",
+        "a subset run may be recorded as evidence (overrides the manifest's "
+        "'subset_reason')",
     )
     parser.add_argument(
         "--no-write",
@@ -218,7 +226,7 @@ def _fmt(value) -> str:
 
 def run(args: argparse.Namespace) -> int:
     tb_path = _resolve_tb_path(args.testbench)
-    tb = tb_mod.load(tb_path)
+    tb = tb_mod.load(tb_path, dut=args.dut)
 
     try:
         pdk = find_pdk()
@@ -239,7 +247,8 @@ def run(args: argparse.Namespace) -> int:
     # matrix unless it states why a subset was used. Refuse to record a thin
     # run without that justification rather than quietly banking weak evidence.
     conformance = report.matrix_conformance(tb, points)
-    if not args.no_write and not conformance["full"] and not args.subset_reason:
+    subset_reason = args.subset_reason or tb.subset_reason
+    if not args.no_write and not conformance["full"] and not subset_reason:
         print(
             "error: this run is a subset of the PVT matrix CLAUDE.md mandates:\n  - "
             + "\n  - ".join(conformance["missing"])
@@ -267,6 +276,8 @@ def run(args: argparse.Namespace) -> int:
               + (f"  ({tb.description})" if tb.description else ""))
         print(f"pdk       : {pdk.variant} @ {pdk.version}  ({pdk.path})")
         print(f"ngspice   : {ngspice}")
+        if tb.dut is not None:
+            print(f"dut       : {tb.dut_path}  ({tb.dut_provenance_class})")
         print(f"corners   : {', '.join(c.name for c in corner_list)}")
         print(f"temps (C) : {', '.join(_fmt(t) for t in temperatures)}")
         print(f"supply (V): {', '.join(_fmt(v) for v in supplies)} "
@@ -323,7 +334,7 @@ def run(args: argparse.Namespace) -> int:
         claim=args.claim,
         supersedes=args.supersedes,
         statistical_convention=args.statistical_convention,
-        subset_reason=args.subset_reason,
+        subset_reason=subset_reason,
         git=git,
     )
 

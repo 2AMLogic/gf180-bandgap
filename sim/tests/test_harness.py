@@ -126,6 +126,132 @@ class TestbenchTests(unittest.TestCase):
         self.assertIn("vbe", tb.checks)
 
 
+class DutTests(unittest.TestCase):
+    """The swappable DUT: one testbench, several netlists (#12, #17)."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.dir = Path(self.tmp.name)
+        self.addCleanup(self.tmp.cleanup)
+        self.tb_dir = self.dir / "an-experiment" / "testbench"
+        self.tb_dir.mkdir(parents=True)
+        (self.tb_dir / "x.spice").write_text("v1 vdd 0 dc {vdd_val}\nXd vdd 0 out dut\n")
+
+    def _manifest(self, **extra) -> Path:
+        base = {"name": "x", "netlist": "x.spice", "measure": {"vout": "v(out)"}}
+        base.update(extra)
+        (self.tb_dir / "tb.json").write_text(json.dumps(base))
+        return self.tb_dir
+
+    def _dut(self, name: str = "dut.spice", body: str | None = None) -> Path:
+        path = self.dir / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(body if body is not None else ".subckt dut vdd vss out\n.ends\n")
+        return path
+
+    def test_manifest_names_the_dut_and_it_is_hashed(self):
+        dut = self._dut()
+        tb = testbench.load(self._manifest(dut=str(dut)))
+        self.assertEqual(tb.dut, dut.resolve())
+        self.assertEqual(len(tb.dut_sha256), 64)
+        self.assertEqual(tb.provenance()["dut_sha256"], tb.dut_sha256)
+
+    def test_dut_argument_overrides_the_manifest(self):
+        """One testbench, a different netlist -- what #17's re-run needs."""
+        self._dut()
+        other = self._dut("extracted/dut.spice", ".subckt dut vdd vss out\nR1 vdd out 1k\n.ends\n")
+        tb = testbench.load(self._manifest(dut="dut.spice"), dut=str(other))
+        self.assertEqual(tb.dut, other.resolve())
+
+    def test_a_missing_dut_is_an_error_not_a_silent_skip(self):
+        with self.assertRaises(FileNotFoundError):
+            testbench.load(self._manifest(dut="no/such/netlist.spice"))
+
+    def test_a_dut_that_ends_the_deck_is_rejected(self):
+        """An xschem export ends in .end; including it verbatim truncates the deck."""
+        dut = self._dut(body=".subckt dut vdd vss out\n.ends\n.end\n")
+        with self.assertRaises(ValueError) as ctx:
+            testbench.load(self._manifest(dut=str(dut)))
+        self.assertIn(".end", str(ctx.exception))
+
+    def test_a_dut_may_include_sub_netlists(self):
+        """An extracted netlist legitimately pulls in sub-netlists of its own."""
+        dut = self._dut(body='.include "cells.spice"\n.subckt dut vdd vss out\n.ends\n')
+        tb = testbench.load(self._manifest(dut=str(dut)))
+        self.assertEqual(tb.dut, dut.resolve())
+
+    def test_provenance_class_follows_the_path(self):
+        cases = {
+            "sim/dut/bandgap_top.spice": "schematic",
+            "sim/dut/frozen/bandgap_top-20260801.spice": "frozen schematic",
+            "layout/netlist/bandgap_top_extracted.spice": "extracted",
+        }
+        for relative, expected in cases.items():
+            with self.subTest(path=relative):
+                tb = testbench.Testbench(
+                    directory=self.tb_dir,
+                    name="x",
+                    netlist=self.tb_dir / "x.spice",
+                    dut=testbench.REPO_ROOT / relative,
+                )
+                self.assertEqual(tb.dut_provenance_class, expected)
+
+    def test_the_repo_dut_is_a_valid_fragment_for_every_bench_this_issue_owns(self):
+        for slug in ("output-voltage-tc", "psrr-dc", "line-regulation", "iq"):
+            with self.subTest(slug=slug):
+                tb = testbench.load(SIM_DIR / slug)
+                self.assertIsNotNone(tb.dut, f"sim/{slug} must name a swappable DUT")
+                self.assertEqual(tb.dut_path, "sim/dut/bandgap_top.spice")
+                self.assertEqual(tb.dut_provenance_class, "schematic")
+
+    def test_a_manifest_may_carry_its_own_subset_justification(self):
+        """sim/README.md wants the reason on the record, not in a shell history."""
+        tb = testbench.load(SIM_DIR / "line-regulation")
+        self.assertEqual(tb.supply_tolerance, 0.0)
+        self.assertIn("swept CONTINUOUSLY inside the testbench", tb.subset_reason)
+
+    def test_the_deck_includes_the_dut_ahead_of_the_testbench(self):
+        dut = self._dut()
+        tb = testbench.load(self._manifest(dut=str(dut)))
+        pdk = fake_pdk(self.dir / "gf180mcuD")
+        point = corners.build_grid(corners.resolve_corners(["tt"]), (27,), [3.3])[0]
+        deck = runner.compose_deck(tb, pdk, point)
+        self.assertIn(f'.include "{dut.resolve()}"', deck)
+        self.assertLess(deck.index(str(dut.resolve())), deck.index(str(tb.netlist)))
+        self.assertIn(tb.dut_sha256, deck)
+
+    def test_the_frozen_snapshot_carries_the_dut_not_just_the_testbench(self):
+        """sim/README.md calls it 'the frozen DUT netlist used for this record'."""
+        dut = self._dut(body=".subckt dut vdd vss out\nR1 vdd out 1meg\n.ends\n")
+        tb = testbench.load(self._manifest(dut=str(dut)))
+        path = report.write_netlist_snapshot(tb, tb.experiment_dir, "20260801-120000-abc1234")
+        frozen = path.read_text()
+        self.assertIn("R1 vdd out 1meg", frozen)          # the DUT
+        self.assertIn("Xd vdd 0 out dut", frozen)          # the testbench
+        self.assertIn(tb.dut_sha256, frozen)
+
+    def test_the_record_states_which_netlist_it_was_taken_against(self):
+        dut = self._dut()
+        tb = testbench.load(self._manifest(dut=str(dut)))
+        pdk = fake_pdk(self.dir / "gf180mcuD")
+        points = corners.build_grid(corners.resolve_corners(["tt"]), (27,), [3.3])
+        record = report.build_record(
+            tb=tb,
+            pdk=pdk,
+            points=points,
+            results=[runner.PointResult(point=points[0], status="ok",
+                                        measurements={"vout": 1.2})],
+            ngspice="ngspice-46",
+            repo_root=SIM_DIR,
+            record_id="20260801-120000-abc1234",
+            started_utc="2026-08-01T12:00:00+00:00",
+            wall_seconds=1.0,
+        )
+        text = report.render_record(record, "an-experiment")
+        self.assertIn("**Netlist provenance**: schematic — DUT", text)
+        self.assertIn(tb.dut_sha256, text)
+
+
 class DeckTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()

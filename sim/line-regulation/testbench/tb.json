@@ -1,0 +1,54 @@
+{
+  "name": "line-regulation",
+  "description": "Vref over a continuous 2.97-3.63 V supply sweep (5 mV steps) at every process/temperature corner: line regulation in mV/V, plus the accuracy window across the supply range.",
+  "claim": "README.md 'Target specification (RATIFIED 2026-07-31)' -> row 'Line regulation': < 1 mV/V (DC, 2.97-3.63 V), corner binding 'full supply range, DC'. Convention: the supply is swept continuously inside the testbench (`dc vsup 2.97 3.63 0.005`, 133 points), and the reported figure is the box over that range, (Vref_max - Vref_min)/0.66 V, i.e. worst-case sensitivity rather than the endpoint chord. The same sweep substantiates the supply-tolerance aspect of the 'Output reference' row (1.20 V +/-2%, i.e. 1.176-1.224 V): vref_min/vref_max are checked at every point of the supply range, not only at the three nominal rails. Note that the pre-#35 draft spec had no standalone line-regulation row -- amendment A5 added one, and this bench claims that ratified row directly. Caveat until #10 lands: bandgap_amp is #8's provisional 5T OTA (design/bandgap_operating_point.md 4.1), so a FAIL here is a statement about that provisional sizing.",
+  "netlist": "tb_line_regulation.spice",
+  "dut": "sim/dut/bandgap_top.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0.0,
+  "temperatures_c": [-40, 27, 125],
+  "corners": ["full"],
+  "subset_reason": "The supply axis is swept CONTINUOUSLY inside the testbench -- dc vsup 2.97 -> 3.63 V in 5 mV steps, 133 points per corner, which is a strictly finer sampling of the mandated +/-10% supply axis than the three rails 2.97/3.30/3.63 V (all three are points of the sweep; v_lo_check/v_hi_check record its measured endpoints). The harness's outer supply axis is therefore collapsed to the nominal rail: it would re-run the identical internal sweep three times and record three identical rows. Process (9 corners) and temperature (-40/27/125 degC) are the full mandated axes.",
+  "analyses": [
+    "dc vsup 2.97 3.63 0.005"
+  ],
+  "measure": {
+    "linereg_mv_per_v": "(maximum(dc1.v(vref))-minimum(dc1.v(vref)))*1000/0.66",
+    "vref_min": "minimum(dc1.v(vref))",
+    "vref_max": "maximum(dc1.v(vref))",
+    "vref_lo": "dc1.v(vref)[0]",
+    "vref_hi": "dc1.v(vref)[132]",
+    "v_lo_check": "dc1.v(vdd)[0]",
+    "v_hi_check": "dc1.v(vdd)[132]",
+    "sweep_points": "length(dc1.v(vref))"
+  },
+  "checks": {
+    "linereg_mv_per_v": {
+      "max": 1.0,
+      "description": "RATIFIED spec: line regulation < 1 mV/V over 2.97-3.63 V DC. Box figure over the whole sweep, not the endpoint chord."
+    },
+    "vref_min": {
+      "min": 1.176,
+      "description": "RATIFIED spec: output reference stays >= 1.176 V (1.20 V -2%) everywhere in the supply range, i.e. the accuracy row still holds at the bottom rail."
+    },
+    "vref_max": {
+      "max": 1.224,
+      "description": "RATIFIED spec: output reference stays <= 1.224 V (1.20 V +2%) everywhere in the supply range."
+    },
+    "v_lo_check": {
+      "min": 2.9699,
+      "max": 2.9701,
+      "description": "Not a spec check: asserts the internal sweep really started at 2.97 V, the ratified -10% rail."
+    },
+    "v_hi_check": {
+      "min": 3.6299,
+      "max": 3.6301,
+      "description": "Not a spec check: asserts the internal sweep really ended at 3.63 V, the ratified +10% rail."
+    },
+    "sweep_points": {
+      "min": 133,
+      "max": 133,
+      "description": "Not a spec check: asserts the sweep ran at the stated 5 mV resolution (133 points across 0.66 V), so a coarsened sweep cannot quietly step over a local nonmonotonicity."
+    }
+  }
+}

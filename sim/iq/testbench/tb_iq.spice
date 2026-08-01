@@ -1,0 +1,34 @@
+* iq -- quiescent supply current of bandgap_top over the PVT grid
+*
+* Netlist FRAGMENT for sim/harness (see sim/harness/README.md). The harness
+* supplies the gf180mcu models, the corner .lib sections, .temp, the
+* .control block and .end, and hands this file vdd_val / vdd_nom / temp_c.
+* The DUT itself is NOT defined here: it is .include-d from the manifest's
+* "dut" key (sim/dut/bandgap_top.spice by default), so the same testbench
+* re-runs unedited against a frozen or post-layout extracted netlist via
+* `--dut <path>` -- see sim/dut/README.md.
+*
+* Claim: README.md's ratified "Quiescent current < 50 uA" row. Iq here is
+* the TOTAL current drawn from the supply rail by the whole block at its
+* quiescent operating point -- every branch of bandgap_core (the four mirror
+* legs plus the MCB/MNB cascode-bias branch) and bandgap_amp. There is no
+* separate startup branch to itemize yet (#11); when #11 lands, its branch
+* is inside bandgap_top and is therefore already counted by this same
+* measurement.
+*
+* vref is measured alongside Iq purely so a corner that collapsed into the
+* degenerate near-zero-current state is visible as such in the record
+* instead of being reported as a spectacularly good Iq result.
+
+vsup vdd 0 dc {vdd_val}
+Xdut vdd 0 vref bandgap_top
+
+* Seed the DC solver toward the intended (nonzero-current) equilibrium.
+* Per design/bandgap_operating_point.md 4.2 this self-biased loop also has a
+* degenerate near-zero-current solution and no startup circuit exists yet
+* (#11); seeding is a convergence aid for THIS measurement, not evidence of
+* self-starting behavior. The iq_floor check below fails the corner if the
+* solver landed in the degenerate state anyway, so a seeded-but-collapsed
+* corner cannot be silently recorded as a pass.
+.ic v(xdut.fb)=1.0 v(xdut.sns1)=0.6 v(xdut.sns2)=0.6 v(vref)=1.2
++ v(xdut.ibias)=0.6 v(xdut.xx1.casc)=1.8

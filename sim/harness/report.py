@@ -363,7 +363,25 @@ def write_netlist_snapshot(tb: Testbench, experiment_dir: Path, record_id: str) 
             "",
         ]
     )
-    path.write_text(header + tb.netlist.read_text())
+    body = tb.netlist.read_text()
+    if tb.dut is not None:
+        # The DUT is a separate file the testbench only .includes, so a
+        # testbench-only snapshot would not actually freeze the circuit this
+        # record measured. sim/README.md calls this file "the frozen DUT
+        # netlist used for this record", so the DUT belongs inside it.
+        body += "\n".join(
+            [
+                "",
+                "* ---------------------------------------------------------------",
+                f"* DUT netlist included by this testbench ({tb.dut_provenance_class})",
+                f"* source     : {tb.dut_path}",
+                f"* sha256     : {tb.dut_sha256}",
+                "* ---------------------------------------------------------------",
+                "",
+                tb.dut.read_text(),
+            ]
+        )
+    path.write_text(header + body)
     return path
 
 
@@ -457,7 +475,14 @@ def render_record(record: dict, experiment: str) -> str:
     git = env["git"]
     pdk = env["pdk"]
 
-    provenance = f"schematic (`sim/{experiment}/{TESTBENCH_DIR}/{tb['netlist']}`)"
+    if tb.get("dut"):
+        provenance = (
+            f"{tb['dut_provenance_class']} — DUT `{tb['dut']}` "
+            f"(sha256 `{tb['dut_sha256']}`), driven by "
+            f"`sim/{experiment}/{TESTBENCH_DIR}/{tb['netlist']}`"
+        )
+    else:
+        provenance = f"schematic (`sim/{experiment}/{TESTBENCH_DIR}/{tb['netlist']}`)"
     if git["dirty"]:
         provenance += (
             f" — **taken against a dirty working tree** at commit `{git['commit']}`; "
@@ -482,6 +507,10 @@ def render_record(record: dict, experiment: str) -> str:
         "- **Links**:",
         f"  - Testbench: `sim/{experiment}/{TESTBENCH_DIR}/{tb['netlist']}`, "
         f"`sim/{experiment}/{TESTBENCH_DIR}/tb.json`",
+    ]
+    if tb.get("dut"):
+        lines.append(f"  - DUT netlist: `{tb['dut']}`")
+    lines += [
         f"  - Netlist snapshot: `sim/{experiment}/{SNAPSHOT_DIR}/{record_id}.spice`",
         f"  - Raw logs: `sim/{experiment}/{CORNERS_DIR}/{record_id}/`",
         f"- **Timestamp / author**: {record['started_utc']}, {env['user']}",
@@ -498,6 +527,10 @@ def render_record(record: dict, experiment: str) -> str:
         f"- git: `{git['commit']}` on `{git['branch']}`"
         + (" (dirty)" if git["dirty"] else " (clean)"),
         f"- Testbench netlist sha256: `{tb['netlist_sha256']}`",
+    ]
+    if tb.get("dut"):
+        lines.append(f"- DUT netlist: `{tb['dut']}` sha256 `{tb['dut_sha256']}`")
+    lines += [
         f"- Manifest sha256: `{tb['manifest_sha256']}`",
         f"- Wall time: {record['wall_seconds']} s",
         "",

@@ -1,0 +1,41 @@
+{
+  "name": "output-voltage-tc",
+  "description": "Vref accuracy at every PVT corner plus the box-method temperature coefficient over an internal 1 degC-step -40..125 degC sweep.",
+  "claim": "README.md 'Target specification (RATIFIED 2026-07-31)' -> rows 'Output reference' (1.20 V +/-2% untrimmed, i.e. 1.176-1.224 V) and 'Temp coefficient (-40..125 degC)' (< 50 ppm/degC, box method). TC convention: (Vref_max - Vref_min)/(Vref_27C * 165 degC) * 1e6, with Vref_max/Vref_min taken over a fine internal temperature sweep -- `dc temp -40 125 1`, i.e. 1 degC steps / 166 points at every process and supply point -- NOT over the three-point outer temperature axis, so the parabolic curvature peak is captured wherever it falls. The accuracy row is claimed here only in its process/temperature/supply-corner sense; that row's 3-sigma untrimmed mismatch portion is verified by the Monte Carlo bench (#13). Caveat carried by every record from this bench until #10 lands: bandgap_amp is the provisional, un-offset-budgeted 5T OTA from #8 (design/bandgap_operating_point.md 4.1), so a FAIL here is a statement about that provisional sizing, not about the achievability of the ratified target.",
+  "netlist": "tb_output_voltage_tc.spice",
+  "dut": "sim/dut/bandgap_top.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0.1,
+  "temperatures_c": [-40, 27, 125],
+  "corners": ["full"],
+  "analyses": [
+    "op",
+    "dc temp -40 125 1"
+  ],
+  "measure": {
+    "vref": "op1.v(vref)",
+    "tc_ppm": "(maximum(dc1.v(vref))-minimum(dc1.v(vref)))/(dc1.v(vref)[67]*165)*1e6",
+    "vref_box_max": "maximum(dc1.v(vref))",
+    "vref_box_min": "minimum(dc1.v(vref))",
+    "vref_m40": "dc1.v(vref)[0]",
+    "vref_27": "dc1.v(vref)[67]",
+    "vref_125": "dc1.v(vref)[165]",
+    "sweep_points": "length(dc1.v(vref))"
+  },
+  "checks": {
+    "vref": {
+      "min": 1.176,
+      "max": 1.224,
+      "description": "RATIFIED spec: output reference 1.20 V +/-2% untrimmed. Corner portion only -- the mismatch/3-sigma portion of the same row is #13."
+    },
+    "tc_ppm": {
+      "max": 50.0,
+      "description": "RATIFIED spec: temperature coefficient < 50 ppm/degC, box method over -40..125 degC. Computed from the internal 1 degC sweep, not from the three outer temperature points."
+    },
+    "sweep_points": {
+      "min": 166,
+      "max": 166,
+      "description": "Not a spec check: asserts the internal temperature sweep really ran -40..125 degC in 1 degC steps (166 points). This is what makes index 0 = -40 degC, index 67 = 27 degC and index 165 = 125 degC true, so the box, the endpoint columns and the TC denominator all mean what the Claim says. sim/run_suite.py cross-checks the same thing a second, independent way: vref_m40/vref_27/vref_125 from the internal sweep must match the outer-axis operating points at -40/27/125 degC."
+    }
+  }
+}

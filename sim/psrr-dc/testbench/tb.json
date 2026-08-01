@@ -1,0 +1,54 @@
+{
+  "name": "psrr-dc",
+  "description": "Supply-to-output rejection of bandgap_top: the DC asymptote (1 Hz) and 1 kHz claimed against the ratified PSRR row, plus a 0.1 Hz..10 MHz reference curve.",
+  "claim": "README.md 'Target specification (RATIFIED 2026-07-31)' -> row 'PSRR': > 60 dB DC-1 kHz (stretch: > 30 dB @ 1 MHz). Convention: AC analysis with the 1 V small-signal perturbation on the supply rail (vsup ... ac 1) and vref as the output, so PSRR(f) = -db(v(vref)). The DC figure is the low-frequency asymptote evaluated at 1 Hz -- an AC analysis cannot evaluate 0 Hz, so the frequency used is stated rather than implied. Pass/fail is claimed on psrr_1hz_db and psrr_1khz_db (the row's stated DC-1 kHz band) at every PVT corner; the worst corner governs. The remaining spot columns (10 Hz, 100 Hz, 10 kHz, 100 kHz, 1 MHz) and the full 161-point curve printed into each raw corner log are reference data, not claims -- 1 MHz is the table's stretch goal, recorded but not gated. Load condition: unloaded. The ratified row's load condition is open item A4 (README.md), to be fixed with the output stage (#10); when it closes, this bench gets the load and a new record set. Caveat until #10 lands: bandgap_amp is #8's provisional 5T OTA (design/bandgap_operating_point.md 4.1, 4.3 -- the cascoded stage's PSRR benefit is currently masked by that amp), so a FAIL here is a statement about provisional sizing.",
+  "netlist": "tb_psrr_dc.spice",
+  "dut": "sim/dut/bandgap_top.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0.1,
+  "temperatures_c": [-40, 27, 125],
+  "corners": ["full"],
+  "analyses": [
+    "op",
+    "ac dec 20 0.1 10meg",
+    "let psrr_db = -db(v(vref))",
+    "print psrr_db"
+  ],
+  "measure": {
+    "psrr_1hz_db": "-db(ac1.v(vref)[20])",
+    "psrr_1khz_db": "-db(ac1.v(vref)[80])",
+    "psrr_10hz_db": "-db(ac1.v(vref)[40])",
+    "psrr_100hz_db": "-db(ac1.v(vref)[60])",
+    "psrr_10khz_db": "-db(ac1.v(vref)[100])",
+    "psrr_100khz_db": "-db(ac1.v(vref)[120])",
+    "psrr_1mhz_db": "-db(ac1.v(vref)[140])",
+    "vref_op": "op1.v(vref)",
+    "f_dc_hz": "real(ac1.frequency[20])",
+    "f_band_edge_hz": "real(ac1.frequency[80])"
+  },
+  "checks": {
+    "psrr_1hz_db": {
+      "min": 60.0,
+      "description": "RATIFIED spec: PSRR > 60 dB at DC. Evaluated at the 1 Hz low-frequency asymptote (see f_dc_hz)."
+    },
+    "psrr_1khz_db": {
+      "min": 60.0,
+      "description": "RATIFIED spec: the same row specifies > 60 dB across DC-1 kHz, so the 1 kHz band edge is gated too (see f_band_edge_hz)."
+    },
+    "f_dc_hz": {
+      "min": 0.999,
+      "max": 1.001,
+      "description": "Not a spec check: asserts the index used for the DC figure really is 1 Hz, so the claimed asymptote is the frequency the record names."
+    },
+    "f_band_edge_hz": {
+      "min": 999.0,
+      "max": 1001.0,
+      "description": "Not a spec check: asserts the index used for the band-edge figure really is 1 kHz."
+    },
+    "vref_op": {
+      "min": 0.9,
+      "max": 1.5,
+      "description": "Not a spec check -- accuracy is claimed in sim/output-voltage-tc/. This wide window only asserts the AC analysis linearized around the intended operating point; a corner outside it makes its PSRR number uninterpretable."
+    }
+  }
+}
