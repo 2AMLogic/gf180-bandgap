@@ -530,6 +530,32 @@ class RecordRenderingTests(unittest.TestCase):
         env = report.environment(self.pdk, "ngspice-46", SIM_DIR, pre_run)
         self.assertEqual(env["git"], pre_run)
 
+    def test_evidence_a_run_writes_does_not_count_as_a_dirty_tree(self):
+        """A suite runs several benches; bench 2 must not inherit bench 1's logs.
+
+        Uncommitted *evidence* cannot make a result unreproducible -- only
+        uncommitted inputs can. Without this, every bench after the first in
+        a suite run records itself as 'not citable as a clean-tree result'.
+        """
+        original = report._git
+        porcelain = "\n".join(
+            [
+                "?? sim/iq/records/20260801-030825-6e49437.md",
+                "?? sim/iq/corners/20260801-030825-6e49437/tt_27c_3.30v.log",
+                "?? sim/psrr-dc/netlist-snapshots/20260801-030726-6e49437.spice",
+                "?? sim/suite/summaries/20260801-030358-6e49437.md",
+            ]
+        )
+        report._git = lambda *args, **kwargs: porcelain if args[0] == "status" else "abc"
+        try:
+            self.assertFalse(report.working_tree_dirty(SIM_DIR))
+            report._git = lambda *args, **kwargs: (
+                porcelain + "\n M design/bandgap_top.sch" if args[0] == "status" else "abc"
+            )
+            self.assertTrue(report.working_tree_dirty(SIM_DIR))
+        finally:
+            report._git = original
+
     def test_a_dirty_tree_is_called_out_in_netlist_provenance(self):
         dirty = dict(self.record)
         dirty["environment"] = dict(self.record["environment"])

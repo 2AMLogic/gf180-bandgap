@@ -71,6 +71,14 @@ def _bench_manifest(slug: str) -> Path:
     return SIM_DIR / slug / "testbench" / "tb.json"
 
 
+def _repo_relative(path: str | Path) -> str:
+    """Repo-relative, so a committed summary reads the same on any machine."""
+    try:
+        return str(Path(path).resolve().relative_to(REPO_ROOT))
+    except ValueError:
+        return str(path)
+
+
 def _runner_status(returncode: int) -> str:
     return {0: "ok", 1: "check-failed", 2: "error", 3: "error"}.get(returncode, "error")
 
@@ -104,7 +112,7 @@ def run_bench(
         line = raw.strip()
         record = _RECORD_RE.match(line)
         if record:
-            bench.record = record.group("path").strip()
+            bench.record = _repo_relative(record.group("path").strip())
         logs = _LOGS_RE.match(line)
         if logs:
             logs_dir = Path(logs.group("path").strip())

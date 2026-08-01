@@ -22,6 +22,7 @@ from __future__ import annotations
 import datetime as _dt
 import getpass
 import platform
+import re
 import socket
 import subprocess
 import sys
@@ -58,14 +59,43 @@ def _git(*args: str, cwd: Path) -> str:
         return ""
 
 
+#: Paths whose git state says nothing about whether a run is reproducible:
+#: the append-only evidence tree, which runs *write into*, and the suite's
+#: own summaries. See :func:`working_tree_dirty`.
+_EVIDENCE_PATH_RE = re.compile(
+    r"^sim/(?:[^/]+/(?:%s|%s|%s)/|suite/summaries/)"
+    % (RECORDS_DIR, SNAPSHOT_DIR, CORNERS_DIR)
+)
+
+
+def working_tree_dirty(repo_root: Path) -> bool:
+    """Is the *input* tree dirty -- design, testbench, harness, docs?
+
+    "Dirty" exists on a record to answer one question: can this result be
+    reproduced from a commit? Uncommitted evidence cannot make it
+    unreproducible -- and evidence is exactly what a run leaves behind, so a
+    naive ``git status --porcelain`` check reports every run after the first
+    as dirty (the previous bench's own logs are sitting in the tree). Only
+    changes outside the append-only evidence directories count.
+    """
+    status = _git("status", "--porcelain", cwd=repo_root)
+    for line in status.splitlines():
+        path = line[3:].strip().strip('"')
+        # Renames read "old -> new"; the destination is what matters here.
+        if " -> " in path:
+            path = path.split(" -> ", 1)[1]
+        if path and not _EVIDENCE_PATH_RE.match(path):
+            return True
+    return False
+
+
 def git_provenance(repo_root: Path) -> dict:
     commit = _git("rev-parse", "HEAD", cwd=repo_root)
-    dirty = bool(_git("status", "--porcelain", cwd=repo_root))
     return {
         "commit": commit or "unknown",
         "short": (commit[:7] if commit else "unknown"),
         "branch": _git("rev-parse", "--abbrev-ref", "HEAD", cwd=repo_root) or "unknown",
-        "dirty": dirty,
+        "dirty": working_tree_dirty(repo_root),
     }
 
 
