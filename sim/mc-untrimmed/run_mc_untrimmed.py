@@ -392,11 +392,18 @@ DEFAULT_MISS_NOTE = (
     "trim-range sizing, which is exactly the point of this record existing "
     "before the trim network is designed."
 )
+#: Credited in the record's "Timestamp / author" line. The historical
+#: default reflects the very first run; override with `--author` when a
+#: different agent/role mints a re-run so the record does not assert a
+#: stale author claim (the same reasoning `--netlist-caveat`/`--miss-note`
+#: already apply to the caveat prose).
+DEFAULT_AUTHOR = "agent-builder"
 RUN_CONTEXT = {
     "issue": "13",
     "supersedes": "(none -- first record for this claim)",
     "netlist_caveat": DEFAULT_NETLIST_CAVEAT,
     "miss_note": DEFAULT_MISS_NOTE,
+    "author": DEFAULT_AUTHOR,
 }
 
 
@@ -671,8 +678,8 @@ def build_record(record, stamp, pdk, dut_path: Path, injected: list[dict], resul
         "and could not be separated this way."
     )
     add(
-        f"- **Timestamp / author**: {stamp:%Y-%m-%dT%H:%M:%SZ}, agent-builder "
-        f"(issue #{RUN_CONTEXT['issue']})"
+        f"- **Timestamp / author**: {stamp:%Y-%m-%dT%H:%M:%SZ}, "
+        f"{RUN_CONTEXT['author']} (issue #{RUN_CONTEXT['issue']})"
     )
     add(f"- **Supersedes**: {RUN_CONTEXT['supersedes']}")
     add("")
@@ -714,6 +721,13 @@ def main() -> int:
         "miss against the ratified untrimmed window.",
     )
     ap.add_argument(
+        "--author",
+        default=DEFAULT_AUTHOR,
+        help="author credited in the record's Timestamp / author field "
+        "(default: %(default)s). Override when a different agent/role "
+        "mints the record so it does not assert a stale author claim.",
+    )
+    ap.add_argument(
         "-j",
         "--jobs",
         type=int,
@@ -733,6 +747,7 @@ def main() -> int:
         RUN_CONTEXT["netlist_caveat"] = args.netlist_caveat
     if args.miss_note:
         RUN_CONTEXT["miss_note"] = args.miss_note
+    RUN_CONTEXT["author"] = args.author
 
     pdk = dc.resolve_pdk()
     root = dc.repo_root(HERE)
