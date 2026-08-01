@@ -1,12 +1,19 @@
 {
   "name": "amp-loop-stability",
-  "description": "Issue #10: bandgap_top servo-loop gain and stability margin with the offset-budgeted amp (design/bandgap_amp.sch). Single-injection loop-gain probe (exact for this topology's single-wire loop break -- see testbench header) swept 0.1 Hz - 2 GHz; the record's stability criterion is the worst-case (global-minimum) loop-gain magnitude across that sweep, not a classical 0dB-crossing phase margin (this topology's Bode response never crosses 0dB -- see design/bandgap_error_budget.md Sec 4).",
-  "claim": "This design's own stability criterion (not a ratified spec line -- see design/bandgap_error_budget.md Sec 4): worst-case loop-gain magnitude over 0.1 Hz - 2 GHz stays >= 0 dB at every PVT corner.",
+  "description": "Issue #42 (bench created by #10): bandgap_top servo-loop gain and stability margin with the telescopic-cascode amp (design/bandgap_amp.sch). Single-injection loop-gain probe at the one-wire fb break, swept 0.1 Hz - 2 GHz. Two criteria are gated: #10's phase margin at the global-minimum-|T| frequency (>= 45 degrees, unchanged), and #42's added Nyquist gain margin at the positive-real-axis crossing (gm_crit_db < 0 dB), which catches an encirclement of this topology's +1 critical point that the first criterion is structurally blind to. See the testbench header for both derivations.",
+  "claim": "This design's own stability criteria (not ratified spec lines -- see design/bandgap_error_budget.md Sec 4): phase margin >= 45 degrees at the global-|T|-minimum frequency, AND the Nyquist locus of T crosses the positive real axis (if at all) to the left of the +1 critical point of the 1-T=0 characteristic equation, at every PVT corner.",
   "netlist": "tb_loop_stability.spice",
+  "dut": "sim/dut/bandgap_amp.spice",
   "nominal_supply_v": 3.3,
   "supply_tolerance": 0.1,
-  "temperatures_c": [-40, 27, 125],
-  "corners": ["full"],
+  "temperatures_c": [
+    -40,
+    27,
+    125
+  ],
+  "corners": [
+    "full"
+  ],
   "analyses": [
     "ac dec 15 0.1 2000meg",
     "let x = v(fb_gates)",
@@ -25,22 +32,41 @@
     "  let i = i + 1",
     "end",
     "let wrapped = tph[minidx] - 360*floor(tph[minidx]/360)",
-    "let pm_from_crit = 180 - abs(180 - wrapped)"
+    "let pm_from_crit = 180 - abs(180 - wrapped)",
+    "let treal = real(t)",
+    "let timag = imag(t)",
+    "let gmcrit = -999",
+    "let i = 1",
+    "while i < nfreq",
+    "  if treal[i] > 0",
+    "    if timag[i] * timag[i-1] < 0",
+    "      if tmagdb[i] > gmcrit",
+    "        let gmcrit = tmagdb[i]",
+    "      end",
+    "    end",
+    "  end",
+    "  let i = i + 1",
+    "end"
   ],
   "measure": {
     "dc_gain_db": "tmagdb[0]",
     "min_loopgain_db": "minval",
     "min_loopgain_freq_hz": "real(frequency[minidx])",
-    "pm_deg": "pm_from_crit"
+    "pm_deg": "pm_from_crit",
+    "gm_crit_db": "gmcrit"
   },
   "checks": {
     "pm_deg": {
       "min": 45.0,
-      "description": "This design's stability criterion (design/bandgap_error_budget.md Sec 4): phase margin -- the angular distance of T's phase (evaluated at the frequency of minimum loop-gain magnitude, the worst-case approach to the Nyquist critical point) from the critical point's phase for this topology's characteristic equation 1-T=0, i.e. 0 degrees (mod 360), not the textbook -180 degrees that applies to a 1+T=0 loop -- must stay >= 45 degrees (a standard minimum-PM bar) at every PVT corner."
+      "description": "Stability criterion #1, unchanged from #10 (design/bandgap_error_budget.md Sec 4): phase margin -- the angular distance of T's phase (evaluated at the frequency of minimum loop-gain magnitude, the worst-case approach to the Nyquist critical point) from the critical point's phase for this topology's characteristic equation 1-T=0, i.e. 0 degrees (mod 360), not the textbook -180 degrees that applies to a 1+T=0 loop -- must stay >= 45 degrees at every PVT corner."
+    },
+    "gm_crit_db": {
+      "max": 0.0,
+      "description": "Stability criterion #2, ADDED in #42 (strictly stronger than #1; nothing was relaxed): the largest |T| in dB at any crossing of the POSITIVE REAL AXIS by T's Nyquist locus. The characteristic equation is 1-T=0, so the locus must cross to the left of +1; gm_crit_db < 0 dB is that condition, and -999 dB is the sentinel for 'the locus never reaches phase 0 (mod 360) anywhere in the sweep' (which is what #10's amp does). Criterion #1 evaluates the phase at a single frequency and is structurally blind to an encirclement elsewhere on the locus -- see the testbench header for the intermediate #42 revision that passed criterion #1 at 179.8 degrees at every one of the 81 corners while oscillating with volts of ripple in transient."
     },
     "dc_gain_db": {
       "min": 10.0,
-      "description": "Sanity floor, not a spec claim: the .ic seed must still be finding the intended nonzero-current operating point at every corner (AC analysis linearizes around whatever DC point converges; a collapse to the degenerate near-zero-current state -- Sec 4.2 of design/bandgap_operating_point.md -- would show up as near-zero small-signal gm everywhere and a much lower DC loop gain than any nonzero-current corner should show)."
+      "description": "Sanity floor, not a spec claim: the DC solve must still be finding the intended nonzero-current operating point at every corner (AC analysis linearizes around whatever DC point converges; a collapse to the degenerate near-zero-current state -- Sec 4.2 of design/bandgap_operating_point.md -- would show up as near-zero small-signal gm everywhere and a much lower DC loop gain than any nonzero-current corner should show)."
     }
   }
 }
