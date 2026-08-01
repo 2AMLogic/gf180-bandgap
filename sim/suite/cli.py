@@ -361,6 +361,7 @@ def build_parser() -> argparse.ArgumentParser:
             "  python3 sim/run_suite.py --smoke         # nominal-only, records nothing\n"
             "  python3 sim/run_suite.py --only iq       # one bench\n"
             "  python3 sim/run_suite.py --dut layout/netlist/bandgap_top_extracted.spice\n"
+            "  python3 sim/run_suite.py --timeout 1200  # ride out shared-host contention\n"
             "  python3 sim/run_suite.py --list          # the spec-line index\n"
         ),
     )
@@ -391,6 +392,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--corner-set",
         help="corner set for every bench (tt / mos / full); default: each manifest's own",
+    )
+    parser.add_argument(
+        "--timeout",
+        type=int,
+        default=0,
+        help="per-point ngspice timeout in seconds for every bench, overriding "
+        "run_corners.py's default (e.g. to ride out shared-host CPU contention "
+        "on a compute-heavy bench like output-voltage-tc's internal sweep); "
+        "default: each bench's own",
     )
     parser.add_argument("--quiet", action="store_true", help="hide each bench's own output")
     return parser
@@ -432,6 +442,8 @@ def main(argv: list[str] | None = None) -> int:
         extra += ["--corner-set", args.corner_set]
     if args.jobs:
         extra += ["-j", str(args.jobs)]
+    if args.timeout:
+        extra += ["--timeout", str(args.timeout)]
     if args.dut:
         extra += ["--dut", args.dut]
     if no_write:
