@@ -54,7 +54,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          # The append-only evidence check (lint step 4/4) diffs against
+          # The append-only evidence check (lint step 4/5) diffs against
           # `git merge-base origin/main HEAD`. The default depth-1 checkout has
           # neither origin/main nor enough history for a merge base, which would
           # silently downgrade that check to a SKIP -- hence full history.
