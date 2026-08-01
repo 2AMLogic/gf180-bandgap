@@ -293,6 +293,39 @@ else
     fail "pre-namespacing entries in the cache root were left behind"
 fi
 
+# --- 9. cache root is created at mode 0700, not the umask default (#50) -------
+# Recreate the whole cache root from scratch (simulates post-reboot / /tmp
+# clean) and confirm the *root* itself — not just the per-repo leaf — lands at
+# 0700. os.makedirs only applies `mode` to the leaf dir it creates, so the
+# root must be created explicitly.
+rm -rf "$GH_CACHE_DIR"
+(umask 022; cd "$REPO_A" && FAKE_GH_MARKER="ROOT-PERM-CHECK" "$GH_CACHED" "${POLL_ARGS[@]}" >/dev/null 2>&1)
+root_mode="$(stat -f '%Lp' "$GH_CACHE_DIR" 2>/dev/null || stat -c '%a' "$GH_CACHE_DIR" 2>/dev/null)"
+if [ "$root_mode" = "700" ]; then
+    pass "cache root is created at mode 700 regardless of umask"
+else
+    fail "cache root was not created at mode 700" "got mode $root_mode"
+fi
+
+# --- 10. -R false-positive rejection (#50) -------------------------------------
+# A value belonging to another flag (e.g. --search "-Reopened") must not be
+# misread as a `-R` repo override — it should fall through to the real
+# git-remote-derived context instead.
+ctx_false_positive="$(ctx_of "$REPO_A" issue list --search "-Reopened")"
+if [ "$ctx_false_positive" = "repo:github.com/2amlogic/repo-a" ]; then
+    pass "-R false positive (--search \"-Reopened\") does not hijack repo scope"
+else
+    fail "-R false positive was misread as a repo override" "ctx=$ctx_false_positive"
+fi
+
+# Regression guard: a legitimate joined short-flag override must still work.
+ctx_legit_join="$(ctx_of "$REPO_A" -R2AMLogic/repo-b "${POLL_ARGS[@]}")"
+if [ "$ctx_legit_join" = "repo:github.com/2amlogic/repo-b" ]; then
+    pass "legitimate -Rowner/repo joined short-flag override still resolves"
+else
+    fail "legitimate -Rowner/repo override regressed" "ctx=$ctx_legit_join"
+fi
+
 echo
 echo "Tests run: $TESTS_RUN, passed: $TESTS_PASSED, failed: $TESTS_FAILED"
 [ "$TESTS_FAILED" -eq 0 ] || exit 1
