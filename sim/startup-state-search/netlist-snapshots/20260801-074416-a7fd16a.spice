@@ -1,0 +1,140 @@
+* Frozen netlist snapshot for record 20260801-074416-a7fd16a
+* source     : sim/startup-state-search/testbench/bandgap_startup_state_search.spice
+* sha256     : 4c1311117f7cf5dfbac8007c322c4a96af6ec5f1af4eec19601ad7f03e51e3bb
+* This is a verbatim copy taken at record time. Do not edit.
+* bandgap-startup adversarial degenerate-state search testbench (issue #11).
+*
+* AMP SIZING (comparability note, #10 integration): the bandgap_amp subckt
+* below carries the FINAL, offset-budgeted sizing from issue #10
+* (design/bandgap_error_budget.md) -- input pair M1/M2 W=100u nf=2 / L=4u,
+* mirror load M3/M4 W=40u / L=4u -- and is byte-for-byte the
+* design/netlist/bandgap_top.spice expansion of the current
+* design/bandgap_amp.sch. The first records minted from this testbench
+* (2026-08-01, record-ids ending -fbfa3f1) predate #10 and used #8's
+* provisional 10u/4u amp; #10 landed after those records were minted, so
+* per issue #11's own ordering note they are SUPERSEDED rather than
+* amended -- see this experiment's records/ for the superseding record and
+* its Supersedes: field. Records taken before and after this change are
+* NOT directly comparable: the resize raises the input pair's gm ~3x and
+* the amp's own node capacitance ~4-10x, which moves the servo loop's
+* settling dynamics and therefore the measured startup time.
+*
+* Netlist FRAGMENT for sim/harness (sim/README.md format). Same
+* bandgap_top/bandgap_core/bandgap_amp/bandgap_startup subckts (with the
+* same Vsu_sense instrumentation tap) as sim/startup/, but driven
+* differently: vdd is held DC at vdd_val from t=0 (supply already valid,
+* not ramping) and the design is seeded via .ic at the DEGENERATE
+* (near-zero-current) operating point -- fb, casc and the four mirror-drain
+* nodes (d1..d4) pinned high, everything else at 0 -- with the startup
+* circuit ENABLED and a uic transient (skips the DC operating-point solve,
+* which sim/bandgap-loop-smoke/'s and design/bandgap_operating_point.md's
+* own experiments show is NOT reliable for finding/holding this state --
+* ngspice's gmin-stepping during a plain .op solve tends to nudge a
+* self-biased loop like this one toward the nonzero solution regardless of
+* the .ic/.nodeset seed, which is a solver artifact, not evidence -- see
+* design/bandgap_operating_point.md section 4.2). uic bypasses that solve
+* entirely and starts the transient exactly at the seeded point, which is
+* the only reliable way to prove this state is (or is not) a trap.
+*
+* The .ic values are literal (3.63 V, the maximum PVT supply) rather than
+* {vdd_val}-substituted: ngspice's .ic parser does not evaluate {}
+* parameter expressions (unlike device/source value fields), and a fixed,
+* corner-independent, deliberately-higher-than-any-actual-corner value is,
+* if anything, a MORE adversarial seed than matching each corner's own
+* vdd_val exactly -- see sim/startup-state-search/records/ for the
+* corner-by-corner recovery result this produces.
+*
+* This is the "(b) adversarial initial-condition settle search" leg of
+* issue #11's required multi-pronged no-other-stable-state evidence
+* (Implementation guidance); see sim/startup-disabled-control/ for leg (c)
+* (proving this same seed IS a stable trap when the startup circuit is
+* disabled) and sim/startup/, sim/startup-slow-ramp/ for leg (a) (ramp
+* transients from a true physical zero).
+
+.subckt bandgap_top vdd vss vref
+
+Xx1 vdd sns1 sns2 vss fb vref ibias casc bandgap_core
+Xx2 sns2 sns1 vss fb vdd ibias bandgap_amp
+Vsu_sense vdd vdd_su 0
+Xx3 vdd_su vss fb casc ibias bandgap_startup
+.ends
+.subckt bandgap_core vdd sns1 sns2 vss fb vref ibias casc
+
+XM1 d1 fb vdd vdd pfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC1 sns1 casc d1 vdd pfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XQ1 vss vss sns1 pnp_05p00x05p00 m=1
+XM2 d2 fb vdd vdd pfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC2 sns2 casc d2 vdd pfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XR2 e2 sns2 vss ppolyf_u r_width=2u r_length=18u m=1
+XQ2 vss vss e2 pnp_10p00x10p00 m=1
+XM3 d3 fb vdd vdd pfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC3 vref casc d3 vdd pfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XR1 e3 vref vss ppolyf_u r_width=2u r_length=280u m=1
+XQ3 vss vss e3 pnp_05p00x05p00 m=1
+XM4 d4 fb vdd vdd pfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC4 ibias casc d4 vdd pfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XM5 ibias ibias vss vss nfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMCB casc casc vdd vdd pfet_03v3 L=12u W=4u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMNB casc ibias vss vss nfet_03v3 L=2u W=5u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+.ends
+.subckt bandgap_amp in_p in_n vss out vdd tail_bias
+
+
+XM3 a3 nd1 vdd vdd pfet_03v3 L=16u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XM4 a4 nd1 vdd vdd pfet_03v3 L=16u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC3 nd1 pbias a3 vdd pfet_03v3 L=16u W=40u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC4 out pbias a4 vdd pfet_03v3 L=16u W=40u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC1 nd1 ncasc n1 vss nfet_03v3 L=16u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC2 out ncasc n2 vss nfet_03v3 L=16u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XM1 n1 in_p tail vss nfet_03v3 L=4u W=200u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XM2 n2 in_n tail vss nfet_03v3 L=4u W=200u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XM5 tail tail_bias vss vss nfet_03v3 L=4u W=10u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMBN2 pbias tail_bias vss vss nfet_03v3 L=16u W=2u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMBP1 pbias pbias vdd vdd pfet_03v3 L=50u W=1u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMB1 ncasc pbias vdd vdd pfet_03v3 L=50u W=5u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMBD1 ncasc ncasc nb1 vss nfet_03v3 L=4u W=1u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMBD2 nb1 nb1 vss vss nfet_03v3 L=4u W=1u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XCC vdd out cap_mim_2f0_m4m5_noshield c_width=60u c_length=60u m=1
+.ends
+.subckt bandgap_startup vdd vss fb casc ibias
+
+XMSENSE det ibias vss vss nfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XRPU det vdd vss ppolyf_u_1k r_width=2u r_length=4000u m=1
+XMKFB fb det vss vss nfet_03v3 L=2u W=2u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMKCASC casc det vss vss nfet_03v3 L=2u W=2u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+.ends
+
+vsup vdd 0 dc {vdd_val}
+Xtop vdd 0 vref bandgap_top
+
+.ic v(xtop.fb)=3.63 v(xtop.sns1)=0 v(xtop.sns2)=0 v(vref)=0 v(xtop.ibias)=0
++ v(xtop.xx1.casc)=3.63 v(xtop.xx2.tail)=0 v(xtop.xx1.d1)=3.63 v(xtop.xx1.d2)=3.63
++ v(xtop.xx1.d3)=3.63 v(xtop.xx1.d4)=3.63 v(xtop.xx1.e2)=0 v(xtop.xx1.e3)=0

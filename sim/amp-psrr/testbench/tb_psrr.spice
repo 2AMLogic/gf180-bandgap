@@ -1,4 +1,7 @@
-* amp-psrr -- issue #10 supply-rejection (PSRR) verification
+* amp-psrr -- supply-rejection (PSRR) verification
+*
+* Issue #10 created this bench; issue #42 re-ran it against the
+* telescopic-cascode amp that closes #10's recorded PSRR shortfall.
 *
 * Netlist FRAGMENT for sim/harness (sim/README.md format). The harness
 * supplies .include of the gf180mcu models, the corner .lib sections,
@@ -6,35 +9,59 @@
 * vdd_nom, temp_c.
 *
 * Content below is design/netlist/bandgap_core.spice and
-* design/netlist/bandgap_amp.spice (the #10 offset-budgeted amp, see
-* design/bandgap_error_budget.md), stripped of xschem comment lines and
-* re-wrapped as .subckt/.ends, followed by an AC supply-ripple injection.
+* design/netlist/bandgap_startup.spice, stripped of xschem comment lines
+* and re-wrapped as .subckt/.ends, followed by this experiment's own
+* stimulus. bandgap_amp is NOT defined here: it comes from the DUT netlist
+* the manifest names (sim/dut/bandgap_amp.spice, generated from
+* design/netlist/bandgap_amp.spice), which is what lets this same bench be
+* re-run unedited against #10's amp with
+*   --dut sim/dut/frozen/bandgap_amp-20260801-issue10.spice
+* The record's Netlist provenance field then names the exact amp measured,
+* by path and sha256 -- see sim/dut/README.md.
 *
-* METHOD: the supply source carries a unit AC stimulus (`ac 1`) on top of
-* its DC operating point, so a small-signal AC sweep gives the closed-loop
-* transfer function H(f) = Vref(f) / Vdd(f) directly -- no loop break, no
-* injection-point ambiguity (unlike the loop-gain probe in
-* sim/amp-loop-stability/, PSRR is a genuinely single-port measurement:
-* how much of a supply perturbation reaches the output, with the servo
-* loop closed exactly as it operates in real use). PSRR(f) is then defined
-* the conventional way, PSRR_dB(f) = -20*log10(|H(f)|), i.e. how many dB
-* the loop attenuates a supply ripple before it reaches vref.
+* TESTBENCH CHANGED IN #42 -- NOT BYTE-COMPARABLE WITH #10's RECORDS.
+* #10 minted its records against a pre-#11 copy of bandgap_core (7 pins,
+* no `casc` port) with NO bandgap_startup instance, seeding the intended
+* operating point with .ic. Two things forced a change here:
+*   1. `.ic` is not honoured by ngspice's .op/.ac DC solve (only by
+*      transient), so #10's seed was doing nothing at all -- the DC solver
+*      simply happened to land on the intended solution for that amp. It
+*      does not for every amp, and a testbench whose result depends on
+*      which of two physical DC solutions the solver picks is not evidence.
+*   2. bandgap_top now instantiates bandgap_startup (#11) and the 8-pin
+*      core, so the #10 fragment no longer described the shipping block.
+* Instantiating bandgap_startup removes the degenerate solution physically
+* (the kick devices hold `fb`/`casc` down until `ibias` is real), so the
+* operating point this bench linearises around is the one the block
+* actually has. The `.nodeset` below is a solver hint only; the answer no
+* longer depends on it.
 *
-* Frequency range 0.01 Hz - 1 kHz brackets the ratified spec row (README.md
-* "PSRR | > 60 dB DC-1 kHz") from below (0.01 Hz stands in for "DC": at
-* that frequency every device capacitance in this design is many decades
-* into its high-impedance region, so H(0.01 Hz) is indistinguishable from
-* the true DC gain to more precision than this measurement needs) through
-* the full ratified band. The worst (minimum) PSRR over the whole swept
-* band is reported, which is >= the requirement for every ratified
-* sub-band within it -- a single number that lower-bounds the whole
-* README.md row rather than just its DC endpoint.
+* For a like-for-like comparison, the paired record in this experiment's
+* records/ directory was minted from this same testbench with
+* --dut sim/dut/frozen/bandgap_amp-20260801-issue10.spice, i.e. #10's 5T
+* OTA measured on #42's bench.
 *
-* No startup circuit exists yet (#11): seed toward the intended nonzero-
-* current state via .ic, exactly as sim/bandgap-loop-smoke and the other
-* #10 testbenches do.
+* METHOD (unchanged from #10): the supply source carries a unit AC
+* stimulus (`ac 1`) on top of its DC operating point, so a small-signal AC
+* sweep gives the closed-loop transfer function H(f) = Vref(f) / Vdd(f)
+* directly -- no loop break, no injection-point ambiguity (unlike the
+* loop-gain probe in sim/amp-loop-stability/, PSRR is a genuinely
+* single-port measurement: how much of a supply perturbation reaches the
+* output, with the servo loop closed exactly as it operates in real use).
+* PSRR(f) = -20*log10(|H(f)|), i.e. how many dB the loop attenuates a
+* supply ripple before it reaches vref.
+*
+* Frequency range 0.01 Hz - 1 kHz brackets the ratified spec row
+* (README.md "PSRR | > 60 dB DC-1 kHz") from below (0.01 Hz stands in for
+* "DC": at that frequency every device capacitance in this design is many
+* decades into its high-impedance region) through the full ratified band.
+* The worst (minimum) PSRR over the whole swept band is reported, which is
+* >= the requirement for every ratified sub-band within it.
+*
 
-.subckt bandgap_core vdd sns1 sns2 vss fb vref ibias
+.subckt bandgap_core vdd sns1 sns2 vss fb vref ibias casc
+
+
 XM1 d1 fb vdd vdd pfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
 XMC1 sns1 casc d1 vdd pfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
@@ -64,22 +91,22 @@ XMNB casc ibias vss vss nfet_03v3 L=2u W=5u nf=1 ad='int((nf+1)/2) * W/nf * 0.18
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
 .ends
 
-.subckt bandgap_amp in_p in_n vss out vdd tail_bias
-XM1 nd1 in_p tail vss nfet_03v3 L=4u W=100u nf=2 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
+.subckt bandgap_startup vdd vss fb casc ibias
+
+
+XMSENSE det ibias vss vss nfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
-XM2 out in_n tail vss nfet_03v3 L=4u W=100u nf=2 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
+XRPU det vdd vss ppolyf_u_1k r_width=2u r_length=4000u m=1
+XMKFB fb det vss vss nfet_03v3 L=2u W=2u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
-XM3 nd1 nd1 vdd vdd pfet_03v3 L=4u W=40u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
-+ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
-XM4 out nd1 vdd vdd pfet_03v3 L=4u W=40u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
-+ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
-XM5 tail tail_bias vss vss nfet_03v3 L=4u W=10u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
+XMKCASC casc det vss vss nfet_03v3 L=2u W=2u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
 .ends
 
 vsup vdd 0 dc {vdd_val} ac 1
-Xcore vdd sns1 sns2 0 fb vref ibias bandgap_core
+Xcore vdd sns1 sns2 0 fb vref ibias casc bandgap_core
 Xamp sns2 sns1 0 fb vdd ibias bandgap_amp
+Xstart vdd 0 fb casc ibias bandgap_startup
 
-.ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6
-+ v(xcore.casc)=1.8
+.nodeset v(fb)=2.27 v(sns1)=0.72 v(sns2)=0.72 v(vref)=1.23 v(ibias)=0.75
++ v(casc)=1.75

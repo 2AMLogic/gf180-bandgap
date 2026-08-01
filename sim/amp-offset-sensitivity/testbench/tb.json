@@ -1,12 +1,19 @@
 {
   "name": "amp-offset-sensitivity",
-  "description": "Issue #10: measured dVref/dVos with a small offset source inserted in series in the amp's in_n path (electrically identical to an amp input-referred offset), verifying the error budget's amp-offset sensitivity line (design/bandgap_error_budget.md Sec 2) against the real closed loop.",
+  "description": "Issue #42 (bench created by #10): measured dVref/dVos with a small offset source inserted in series in the amp's in_n path (electrically identical to an amp input-referred offset), verifying the error budget's amp-offset sensitivity line (design/bandgap_error_budget.md Sec 2) against the real closed loop. Re-run against the telescopic-cascode amp to confirm the redesign did not move this core-determined number.",
   "claim": "design/bandgap_error_budget.md Sec 2 (amp input-referred offset -> Vref sensitivity line); not a ratified spec line.",
   "netlist": "tb_offset_sensitivity.spice",
+  "dut": "sim/dut/bandgap_amp.spice",
   "nominal_supply_v": 3.3,
   "supply_tolerance": 0.1,
-  "temperatures_c": [-40, 27, 125],
-  "corners": ["full"],
+  "temperatures_c": [
+    -40,
+    27,
+    125
+  ],
+  "corners": [
+    "full"
+  ],
   "analyses": [
     "dc vos -2m 2m 4m",
     "let dvref_dvos = (v(vref)[1] - v(vref)[0]) / 4m"
