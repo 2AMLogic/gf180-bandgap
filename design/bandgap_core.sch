@@ -197,16 +197,26 @@ v {xschem version=3.4.7 file_version=1.2
 * above was chosen to preserve -- so MCB/MNB's own operating point is
 * unaffected by this issue's resize, verified (not just assumed) by
 * sim/core-mirror-sensitivity/'s full-PVT MCB saturation-margin measurement.
+*
+* NF CORRECTION (issue #65) -- M1-M3/MC1-MC3 are drawn nf=4 (15 um/finger),
+* up from nf=1: layout/bandgap_top/plan.py's common-centroid interdigitation
+* for this mirror/cascode array needs 4 fingers per device
+* (D (A B C C B A) x2 D, floorplan.md Sec 0 tier 1), and #65 found the
+* schematic's nf had never been updated to match what the layout actually
+* draws. Total W/L is unchanged. ad/as/pd/ps are already nf-parameterized
+* expressions, so correcting nf here is what makes the simulated drain
+* junction capacitance match the drawn geometry -- see sim/ records re-run
+* under #65. M4/MC4/M5/MCB/MNB stay nf=1 (not folded by the layout).
 }
 G {}
 K {}
 V {}
 S {}
 E {}
-C {symbols/pfet_03v3.sym} 0 300 0 0 {name=M1 model=pfet_03v3 W=60u L=6u nf=1 m=1}
+C {symbols/pfet_03v3.sym} 0 300 0 0 {name=M1 model=pfet_03v3 W=60u L=6u nf=4 m=1}
 N 20 330 20 350 {}
 C {lab_pin.sym} 20 350 0 0 {name=l1 lab=d1}
-C {symbols/pfet_03v3.sym} 0 600 0 0 {name=MC1 model=pfet_03v3 W=60u L=6u nf=1 m=1}
+C {symbols/pfet_03v3.sym} 0 600 0 0 {name=MC1 model=pfet_03v3 W=60u L=6u nf=4 m=1}
 N 20 570 20 550 {}
 C {lab_pin.sym} 20 550 0 0 {name=lc1a lab=d1}
 N -20 600 -40 600 {}
@@ -228,10 +238,10 @@ N -20 0 -40 0 {}
 C {lab_pin.sym} -40 0 0 0 {name=l6 lab=vss}
 N 20 -30 20 -50 {}
 C {lab_pin.sym} 20 -50 0 0 {name=l7 lab=sns1}
-C {symbols/pfet_03v3.sym} 300 300 0 0 {name=M2 model=pfet_03v3 W=60u L=6u nf=1 m=1}
+C {symbols/pfet_03v3.sym} 300 300 0 0 {name=M2 model=pfet_03v3 W=60u L=6u nf=4 m=1}
 N 320 330 320 350 {}
 C {lab_pin.sym} 320 350 0 0 {name=l8 lab=d2}
-C {symbols/pfet_03v3.sym} 300 600 0 0 {name=MC2 model=pfet_03v3 W=60u L=6u nf=1 m=1}
+C {symbols/pfet_03v3.sym} 300 600 0 0 {name=MC2 model=pfet_03v3 W=60u L=6u nf=4 m=1}
 N 320 570 320 550 {}
 C {lab_pin.sym} 320 550 0 0 {name=lc2a lab=d2}
 N 280 600 260 600 {}
@@ -260,10 +270,10 @@ N 280 -60 260 -60 {}
 C {lab_pin.sym} 260 -60 0 0 {name=l16 lab=vss}
 N 320 -90 320 -110 {}
 C {lab_pin.sym} 320 -110 0 0 {name=l17 lab=e2}
-C {symbols/pfet_03v3.sym} 600 300 0 0 {name=M3 model=pfet_03v3 W=60u L=6u nf=1 m=1}
+C {symbols/pfet_03v3.sym} 600 300 0 0 {name=M3 model=pfet_03v3 W=60u L=6u nf=4 m=1}
 N 620 330 620 350 {}
 C {lab_pin.sym} 620 350 0 0 {name=l18 lab=d3}
-C {symbols/pfet_03v3.sym} 600 600 0 0 {name=MC3 model=pfet_03v3 W=60u L=6u nf=1 m=1}
+C {symbols/pfet_03v3.sym} 600 600 0 0 {name=MC3 model=pfet_03v3 W=60u L=6u nf=4 m=1}
 N 620 570 620 550 {}
 C {lab_pin.sym} 620 550 0 0 {name=lc3a lab=d3}
 N 580 600 560 600 {}

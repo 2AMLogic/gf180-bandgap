@@ -217,17 +217,24 @@ CLAUDE.md forbids silently absorbing a gap between the drawn layout and the
 schematic. Three were found while drawing and maintaining this block; all
 are reported, not patched around:
 
-- **Schematic `nf=1` on 15 devices the layout must finger** —
+- **RESOLVED — schematic `nf=1` on 15 devices the layout must finger** —
   [#65](https://github.com/2AMLogic/gf180-bandgap/issues/65). Total `W` and
-  `L` are drawn exactly as the schematic specifies, but the finger count is
+  `L` were drawn exactly as the schematic specified, but the finger count was
   not, because a single-finger device cannot be interdigitated and
   `floorplan.md` §0 ranks those very devices as the highest matching
   priority. Since `ad`/`as`/`pd` are written as expressions in `nf`, this
-  means every simulated junction capacitance corresponds to a geometry that
-  cannot be drawn (drain area and perimeter both roughly halve when the
-  device is fingered). The fix belongs in the schematic plus a re-run of the
-  affected `sim/` suites, not in the layout.
-- **`floorplan.md` §8's area estimate is 1.92× stale, and the drawn block
+  meant every simulated junction capacitance corresponded to a geometry that
+  could not be drawn (drain area and perimeter both roughly halve when the
+  device is fingered). #65 corrected `nf` in the schematic to match the
+  drawn finger counts, re-emitted `design/netlist/`, re-ran the affected
+  `sim/` suites, and emptied `bandgap_top/plan.py`'s `LAYOUT_FOLDS` — the
+  drawn geometry for those 15 devices is unchanged (total `W`/`L` per device
+  was already correct; only which artifact declared the finger count moved).
+  The committed GDS also carries #70/#71's independent resistor fold-count
+  fix (`core.R1`/`R2` `segments` 14/2 → 28/4), so it is not byte-identical to
+  the pre-#65 GDS — that delta is #70/#71's, not #65's; see the third finding
+  below.
+- **`floorplan.md` §8's area estimate is 1.85× stale, and the drawn block
   lands at 96.7 % of the ratified 0.05 mm² target** — see
   [`bandgap_top/AREA.md`](bandgap_top/AREA.md). The budget *passes*, with
   1,660.89 µm² (3.3 %) of headroom, and is reported as-is rather than

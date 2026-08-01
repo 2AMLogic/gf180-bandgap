@@ -1,4 +1,4 @@
-** sch_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-11/design/bandgap_startup.sch
+** sch_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-65/design/bandgap_startup.sch
 **.subckt bandgap_startup vdd vss fb casc ibias
 
 *.iopin vdd
@@ -6,7 +6,7 @@
 *.iopin fb
 *.iopin casc
 *.iopin ibias
-XMSENSE det ibias vss vss nfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
+XMSENSE det ibias vss vss nfet_03v3 L=2u W=20u nf=2 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
 XRPU det vdd vss ppolyf_u_1k r_width=2u r_length=4000u m=1
 XMKFB fb det vss vss nfet_03v3 L=2u W=2u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'

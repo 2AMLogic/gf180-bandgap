@@ -99,7 +99,7 @@ explicit dominant-pole compensation capacitor**
 
 | Device | Type | #10 sizing | #42 sizing | Role |
 |---|---|---|---|---|
-| M1, M2 | `nfet_03v3` | W=100 µm L=4 µm nf=2 | **W=200 µm L=4 µm nf=4** | input pair (in_p = core `sns2`, in_n = core `sns1`) |
+| M1, M2 | `nfet_03v3` | W=100 µm L=4 µm nf=2 | **W=200 µm L=4 µm nf=8** | input pair (in_p = core `sns2`, in_n = core `sns1`) |
 | MC1, MC2 | `nfet_03v3` | — (new) | **W=20 µm L=16 µm** | NMOS cascodes on the input-pair drains, gate `ncasc` |
 | M3, M4 | `pfet_03v3` | W=40 µm L=4 µm | **W=20 µm L=16 µm** | PMOS mirror load |
 | MC3, MC4 | `pfet_03v3` | — (new) | **W=40 µm L=16 µm** | wide-swing PMOS cascodes on the mirror load, gate `pbias` |
@@ -113,11 +113,15 @@ explicit dominant-pole compensation capacitor**
 L on the input pair is held at 4 µm (unchanged from #8/#10, and matching
 the characterized geometry in `sim/device-mos-mismatch`, record
 `20260731-031718-8fb0ea6`) so the measured `A_pair` Pelgrom coefficient
-applies directly with no extrapolation in L. `nf=4` at W=200 µm is not a
+applies directly with no extrapolation in L. Fingering at W=200 µm is not a
 layout preference: gf180mcu's `nfet_03v3`/`pfet_03v3` models are
 width-binned with a 100 µm top bin edge per finger, so 200 µm needs ≥2
-fingers; 4 fingers of 50 µm keeps each finger inside the *same* bin #10's
-100 µm/nf=2 device used, so no bin extrapolation is introduced either.
+fingers. #42 originally declared `nf=4` (50 µm/finger); #65 found the
+schematic had never been updated to the `nf=8` (25 µm/finger) 8-way
+common-centroid array `layout/bandgap_top/plan.py` always drew for this
+pair, and corrected it. Either finger count keeps each finger inside the
+*same* bin #10's 100 µm/nf=2 device used, so no bin extrapolation is
+introduced.
 
 **Why each piece is there** — the three problems and the three answers:
 

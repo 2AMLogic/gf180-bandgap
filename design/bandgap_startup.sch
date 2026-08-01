@@ -48,6 +48,13 @@ v {xschem version=3.4.7 file_version=1.2
 * the corner-by-corner startup-time, residual-current and no-other-stable-
 * state evidence this schematic's sizing is grounded in.
 *
+* NF CORRECTION (issue #65) -- MSENSE is drawn nf=2 (10 um/finger), up from
+* nf=1: a 20 um single-finger device is not a shape layout draws, so
+* layout/bandgap_top/plan.py folds it to 2 fingers. ad/as/pd/ps are already
+* nf-parameterized expressions, so this is what makes the simulated drain
+* junction capacitance match the drawn geometry -- see sim/ records re-run
+* under #65.
+*
 * Pins: vdd, vss, fb, casc, ibias
 }
 G {}
@@ -55,7 +62,7 @@ K {}
 V {}
 S {}
 E {}
-C {symbols/nfet_03v3.sym} 0 0 0 0 {name=MSENSE model=nfet_03v3 W=20u L=2u nf=1 m=1}
+C {symbols/nfet_03v3.sym} 0 0 0 0 {name=MSENSE model=nfet_03v3 W=20u L=2u nf=2 m=1}
 N 20 -30 20 -50 {}
 C {lab_pin.sym} 20 -50 0 0 {name=l1 lab=det}
 N -20 0 -40 0 {}
