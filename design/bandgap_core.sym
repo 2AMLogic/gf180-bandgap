@@ -1,5 +1,6 @@
 v {xschem version=3.4.7 file_version=1.2
-* bandgap_core symbol -- Brokaw-cell core + bias/output stage (issue #8)
+* bandgap_core symbol -- Brokaw-cell core + cascoded current-mode
+* bias/output stage (issue #8)
 * Pins: vdd, vss, fb, sns1, sns2, vref, ibias
 }
 G {}

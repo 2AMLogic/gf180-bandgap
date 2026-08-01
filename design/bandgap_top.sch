@@ -1,7 +1,8 @@
 v {xschem version=3.4.7 file_version=1.2
 * bandgap_top -- top-level wrapper for the testbench suite (issue #8)
 *
-* Instantiates bandgap_core (Brokaw core + bias/output stage) and
+* Instantiates bandgap_core (Brokaw core + cascoded current-mode
+* bias/output stage, per DR-0001) and
 * bandgap_amp (provisional 5T servo op-amp), closing the loop:
 *
 *   core.fb    <- amp.out
@@ -10,7 +11,8 @@ v {xschem version=3.4.7 file_version=1.2
 *   core.ibias -> amp.tail_bias
 *
 * Exposed pins (minimum set #12's testbench suite needs): vdd, vss, vref.
-* Internal nodes (fb, sns1, sns2, ibias) are deliberately NOT exposed at
+* Internal nodes (fb, sns1, sns2, ibias, and the core's cascode nodes
+* casc / d1..d4) are deliberately NOT exposed at
 * this level -- see design/bandgap_operating_point.md if a future testbench
 * needs to probe them; add pins there rather than routing around this file.
 *
