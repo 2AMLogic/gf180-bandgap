@@ -361,6 +361,34 @@ def extract(log: str) -> dict:
 TARGET_V = 1.20
 TARGET_TOL = 0.02  # README.md ratified: 1.20 V +/-2% untrimmed
 
+# Run-context prose stitched into the minted record. The defaults describe
+# the first run (issue #13) against #8's provisional amplifier. A later
+# re-run against a moved schematic -- #14's re-validation against #10's final
+# offset-budgeted amp, say -- overrides them from the command line, so the
+# record states what it actually measured instead of silently inheriting the
+# first run's caveats. Nothing here edits an existing record: every run mints
+# a new record-id, per sim/README.md's append-only rule.
+DEFAULT_NETLIST_CAVEAT = (
+    "**Provisional-amp caveat**: `design/bandgap_top.sch`'s error "
+    "amplifier is #8's provisional, unbudgeted amp (#10's offset-budgeted "
+    "amp has not landed). Per the ordering note on #12/#13, any record "
+    "minted against the provisional amp is superseded once #10 lands -- "
+    "this one is no exception; its numbers characterize *this* netlist, "
+    "not the design's final untrimmed accuracy."
+)
+DEFAULT_MISS_NOTE = (
+    "A miss here (expected, given the provisional-amp caveat above -- the "
+    "mean itself is not yet offset-budgeted) feeds directly into #14's "
+    "trim-range sizing, which is exactly the point of this record existing "
+    "before the trim network is designed."
+)
+RUN_CONTEXT = {
+    "issue": "13",
+    "supersedes": "(none -- first record for this claim)",
+    "netlist_caveat": DEFAULT_NETLIST_CAVEAT,
+    "miss_note": DEFAULT_MISS_NOTE,
+}
+
 
 def build_record(record, stamp, pdk, dut_path: Path, injected: list[dict], results: dict) -> str:
     lines: list[str] = []
@@ -387,14 +415,7 @@ def build_record(record, stamp, pdk, dut_path: Path, injected: list[dict], resul
         "(resistor vs. MOS+BJT mismatch) feeds the trim-network sizing "
         "(#14) and the layout matching plan (#16)."
     )
-    add(
-        "  - **Provisional-amp caveat**: `design/bandgap_top.sch`'s error "
-        "amplifier is #8's provisional, unbudgeted amp (#10's offset-budgeted "
-        "amp has not landed). Per the ordering note on #12/#13, any record "
-        "minted against the provisional amp is superseded once #10 lands -- "
-        "this one is no exception; its numbers characterize *this* netlist, "
-        "not the design's final untrimmed accuracy."
-    )
+    add(f"  - {RUN_CONTEXT['netlist_caveat']}")
     add(
         "- **Netlist provenance**: schematic "
         f"(`{dut_path.relative_to(dc.repo_root(HERE))}`, from `design/bandgap_top.sch`, "
@@ -554,18 +575,14 @@ def build_record(record, stamp, pdk, dut_path: Path, injected: list[dict], resul
         "  **No spec relaxation**: the numbers above are reported as "
         "measured, whatever they say against the ratified +/-2% window; "
         "CLAUDE.md does not permit adjusting this record's pass/fail "
-        "threshold to make it pass. A miss here (expected, given the "
-        "provisional-amp caveat above -- the mean itself is not yet "
-        "offset-budgeted) feeds directly into #14's trim-range sizing, "
-        "which is exactly the point of this record existing before the "
-        "trim network is designed."
+        "threshold to make it pass. " + RUN_CONTEXT["miss_note"]
     )
     add("")
     add(f"  **Overall (mismatch-MC leg): {'FAIL' if overall_fail else 'PASS'}** "
         "against the ratified +/-2% window; see the caveat above on why this "
         "is not yet the full ratified claim (process-corner leg pending #12) "
-        "and the provisional-amp caveat on why a FAIL here is expected "
-        "at this design stage.")
+        "and the netlist caveat on how to read this result at this design "
+        "stage.")
     add("")
 
     add("  ### Sensitivity ranking: resistor vs. MOS+BJT mismatch")
@@ -643,8 +660,11 @@ def build_record(record, stamp, pdk, dut_path: Path, injected: list[dict], resul
         "controllable. MOS and BJT mismatch have no such independent lever "
         "and could not be separated this way."
     )
-    add(f"- **Timestamp / author**: {stamp:%Y-%m-%dT%H:%M:%SZ}, agent-builder (issue #13)")
-    add("- **Supersedes**: (none -- first record for this claim)")
+    add(
+        f"- **Timestamp / author**: {stamp:%Y-%m-%dT%H:%M:%SZ}, agent-builder "
+        f"(issue #{RUN_CONTEXT['issue']})"
+    )
+    add(f"- **Supersedes**: {RUN_CONTEXT['supersedes']}")
     add("")
     return "\n".join(lines)
 
@@ -658,7 +678,40 @@ def main() -> int:
         help="DUT netlist to include (default: design/netlist/bandgap_top.spice); "
         "the swappable-include hook #17 will use for the extracted netlist.",
     )
+    ap.add_argument(
+        "--issue",
+        default=RUN_CONTEXT["issue"],
+        help="issue number credited in the record's author field "
+        "(default: %(default)s, the issue this bench was written for).",
+    )
+    ap.add_argument(
+        "--supersedes",
+        default=None,
+        help="record-id this run supersedes, e.g. a run taken against an "
+        "older schematic. Omit when the run supersedes nothing.",
+    )
+    ap.add_argument(
+        "--netlist-caveat",
+        default=None,
+        help="replacement text for the record's netlist-caveat bullet. Use "
+        "this when the DUT has moved on from the one the default caveat "
+        "describes, so the record does not inherit a stale caveat.",
+    )
+    ap.add_argument(
+        "--miss-note",
+        default=None,
+        help="replacement text for the sentence that explains how to read a "
+        "miss against the ratified untrimmed window.",
+    )
     args = ap.parse_args()
+
+    RUN_CONTEXT["issue"] = args.issue
+    if args.supersedes:
+        RUN_CONTEXT["supersedes"] = args.supersedes
+    if args.netlist_caveat:
+        RUN_CONTEXT["netlist_caveat"] = args.netlist_caveat
+    if args.miss_note:
+        RUN_CONTEXT["miss_note"] = args.miss_note
 
     pdk = dc.resolve_pdk()
     root = dc.repo_root(HERE)
