@@ -1,4 +1,4 @@
-# bandgap_top operating point (issues #8, #10, #11, #42)
+# bandgap_top operating point (issues #8, #10, #11, #42, #55)
 
 Schematic entry for the ratified Brokaw-cell bandgap
 ([DR-0001](../spec/decision-records/0001-bandgap-topology-selection.md)):
@@ -9,34 +9,39 @@ grounded in, and states every caveat that applies before the numbers here can
 be treated as final.
 
 **Scope**: schematic entry (#8); the amplifier offset/mismatch budget and
-loop-stability/PSRR verification (#10, then **#42**, see
-[`design/bandgap_error_budget.md`](bandgap_error_budget.md) for the full
-derivation); and a current-sensing, self-disabling startup circuit verified
-across the full PVT matrix (#11). No per-spec-line testbenches (#12), no
-trim network (#14).
+loop-stability/PSRR verification (#10, then **#42**); the **core
+mirror/cascode mismatch budget and sizing (#55)** — both in
+[`design/bandgap_error_budget.md`](bandgap_error_budget.md); and a
+current-sensing, self-disabling startup circuit verified across the full PVT
+matrix (#11).
 
 Three ratified target-spec rows are now directly evaluated here, and
 nothing else is:
 
-- **Startup time** (README.md's Startup row) — verified by #11's benches
-  and re-verified in #42 against the redesigned amplifier; **passes**, see
+- **Startup time** (README.md's Startup row) — verified by #11's benches,
+  re-verified in #42 against the redesigned amplifier and again in #55
+  against the resized core; **passes** (9.3–31.1 µs against 1 ms), see
   §3a and §4.2.
-- **PSRR** — **passes** as of #42 (77.6 dB worst of 81 PVT points against
-  the ratified >60 dB DC–1 kHz row); #10's recorded shortfall is closed.
-  See §4.1 and `bandgap_error_budget.md` Sec 3.
-- **Untrimmed accuracy** — the amplifier's own allocation now **closes**
-  (RSS 15.79 mV against the ratified 24.0 mV (3σ), was 27.5 mV), but the
-  circuit-level mismatch Monte Carlo over *all* devices still **misses** at
-  23.6–24.3 mV (3σ) with the window check failing at all three
-  temperatures: after #42 the binding contributors are `bandgap_core`'s
-  provisional, never-budgeted mirror sizing (§4.3) and the untrimmed mean
-  from R1/R2's first-pass hand sizing (#14), not the amplifier. See §4.1
-  and `bandgap_error_budget.md` Sec 2.7, 2.8 and 5.
+- **PSRR** — **passes** as of #42 and improves again in #55 (86.98 dB worst
+  of 81 PVT points on the amp-loop bench, 87.07 dB on the whole-block
+  `sim/psrr-dc/` bench, against the ratified >60 dB DC–1 kHz row); #10's
+  recorded shortfall is closed. See §4.1, §4.3 and
+  `bandgap_error_budget.md` Sec 3.
+- **Untrimmed accuracy** — the *mismatch spread* allocation now covers
+  every device group in the block and closes at **17.19 mV against the
+  ratified 24.0 mV (3σ)**, with `bandgap_core`'s mirror — the term #42 left
+  unallocated — budgeted and sized in #55 (§2, §4.3); the circuit-level
+  mismatch Monte Carlo over *all* devices measures **14.89 / 15.12 /
+  15.82 mV (3σ)** at −40/27/125 °C, passing at every temperature (was
+  23.6–24.3 mV). What still misses is
+  the distribution's **centre**: 1.22–1.25 V untrimmed against 1.200 V,
+  from R1/R2's first-pass hand sizing, which is a trim/resistor question and
+  not a mismatch one. See `bandgap_error_budget.md` Sec 2.6a, 2.7, 2.8, 5.
 
-Every other row remains un-claimed: no trim (#14), no per-spec-line
-testbench suite or whole-circuit process-corner sweep (#12). **The ratified
-quiescent-current row is a known miss** — §4.3, and
-`bandgap_error_budget.md` Sec 5. See §6.
+**The ratified quiescent-current row is a known miss** — 65.71 µA at the
+binding corner against < 50 µA, down from 80.5 µA before #55. §4.3 and
+`bandgap_error_budget.md` Sec 5 state why mirror sizing cannot close the
+remainder and what can. See §6.
 
 
 ## 1. Topology
@@ -206,9 +211,14 @@ sweep rather than this single nominal measurement.
 
 ### Mirror (core) and amp devices
 
-Core mirror/cascode-bias sizing (rows 1–5) is still **provisional** — see
-§4.3, unchanged by #10 and #42. Amp sizing (the amp rows) is **final** as
-of #42's topology change — see
+Core mirror/cascode sizing (`M1`–`M4`/`MC1`–`MC4`/`M5`) is **budgeted and
+final as of #55** — `design/bandgap_error_budget.md` Sec 2.6a derives the
+`∂Vref/∂ΔVgs` sensitivity on this circuit's own netlist, sizes the devices
+against an explicit area budget, and Sec 2.6b records the full-PVT headroom
+verification §4.3 asked for. `MCB`/`MNB` remain simulation-picked rather
+than budgeted, but are now verified over the whole grid rather than 7 spot
+points — see §4.3 for exactly what is and is not closed. Amp sizing (the amp
+rows) is **final** as of #42's topology change — see
 [`design/bandgap_error_budget.md`](bandgap_error_budget.md) Sec 2 for the
 full derivation, sensitivity measurement, and why sizing was not pushed
 further. Device names `M1`–`M5` are reused independently inside
@@ -217,11 +227,12 @@ the `(core)`/`(amp)` qualifiers below disambiguate.
 
 | Device | Type | Size | Role |
 |---|---|---|---|
-| M1–M4 (core) | `pfet_03v3` | W=20 µm, L=2 µm, m=1 | Core current mirror (lower devices) — provisional, §4.3 |
-| MC1–MC4 (core) | `pfet_03v3` | W=20 µm, L=2 µm, m=1 | Cascode devices, one per mirror leg — deliberately identical to M1–M4 so the whole stage is one matching group for #16's common-centroid layout — provisional, §4.3 |
-| MCB (core) | `pfet_03v3` | W=4 µm, L=12 µm | Diode-connected cascode-bias device (see sizing derivation below) — provisional, §4.3 |
-| MNB (core) | `nfet_03v3` | W=5 µm, L=2 µm | Cascode-bias current sink; 1/4 of Mn5's W/L, so it draws ≈ I/4 (measured 2.533 µA, §3) — provisional, §4.3 |
-| Mn5 (core) | `nfet_03v3` | W=20 µm, L=2 µm | Diode-connected tail-bias generator for the amp — provisional, §4.3 |
+| M1–M3 (core) | `pfet_03v3` | **W=60 µm, L=6 µm, m=1** (was 20/2) | Core current mirror, the three signal legs (`sns1`, `sns2`, `vref`) — **budgeted (#55)**: 360 µm² of gate area each, chosen so this line's 3σ contribution to `Vref` (6.36 mV) is under half the amplifier's, `W/L = 10` held so `Vov` is unchanged. `bandgap_error_budget.md` Sec 2.6a |
+| MC1–MC3 (core) | `pfet_03v3` | **W=60 µm, L=6 µm, m=1** (was 20/2) | Cascodes on those three legs. Kept identical to `M1`–`M3` — still one matching group for #16's common-centroid layout, but now because the measured cascode-only sensitivity (−0.0133 V/V, 274× below the mirror's) says nothing is bought by sizing them differently, not for want of a number |
+| M4, MC4 (core) | `pfet_03v3` | **W=7.5 µm, L=6 µm, m=1** (was 20/2) | The `ibias`-only leg. Sized *down* deliberately: `W/L = 1.25` against the signal legs' 10, so it carries 1/8 of the design current at the same `Vov`. Licensed by the measured `∂Vref/∂δ(M4) ≈ −8e−5 V/V` — this leg's mismatch does not reach `Vref` — and taken as the quiescent-current lever `bandgap_error_budget.md` Sec 5 quantifies |
+| MCB (core) | `pfet_03v3` | W=4 µm, L=12 µm (unchanged) | Diode-connected cascode-bias device (see sizing derivation below). Still **simulation-picked, not budgeted**, but now verified in saturation with ≥ +858.9 mV of margin at all 81 PVT points, not 7 — §4.3 |
+| MNB (core) | `nfet_03v3` | W=5 µm, L=2 µm (unchanged) | Cascode-bias current sink; 2× Mn5's W/L after #55's rescale, so it still draws ≈2.5 µA at nominal — its bias is set by the `ibias` node voltage, which #55 deliberately preserved |
+| Mn5 / `M5` (core) | `nfet_03v3` | **W=2.5 µm, L=2 µm** (was 20/2) | Diode-connected `ibias` generator for the amp tail, MNB and the startup sense device. Rescaled by the same 1/8 as `M4` so `Vov(M5)` — and therefore the `ibias` node voltage every one of those consumers mirrors off — is unchanged. Verified: `v_ibias_op` = 0.758 V at nominal (§3's pre-#55 value: 0.75 V), amp tail 2.775 µA (#42: 2.66 µA) |
 | M1, M2 (amp input pair) | `nfet_03v3` | W=200 µm, L=4 µm, nf=4 | **Final (#42).** 2x #10's gate area (20x #8's). L unchanged from the #4 MOS-mismatch characterization geometry (`20260731-031718-8fb0ea6`) so `A_pair` applies with no L-extrapolation; `nf=4` keeps each 50 µm finger inside the *same* width bin #10's 100 µm/nf=2 device used. Still the largest single term in the offset budget — `bandgap_error_budget.md` Sec 2.2, 2.7 |
 | MC1, MC2 (amp NMOS cascodes) | `nfet_03v3` | W=20 µm, L=16 µm | **New (#42).** Cascodes on the input-pair drains, gate = `ncasc`. This is the device that fixes PSRR: the amp's supply-referred input error is `1/(gm1·Ro,nmos)` and depends on *only* the NMOS branch's output impedance — `bandgap_error_budget.md` Sec 2.1, Sec 3.4 |
 | M3, M4 (amp mirror load) | `pfet_03v3` | W=20 µm, L=16 µm | **Final (#42).** 2x #10's gate area at 1/8 the W/L: the mirror's input-referred mismatch contribution scales as 1/L₃, and measured `gm3/gm1` falls 0.689 → 0.283 — `bandgap_error_budget.md` Sec 2.1, 2.2 |
@@ -242,13 +253,24 @@ final value was picked by simulation rather than by the hand formula: at
 `W = 4 µm / L = 12 µm` (`W/L = 0.333`), which puts `Vds − Vdsat = +158 mV`
 on M1 at nominal and keeps every mirror and cascode device in saturation at
 all 7 corner/temperature/supply spot-checks in §3. This is a provisional
-sizing choice made by simulation, not a budgeted one.
+sizing choice made by simulation, not a budgeted one. (**#55**: MCB itself
+is unchanged and this derivation still stands; what changed is that its
+consequence is now verified over all 81 PVT points instead of 7 — M1's
+`Vds − Vdsat` reads +169.3 mV at nominal and never falls below +122.7 mV
+anywhere on the grid, MCB's own margin never below +858.9 mV. §4.3.)
 
-None of these sizes are offset-budgeted or headroom-verified as a *design
-margin* against the 2.97 V / ss / −40 °C worst case that
-device-characterization.md §3 flags for PMOS-stack headroom — the §3
-spot-check confirms saturation is maintained there, but a spot-check is not
-a margin budget over mismatch and model spread; that is #10's job.
+**Update (#55).** That last paragraph used to read "none of these sizes are
+offset-budgeted or headroom-verified as a *design margin*". For the mirror
+and cascode devices it no longer holds: `M1`–`M4`/`MC1`–`MC4`/`M5` are
+offset-budgeted in `bandgap_error_budget.md` Sec 2.6a, and headroom is
+verified over the **full 81-point PVT grid** — worst case **+122.7 mV** of
+`Vds − Vdsat` on `M1` at `res_ss`/−40 °C/2.97 V, the exact PMOS-stack corner
+`design/device-characterization.md` §3 flags, with `MCB` at ≥ +858.9 mV
+(record
+[`20260801-132317-cfd0146`](../sim/core-mirror-sensitivity/records/20260801-132317-cfd0146.md)).
+`MCB`'s own `W/L` is still a simulation-picked value rather than a derived
+one — see §4.3 for that remaining item, and for the startup devices, which
+are unchanged and still verified-but-unbudgeted.
 
 ### Startup devices (issue #11)
 
@@ -265,8 +287,9 @@ verified" sense as the cascode-bias generator (§4.3), the startup circuit's
 *function* is proven across all 81 corners, but its sizing has not been
 re-derived against a mismatch/margin budget the way #10 did for the
 amplifier (`design/bandgap_error_budget.md`). #10's scope was the amp only,
-so the startup branch — like the core mirror/cascode (§4.3) — is still
-verified-but-unbudgeted.
+so the startup branch is still verified-but-unbudgeted. (The core
+mirror/cascode used to be listed alongside it here; as of #55 it is
+budgeted — §4.3.)
 
 ## 3. Smoke-test result
 
@@ -278,6 +301,19 @@ unedited per `sim/README.md`'s append-only convention). If the smoke test is
 re-run, the new record supersedes this one — check that experiment's
 `records/` directory for the latest ID rather than assuming this citation is
 current forever.
+
+**Note (#55):** the bench was re-run against the resized core, record
+[`20260801-150433-cfd0146`](../sim/bandgap-loop-smoke/records/20260801-150433-cfd0146.md)
+(clean tree; nominal-corner subset, with the reason recorded in the record's
+own **Corner matrix run** field — the PVT-matrix claims are carried by
+`sim/core-mirror-sensitivity/`, `sim/iq/`, `sim/startup/` and `sim/psrr-dc/`,
+not by this bench). Against the table below it reads `vref` **1.22904 V**
+(was 1.2291), `fb` **2.26833 V** (was 2.2727), `sns1`/`sns2`
+**0.722825 / 0.722568 V** (was 0.72283 / 0.72258), total supply current
+**35.62 µA** (was 44.3). The **operating point did not move** — `vref` by
+60 µV, the servo residual by 3 µV — which is the `W/L = 10`-invariance claim
+in `bandgap_error_budget.md` Sec 2.6a holding on the real circuit; the
+supply-current drop is the `ibias` leg's deliberate 1/8 rescale.
 
 **Note (#10):** the table below predates #10's amplifier resize (Section 2)
 and reflects #8's provisional 10 µm/4 µm amp, not the final sizing —
@@ -553,6 +589,21 @@ What that cost: two small bias branches, ≈0.86 µA at nominal, on a
 quiescent-current row that was **already failing** at the hot corner before
 this issue — see §4.3 and `bandgap_error_budget.md` Sec 5.
 
+**Superseded in part by #55.** The bullets above are #42's own results and
+are left as recorded, but two of them have moved since, because #55 resized
+`bandgap_core` and the amplifier's benches are closed-loop measurements of
+the whole circuit:
+
+- *Untrimmed accuracy* — the "13.79 / 15.79 mV" figures were an allocation
+  over the amplifier, R1/R2 and the PNP pair only. With #55's core-mirror
+  row added the complete allocation is **17.19 mV** against 24.0 mV
+  (`bandgap_error_budget.md` Sec 2.7's three-column table restates #10's
+  and #42's numbers on the same complete basis).
+- *PSRR* 77.61 → **86.98 dB** and *phase margin* 177.8° → **108.9°** worst
+  corner (still 2.4× the 45° criterion, and the stronger Nyquist criterion
+  improves to no critical-axis crossing at all) — `bandgap_error_budget.md`
+  Sec 3.2 and Sec 4.5.
+
 ### 4.2 Degenerate (near-zero-current) state — resolved by the startup circuit (issue #11)
 
 This is a self-biased loop: there is no independent bias reference forcing
@@ -604,50 +655,57 @@ forward from #8 — it is now directly verified, in both directions:**
 Full corner-by-corner data, the measurement convention, and links to all four
 records are in §3a.
 
-### 4.3 Provisional cascode sizing
+### 4.3 Cascode sizing — closed by #55, except for MCB's own `W/L`
 
 The cascoded current-mode bias/output stage DR-0001 specifies **is
 implemented** (MC1–MC4 + the MCB/MNB wide-swing bias generator, §1), and its
-effect is measured in §3. What is *not* final is its **sizing** — #10
-budgeted and sized the *amp* (§4.1) and deliberately left the core/cascode
-alone, so this stage is still where the amp was before #10:
+effect is measured in §3. Its **sizing** was left provisional by #8, #10,
+#11 and #42 — all of which were scoped to the amplifier or the startup
+branch. **#55 is the sizing pass this section was asking for.** Item by
+item, against how this section previously read:
 
-- MCB's `W/L` was picked by simulation to place the mirror devices
-  comfortably in saturation at nominal (§2), not by a headroom budget over
-  mismatch, model spread, and the full corner grid. The §3 spot-check shows
-  ≥ +102 mV of `Vds − Vdsat` on the mirror devices at the worst of 7
-  corner points, but 7 spot-checks are not a margin budget.
-- MC1–MC4 are drawn identical to M1–M4 for matching-group simplicity. A
-  sizing pass may well want different cascode geometry (e.g. shorter
-  cascodes to recover headroom, or wider ones to lower `Vdsat`).
-- **PSRR has now been measured against the sized amp (#10)** —
-  `design/bandgap_error_budget.md` Sec 3 runs a full-PVT PSRR sweep against
-  the final amp and a diagnostic isolating `bandgap_core`'s own
-  contribution (an idealized-amp variant, majority of the PVT grid reading
-  80–99 dB). That diagnostic result is consistent with the cascoded stage's
-  own PSRR being adequate — **the amp, not the cascode, is where the
-  ratified >60 dB target's shortfall traces to.** The cascode's own
-  headroom-margin budget (as opposed to its PSRR contribution) is still
-  unbudgeted — this bullet's first point (MCB sizing, no margin budget)
-  remains open, unaddressed by #10.
-- The cascode adds one bias branch (≈2.5 µA) to the Iq budget. The whole
-  block reads **48.24 µA at `tt`/27 °C/3.30 V and 80.5 µA at the binding
+- ~~"MCB's `W/L` was picked by simulation … 7 spot-checks are not a margin
+  budget."~~ **Half closed.** The margin budget now exists: every mirror,
+  cascode, and the MCB bias device is checked for `Vds − Vdsat ≥ 0` at all
+  **81** PVT points, not 7 — worst case **+122.7 mV** on `M1` at
+  `res_ss`/−40 °C/2.97 V, `MCB` at ≥ +858.9 mV (record
+  [`20260801-132317-cfd0146`](../sim/core-mirror-sensitivity/records/20260801-132317-cfd0146.md)).
+  **Still open**: MCB's `W/L = 0.333` remains a value *picked* by simulation
+  rather than *derived*, and #55 deliberately did not move it — MCB's
+  current is set by MNB mirroring `M5`'s `Vgs`, which #55's `M4`/`M5`
+  co-scaling was chosen to preserve, so re-deriving it is an independent
+  question with ~858 mV of measured margin behind it.
+- ~~"MC1–MC4 are drawn identical to M1–M4 for matching-group simplicity. A
+  sizing pass may well want different cascode geometry."~~ **Closed, and
+  the answer is no.** The sizing pass measured the cascode-only mechanism
+  directly: `∂Vref/∂δ(MC3) = −0.0133 V/V`, **274× smaller** than the mirror
+  device's own −3.647 V/V, because a cascode is a common-gate stage whose
+  `ΔVgs` only perturbs the mirror drain and is then divided by the mirror's
+  (cascoded, hence very large) output impedance. Different cascode geometry
+  would buy nothing measurable on accuracy, so MC1–MC4 stay identical to
+  M1–M4 — now as a budgeted conclusion rather than a placeholder.
+  `design/bandgap_error_budget.md` Sec 2.6a.
+- **PSRR** — unchanged conclusion, better number. Sec 3 of the error budget
+  runs the full-PVT sweep; #55's larger `L` raises each mirror leg's output
+  impedance and the amp-loop PSRR bench moves 77.61 → **86.98 dB** worst
+  corner, with the whole-block `sim/psrr-dc/` spec bench at **87.07 dB**
+  (1 kHz), 81/81 PASS.
+- **Iq**: the cascode adds one bias branch (≈2.5 µA). The whole block now
+  reads **39.32 µA at `tt`/27 °C/3.30 V and 65.71 µA at the binding
   `ff`/125 °C/3.63 V corner** (`sim/startup/` record
-  `20260801-073947-a7fd16a`, `iq_total_final_ua`), against the ratified
-  < 50 µA row — i.e. this row fails at the hot corner and has done since
-  before #10. Neither #10 nor #11 nor #42 changed the core/cascode sizing,
-  which is where the current actually is (four core branches at ~10 µA
-  each); #42's two new amplifier bias branches add ≈0.86 µA at nominal and
-  ≈3.0 µA at the binding corner (46.78 → 48.24 µA and 77.5 → 80.5 µA), a
-  regression on an already-failing line that is recorded rather than
-  buried — `bandgap_error_budget.md` Sec 5 states it, quantifies it, and
-  names the concrete 0.45 µA lever available if a later issue wants it
-  back. Closing this row needs the core/cascode sizing pass this section
-  calls for, not amplifier bias trimming.
+  [`20260801-145517-cfd0146`](../sim/startup/records/20260801-145517-cfd0146.md),
+  `iq_total_final_ua`), from 48.24 / 80.5 µA before #55 — a 18 % cut at the
+  binding corner, from scaling the `ibias` leg to 1/8 of the design current.
+  **The row still fails** (< 50 µA ratified). `bandgap_error_budget.md`
+  Sec 5 now shows in closed form *why* no further mirror sizing can close
+  it — the three signal branches each carry `I = ΔVBE/R2`, which is not a
+  function of mirror geometry — and quantifies the resistor co-scaling that
+  would (`R1`,`R2` × ~1.5 ⇒ ~44.6 µA). That is a resistor/trim-network
+  sizing pass, not a mirror one.
 
-Final sizing of the cascode stack and its headroom budget remain open
-(unaddressed by #10, which was scoped to the amp — see Section 4.1); its
-PSRR contribution has now been measured, per above.
+**What remains open in this section**: MCB's derived-vs-picked `W/L` (with
+a measured ≥858 mV margin), and the startup devices' own budget (§2's
+"Startup devices" note) — both explicitly out of #55's scope.
 
 ### 4.4 Base-current loading
 
@@ -698,37 +756,49 @@ quickly. The cited records are taken against **#42's amp**; the #10-amp and
 #8-amp generations were superseded on integration rather than left
 standing — see §3a's supersession notes.
 
-**Passing — the PSRR row (#42).** `sim/amp-psrr/` record
-`20260801-073633-a7fd16a` is a full 81-point PVT sweep of the closed-loop
-supply-to-`vref` transfer over 0.01 Hz – 1 kHz, reporting the worst point
-of the whole band at every corner: 77.61 dB minimum against the ratified
-> 60 dB DC–1 kHz row, 81/81 corners passing. Like the startup row, this is
-claimable now because it does not depend on R1/R2's trim state. The
-ratified > 30 dB @ 1 MHz *stretch* target is **not** evaluated (the bench
-sweeps only the ratified DC–1 kHz band), and the PSRR row's load condition
-is still the ratified table's own open item A4.
+**Passing — the PSRR row (#42, improved in #55).** `sim/amp-psrr/` record
+[`20260801-133427-cfd0146`](../sim/amp-psrr/records/20260801-133427-cfd0146.md)
+is a full 81-point PVT sweep of the closed-loop supply-to-`vref` transfer
+over 0.01 Hz – 1 kHz, reporting the worst point of the whole band at every
+corner: **86.98 dB** minimum against the ratified > 60 dB DC–1 kHz row
+(77.61 dB before #55's core resize), 81/81 corners passing. Like the startup
+row, this is claimable now because it does not depend on R1/R2's trim state.
+The whole-block spec bench `sim/psrr-dc/` agrees at
+[`20260801-143203-cfd0146`](../sim/psrr-dc/records/20260801-143203-cfd0146.md)
+— 87.07 dB worst at 1 kHz — and additionally reports the ratified
+> 30 dB @ 1 MHz *stretch* target passing at every corner (worst 30.39 dB),
+recorded and not gated. The PSRR row's load condition is still the ratified
+table's own open item A4.
 
-**Failing — the Quiescent-current row.** 48.24 µA at nominal and **80.5 µA
-at the binding `ff`/125 °C/3.63 V corner**, against < 50 µA. Failing since
-before #10; see §4.3 and `bandgap_error_budget.md` Sec 5, including the
-≈3.0 µA #42 itself adds at that corner.
+**Failing — the Quiescent-current row.** **39.32 µA at nominal and 65.71 µA
+at the binding `ff`/125 °C/3.63 V corner**, against < 50 µA (records
+[`20260801-145326-cfd0146`](../sim/iq/records/20260801-145326-cfd0146.md),
+[`20260801-145517-cfd0146`](../sim/startup/records/20260801-145517-cfd0146.md)).
+Failing since before #10, but −18 % at the binding corner as of #55's
+`ibias`-leg rescale (80.5 → 65.71 µA). §4.3 and
+`bandgap_error_budget.md` Sec 5 show in closed form why no further *mirror*
+sizing can close it, and quantify the resistor co-scaling that would.
 
-**Failing (mismatch-MC leg) — the Output-reference (untrimmed accuracy)
-row.** The ratified basis is "3σ, mismatch MC N≥300 **+** process corners,
-−40…125 °C". The mismatch-MC leg is measured: `sim/mc-untrimmed/` record
-`20260801-080002-a7fd16a`, N=300 per point, 3σ = 23.6–24.3 mV, window check
-**FAIL** at all three temperatures. `bandgap_error_budget.md` Sec 2.7's
-amplifier allocation closes (15.79 mV against 24.0 mV) — that is the half
-#42 owned — but the whole-circuit result does not, and Sec 2.8/Sec 5 say
-where the rest is (core mirror mismatch, §4.3; untrimmed mean, #14). The
+**Output-reference (untrimmed accuracy) row — the mismatch *spread* now
+closes; the *centre* does not.** The ratified basis is "3σ, mismatch MC
+N≥300 **+** process corners, −40…125 °C". `bandgap_error_budget.md` Sec 2.7
+now allocates every device group in the block, not just the amplifier's, and
+closes at 17.19 mV against 24.0 mV; Sec 2.8's `sim/mc-untrimmed/` re-run
+against the trim-inclusive, resized DUT measures the same quantity live.
+What remains outside the ±2 % window is the distribution's centre
+(1.22–1.25 V untrimmed against 1.200 V, from R1/R2's first-pass hand sizing
+at the trim network's mid-code), which is what the 1-point wafer-probe trim
+exists to remove — see `design/bandgap_trim_network.md`. The bench's own
+verdict folds centre and width together and therefore still reads FAIL. The
 process-corner leg is #12's, and combining the two legs into a single
 verdict is a follow-on step this document does not attempt.
 
 Beyond those, a pass/fail claim against the remaining ratified rows (TC,
-line regulation, output noise, area, load) is still premature: no
-per-spec-line testbench suite has been run against every row on the current
-netlist (#12 — note `sim/dut/bandgap_top.spice`, which that suite's benches
-use, has not been regenerated since #8), and R1/R2 are still a first-pass
-hand calculation (Section 2), not a trimmed design (#14). The smoke-test
-acceptance bound in §3 (1.15–1.35 V) remains intentionally wider than and
-independent of the ratified spec window for exactly that reason.
+line regulation, output noise, area, load) is still premature: the
+per-spec-line testbench suite (#12) has not been re-run end-to-end against
+the current netlist — #55 regenerated `sim/dut/bandgap_top.spice` and
+re-minted the `psrr-dc`, `iq` and `startup` records off it, but
+`output-voltage-tc` and `line-regulation` still cite a pre-#42 DUT (#58's
+scope). R1/R2 also remain a first-pass hand calculation (Section 2). The
+smoke-test acceptance bound in §3 (1.15–1.35 V) remains intentionally wider
+than and independent of the ratified spec window for exactly that reason.
