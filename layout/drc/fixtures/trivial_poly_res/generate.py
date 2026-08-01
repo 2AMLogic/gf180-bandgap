@@ -30,7 +30,10 @@ Run from the repo root:
 
     uv run --with klayout python3 layout/drc/fixtures/trivial_poly_res/generate.py
 
-Regenerates ``trivial_poly_res.gds`` deterministically next to this script.
+Regenerates ``trivial_poly_res.gds`` next to this script, byte-for-byte
+deterministically -- GDSII header timestamps are disabled explicitly (see
+``save_options()``), so re-running produces an identical file and
+``git diff`` stays empty.
 The committed DRC reports under ``layout/drc/reports/trivial_poly_res/``
 are the ``klt drc`` output against that exact file -- see
 ``layout/README.md`` for the reproducible invocation and the append-only
@@ -105,10 +108,25 @@ def build() -> kdb.Layout:
     return layout
 
 
+def save_options() -> kdb.SaveLayoutOptions:
+    """Writer options that make the emitted GDS byte-stable.
+
+    ``klayout.db``'s GDSII writer stamps wall-clock modification/access
+    times into the ``BGNLIB``/``BGNSTR`` records by default, so two runs
+    over identical geometry produce byte-different files. Disabling
+    timestamps makes the output a pure function of the geometry, which is
+    what lets ``layout/README.md``'s "regenerate and ``git diff`` should be
+    empty" check actually hold.
+    """
+    opts = kdb.SaveLayoutOptions()
+    opts.gds2_write_timestamps = False
+    return opts
+
+
 def main() -> None:
     out_dir = os.path.dirname(os.path.abspath(__file__))
     out_path = os.path.join(out_dir, "trivial_poly_res.gds")
-    build().write(out_path)
+    build().write(out_path, save_options())
     print(f"wrote {out_path}")
 
 

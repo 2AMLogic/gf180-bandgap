@@ -102,7 +102,8 @@ already identified.
 `klayout.db` (`pya`-compatible) Python API, mirroring the construction
 pattern in klayout-tools' own worked example
 (`klayout-tools/examples/drc/generate.py`): a `kdb.Layout`, layer/datatype
-pairs matching the deck, boxes inserted directly, `layout.write(path)`.
+pairs matching the deck, boxes inserted directly, `layout.write(path)`
+(here with an explicit `SaveLayoutOptions` — see below).
 
 `layout/drc/fixtures/trivial_poly_res/generate.py` builds a trivial
 single-device layout — a `Poly2` resistor with two `Contact`-and-`Metal1`
@@ -114,11 +115,19 @@ proves the deck catches a real violation without drowning it in incidental
 ones — mirroring the seeded-violation pattern in klayout-tools' own sky130
 worked example.
 
-Regenerate the fixture (deterministic — same output every run):
+Regenerate the fixture (byte-for-byte deterministic — same output every run):
 
 ```bash
 uv run --with klayout python3 layout/drc/fixtures/trivial_poly_res/generate.py
 ```
+
+Determinism is not free: `klayout.db`'s GDSII writer stamps wall-clock
+times into the `BGNLIB`/`BGNSTR` header records by default, so a plain
+`layout.write(path)` yields byte-different files on every run even when the
+geometry is identical. The generator therefore writes with
+`SaveLayoutOptions.gds2_write_timestamps = False`, which makes the output a
+pure function of the geometry — that is what makes the `git diff` check
+below actually hold.
 
 The committed `trivial_poly_res.gds` and its `layout/drc/reports/`
 snapshot are the frozen input/output pair for this bring-up. If the deck's
