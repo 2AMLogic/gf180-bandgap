@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "engine": "klayout",
+  "layout": "../../../bandgap_top/bandgap_top.gds",
+  "reference": "../../bandgap_top.ref.spice",
+  "top": "bandgap_top",
+  "status": "match",
+  "mismatch_count": 0,
+  "category_counts": {},
+  "counts": {
+    "nets": {
+      "layout": 23,
+      "reference": 23,
+      "matched": 23
+    },
+    "devices": {
+      "layout": 81,
+      "reference": 81,
+      "matched": 81
+    },
+    "pins": {
+      "layout": 4,
+      "reference": 5,
+      "matched": 5
+    }
+  },
+  "environment": {
+    "engine": "klayout",
+    "engine_version": "0.30.10",
+    "layout_sha256": "24096825b10140b8e22946d6f16f2fd045b460e766375cf0116f8866cba541c2",
+    "reference_sha256": "9580fdac79ccf105963125f61ba08c4fa4c2d9cf0d55272b12743966b6c1265c",
+    "extracted_netlist": null
+  },
+  "mismatches": []
+}
