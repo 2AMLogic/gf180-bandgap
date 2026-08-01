@@ -394,7 +394,7 @@ pushes the reported time later rather than being missed). All four are
   [`20260801-033326-fbfa3f1`](../sim/startup-disabled-control/records/20260801-033326-fbfa3f1.md).
   This is the "(c) control run" leg of the required multi-pronged evidence:
   it observes where the degenerate state persists vs. self-starts from
-  leakage alone, rather than gating a pass/fail outcome. Result: at 72 of 81
+  leakage alone, rather than gating a pass/fail outcome. Result: at 78 of 81
   points the block sits at `vref` in the 0.05–0.53 V range with
   `iq_total_final_ua` in the **9 pA – 160 pA** range — the degenerate state
   is physical, not a solver artifact, including at the `ss`/−40 °C/2.97 V
@@ -490,7 +490,7 @@ forward from #8 — it is now directly verified, in both directions:**
   `.ic`/`uic` (which bypasses the DC solver's own gmin-stepping bias toward
   the nonzero solution — a solver artifact this smoke test's original `.op`
   convergence could not distinguish from genuine self-starting) and the
-  block sits there, undisturbed, for the whole transient at 72 of 81 PVT
+  block sits there, undisturbed, for the whole transient at 78 of 81 PVT
   points — including the `ss`/−40 °C/2.97 V corner this section used to
   flag as unverified.
 - **`bandgap_startup`'s kick removes it**, everywhere it needs to: the
