@@ -1,0 +1,41 @@
+{
+  "name": "startup-slow-ramp",
+  "description": "Issue #11: slow supply-ramp startup transient (sibling to sim/startup/'s fast ramp) for bandgap_top with the bandgap_startup circuit in the loop. The slow ramp is the classic trap the Implementation guidance flags: the loop can track a slow ramp into a stalled state that a fast ramp/step never exposes. Ramp rate: 0V->final over 1 ms (comparable to the ratified startup bound itself -- deliberately slower than any realistic supply/LDO power-up rate for this rail, without extending full-PVT sim runtime past what is practical for this record).",
+  "claim": "README.md#target-specification (Startup row: self-starting at all corners incl. SS/-40C/2.97V, < 1 ms to within 1% of final value, must hold under a slow ramp as well as a fast one)",
+  "netlist": "bandgap_startup_ramp.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0.1,
+  "temperatures_c": [-40, 27, 125],
+  "corners": ["full"],
+  "analyses": [
+    "tran 2u 5m",
+    "let n = length(time)\nlet vf = v(vref)[n-1]\nlet iqf = -i(vsup)[n-1]*1e6\nlet iq_su = v.xtop.vsu_sense#branch[n-1]*1e6\nlet detf = v(xtop.xx3.det)[n-1]\nlet tol = 0.01 * abs(vf)\nlet lo = vf - tol\nlet hi = vf + tol\nlet idx = n-1\nlet inband = 1\nwhile inband = 1 AND idx > 0\n  if v(vref)[idx-1] < lo | v(vref)[idx-1] > hi\n    let inband = 0\n  else\n    let idx = idx - 1\n  end\nend\nlet t_settle = time[idx]\nlet vdd_final = v(vdd)[n-1]\nlet thresh = 0.9*vdd_final\nlet j = 0\nlet above = 0\nwhile above = 0 AND j < n-1\n  if v(vdd)[j] >= thresh\n    let above = 1\n  else\n    let j = j + 1\n  end\nend\nlet t0 = time[j]\nlet startup_time = t_settle - t0"
+  ],
+  "params": {
+    "tramp": "1m"
+  },
+  "measure": {
+    "startup_time_s": "startup_time",
+    "vref_final_v": "vf",
+    "iq_total_final_ua": "iqf",
+    "iq_startup_branch_final_ua": "iq_su",
+    "det_final_v": "detf",
+    "t0_s": "t0",
+    "t_settle_s": "t_settle"
+  },
+  "checks": {
+    "startup_time_s": {
+      "max": 0.001,
+      "description": "same measurement convention as sim/startup/'s fast-ramp record: t=0 at vdd crossing 90% of final, settled = last exit from +/-1% of vref's own final value via a robust backward scan. A negative value (settled before vdd even reached 90% of final) is the expected, best-case outcome for a slow ramp and still a clean PASS against the 1 ms bound."
+    },
+    "vref_final_v": {
+      "min": 1.15,
+      "max": 1.35,
+      "description": "sanity window, same bound as sim/bandgap-loop-smoke/ (issue #8) -- not the ratified +/-2% spec window; catches a gross convergence/stall failure, not a spec-conformance claim (amp sizing is #10)."
+    },
+    "det_final_v": {
+      "max": 0.3,
+      "description": "clean-disengagement sanity bound, same as sim/startup/."
+    }
+  }
+}
