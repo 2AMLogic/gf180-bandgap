@@ -1,0 +1,57 @@
+* trim-coverage -- binary-weighted trim ladder range, resolution and
+* linearity on bandgap_top, over the full PVT grid (issue #14)
+*
+* Netlist FRAGMENT for sim/harness (see sim/harness/README.md). The harness
+* supplies the gf180mcu models, the corner .lib sections, .temp, the
+* .control block and .end, and hands this file vdd_val / vdd_nom / temp_c.
+* The DUT is .include-d from the manifest's "dut" key
+* (sim/dut/bandgap_top.spice), so this bench re-runs unedited against a
+* frozen or post-layout extracted netlist via `--dut` -- see
+* sim/dut/README.md.
+*
+* Claim: README.md's ratified Trim row -- "1-point resistor trim
+* (binary-weighted segments per DR-0001), range >= +/-5%, resolution
+* <= 0.25%/step (>=5 bits equiv.), magnitude only", performed at 27 C.
+* Sizing derivation and the coverage argument against the untrimmed
+* mismatch spread: design/bandgap_trim_network.md.
+*
+* HOW THE SWEEP WORKS. design/bandgap_trim.sch carries the ladder as 63
+* IDENTICAL ppolyf_u unit segments in one series string, tapped into six
+* groups of 1/2/4/8/16/32 units, each group shunted by a strap RS0..RS5
+* whose value is decoded from the subcircuit-local parameter `trim_code`
+* (0..63, default 32). The manifest's "analyses" block walks a set of codes
+* with
+*   alterparam bandgap_trim trim_code = <n>
+*   reset
+*   op
+* and stores v(vref) per code into the vector `vv`. `alterparam` + `reset` is
+* used rather than 64 separate decks because the ladder is a pure series
+* string in the output branch: vref = VEB(Q3) + I*(R1 + Rtrim) and the PTAT
+* current I = dVBE/R2 is fixed by the R2/Q1/Q2 loop, independent of what sits
+* in the output branch. vref is therefore EXACTLY linear in the selected
+* segment resistance, so the seven measured points {code 0, and the six
+* single-group codes 1, 2, 4, 8, 16, 32} determine all 64 codes by
+* superposition. The bench does not assume that: it measures full scale
+* (code 63) too and reports the superposition residual `lin_resid_mv`, which
+* is the linearity claim rather than an assumption behind it.
+*
+* Codes visited, in order, and their index in `vv`:
+*   0 -> vv[0]   1 -> vv[1]   2 -> vv[2]   4 -> vv[3]   8 -> vv[4]
+*  16 -> vv[5]  32 -> vv[6]  63 -> vv[7]  22 -> vv[8]
+* Code 32 is the schematic default (MSB group only), which reproduces the
+* pre-trim drawn 280 um summing resistor. Code 22 is the code that lands
+* nearest 1.200 V at tt/27 C on the nominal (mismatch-free) design -- i.e.
+* the code a 1-point trim would pick for a typical die -- carried across the
+* whole grid so the record can report trimmed accuracy over PVT, not just at
+* the trim temperature.
+
+vsup vdd 0 dc {vdd_val}
+Xdut vdd 0 vref bandgap_top
+
+* Seed the DC solver toward the intended (nonzero-current) equilibrium, the
+* same convergence aid every other bandgap_top bench uses. bandgap_startup
+* (#11) makes the intended state reachable without seeding; the seed is here
+* so that a `reset` in the middle of a code sweep restarts from the same
+* place every time rather than from whatever the previous code left behind.
+.ic v(xdut.fb)=1.0 v(xdut.sns1)=0.6 v(xdut.sns2)=0.6 v(vref)=1.2
++ v(xdut.ibias)=0.6 v(xdut.xx1.casc)=1.8
