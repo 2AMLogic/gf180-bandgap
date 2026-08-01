@@ -24,10 +24,14 @@ nothing else is:
 - **PSRR** — **passes** as of #42 (77.6 dB worst of 81 PVT points against
   the ratified >60 dB DC–1 kHz row); #10's recorded shortfall is closed.
   See §4.1 and `bandgap_error_budget.md` Sec 3.
-- **Untrimmed accuracy (offset/mismatch budget leg)** — the RSS budget now
-  **closes** at 15.79 mV against the ratified 24.0 mV (3σ), as of #42; the
-  full ratified basis also needs the mismatch-MC and process-corner legs
-  (#13/#12). See §4.1 and `bandgap_error_budget.md` Sec 2.7.
+- **Untrimmed accuracy** — the amplifier's own allocation now **closes**
+  (RSS 15.79 mV against the ratified 24.0 mV (3σ), was 27.5 mV), but the
+  circuit-level mismatch Monte Carlo over *all* devices still **misses** at
+  23.6–24.3 mV (3σ) with the window check failing at all three
+  temperatures: after #42 the binding contributors are `bandgap_core`'s
+  provisional, never-budgeted mirror sizing (§4.3) and the untrimmed mean
+  from R1/R2's first-pass hand sizing (#14), not the amplifier. See §4.1
+  and `bandgap_error_budget.md` Sec 2.7, 2.8 and 5.
 
 Every other row remains un-claimed: no trim (#14), no per-spec-line
 testbench suite or whole-circuit process-corner sweep (#12). **The ratified
@@ -521,11 +525,20 @@ below is a same-testbench measurement against #10's own amp, not an
 assertion (`bandgap_error_budget.md` Sec 3.5 explains the paired-record
 mechanism):
 
-- **Untrimmed accuracy (offset/mismatch leg)**: the RSS budget goes
+- **Untrimmed accuracy, amplifier allocation**: the RSS budget goes
   25.45 mV → **13.79 mV** of random terms, 27.5 mV → **15.79 mV** including
   the systematic reserve, against a ratified 24.0 mV (3σ) — 66 % of budget
   used, was 115 % (`bandgap_error_budget.md` Sec 2.7). The amp's own random
   offset falls 25.06 → 13.06 mV.
+- **Untrimmed accuracy, whole circuit**: the circuit-level mismatch Monte
+  Carlo (`sim/mc-untrimmed/`, record `20260801-080002-a7fd16a`) goes
+  **66.6–69.7 mV → 23.6–24.3 mV (3σ)**, a 2.8× reduction, but its window
+  check still **FAILS** at all three temperatures. It is no longer
+  amplifier-limited: the remaining spread is dominated by the core mirror's
+  40 µm² devices (§4.3) and the intervals are pushed out of the window by
+  the untrimmed *mean* (1.221–1.248 V), not by their width.
+  `bandgap_error_budget.md` Sec 2.8 and Sec 5 decompose this; it is the
+  explicit residual #42 reports rather than closes.
 - **PSRR**: worst of the 81-point PVT grid goes 31.87 dB → **77.61 dB**
   against the ratified >60 dB DC–1 kHz row; corners passing goes 19/81 →
   **81/81** (`bandgap_error_budget.md` Sec 3.2).
@@ -700,13 +713,16 @@ at the binding `ff`/125 °C/3.63 V corner**, against < 50 µA. Failing since
 before #10; see §4.3 and `bandgap_error_budget.md` Sec 5, including the
 ≈3.0 µA #42 itself adds at that corner.
 
-**Partly claimed — the Output-reference (untrimmed accuracy) row.** The
-ratified basis is "3σ, mismatch MC N≥300 **+** process corners,
-−40…125 °C". `bandgap_error_budget.md` Sec 2.7's offset/mismatch budget now
-closes (15.79 mV against 24.0 mV), and `sim/mc-untrimmed/` (#13) supplies
-the live mismatch-MC leg; the process-corner leg is #12's. Combining the
-two legs into a single verdict is a follow-on step, not something this
-document claims.
+**Failing (mismatch-MC leg) — the Output-reference (untrimmed accuracy)
+row.** The ratified basis is "3σ, mismatch MC N≥300 **+** process corners,
+−40…125 °C". The mismatch-MC leg is measured: `sim/mc-untrimmed/` record
+`20260801-080002-a7fd16a`, N=300 per point, 3σ = 23.6–24.3 mV, window check
+**FAIL** at all three temperatures. `bandgap_error_budget.md` Sec 2.7's
+amplifier allocation closes (15.79 mV against 24.0 mV) — that is the half
+#42 owned — but the whole-circuit result does not, and Sec 2.8/Sec 5 say
+where the rest is (core mirror mismatch, §4.3; untrimmed mean, #14). The
+process-corner leg is #12's, and combining the two legs into a single
+verdict is a follow-on step this document does not attempt.
 
 Beyond those, a pass/fail claim against the remaining ratified rows (TC,
 line regulation, output noise, area, load) is still premature: no

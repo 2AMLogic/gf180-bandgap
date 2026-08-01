@@ -9,14 +9,15 @@ measured sensitivity (∂Vref/∂x), not assumed evenly. It also records the
 amplifier sizing and topology decision, the loop's stability criteria and
 PVT verification, and its PSRR contribution.
 
-**Bottom line, stated up front: both of #10's recorded shortfalls now
-close.** #10 sized a 5-transistor single-stage OTA against this budget and
-found two ratified-spec lines it could not meet — the untrimmed accuracy
-budget came in at ~106–115 % of target, and PSRR fell 5–28 dB short of the
->60 dB DC–1 kHz row — and escalated both (its Section 5) rather than
-relaxing anything. **#42 is that escalation's answer**: `bandgap_amp` is
-now a telescopic-cascode OTA with explicit dominant-pole compensation
-(Section 2.1), and against the same testbenches, on the same PVT grid:
+**Bottom line, stated up front.** #10 sized a 5-transistor single-stage OTA
+against this budget and found two ratified-spec lines it could not meet —
+the untrimmed accuracy budget came in at ~106–115 % of target, and PSRR fell
+5–28 dB short of the >60 dB DC–1 kHz row — and escalated both (its
+Section 5) rather than relaxing anything. **#42 is that escalation's
+answer**: `bandgap_amp` is now a telescopic-cascode OTA with explicit
+dominant-pole compensation (Section 2.1). Against the same testbenches, on
+the same PVT grid, **PSRR now passes outright and this document's
+offset/mismatch allocation now closes**:
 
 | Line | #10 (5T OTA) | #42 (telescopic cascode) | Ratified target |
 |---|---|---|---|
@@ -25,9 +26,20 @@ now a telescopic-cascode OTA with explicit dominant-pole compensation
 | Loop phase margin, worst corner | 119.1° | 177.8° | ≥ 45° (this design's own criterion) |
 | Loop Nyquist gain margin, worst corner | no critical-axis crossing | **−7.0 dB** | < 0 dB (added in #42, Section 4.4) |
 
-Section 5 records what did **not** close, unrelaxed: the ratified
+**But the *whole-circuit* untrimmed accuracy row still does not pass**, and
+this document would be misleading if it stopped at the table above. The
+allocation this document makes covers the amplifier's own input-referred
+offset, the two resistors and the Q1/Q2 PNP pair — it has never covered
+`bandgap_core`'s own current-mirror mismatch, whose sizing is still
+provisional and unbudgeted (`design/bandgap_operating_point.md` §4.3). The
+circuit-level Monte Carlo that *does* cover everything (`sim/mc-untrimmed/`,
+#13's bench, re-run in #42) puts the untrimmed 3σ at **23.6–24.3 mV**, not
+13.8 mV — a 2.8× improvement over the same bench's previous run, but no
+longer amplifier-limited. Section 2.8 has the numbers, the decomposition,
+and the arithmetic identifying where the remaining spread lives; Section 5
+states the residual gaps in full (that one, plus the ratified
 quiescent-current row, which was already failing before this issue and is
-~1.5 µA (nominal) / ~3.0 µA (worst corner) worse because of it.
+~1.5 µA / ~3.0 µA worse because of it).
 
 ## 1. What is and is not in scope here
 
@@ -48,9 +60,16 @@ Per #10's scope boundary against #4, #8 and #13, carried forward:
   is #13's scope (`sim/mc-untrimmed/`). Everything below is a
   deterministic/analytic allocation, cross-checked by direct closed-loop
   simulation of the offset-sensitivity and loop-gain lines.
+- **`bandgap_core`'s own mirror/cascode mismatch is NOT allocated here** —
+  it never was, in #10's version of this document either. Those devices'
+  sizing is provisional and unbudgeted
+  (`design/bandgap_operating_point.md` §4.3). Section 2.8 shows that, with
+  the amplifier fixed, they are now the dominant remaining contributor to
+  the whole-circuit untrimmed spread.
 - **The accuracy/trim split is #14's decision, not this document's.** This
-  budget closes untrimmed against the ratified target; it does not scope
-  trim range.
+  budget closes its own allocation untrimmed against the ratified target;
+  it does not scope trim range, and it is not the whole untrimmed claim
+  (Section 2.8).
 
 ## 2. Amplifier offset budget
 
@@ -334,30 +353,77 @@ mismatch at 10 µA, 27 °C: **3σ = 0.128 mV**. Per Section 2.4 this enters
 | **Ratified untrimmed target (3σ)** | 24.0 mV (±2 % of 1.20 V) | 24.0 mV | `README.md`, DR-0003 |
 | **Margin** | −15 % (over) | **+34 % (66 % of budget used)** | |
 
-**The budget closes.** The amplifier's own random offset is still the
-largest single term (13.06 of 13.79 mV RSS), so it remains where any
-further accuracy work should go; but it is now 54 % of the target rather
-than 104 % of it.
+**This allocation closes.** The amplifier's own random offset is still the
+largest term *within it* (13.06 of 13.79 mV RSS), but it is now 54 % of the
+ratified target rather than 104 % of it.
 
 No allocation above was loosened to make the table sum: every line except
 the amplifier's own is numerically identical to #10's, and the amplifier
-line moved because the amplifier changed. See Section 5 for what still does
-not close.
+line moved because the amplifier changed.
 
-### 2.8 Circuit-level Monte Carlo cross-check (#13's bench)
+**Read Section 2.8 before quoting this table as the untrimmed accuracy
+result.** The table's scope is the amplifier, the two resistors and the
+Q1/Q2 pair; the circuit-level Monte Carlo covers every device and reads
+23.6–24.3 mV. The difference is not an inconsistency — it is the part of
+the circuit this document has never allocated.
 
-The analytic RSS above is a deterministic allocation. `sim/mc-untrimmed/`
-(#13, `run_mc_untrimmed.py`) measures the same quantity the other way — a
-live N=300 mismatch Monte Carlo on the whole `bandgap_top` netlist — and
-its existing record `20260801-033856-7c40876` carries an explicit
-"provisional-amp caveat": it was minted against **#8's** unbudgeted amp
-(neither #10's nor #42's) and reads 3σ = 5.5–5.8 % of 1.20 V. Because that
-bench takes `design/netlist/bandgap_top.spice` directly as its DUT, it
-re-runs against this amp with no bench edit; see
-`sim/mc-untrimmed/records/` for the record this issue minted and the
-superseding note it carries. The MC result is the authority on the
-*combined* mismatch distribution; this section's RSS is the allocation that
-says where the spread comes from and which device to spend area on.
+### 2.8 Circuit-level Monte Carlo cross-check — and what it says this budget misses
+
+The RSS above is a deterministic allocation over a chosen list of
+contributors. `sim/mc-untrimmed/` (#13's bench, `run_mc_untrimmed.py`)
+measures the same output quantity the other way: a live N=300 mismatch
+Monte Carlo on the **whole** `bandgap_top` netlist, every device included,
+at nominal supply across the CLAUDE.md temperature axis. It takes
+`design/netlist/bandgap_top.spice` directly as its DUT, so it re-runs
+against this amplifier with no bench edit — which #42 did.
+
+- **Record (#42 amp)**: [`20260801-080002-a7fd16a`](../sim/mc-untrimmed/records/20260801-080002-a7fd16a.md)
+- **Previous record**: `20260801-033856-7c40876`, minted against **#8's**
+  unbudgeted 10 µm/4 µm amp (neither #10's nor #42's) — it carried an
+  explicit "provisional-amp caveat" saying it would be superseded, and this
+  is that supersession.
+
+| Group (N=300, 3.30 V) | 3σ at −40 °C | 3σ at 27 °C | 3σ at 125 °C |
+|---|---|---|---|
+| all mismatch on, **#8 amp** (record `…-7c40876`) | 66.58 mV | 67.32 mV | 69.67 mV |
+| all mismatch on, **#42 amp** | **23.62 mV** | **23.77 mV** | **24.27 mV** |
+| MOS+BJT mismatch only, #42 amp | 22.13 mV | 22.16 mV | 22.45 mV |
+| resistor mismatch only, #42 amp | 2.93 mV | 3.82 mV | 5.15 mV |
+| **Ratified target (3σ)** | 24.0 mV | 24.0 mV | 24.0 mV |
+
+**A 2.8× reduction in the measured circuit-level spread**, landing at
+1.97 %/1.98 %/2.02 % of 1.20 V against the ratified ±2 %. The
+mismatch-MC leg's own window check (`mean ± 3σ` inside 1.176–1.224 V) is
+still **FAIL at all three temperatures**, but for a different reason than
+before: the intervals are `[1.1972, 1.2444]`, `[1.2095, 1.2570]`,
+`[1.2235, 1.2720]` — i.e. the *width* is now at or inside the ±24 mV window
+at −40 °C and 27 °C, and what puts them outside is the **mean** sitting
+1.7 %–4.0 % high, which is R1/R2's first-pass hand sizing
+(`design/bandgap_operating_point.md` §2), untrimmed, and squarely #14's
+subject.
+
+**Why 23.8 mV here and 13.79 mV in Section 2.7 — the honest reconciliation.**
+The two numbers measure different sets of devices. Section 2.7 allocates
+the amplifier's input pair and mirror load, R1/R2, and the Q1/Q2 pair. The
+Monte Carlo additionally includes everything else on the die, and in
+particular **`bandgap_core`'s four-leg PMOS mirror and its cascodes** —
+`M1`…`M4` / `MC1`…`MC4`, drawn W=20 µm/L=2 µm, i.e. **40 µm² of gate area
+each**, against 800 µm² for the amplifier's input devices. Quadrature
+subtraction puts the unallocated remainder at
+`sqrt(23.8² − 13.79²) ≈ 19.4 mV (3σ)`, and a first-principles estimate lands
+in the same place: `A_pair(pfet) · √2 / √40 µm² = 1.12 mV` of σ(ΔVgs) per
+mirror pair, which at the core PMOS's measured `gm/I` translates to roughly
+1.7 % of branch-current mismatch, and `1.7 % × R1·I (0.506 V) ≈ 8.5 mV` of
+1σ at `Vref` from the output leg alone. **That estimate is arithmetic, not
+a measurement** — it is offered to identify where to look next, not as an
+allocation — but it is consistent with the MC's `MOS+BJT-only` column
+(22.1–22.5 mV of 3σ) dominating everything this document budgets.
+
+The conclusion is not that Section 2.7 is wrong; it is that **the amplifier
+is no longer the accuracy bottleneck, and the next one is the core mirror's
+provisional, never-budgeted sizing** — which `design/bandgap_operating_point.md`
+§4.3 has flagged as open since #8, and which is out of this issue's scope
+(it changes `bandgap_core`, not `bandgap_amp`). See Section 5.
 
 ## 3. PSRR contribution
 
@@ -558,10 +624,38 @@ settles at every corner, `startup_time` 17.2–37.0 µs against the ratified
 ## 5. What still does not close (no spec relaxation)
 
 Per CLAUDE.md's "agents do not relax the ratified spec to make results
-pass", one ratified row is reported here as a miss rather than fudged, and
-this issue makes it slightly worse:
+pass", and per this issue's explicit instruction to report any residual gap
+rather than leave a partial fix silent, **two** ratified rows are reported
+here as misses rather than fudged.
 
-**Quiescent current.** Ratified `< 50 µA`, binding at `ff`/125 °C/3.63 V.
+**Untrimmed accuracy, whole-circuit (the residual this issue does not
+close).** Section 2.7's allocation closes at 15.79 mV against 24.0 mV; the
+circuit-level Monte Carlo over *all* devices (Section 2.8) reads
+**23.6–24.3 mV (3σ)** and its window check still fails at all three
+temperatures. Two things stand between here and a pass, neither of them the
+amplifier and neither of them this issue's scope:
+
+1. **`bandgap_core`'s mirror/cascode mismatch.** `M1`…`M4` / `MC1`…`MC4` are
+   40 µm² of gate area each, provisional and never offset-budgeted
+   (`design/bandgap_operating_point.md` §4.3). Section 2.8's quadrature
+   subtraction and first-principles estimate both put ~19 mV (3σ) of the
+   remaining spread there. Fixing it means resizing `bandgap_core`, which
+   this issue deliberately did not touch — a separate issue, with the same
+   shape as this one: budget the device, verify on the same MC bench.
+2. **The untrimmed mean.** 1.2208–1.2477 V against a 1.200 V target, from
+   R1/R2's first-pass hand sizing. That is not a mismatch problem at all,
+   and it is #14's subject.
+
+**Explicitly not decided here**: the accuracy/trim split. This issue
+removes the *amplifier's* contribution as the binding constraint; it does
+not decide how much of what remains should be closed by sizing versus by
+trim range. #14 owns that call and now has both a smaller and a
+better-decomposed number to make it with.
+
+**Quiescent current** — the second miss, and the one this issue makes
+worse:
+
+Ratified `< 50 µA`, binding at `ff`/125 °C/3.63 V.
 
 | | before #42 | after #42 |
 |---|---|---|
@@ -586,22 +680,15 @@ core/cascode sizing pass §4.3 calls for (tens of µA), not 0.45 µA of
 amplifier bias, and spending PSRR margin for 0.6 % of a 55 % overshoot is a
 bad trade to make unilaterally.
 
-**Explicitly not decided here**: the accuracy/trim split. Section 2.7
-closes the *untrimmed* budget against the ratified target, which removes
-the reason #10 gave for handing a shortfall to #14; #14 remains free to
-size trim range against the full ratified basis (mismatch MC + process
-corners together — Section 2.8), which is a wider basis than this
-document's allocation and is #14's call, not this one's.
-
 ## 6. Summary of acceptance criteria
 
 | Criterion | Status |
 |---|---|
 | Amp redesigned/recompensated to close both #10 shortfalls simultaneously | **Done** — telescopic cascode + dominant-pole compensation, Section 2.1 |
 | Loop stability re-verified full PVT, PM ≥45°, no new violation vs #10 | **PASS** 81/81, Section 4.5 (and a second, stronger Nyquist criterion added, Section 4.4) |
-| Offset sensitivity re-verified; updated RSS budget vs ±2 % (3σ) untrimmed | **PASS** — 15.79 mV vs 24.0 mV target, Section 2.7; sensitivity unchanged at 16.13 mV/mV, Section 2.4 |
+| Offset sensitivity re-verified; updated RSS budget vs ±2 % (3σ) untrimmed | **Allocation PASSES** — 15.79 mV vs 24.0 mV, Section 2.7; sensitivity unchanged at 16.13 mV/mV, Section 2.4. **Whole-circuit MC still misses** at 23.6–24.3 mV, now core-mirror- and mean-limited rather than amp-limited — Section 2.8, reported as a residual per Section 5 |
 | PSRR re-verified full PVT vs >60 dB DC–1 kHz | **PASS** 81/81, worst corner 77.61 dB, Section 3.2 |
 | `design/bandgap_error_budget.md` and `design/bandgap_operating_point.md` updated | Done — this document and `design/bandgap_operating_point.md` §2/§4.1 |
-| New `sim/` records appended, not edited | Done — 10 new records (3 amp-* × 2 amps, 4 startup re-runs), no existing record touched |
-| No spec relaxation; residual gaps reported explicitly | Done — Section 5 (Iq row, a pre-existing failure this issue makes ~3 µA worse) |
+| New `sim/` records appended, not edited | Done — 11 new records (3 amp-* × 2 amps, 4 startup re-runs, 1 circuit-level MC), no existing record touched |
+| No spec relaxation; residual gaps reported explicitly | Done — Section 5: the whole-circuit untrimmed-accuracy residual (core-mirror mismatch + untrimmed mean, neither in this issue's scope), and the Iq row (a pre-existing failure this issue makes ~3 µA worse) |
 | Accuracy/trim split not decided here | Done — Section 5's closing note |
