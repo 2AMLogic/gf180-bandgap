@@ -3,9 +3,10 @@ v {xschem version=3.4.7 file_version=1.2
 * now with the issue #11 startup circuit instantiated.
 *
 * Instantiates bandgap_core (Brokaw core + cascoded current-mode
-* bias/output stage, per DR-0001), bandgap_amp (provisional 5T servo
-* op-amp) and bandgap_startup (issue #11's current-sensing, self-disabling
-* startup circuit), closing the loop and kicking it out of the degenerate
+* bias/output stage, per DR-0001), bandgap_amp (5T servo op-amp, sized to
+* issue #10's offset budget -- see design/bandgap_error_budget.md) and
+* bandgap_startup (issue #11's current-sensing, self-disabling startup
+* circuit), closing the loop and kicking it out of the degenerate
 * (zero-current) state:
 *
 *   core.fb      <- amp.out

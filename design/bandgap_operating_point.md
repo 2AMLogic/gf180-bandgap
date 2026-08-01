@@ -33,8 +33,9 @@ testbench suite or whole-circuit PVT/mismatch sweep (#12/#13). See §6.
 
 `bandgap_top` = `bandgap_core` (matched vertical-PNP pair, PTAT/CTAT summing,
 and the **cascoded** 4-leg current-mode bias/output stage DR-0001 calls for)
-servoed by `bandgap_amp` (a provisional real-device 5-transistor OTA), per
-DR-0001.
+servoed by `bandgap_amp` (a real-device 5-transistor OTA, sized to #10's
+offset budget — §2, §4.1) and kicked out of the degenerate state by
+`bandgap_startup` (§1a), per DR-0001.
 
 ```
                       vdd
@@ -246,8 +247,10 @@ These sizes were picked by simulation against the full PVT matrix (§3a), not
 by a first-principles headroom/offset budget — in the same "provisional but
 verified" sense as the cascode-bias generator (§4.3), the startup circuit's
 *function* is proven across all 81 corners, but its sizing has not been
-re-derived against a mismatch/margin budget the way #10's final pass will
-need to for the rest of the loop.
+re-derived against a mismatch/margin budget the way #10 did for the
+amplifier (`design/bandgap_error_budget.md`). #10's scope was the amp only,
+so the startup branch — like the core mirror/cascode (§4.3) — is still
+verified-but-unbudgeted.
 
 ## 3. Smoke-test result
 
@@ -363,54 +366,78 @@ of the run (so a late re-entry — chattering — after an apparent early settle
 pushes the reported time later rather than being missed). All four are
 **Overall: PASS**, 81/81 points each.
 
+> **Superseding note (#10 integration).** The records cited below are the
+> **second** run of all four experiments, taken against the **final (#10)
+> amp sizing** (input pair W=100 µm/nf=2, mirror load W=40 µm — §2). The
+> first run (record-ids `…-fbfa3f1`, 2026-08-01) was minted against #8's
+> provisional 10 µm/4 µm amp, before #10 landed. Issue #11's own ordering
+> note called this out in advance — "if #10 lands after this issue's
+> records are minted, the amp change invalidates the recorded startup
+> claims" — and it was right to: the resize moved the fast-ramp worst-case
+> startup time from 3.78 µs to **25.5 µs**, a ~6.7× change, and moved which
+> corner is worst. The provisional-amp records are retained unedited per
+> `sim/README.md`'s append-only rule and are pointed at by each new
+> record's **Supersedes** field; they must not be cited as current
+> evidence.
+
 - **`sim/startup/`** (fast ramp, 1 µs 0→final) — record
-  [`20260801-032901-fbfa3f1`](../sim/startup/records/20260801-032901-fbfa3f1.md).
-  `startup_time_s` ranges 0 (`ff_27c_3.63v`) to **3.784 µs**
-  (`ss_125c_3.63v`), all ≪ the ratified 1 ms bound. Note the worst corner is
-  `ss`/125 °C/3.63 V, **not** the `ss`/−40 °C/2.97 V corner the original
-  issue text expected — the Implementation guidance's "verify rather than
-  assume" call was correct to make: `ss`/−40 °C/2.97 V itself settles in
-  520 ns (`iq_startup_branch_final_ua` = 1.134 µA, the itemized-Iq minimum
-  across the whole grid — see §4.2).
+  [`20260801-040646-5ac97dc`](../sim/startup/records/20260801-040646-5ac97dc.md)
+  (supersedes `20260801-032901-fbfa3f1`).
+  `startup_time_s` ranges 1.256 µs (`res_ff_125c_3.30v`) to **25.51 µs**
+  (`res_ss_-40c_3.30v`), all ≪ the ratified 1 ms bound — **~39× of margin**
+  at the worst corner. Note the worst corner is `res_ss`/−40 °C/3.30 V,
+  **not** the `ss`/−40 °C/2.97 V corner the original issue text expected —
+  the Implementation guidance's "verify rather than assume" call was
+  correct to make: `ss`/−40 °C/2.97 V itself settles in 6.01 µs
+  (`iq_startup_branch_final_ua` = 1.134 µA, the itemized-Iq minimum across
+  the whole grid — see §4.2). It is also not the same worst corner the
+  provisional-amp run found (`ss`/125 °C/3.63 V), which is the concrete
+  reason the re-run was necessary rather than cosmetic.
 - **`sim/startup-slow-ramp/`** (slow ramp, 1 ms 0→final — the Implementation
   guidance's "classic trap" case) — record
-  [`20260801-033024-fbfa3f1`](../sim/startup-slow-ramp/records/20260801-033024-fbfa3f1.md).
-  `startup_time_s` is **negative at every corner** (−320 µs to −510 µs): the
+  [`20260801-040919-5ac97dc`](../sim/startup-slow-ramp/records/20260801-040919-5ac97dc.md)
+  (supersedes `20260801-033024-fbfa3f1`).
+  `startup_time_s` is **negative at every corner** (−320 µs to −508 µs): the
   loop is already settled to within ±1% of its final value *before* `vdd`
   even reaches 90% of final, which is the best possible outcome for a slow
-  ramp and rules out the ramp-tracking stall the guidance warns about.
+  ramp and rules out the ramp-tracking stall the guidance warns about. This
+  conclusion is unchanged by the amp resize.
 - **`sim/startup-state-search/`** (adversarial `.ic`/`uic` seed at the exact
   degenerate operating point — `fb`, `casc`, `d1`…`d4` pinned to 3.63 V,
   everything else 0 — `vdd` already valid DC, startup circuit **enabled**) —
   record
-  [`20260801-033147-fbfa3f1`](../sim/startup-state-search/records/20260801-033147-fbfa3f1.md).
-  `recovery_time_s` ranges 466 ns–3.914 µs; `iq_total_final_ua` gated
+  [`20260801-041217-5ac97dc`](../sim/startup-state-search/records/20260801-041217-5ac97dc.md)
+  (supersedes `20260801-033147-fbfa3f1`).
+  `recovery_time_s` ranges 1.254 µs–12.87 µs; `iq_total_final_ua` gated
   `min=5` (must clear a genuine nonzero operating current, not degenerate
-  leakage) and clears it everywhere (28.9–76.0 µA). The kick recovers from
+  leakage) and clears it everywhere (29.7–77.5 µA). The kick recovers from
   this adversarial seed at every one of the 81 points.
 - **`sim/startup-disabled-control/`** (identical adversarial seed,
   `bandgap_startup` **not instantiated** — `bandgap_top`/`bandgap_core`
   wired the same way #8 originally shipped it) — record
-  [`20260801-033326-fbfa3f1`](../sim/startup-disabled-control/records/20260801-033326-fbfa3f1.md).
+  [`20260801-041607-5ac97dc`](../sim/startup-disabled-control/records/20260801-041607-5ac97dc.md)
+  (supersedes `20260801-033326-fbfa3f1`).
   This is the "(c) control run" leg of the required multi-pronged evidence:
   it observes where the degenerate state persists vs. self-starts from
   leakage alone, rather than gating a pass/fail outcome. Result: at 78 of 81
-  points the block sits at `vref` in the 0.05–0.53 V range with
-  `iq_total_final_ua` in the **9 pA – 160 pA** range — the degenerate state
+  points the block sits at `vref` in the 0.046–0.531 V range with
+  `iq_total_final_ua` in the **13 pA – 177 pA** range — the degenerate state
   is physical, not a solver artifact, including at the `ss`/−40 °C/2.97 V
   corner the Implementation guidance calls out (`vref` = 0.525 V,
-  `iq_total` = 14.1 pA). At exactly the 3 `ff`/125 °C points (`ff_125c_*`,
+  `iq_total` = 16.1 pA). At exactly the 3 `ff`/125 °C points (`ff_125c_*`,
   all three supplies — **not** the partial skews `res_ff_125c_*` or
   `bjt_ff_125c_*`, which stay degenerate), leakage alone self-starts the
-  loop to the intended operating point (`vref` ≈ 1.234–1.240 V,
-  `iq_total_final_ua` ≈ 73.5–73.9 µA) with **no startup circuit present at
+  loop to the intended operating point (`vref` ≈ 1.231–1.237 V,
+  `iq_total_final_ua` ≈ 75.0–75.5 µA) with **no startup circuit present at
   all** — exactly the masking effect the Implementation guidance flagged
   ("ff/125 °C leakage may self-start the core — a pass there proves
   little"), now confirmed rather than assumed, and narrowed to the specific
-  sub-corner where it actually happens. Contrasting this record against
-  `sim/startup-state-search/`'s (same seed, same corners, startup circuit
-  present) shows the kick doing genuine work at the other 78/81 points, not
-  riding on leakage that was going to self-start anyway.
+  sub-corner where it actually happens. The 78/81-vs-3/81 split is
+  identical to the provisional-amp run's: the amp resize moved the startup
+  *dynamics*, not which corners are degenerate traps. Contrasting this
+  record against `sim/startup-state-search/`'s (same seed, same corners,
+  startup circuit present) shows the kick doing genuine work at the other
+  78/81 points, not riding on leakage that was going to self-start anyway.
 
 **Startup-branch residual current, itemized against the Iq budget.** Every
 record above reports `iq_startup_branch_final_ua` — the startup branch's own
@@ -419,7 +446,11 @@ between the shared `vdd` rail and `bandgap_startup`'s own `vdd` pin (so it
 does not include the rest of the block's current). Across the full 81-point
 grid this ranges **1.134 µA** (`ss_-40c_2.97v`) to **2.391 µA**
 (`ff_125c_3.63v`) — comfortably inside both the ratified < 50 µA budget and
-its < 20 µA stretch target on its own. `det_final_v` (the internal sense
+its < 20 µA stretch target on its own. These figures are set by XRPU and
+XMSENSE alone and are numerically unchanged by #10's amp resize (the amp
+sits on a different branch), which is itself a small consistency check that
+the re-run is measuring the same startup branch.
+`det_final_v` (the internal sense
 node) sits at 8.0–14.5 mV at every corner, three orders of magnitude below
 `nfet_03v3`'s 0.53–0.89 V threshold range
 (device-characterization.md §3) — the kick devices are firmly off, not
@@ -428,12 +459,13 @@ end-of-run value, not an oscillating one) show no chattering around the
 detect threshold.
 
 **What this does *not* itemize**: the block's *total* Iq
-(`iq_total_final_ua`, 28.9–76.0 µA across the grid) already exceeds the
+(`iq_total_final_ua`, 29.0–77.5 µA across the grid) already exceeds the
 ratified < 50 µA budget at the `ff`/125 °C corners — this is the same
-pre-existing, provisional-amp/cascode-sizing issue §4.3 already documents
-(73.5–76.0 µA total, of which the startup branch itself is only
-≈1.6–2.4 µA), not a regression introduced by this issue. Final Iq-budget
-closure across the whole loop is #10's job.
+pre-existing core/cascode-sizing issue §4.3 already documents (74.9–77.5 µA
+total, of which the startup branch itself is only ≈1.6–2.4 µA), not a
+regression introduced by this issue. #10 explicitly did **not** close it
+(it was scoped to the amp, and left the core/cascode sizing alone — §4.3),
+so whole-loop Iq-budget closure across corners remains open.
 
 ## 4. Caveats (read before reusing these values)
 
@@ -519,8 +551,9 @@ records are in §3a.
 
 The cascoded current-mode bias/output stage DR-0001 specifies **is
 implemented** (MC1–MC4 + the MCB/MNB wide-swing bias generator, §1), and its
-effect is measured in §3. What is *not* final is its **sizing**, in exactly
-the same sense the amp's is not (§4.1):
+effect is measured in §3. What is *not* final is its **sizing** — #10
+budgeted and sized the *amp* (§4.1) and deliberately left the core/cascode
+alone, so this stage is still where the amp was before #10:
 
 - MCB's `W/L` was picked by simulation to place the mirror devices
   comfortably in saturation at nominal (§2), not by a headroom budget over
