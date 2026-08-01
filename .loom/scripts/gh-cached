@@ -167,7 +167,14 @@ def repo_from_args(args: list[str]) -> str | None:
         if arg.startswith("--repo="):
             return arg[len("--repo="):]
         if arg.startswith("-R") and len(arg) > 2:
-            return arg[2:]
+            value = arg[2:]
+            # A real `gh -R` value is always `[HOST/]OWNER/REPO` and so always
+            # contains a `/`. Without this guard, any other flag's value that
+            # happens to start with `-R` (e.g. `--search "-Reopened"`) is
+            # misread as a repo override.
+            if "/" in value:
+                return value
+            continue
     return None
 
 
@@ -212,7 +219,14 @@ def resolve_repo_context(args: list[str]) -> tuple[str, str]:
             "git-dir",
         )
 
-    return f"cwd:{os.path.realpath(os.getcwd())}", "cwd"
+    # If cwd itself has been deleted out from under this process, even
+    # os.getcwd() raises FileNotFoundError (as OSError). Degrade to a
+    # constant context rather than let that propagate — the wrapper's
+    # contract is to never raise, always falling back to plain `gh`.
+    try:
+        return f"cwd:{os.path.realpath(os.getcwd())}", "cwd"
+    except OSError:
+        return "cwd:unresolvable", "cwd-unresolvable"
 
 
 def namespace_for(context: str) -> str:
@@ -284,6 +298,11 @@ def purge_legacy_root_entries() -> None:
 def ensure_cache_dir() -> None:
     path = cache_dir()
     existed = os.path.isdir(path)
+    # os.makedirs only applies `mode` to the leaf directory it creates, so
+    # CACHE_ROOT itself must be created (at 0700) explicitly first — otherwise
+    # it's created at the umask default and becomes world-listable after any
+    # reboot or /tmp clean, exposing every repo's namespace dir name.
+    os.makedirs(CACHE_ROOT, mode=0o700, exist_ok=True)
     os.makedirs(path, mode=0o700, exist_ok=True)
     if not existed:
         purge_legacy_root_entries()
