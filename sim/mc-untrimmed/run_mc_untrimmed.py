@@ -501,7 +501,7 @@ def build_record(record, stamp, pdk, dut_path: Path, injected: list[dict], resul
     )
     add("")
     add(
-        "  | Group | T (C) | mean (V) | 1 sigma (mV) | 3 sigma (%% of "
+        "  | Group | T (C) | mean (V) | 1 sigma (mV) | 3 sigma (% of "
         "1.20 V) | degenerate samples |"
     )
     add("  |---|---|---|---|---|---|")
