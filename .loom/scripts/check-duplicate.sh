@@ -37,6 +37,33 @@
 
 set -euo pipefail
 
+# Interrupt/timeout safety (#49): a caller wrapping this script in
+# `timeout N ...` (or hitting Ctrl-C) sends its signal only to this script's
+# own bash process -- not to any children it has already forked for a
+# pipeline/command-substitution in flight (jq, sort, comm, tr, grep, and the
+# search_*() functions' own `$(...)` subshells). Left untrapped, those
+# children become orphans that keep running after the parent exits, which is
+# the acknowledged confound behind the reported process pile-up ("subshells
+# ... survived past the parent's kill"). Trap INT/TERM and walk this
+# process's descendant tree so an interrupted/timed-out run cleans up after
+# itself instead of leaving orphans for the caller to `pkill -f` manually.
+# shellcheck disable=SC2329 # invoked indirectly via `trap` below, not a call site
+_cleanup_descendants() {
+    local parent="$1"
+    local child
+    for child in $(pgrep -P "$parent" 2>/dev/null || true); do
+        _cleanup_descendants "$child"
+        kill -TERM "$child" 2>/dev/null || true
+    done
+}
+
+# shellcheck disable=SC2329 # invoked indirectly via `trap` below, not a call site
+_on_interrupt() {
+    _cleanup_descendants "$$"
+    exit 130
+}
+trap _on_interrupt INT TERM
+
 # Minimum number of scanned candidates before degenerate-result
 # self-detection (#4409) kicks in. Below this, "more than half matched" is
 # not a meaningful signal -- e.g. with only 1 candidate scanned, a single
@@ -164,6 +191,15 @@ INTEGRATION:
     if ! ./.loom/scripts/check-duplicate.sh --include-merged-prs --issue "$N" "$TITLE" "$BODY"; then
         echo "Read the DUPLICATE_FOUND / RELATED_OPEN_WORK output before curating"
     fi
+
+SAFETY (#49):
+    This script traps INT/TERM and cleans up its own child processes, so a
+    `timeout N ./check-duplicate.sh ...` wrapper or Ctrl-C should not leave
+    orphans behind. If you interrupted an OLDER invocation (predating this
+    fix) and suspect stray processes, verify and clean up with:
+
+        pgrep -fl check-duplicate.sh   # list any survivors
+        pkill -f check-duplicate.sh    # kill them
 EOF
 }
 
@@ -187,52 +223,61 @@ calculate_similarity() {
     local keywords1="$1"
     local keywords2="$2"
 
-    # Convert the newline-delimited keyword lists (one keyword per line, from
-    # extract_keywords' `sort -u`) into arrays. NOTE (#4409): `read -ra arr <<<
-    # "$multiline_str"` looks like it splits on all IFS whitespace, but `read`
-    # only ever consumes a SINGLE LINE of its input -- everything after the
-    # first newline is silently discarded. Since each keyword already sits on
-    # its own line, that made arr1/arr2 collapse to a ONE-ELEMENT array (just
-    # the alphabetically-first keyword) for any multi-keyword input, turning
-    # every comparison into a coin flip on that one token (0% or 100%) instead
-    # of a real set comparison -- this is bash's `read` semantics in every
-    # version, not a bash-3.2-only quirk. `mapfile`/`readarray` would fix it
-    # but require bash 4+, which macOS's shipped `/bin/bash` (3.2) doesn't
-    # have; splitting on IFS=$'\n' via an unquoted array assignment works on
-    # both and keeps this script bash-3.2-safe.
-    # The unquoted array assignments below are the intended word split (one
-    # array element per keyword line) -- `set -f` around them neutralizes the
-    # linter's other concern (accidental pathname/glob expansion) even though
-    # extract_keywords' alnum-only filter already guarantees no keyword can
-    # contain a glob metacharacter.
-    local -a arr1
-    local -a arr2
-    local old_ifs="$IFS"
-    IFS=$'\n'
-    set -f
-    # shellcheck disable=SC2206 # unquoted-intentionally, see comment above
-    arr1=($keywords1)
-    # shellcheck disable=SC2206 # unquoted-intentionally, see comment above
-    arr2=($keywords2)
-    set +f
-    IFS="$old_ifs"
-
-    # Handle empty arrays
-    if [[ ${#arr1[@]} -eq 0 ]] || [[ ${#arr2[@]} -eq 0 ]]; then
+    # Handle empty sets up front -- mirrors the old array-based version's
+    # "arr1/arr2 length 0" early return. A several-KB curator-enhanced body
+    # is non-empty by construction (extract_keywords never emits blank
+    # lines), so this only fires for genuinely empty keyword strings.
+    if [[ -z "$keywords1" || -z "$keywords2" ]]; then
         echo "0"
         return
     fi
 
-    # Count matches
-    local matches=0
-    for word1 in "${arr1[@]}"; do
-        for word2 in "${arr2[@]}"; do
-            if [[ "$word1" == "$word2" ]]; then
-                ((matches++)) || true
-                break
-            fi
-        done
-    done
+    # #49: the previous implementation built bash arrays from keywords1/2
+    # and ran a pure-bash O(|A|*|B|) nested loop comparing every keyword in
+    # A against every keyword in B. On a several-KB curator-enhanced issue
+    # body, |A| alone can run into the hundreds of tokens, and this is
+    # called once per candidate (up to ~90 candidates across the open/
+    # merged-PR/closed-issue searches) -- making a single candidate
+    # comparison slow enough that its wrapping `$(calculate_similarity ...)`
+    # subshell stayed alive for that whole comparison. Because bash forks
+    # (never execs) that subshell, its entry in `ps`/`/proc/<pid>/cmdline`
+    # retains the FULL ORIGINAL SCRIPT INVOCATION -- including the entire
+    # multi-KB title+body text passed as argv -- for as long as it runs,
+    # which is why a slow run can visually look like many independent
+    # "check-duplicate.sh" processes are alive even though it's a single
+    # serial loop (confirmed by inspecting the live process tree of a real
+    # concurrent invocation during this fix: multiple bash processes with
+    # byte-identical multi-KB argv, in a straight parent/child chain, not
+    # separate invocations). Reported process counts far above what a
+    # single clean run produces are best explained by the issue's own
+    # acknowledged confound -- overlapping/timed-out invocations (manual or,
+    # as observed live on this shared host, concurrent automated dispatches)
+    # -- compounding with this per-candidate slowness, not a distinct bug in
+    # the loop itself.
+    #
+    # `comm -12` computes the identical set-intersection cardinality via a
+    # single O(|A|+|B|) external merge instead of a bash loop, so each
+    # candidate's comparison (and therefore its subshell's lifetime)
+    # collapses from "however long a nested bash loop over hundreds of
+    # tokens takes" to "however long two sorted external commands take."
+    #
+    # `comm` requires both inputs sorted in the SAME collation it uses
+    # internally. keywords1/keywords2 already arrive sorted+deduplicated
+    # (extract_keywords' `sort -u`), but under whatever locale the caller's
+    # environment happens to have -- not necessarily the locale `comm`
+    # would default to. Re-sorting here under an explicit, matching
+    # LC_ALL=C for both the sort and the comm call is idempotent (the input
+    # is already deduplicated -- byte-identical lines are always adjacent
+    # after ANY sort, so `sort -u` can't gain or lose keywords by re-running
+    # under a different locale) and guarantees a byte-exact intersection
+    # identical to the old `[[ "$word1" == "$word2" ]]` bash comparison,
+    # which was never locale-aware either.
+    local sorted1 sorted2 count1 count2 matches union percent
+    sorted1=$(printf '%s\n' "$keywords1" | LC_ALL=C sort -u)
+    sorted2=$(printf '%s\n' "$keywords2" | LC_ALL=C sort -u)
+    count1=$(printf '%s\n' "$sorted1" | wc -l | tr -d ' ')
+    count2=$(printf '%s\n' "$sorted2" | wc -l | tr -d ' ')
+    matches=$(LC_ALL=C comm -12 <(printf '%s\n' "$sorted1") <(printf '%s\n' "$sorted2") | wc -l | tr -d ' ')
 
     # True Jaccard similarity: matches / |union| = matches / (|A|+|B|-matches).
     # (Previously normalized by the SMALLER set: percent = matches*100/min(|A|,|B|).
@@ -241,13 +286,13 @@ calculate_similarity() {
     # against a short candidate title+body: matches approaches |B| regardless
     # of actual relatedness. True Jaccard is symmetric and bounded by the
     # union, so a large query set dilutes rather than saturates. See #4409.)
-    local union=$(( ${#arr1[@]} + ${#arr2[@]} - matches ))
+    union=$(( count1 + count2 - matches ))
     if [[ $union -eq 0 ]]; then
         echo "0"
         return
     fi
 
-    local percent=$((matches * 100 / union))
+    percent=$((matches * 100 / union))
     echo "$percent"
 }
 
