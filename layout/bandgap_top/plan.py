@@ -1,0 +1,596 @@
+#!/usr/bin/env python3
+"""Declarative floorplan for the ``bandgap_top`` layout.
+
+This module turns the flattened schematic netlist
+(:mod:`layout.bandgap_top.netlist_model`) into an explicit, ordered list of
+**rows** of **items** — the placement plan the GDS generator draws and the LVS
+reference-netlist writer mirrors. Both read this one module, so the drawn
+geometry and the LVS reference can never disagree about how many fingers a
+device was split into or which dummy devices exist.
+
+Row order (bottom to top) follows ``layout/floorplan.md``:
+
+* the start-up bleeder ``XRPU`` and the start-up kick devices sit at the
+  block periphery (floorplan §1, §7) — they interact with the matched core
+  only through the two kick taps;
+* the amplifier stack sits above them (floorplan §6);
+* the core mirror/cascode array sits directly beneath the PNP array
+  (floorplan §1: every mirror leg feeds the PNP-array/resistor-strip nodes);
+* the PNP array, the R1/R2 summing resistors and the trim ladder are
+  physically adjacent, in the ``Q3 -> R1 -> tn0 -> ladder -> vref`` order the
+  floorplan's §3.2 diagram specifies.
+
+All PMOS rows are contiguous so the whole PMOS band sits in **one** Nwell,
+which keeps the extracted PMOS body a single net (the ``klt`` gf180mcu
+extraction deck derives the PMOS body from the Nwell polygon; see
+``netlist_model.reduce_nets``).
+
+Matching plan realised here (floorplan §0's priority order)
+----------------------------------------------------------
+
+* **Tier 1 — amp input pair, amp mirror/cascode load, core mirror + cascode.**
+  Each of these is drawn as an interdigitated, common-centroid array with
+  dummy devices at both array edges:
+
+  =============================  ==========================================
+  array                          finger order (D = dummy)
+  =============================  ==========================================
+  amp ``M1``/``M2`` input pair   ``D (A B B A) x4 D``     (nf = 8 by layout)
+  amp ``M3``/``M4`` load         ``D A B B A D``          (nf = 2 by layout)
+  amp ``MC3``/``MC4`` cascode    ``D A B B A D``          (nf = 2 by layout)
+  amp ``MC1``/``MC2`` cascode    ``D A B B A D``          (nf = 2 by layout)
+  core ``M1``/``M2``/``M3``      ``D (A B C C B A) x2 D`` (nf = 4 by layout)
+  core ``MC1``/``MC2``/``MC3``   ``D (A B C C B A) x2 D`` (nf = 4 by layout)
+  =============================  ==========================================
+
+  ``A B B A`` / ``A B C C B A`` repeat to a palindrome about the array
+  centre, so every device in the array shares one centroid — the standard
+  common-centroid finger order for a 2- or 3-element ratioed group.
+
+* **Tier 2 — resistor array.** ``R1``/``R2`` and all 63 trim-ladder unit
+  segments are drawn from the identical ``ppolyf_u`` unit width
+  (``r_width = 2 um``) with identical per-segment contact geometry, per
+  floorplan §3.1/§3.2.
+
+* **Tier 3 — PNP array.** ``Q1``/``Q3`` (one unit each) and ``Q2`` (four
+  units, per floorplan §4.1's "build Q2 from 4 unit devices, not the
+  monolithic 10x10 cell") are placed as ``D Q3 Q2 Q2 Q1 Q2 Q2 D``, with
+  dummy units at both array edges.
+
+  Floorplan §4.1 asks for a common-centroid pattern over all three devices,
+  which **cannot be drawn exactly**: ``Q1`` and ``Q3`` are one indivisible
+  ``pnp_05p00x05p00`` unit each, so no placement can give two single-unit
+  devices the same centroid. One pairing has to win, and it is ``Q1``/``Q2``:
+
+  - ``Q1``/``Q2`` set ``dVBE`` across ``R2``, and that error reaches ``vref``
+    multiplied by ``R1/R2`` (230.18 um / 18 um ~ 12.8x);
+  - ``Q3``'s ``VBE`` lands on ``vref`` at unity gain.
+
+  So a gradient-induced ``VBE`` error between ``Q1`` and ``Q2`` costs ~13x
+  what the same error between ``Q1`` and ``Q3`` costs. ``Q2``'s four units
+  are therefore placed symmetrically about ``Q1`` (exact shared centroid,
+  verified by ``matching_report.py``), and ``Q3`` keeps floorplan §4.2's
+  weaker requirement — "the same unit type as Q1, placed in the same
+  common-centroid group for process-gradient consistency", which §4.2 itself
+  distinguishes from the routing/placement symmetry ``Q1``/``Q2`` needs.
+
+Deliberate, documented deviation from the netlist
+-------------------------------------------------
+
+Fifteen devices are drawn with a **different finger count** than
+``design/netlist/bandgap_top.spice`` carries (:data:`LAYOUT_FOLDS`). Total
+``W`` and ``L`` are unchanged in every case — only the finger count differs
+(e.g. ``core.M1`` is drawn 4 x 15 um instead of 1 x 60 um).
+
+Two reasons, both layout-driven:
+
+* A single-finger device **cannot be interdigitated with anything**, so the
+  netlist's ``nf=1`` makes the common-centroid arrays that floorplan §0 ranks
+  as the *highest* matching priority impossible to draw.
+* A 60 um (or 200 um) wide single-finger transistor is not a shape anyone
+  draws; fingering wide devices is ordinary analog-layout practice.
+
+This is a real schematic/layout inconsistency and is **reported, not
+silently absorbed**: ``nf`` (and the ``ad``/``as``/``pd``/``ps`` expressions
+derived from it, which set the junction-capacitance the simulated results
+depend on) should be updated in the schematic to match the drawn layout. See
+``layout/README.md`` § "Findings and escalations".
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+
+from netlist_model import Device, FlatNetlist, load, nm
+
+#: Trim code the layout's metal strap option is drawn for. 32 is the
+#: mid-scale code ``design/bandgap_trim.sch`` defaults to (``.param
+#: trim_code=32``); at code 32 straps RS0..RS4 are shorted and RS5 is open,
+#: i.e. ladder units 1..31 are strapped out and units 32..63 are in circuit.
+DRAWN_TRIM_CODE = 32
+
+#: Layout finger counts that differ from the netlist's ``nf`` — see the
+#: module docstring's "Deliberate, documented deviation" section. Keys are
+#: flattened device paths.
+LAYOUT_FOLDS: dict[str, int] = {
+    # Core mirror + cascode (floorplan §0 tier 1): 60 um / 4 = 15 um fingers.
+    "core.M1": 4,
+    "core.M2": 4,
+    "core.M3": 4,
+    "core.MC1": 4,
+    "core.MC2": 4,
+    "core.MC3": 4,
+    # Amp input pair (floorplan §0 tier 1): 200 um / 8 = 25 um fingers.
+    "amp.M1": 8,
+    "amp.M2": 8,
+    # Amp mirror load and cascodes: 2 fingers is the minimum that permits an
+    # A B B A common-centroid interleave.
+    "amp.M3": 2,
+    "amp.M4": 2,
+    "amp.MC3": 2,
+    "amp.MC4": 2,
+    "amp.MC1": 2,
+    "amp.MC2": 2,
+    # Not a matching group -- fingered only because a 20 um single-finger
+    # device is an unreasonable aspect ratio to draw.
+    "startup.MSENSE": 2,
+}
+
+#: Geometry of the dummy devices placed at every matched-array edge. Dummies
+#: are drawn at the same L as the array they guard (set per row below) and at
+#: a small W; all three terminals tie to the array's own supply rail so the
+#: dummy is unconditionally off.
+DUMMY_W_NM = 2000
+
+
+@dataclass
+class MosItem:
+    """One drawn MOS finger (a single-gate island)."""
+
+    key: str
+    kind: str  # "nfet" | "pfet"
+    w_nm: int
+    l_nm: int
+    nets: dict[str, str]  # s / g / d
+    device: str | None = None  # flattened netlist path (None for a dummy)
+    dummy: bool = False
+
+    @property
+    def is_mos(self) -> bool:
+        return True
+
+
+@dataclass
+class ResItem:
+    """One drawn ``ppolyf_u`` resistor, folded into ``segments`` serpentine legs."""
+
+    key: str
+    width_nm: int
+    length_nm: int
+    segments: int
+    nets: tuple[str, str]
+    devices: tuple[str, ...] = ()
+
+    is_mos = False
+
+
+@dataclass
+class TrimLadderItem:
+    """The 63-segment trim ladder, drawn as unit segments in ``rows`` sub-rows."""
+
+    key: str
+    unit_width_nm: int
+    unit_length_nm: int
+    units: int
+    sub_rows: int
+    nets: tuple[str, str]  # (bottom = tn0, top = vref)
+    strap_after_unit: int  # metal option strap spans units 1..N (trim code)
+    devices: tuple[str, ...] = ()
+
+    is_mos = False
+
+
+@dataclass
+class PnpItem:
+    """One vertical-PNP unit cell (emitter / base ring / collector ring)."""
+
+    key: str
+    emitter_um: float
+    emitter_net: str
+    base_net: str
+    device: str | None = None
+    dummy: bool = False
+
+    is_mos = False
+
+
+@dataclass
+class TapItem:
+    """A substrate or Nwell tap bar (no device, pure body/guard contact)."""
+
+    key: str
+    kind: str  # "psub" | "nwell"
+    length_nm: int
+    net: str
+
+    is_mos = False
+
+
+@dataclass
+class MimCapItem:
+    """The amplifier's compensation MIM capacitor.
+
+    Drawn on Metal4 / FuseTop / Metal5 — layers the ``klt`` gf180mcu DRC and
+    extraction decks do not read at all — so it is invisible to both checks
+    and is stacked **over** the device field rather than consuming its own
+    floor area (standard practice for an M4/M5 MIM).
+    """
+
+    key: str
+    width_nm: int
+    height_nm: int
+    nets: tuple[str, str]
+    device: str
+
+
+@dataclass
+class Row:
+    name: str
+    items: list[object] = field(default_factory=list)
+    nwell: bool = False  # row sits inside the PMOS band's Nwell
+    note: str = ""
+
+
+# --------------------------------------------------------------------------- #
+# Plan construction
+# --------------------------------------------------------------------------- #
+
+
+def fingers(device: Device) -> int:
+    """Drawn finger count for ``device`` (netlist ``nf``, or a layout fold)."""
+    return LAYOUT_FOLDS.get(device.path, device.nf)
+
+
+def _mos_fingers(flat: FlatNetlist, path: str) -> list[MosItem]:
+    device = flat.get(path)
+    count = fingers(device)
+    if device.w_nm % count:
+        raise ValueError(f"{path}: W={device.w_nm} does not divide into {count} fingers")
+    per_finger = device.w_nm // count
+    return [
+        MosItem(
+            key=f"{path}#{i}",
+            kind=device.mos_kind,
+            w_nm=per_finger,
+            l_nm=device.l_nm,
+            nets={"s": device.nets["s"], "g": device.nets["g"], "d": device.nets["d"]},
+            device=path,
+        )
+        for i in range(count)
+    ]
+
+
+def _dummy(key: str, kind: str, l_nm: int, net: str) -> MosItem:
+    return MosItem(
+        key=key,
+        kind=kind,
+        w_nm=DUMMY_W_NM,
+        l_nm=l_nm,
+        nets={"s": net, "g": net, "d": net},
+        dummy=True,
+    )
+
+
+def _centroid_pair(a: list[MosItem], b: list[MosItem]) -> list[MosItem]:
+    """``A B B A`` / ``A B B A A B B A`` mirror-symmetric interleave of two
+    equal-length finger lists."""
+    if len(a) != len(b):
+        raise ValueError("common-centroid pair needs equal finger counts")
+    out: list[MosItem] = []
+    for i in range(0, len(a), 2):
+        out.extend([a[i], b[i]])
+        if i + 1 < len(a):
+            out.extend([b[i + 1], a[i + 1]])
+    return out
+
+
+def _centroid_triple(
+    a: list[MosItem], b: list[MosItem], c: list[MosItem]
+) -> list[MosItem]:
+    """``(A B C C B A)`` x n/2 mirror-symmetric interleave of three devices.
+
+    The emitted letter pattern is a palindrome for any even finger count, so
+    all three devices share one centroid in both halves of the array.
+    """
+    if not (len(a) == len(b) == len(c)) or len(a) % 2:
+        raise ValueError("common-centroid triple needs an equal, even finger count")
+    out: list[MosItem] = []
+    for i in range(0, len(a), 2):
+        out.extend([a[i], b[i], c[i], c[i + 1], b[i + 1], a[i + 1]])
+    return out
+
+
+def build_rows(flat: FlatNetlist) -> list[Row]:
+    """Build the ordered (bottom-to-top) row plan."""
+    rows: list[Row] = []
+
+    # ---------------- start-up periphery (floorplan §1, §7) ----------------
+    rows.append(
+        Row(
+            "XRPU",
+            [
+                ResItem(
+                    key="startup.RPU",
+                    width_nm=nm(flat.get("startup.RPU").params["r_width"]),
+                    length_nm=nm(flat.get("startup.RPU").params["r_length"]),
+                    segments=57,
+                    nets=("startup.det", "vdd"),
+                    devices=("startup.RPU",),
+                )
+            ],
+            note="start-up pull-up bleeder, folded serpentine (floorplan §7/§11.3)",
+        )
+    )
+
+    rows.append(
+        Row(
+            "NBIAS",
+            _mos_fingers(flat, "core.M5")
+            + _mos_fingers(flat, "core.MNB")
+            + _mos_fingers(flat, "startup.MSENSE")
+            + _mos_fingers(flat, "startup.MKFB")
+            + _mos_fingers(flat, "startup.MKCASC")
+            + [TapItem("ptap.nbias", "psub", 6000, "vss")],
+            note="core NMOS bias + start-up kick devices (no matching requirement)",
+        )
+    )
+
+    rows.append(
+        Row(
+            "AMPNBIAS",
+            _mos_fingers(flat, "amp.M5")
+            + _mos_fingers(flat, "amp.MBN2")
+            + _mos_fingers(flat, "amp.MBD1")
+            + _mos_fingers(flat, "amp.MBD2")
+            + [TapItem("ptap.ampn", "psub", 6000, "vss")],
+            note="amp tail + cascode-bias NMOS (single instances, not matched)",
+        )
+    )
+
+    mc1 = _mos_fingers(flat, "amp.MC1")
+    mc2 = _mos_fingers(flat, "amp.MC2")
+    rows.append(
+        Row(
+            "AMPNCASC",
+            [_dummy("dum.ampncasc.l", "nfet", mc1[0].l_nm, "vss")]
+            + _centroid_pair(mc1, mc2)
+            + [_dummy("dum.ampncasc.r", "nfet", mc1[0].l_nm, "vss")],
+            note="amp NMOS cascode pair, common-centroid A B B A + edge dummies",
+        )
+    )
+
+    m1 = _mos_fingers(flat, "amp.M1")
+    m2 = _mos_fingers(flat, "amp.M2")
+    rows.append(
+        Row(
+            "AMPPAIR",
+            [_dummy("dum.amppair.l", "nfet", m1[0].l_nm, "vss")]
+            + _centroid_pair(m1, m2)
+            + [_dummy("dum.amppair.r", "nfet", m1[0].l_nm, "vss")],
+            note="amp input pair — floorplan §0 tier-1 matching, A B B A A B B A",
+        )
+    )
+
+    # ---------------- PMOS band (one Nwell) --------------------------------
+    amc3 = _mos_fingers(flat, "amp.MC3")
+    amc4 = _mos_fingers(flat, "amp.MC4")
+    rows.append(
+        Row(
+            "AMPPCASC",
+            [_dummy("dum.amppcasc.l", "pfet", amc3[0].l_nm, "vdd")]
+            + _centroid_pair(amc3, amc4)
+            + [_dummy("dum.amppcasc.r", "pfet", amc3[0].l_nm, "vdd")],
+            nwell=True,
+            note="amp PMOS cascode pair, common-centroid A B B A + edge dummies",
+        )
+    )
+
+    am3 = _mos_fingers(flat, "amp.M3")
+    am4 = _mos_fingers(flat, "amp.M4")
+    rows.append(
+        Row(
+            "AMPLOAD",
+            [_dummy("dum.ampload.l", "pfet", am3[0].l_nm, "vdd")]
+            + _centroid_pair(am3, am4)
+            + [_dummy("dum.ampload.r", "pfet", am3[0].l_nm, "vdd")],
+            nwell=True,
+            note="amp PMOS mirror load — floorplan §0 tier-1 matching",
+        )
+    )
+
+    rows.append(
+        Row(
+            "PBIAS",
+            _mos_fingers(flat, "core.MCB")
+            + _mos_fingers(flat, "amp.MBP1")
+            + _mos_fingers(flat, "amp.MB1")
+            + [TapItem("ntap.pbias", "nwell", 6000, "vdd")],
+            nwell=True,
+            note="cascode-bias PMOS (single instances, floorplan §5: not a matching group)",
+        )
+    )
+
+    cm4 = _mos_fingers(flat, "core.M4")
+    cmc4 = _mos_fingers(flat, "core.MC4")
+    rows.append(
+        Row(
+            "COREIBIAS",
+            [_dummy("dum.coreibias.l", "pfet", cm4[0].l_nm, "vdd")]
+            + cm4
+            + cmc4
+            + [_dummy("dum.coreibias.r", "pfet", cm4[0].l_nm, "vdd")],
+            nwell=True,
+            note="core ibias leg (M4/MC4) — different W from M1-M3, own sub-array",
+        )
+    )
+
+    cmc1 = _mos_fingers(flat, "core.MC1")
+    cmc2 = _mos_fingers(flat, "core.MC2")
+    cmc3 = _mos_fingers(flat, "core.MC3")
+    rows.append(
+        Row(
+            "CORECASC",
+            [_dummy("dum.corecasc.l", "pfet", cmc1[0].l_nm, "vdd")]
+            + _centroid_triple(cmc1, cmc2, cmc3)
+            + [_dummy("dum.corecasc.r", "pfet", cmc1[0].l_nm, "vdd")],
+            nwell=True,
+            note="core cascode MC1-MC3, common-centroid A B C C B A + edge dummies",
+        )
+    )
+
+    cm1 = _mos_fingers(flat, "core.M1")
+    cm2 = _mos_fingers(flat, "core.M2")
+    cm3 = _mos_fingers(flat, "core.M3")
+    rows.append(
+        Row(
+            "COREMIRROR",
+            [_dummy("dum.coremirror.l", "pfet", cm1[0].l_nm, "vdd")]
+            + _centroid_triple(cm1, cm2, cm3)
+            + [_dummy("dum.coremirror.r", "pfet", cm1[0].l_nm, "vdd")],
+            nwell=True,
+            note="core mirror M1-M3 — floorplan §0 tier-1 matching",
+        )
+    )
+
+    rows.append(
+        Row(
+            "NTAP",
+            [TapItem("ntap.top", "nwell", 40000, "vdd")],
+            nwell=True,
+            note="Nwell body tie for the PMOS band",
+        )
+    )
+
+    # ---------------- PNP array + resistor / trim strip --------------------
+    rows.append(
+        Row(
+            "PNP",
+            [
+                PnpItem("dum.pnp.l", 5.0, "vss", "vss", dummy=True),
+                PnpItem("core.Q3", 5.0, "core.e3", "vss", device="core.Q3"),
+                PnpItem("core.Q2#0", 5.0, "core.e2", "vss", device="core.Q2"),
+                PnpItem("core.Q2#1", 5.0, "core.e2", "vss", device="core.Q2"),
+                PnpItem("core.Q1", 5.0, "sns1", "vss", device="core.Q1"),
+                PnpItem("core.Q2#2", 5.0, "core.e2", "vss", device="core.Q2"),
+                PnpItem("core.Q2#3", 5.0, "core.e2", "vss", device="core.Q2"),
+                PnpItem("dum.pnp.r", 5.0, "vss", "vss", dummy=True),
+            ],
+            note="PNP array, D Q3 Q2 Q2 Q1 Q2 Q2 D (floorplan §4.1)",
+        )
+    )
+
+    r1 = flat.get("core.R1")
+    r2 = flat.get("core.R2")
+    rows.append(
+        Row(
+            "RSTRIP",
+            [
+                ResItem(
+                    key="core.R2",
+                    width_nm=nm(r2.params["r_width"]),
+                    length_nm=nm(r2.params["r_length"]),
+                    segments=2,
+                    nets=("core.e2", "sns2"),
+                    devices=("core.R2",),
+                ),
+                ResItem(
+                    key="core.R1",
+                    width_nm=nm(r1.params["r_width"]),
+                    length_nm=nm(r1.params["r_length"]),
+                    segments=14,
+                    nets=("core.e3", "core.tn0"),
+                    devices=("core.R1",),
+                ),
+            ],
+            note="R2 (PTAP-setting) and R1 (output branch), identical unit width",
+        )
+    )
+
+    trim_units = [d for d in flat.devices if d.path.startswith("core.trim.RU")]
+    unit = trim_units[0]
+    rows.append(
+        Row(
+            "TRIM",
+            [
+                TrimLadderItem(
+                    key="core.trim",
+                    unit_width_nm=nm(unit.params["r_width"]),
+                    unit_length_nm=nm(unit.params["r_length"]),
+                    units=len(trim_units),
+                    sub_rows=2,
+                    nets=("core.tn0", "vref"),
+                    strap_after_unit=31,
+                    devices=tuple(d.path for d in trim_units),
+                )
+            ],
+            note="63-unit binary trim ladder, identical unit segments (floorplan §3.2)",
+        )
+    )
+
+    return rows
+
+
+def mim_cap(flat: FlatNetlist) -> MimCapItem:
+    device = flat.get("amp.CC")
+    return MimCapItem(
+        key="amp.CC",
+        width_nm=nm(device.params["c_width"]),
+        height_nm=nm(device.params["c_length"]),
+        nets=(device.nets["p"], device.nets["n"]),
+        device="amp.CC",
+    )
+
+
+def routed_nets(rows: list[Row]) -> list[str]:
+    """Every net that needs a corridor spine, in a stable, deterministic order."""
+    seen: list[str] = []
+
+    def add(net: str) -> None:
+        if net not in seen:
+            seen.append(net)
+
+    for row in rows:
+        for item in row.items:
+            if isinstance(item, MosItem):
+                for net in ("s", "g", "d"):
+                    add(item.nets[net])
+            elif isinstance(item, ResItem):
+                add(item.nets[0])
+                add(item.nets[1])
+            elif isinstance(item, TrimLadderItem):
+                add(item.nets[0])
+                add(item.nets[1])
+            elif isinstance(item, PnpItem):
+                add(item.emitter_net)
+                add(item.base_net)
+            elif isinstance(item, TapItem):
+                add(item.net)
+    # Supplies first so they land closest to the device field.
+    priority = ["vss", "vdd", "vref"]
+    return [n for n in priority if n in seen] + [n for n in seen if n not in priority]
+
+
+def load_plan() -> tuple[FlatNetlist, list[Row]]:
+    flat = load()
+    return flat, build_rows(flat)
+
+
+if __name__ == "__main__":  # pragma: no cover
+    flat, rows = load_plan()
+    for row in rows:
+        kinds: dict[str, int] = {}
+        for item in row.items:
+            kinds[type(item).__name__] = kinds.get(type(item).__name__, 0) + 1
+        print(f"{row.name:12s} {len(row.items):3d} items  {kinds}")
+    print("routed nets:", len(routed_nets(rows)))
+    print(routed_nets(rows))

@@ -1,29 +1,41 @@
-# layout — DRC/LVS flow (klayout-tools)
+# layout — `bandgap_top` GDS, DRC and LVS (klayout-tools)
 
-Layout verification for this repo is driven by
+Layout work for this repo is driven by
 [klayout-tools](https://github.com/2AMLogic/klayout-tools) (`klt`), per
-`CLAUDE.md`. This directory stands up the **DRC** half of that flow, proves
-it on a trivial single-device layout, and records where the flow currently
-stops (LVS bring-up is deferred — see "LVS: deferred" below).
+`CLAUDE.md`. This directory holds **the block layout itself** plus the DRC and
+LVS flows that verify it.
 
-No real block layout exists yet (`sim/` is where the design lives today —
-this repo is still in the simulation-complete phase; see the root
-`README.md` maturity ladder). This directory currently holds only the
-DRC bring-up scaffolding and its proof fixture.
+`layout/bandgap_top/` is a real, drawn physical layout of the whole block
+(`bandgap_core` + `bandgap_amp` + `bandgap_startup` + trim ladder), generated
+from the committed schematic netlist, **DRC-clean** against the `gf180mcu`
+deck and **LVS-matching** against a mechanically-derived reference netlist
+(see "What the LVS verdict does and does not cover" below — it is a
+MOS-device-and-connectivity LVS, not a full-device LVS, for tool reasons that
+are filed upstream).
 
 ```
 layout/
   README.md          this file
+  floorplan.md       the matching/floorplan plan this layout implements (#16)
+  bandgap_top/
+    netlist_model.py  parse + flatten design/netlist/bandgap_top.spice
+    plan.py           declarative row/matching plan built from that netlist
+    generate.py       draws bandgap_top.gds (klayout.db API)
+    matching_report.py verifies the drawn geometry against floorplan.md §0
+    area_report.py    drawn area vs. floorplan.md §8 / the ratified target
+    AREA.md           the area-budget finding (§11.1's owed re-check)
+    bandgap_top.gds   committed, deterministic block GDS
   drc/
     run_drc.py        reproducible klt drc invocation -> committed report
-    fixtures/
-      trivial_poly_res/
-        generate.py            builds the fixture GDS (klayout.db API)
-        trivial_poly_res.gds   committed fixture GDS
+    fixtures/trivial_poly_res/   DRC bring-up proof fixture (#15)
     reports/
-      trivial_poly_res/
-        <record-id>.drc.json   committed klt drc --format json output
-        <record-id>.drc.txt    companion --format text output
+      bandgap_top/         <record-id>.drc.{json,txt}
+      trivial_poly_res/    <record-id>.drc.{json,txt}
+  lvs/
+    make_reference.py  derives the LVS reference netlist from the schematic
+    run_lvs.py         klt extract + klt lvs -> committed report
+    bandgap_top.ref.spice  generated reference netlist (do not hand-edit)
+    reports/bandgap_top/   <record-id>.{extract.json,extracted.spice,lvs.json,lvs.txt,lvs-request.json}
 ```
 
 ## Install `klt`
@@ -38,140 +50,226 @@ klt --version
 klt drc --help
 ```
 
-`klt drc` runs fully headless: it drives the pip `klayout` package's native
-`klayout.db.Region` check primitives directly, with **no dependency on the
-standalone KLayout GUI/application binary or its `.drc`/`.lydrc` script
-runner** (klayout-tools `docs/cli/drc.md`). Confirmed for this bring-up: the
-commands below ran to completion in a shell with no KLayout application
+`klt` runs fully headless: it drives the pip `klayout` package's native
+`klayout.db` primitives directly, with **no dependency on the standalone
+KLayout GUI/application binary or its `.drc`/`.lydrc` script runner**. Every
+command below ran to completion in a shell with no KLayout application
 installed, no `DISPLAY`, and no Qt.
 
-## Running DRC
+## Reproducing the whole flow
+
+From the repo root, in order:
 
 ```bash
-python3 layout/drc/run_drc.py layout/drc/fixtures/trivial_poly_res/trivial_poly_res.gds
+# 1. Draw the layout (byte-for-byte deterministic -- git diff stays empty)
+uv run --with klayout python3 layout/bandgap_top/generate.py
+
+# 2. Check the drawn geometry against floorplan.md §0's matching plan
+uv run --with klayout python3 layout/bandgap_top/matching_report.py
+
+# 3. DRC
+python3 layout/drc/run_drc.py layout/bandgap_top/bandgap_top.gds
+
+# 4. Extract + LVS
+python3 layout/lvs/run_lvs.py layout/bandgap_top/bandgap_top.gds
+
+# 5. Area budget
+uv run --with klayout python3 layout/bandgap_top/area_report.py
 ```
 
-This is a thin wrapper around:
+Expected results (all four verifications, as committed):
 
-```bash
-klt drc layout/drc/fixtures/trivial_poly_res/trivial_poly_res.gds --deck gf180mcu --format json
-klt drc layout/drc/fixtures/trivial_poly_res/trivial_poly_res.gds --deck gf180mcu --format text
+| Step | Result |
+|---|---|
+| `matching_report.py` | all tier-1/2/3 checks pass, exit 0 |
+| `run_drc.py` | `status: clean`, `violation_count: 0` |
+| `run_lvs.py` | `lvs status: match`, 81/81 devices, 23/23 nets |
+| `area_report.py` | 48,349.94 µm² vs. 50,000 µm² target — PASS, 3.3 % headroom |
+
+## How the layout is built
+
+Three modules, layered, with the committed schematic netlist as the single
+source of truth at the bottom:
+
+1. **`netlist_model.py`** parses and flattens
+   `design/netlist/bandgap_top.spice` into primitive devices with
+   hierarchically-resolved net names, in integer nanometres. Nothing
+   downstream restates a device size.
+2. **`plan.py`** turns that flat netlist into an ordered list of **rows** of
+   **items** — the placement plan, including finger splitting, the
+   common-centroid finger order of each matched array, and the edge dummy
+   devices. `generate.py` and `layout/lvs/make_reference.py` both read this
+   one module, so the drawn geometry and the LVS reference cannot disagree
+   about how a device was folded or which dummies exist.
+3. **`generate.py`** draws the GDS with the `klayout.db` API — the same
+   construction pattern the `trivial_poly_res` DRC fixture uses (`klt` has no
+   layout-*write* verb; `klt gen` runs named PCell generators, not an
+   arbitrary block builder).
+
+Output is deterministic: the GDSII writer's header timestamps are disabled, so
+the written file is a pure function of the geometry and re-running step 1
+leaves `git diff` empty.
+
+### Matching, and how it is verified
+
+`matching_report.py` is the mechanical form of "open it in KLayout and eyeball
+it". It reads the *drawn* x position of every finger back out of the
+generator's own placement and checks `floorplan.md` §0's three tiers:
+
+```
+AMPPAIR      §0 tier 1 / §6 — amp input pair
+  drawn order    : D A B B A A B B A A B B A A B B A D
+  centroid spread: 0.000 um (tolerance 2.900 um) -> OK
+COREMIRROR   §0 tier 1 / §5 — core mirror M1-M3
+  drawn order    : D A B C C B A A B C C B A D
+  centroid spread: 0.000 um (tolerance 3.900 um) -> OK
+PNP array (§0 tier 3 / §4.1)
+  drawn order    : D Q3 Q2 Q2 Q1 Q2 Q2 D
+  Q1/Q2 centroid spread 0.00 unit cells -> OK
 ```
 
-`--format json` is the committed, stable-contract report (klayout-tools
-treats JSON as the API and text as a courtesy view — `docs/cli/drc.md`);
-the `--format text` capture is kept alongside purely for human skimming.
-`run_drc.py` writes both under `layout/drc/reports/<fixture>/<record-id>.*`
-and never overwrites an existing report — mirroring the append-only
-evidence convention `sim/README.md` documents for `sim/` (CLAUDE.md:
-"`sim/` results are append-only evidence"; this repo applies the same rule
-to `layout/` DRC reports). A re-run mints a new `<record-id>`
-(`<YYYYMMDD>-<HHMMSS>-<short-git-sha>`) rather than clobbering the last one.
+Every tier-1 array (amp input pair, amp mirror load, both amp cascode pairs,
+core mirror, core cascode) is drawn as a palindromic interdigitated array with
+dummy devices at both edges, and all members share one centroid *exactly*.
+Tier 2 is a single `ppolyf_u` unit width across `R1`, `R2` and all 63
+trim-ladder segments. Tier 3 is the PNP array; see `plan.py`'s tier-3 note for
+why `Q1`/`Q2` is the pair given the exact centroid (two single-unit devices
+cannot both have it, and the `Q1`/`Q2` `dVBE` error reaches `vref` with
+~12.8× the gain `Q3`'s does).
 
-**Limitation carried from klayout-tools:** DRC is whole-layout, flattened
-per top cell — there is no `--top <cell>` filter to scope a check to one
-cell inside a larger layout (`docs/cli/drc.md` § "Limitation: whole-layout,
-flattened"). Fine for the single-cell fixture here; will matter once a
-real, hierarchical block layout exists.
+### Routing style, and why it looks like this
 
-## The gf180mcu deck: coverage
+`klt`'s gf180mcu decks model exactly **one** metal level (`Metal1`, 34/0) —
+there is no `Metal2`..`Metal5` in either the DRC deck or the extraction
+deck's connectivity graph. A block routed on layers the extraction deck
+cannot see extracts as a pile of disconnected nets, so this layout is routed
+entirely on `Metal1` plus `Poly2`, using poly as the crossunder layer:
+per-net vertical Poly2 spines in a corridor down the left edge, one
+horizontal Metal1 rail per net per row, and short Poly2 stubs from each device
+terminal up to its rail.
 
-The `gf180mcu` deck (`klayout-tools/src/klayout_tools/decks/gf180mcu.py`)
-is a **curated starter subset**, not the full GlobalFoundries 180nm MCU
-Design Rule Manual. It covers 10 width/spacing/enclosure rules across
-exactly four layers:
+That is a correct single-metal discipline, but it is not how this block would
+be routed with a real multi-metal stack, and it costs significant area —
+quantified in [`bandgap_top/AREA.md`](bandgap_top/AREA.md). Filed upstream:
+[`klayout-tools#220`](https://github.com/2AMLogic/klayout-tools/issues/220).
 
-| Layer     | GDS layer/datatype |
-| --------- | ------------------- |
-| `Poly2`   | 30/0 |
-| `Comp`    | 22/0 |
-| `Contact` | 33/0 |
-| `Metal1`  | 34/0 |
+## What the LVS verdict does and does not cover
 
-No well/tap rules, no BJT-specific rules, no HV/5V-variant rules, no
-Metal2–4. This block's real design uses devices outside that coverage (a
-vertical PNP substrate device, multiple poly resistor flavors) — expect
-the deck to grow incrementally as this and other blocks surface real gaps.
-See "Friction filed" below for the coverage-gap issue this bring-up
-already identified.
+`klt`'s gf180mcu extraction deck recognises exactly two device classes —
+`nfet` and `pfet` (from `Comp`/`Poly2`/`Nwell`) — and treats `Poly2` as a
+plain conductor. It has no resistor, bipolar or MIM-capacitor extractor, and
+no Metal2..Metal5 connectivity.
 
-## Trivial proof fixture: `trivial_poly_res`
+So the reference netlist cannot be `design/netlist/bandgap_top.spice`
+verbatim. `layout/lvs/make_reference.py` derives it mechanically, applying
+exactly the transformations the deck's own capabilities imply (its docstring
+lists all seven): poly resistors collapse to shorts, `pnp_*` and `cap_mim_*`
+drop out, the ideal `RS0..RS5` trim straps resolve at the drawn trim code,
+each MOS expands to its drawn finger count, the layout's edge dummies are
+added, and body terminals re-target to the nets the deck actually produces.
 
-`klt` has no layout-generation/write capability yet (klayout-tools Phase 3,
-"write", has not started) — the fixture GDS is built directly with the
-`klayout.db` (`pya`-compatible) Python API, mirroring the construction
-pattern in klayout-tools' own worked example
-(`klayout-tools/examples/drc/generate.py`): a `kdb.Layout`, layer/datatype
-pairs matching the deck, boxes inserted directly, `layout.write(path)`
-(here with an explicit `SaveLayoutOptions` — see below).
+**Every one of those is a tool-capability consequence, not a design
+simplification** — the layout still draws all of the dropped devices. But the
+consequence for the verdict is real and worth stating plainly:
 
-`layout/drc/fixtures/trivial_poly_res/generate.py` builds a trivial
-single-device layout — a `Poly2` resistor with two `Contact`-and-`Metal1`
-terminals — with **one seeded rule violation**: the resistor body is drawn
-100 dbu (0.10 um) wide, narrower than the `poly2.width.1` rule's 180 dbu
-(0.18 um) minimum. Everything else in the fixture (contact sizing, poly2
-enclosure of each contact, metal1 pad sizing) is drawn clean, so the report
-proves the deck catches a real violation without drowning it in incidental
-ones — mirroring the seeded-violation pattern in klayout-tools' own sky130
-worked example.
+- **Covered**: every MOS device (81 of them, including the 14 edge dummies),
+  their W/L, and the full Metal1/Poly2/Contact connectivity between them —
+  i.e. the drawn topology of the amplifier, the core mirror/cascode, the
+  start-up kick path and every net that joins them.
+- **Not covered**: the drawn `ppolyf_u` resistors (`R1`, `R2`, `startup.RPU`
+  and all 63 trim units), the six PNP unit devices, and the compensation MIM
+  capacitor. A resistor drawn at the wrong length, or a PNP with its emitter
+  and base swapped, would still pass. Filed upstream:
+  [`klayout-tools#219`](https://github.com/2AMLogic/klayout-tools/issues/219).
 
-Regenerate the fixture (byte-for-byte deterministic — same output every run):
+**Limitation carried from klayout-tools:** DRC is whole-layout, flattened per
+top cell — there is no `--top <cell>` filter to scope a check to one cell
+inside a larger layout (`docs/cli/drc.md` § "Limitation: whole-layout,
+flattened"). This layout is a single flat cell, so it does not bite here.
 
-```bash
-uv run --with klayout python3 layout/drc/fixtures/trivial_poly_res/generate.py
-```
+## The gf180mcu DRC deck: coverage
 
-Determinism is not free: `klayout.db`'s GDSII writer stamps wall-clock
-times into the `BGNLIB`/`BGNSTR` header records by default, so a plain
-`layout.write(path)` yields byte-different files on every run even when the
-geometry is identical. The generator therefore writes with
-`SaveLayoutOptions.gds2_write_timestamps = False`, which makes the output a
-pure function of the geometry — that is what makes the `git diff` check
-below actually hold.
+The `gf180mcu` deck (`klayout-tools/src/klayout_tools/decks/gf180mcu.py`) is a
+**curated starter subset**, not the full GlobalFoundries 180nm MCU Design Rule
+Manual. It covers width/spacing/enclosure rules across `Poly2` (30/0), `Comp`
+(22/0), `Contact` (33/0) and `Metal1` (34/0), plus one BJT marker-layer rule.
+No well/tap rules, no HV/5V-variant rules, no Metal2–4 rules. A `clean` DRC
+verdict from it is therefore a real but partial check — the drawn Nwell,
+implant and MIM geometry in this layout is unchecked. See "Friction filed".
 
-The committed `trivial_poly_res.gds` and its `layout/drc/reports/`
-snapshot are the frozen input/output pair for this bring-up. If the deck's
-rules change upstream, regenerate the GDS and re-run `run_drc.py` to mint a
-new report rather than editing an existing one in place.
+## Reports are append-only evidence
 
-## LVS: deferred
+`run_drc.py` and `run_lvs.py` write under
+`layout/<flow>/reports/<block>/<record-id>.*` and **never overwrite an
+existing report** — mirroring the append-only evidence convention
+`sim/README.md` documents (`CLAUDE.md`: "`sim/` results are append-only
+evidence"; this repo applies the same rule to `layout/` reports). A re-run
+mints a new `<record-id>` (`<YYYYMMDD>-<HHMMSS>-<short-git-sha>`) rather than
+clobbering the last one.
 
-**`klt lvs` does not exist.** LVS is klayout-tools Roadmap Phase 4
-("extract & verify"); as of this bring-up the project is still in Phase
-1/2 (read + DRC). This is not a gap this repo can close — there is nothing
-to "stand up" until the upstream verb exists. LVS bring-up for this repo
-is explicitly deferred until it does; when `klt lvs` ships, a follow-on
-issue picks up LVS bring-up proper, most likely reusing `trivial_poly_res`
-(or a comparable trivial fixture) as its own first proof point, the same
-way this issue used it for DRC.
+`layout/lvs/bandgap_top.ref.spice` is the one generated file that *is*
+overwritten — `run_lvs.py` regenerates it before every run precisely so a
+stale or hand-edited reference can never quietly pass.
+
+## Findings and escalations
+
+CLAUDE.md forbids silently absorbing a gap between the drawn layout and the
+schematic. Two were found while drawing this block; both are reported, not
+patched around:
+
+- **Schematic `nf=1` on 15 devices the layout must finger** —
+  [#65](https://github.com/2AMLogic/gf180-bandgap/issues/65). Total `W` and
+  `L` are drawn exactly as the schematic specifies, but the finger count is
+  not, because a single-finger device cannot be interdigitated and
+  `floorplan.md` §0 ranks those very devices as the highest matching
+  priority. Since `ad`/`as`/`pd` are written as expressions in `nf`, this
+  means every simulated junction capacitance corresponds to a geometry that
+  cannot be drawn (drain area and perimeter both roughly halve when the
+  device is fingered). The fix belongs in the schematic plus a re-run of the
+  affected `sim/` suites, not in the layout.
+- **`floorplan.md` §8's area estimate is 1.85× stale, and the drawn block
+  lands at 96.7 % of the ratified 0.05 mm² target** — see
+  [`bandgap_top/AREA.md`](bandgap_top/AREA.md). The budget *passes*, with
+  1,650 µm² (3.3 %) of headroom, and is reported as-is rather than adjusted.
+  §8's tally predates #56 (telescopic-cascode amp) and #60 (core
+  mirror/cascode resizing).
 
 ## Friction filed (klayout-tools tracker)
 
-Per CLAUDE.md's friction protocol, every klayout-tools gap this bring-up
+Per CLAUDE.md's friction protocol, every klayout-tools gap this work
 surfaced is tracked generically (tool capability, never this design's
 specifics) on the public
 [klayout-tools issue tracker](https://github.com/2AMLogic/klayout-tools/issues):
 
-- **Missing `klt lvs` / extraction capability** — already tracked upstream:
-  [`2AMLogic/klayout-tools#54`](https://github.com/2AMLogic/klayout-tools/issues/54)
-  (the original friction marker) and
-  [`2AMLogic/klayout-tools#153`](https://github.com/2AMLogic/klayout-tools/issues/153)
-  (the phased epic that supersedes it, which already references this
-  repo's DRC/LVS bring-up as one of the consumers waiting on it). No new
-  issue was filed for this gap — it was already open and current.
+- **Extraction decks recognise MOS only** — no resistor/bipolar/capacitor
+  device classes, so an analog block's LVS cannot be a full-device LVS:
+  [`#219`](https://github.com/2AMLogic/klayout-tools/issues/219).
+- **gf180mcu extraction deck declares one metal level and no vias** — forces
+  single-metal routing on any block that wants to LVS, at a real area cost:
+  [`#220`](https://github.com/2AMLogic/klayout-tools/issues/220).
 - **`gf180mcu` deck coverage gap (well/tap, BJT-specific rules)** —
-  [`2AMLogic/klayout-tools#157`](https://github.com/2AMLogic/klayout-tools/issues/157):
-  filed from this bring-up, described generically (deck coverage
-  characteristic, no design specifics).
+  [`#157`](https://github.com/2AMLogic/klayout-tools/issues/157), filed from
+  the #15 DRC bring-up.
+- **Missing `klt lvs` / extraction capability** — the original gap
+  ([`#54`](https://github.com/2AMLogic/klayout-tools/issues/54), superseded
+  by epic [`#153`](https://github.com/2AMLogic/klayout-tools/issues/153)) —
+  **resolved upstream**, and this block's layout is the consumer that closed
+  the loop on it.
 
-## Verifying this bring-up
+## The `trivial_poly_res` DRC fixture (#15)
+
+The DRC bring-up fixture predating this layout is kept as the deck's
+regression proof: a single `Poly2` resistor with two `Contact`-and-`Metal1`
+terminals and **one seeded rule violation** (the body is drawn 100 dbu wide,
+under `poly2.width.1`'s 180 dbu minimum), so the report proves the deck
+catches a real violation without drowning it in incidental ones.
 
 ```bash
-# 1. Regenerate the fixture and confirm it matches the committed GDS
+# Regenerate the fixture and confirm it matches the committed GDS
 uv run --with klayout python3 layout/drc/fixtures/trivial_poly_res/generate.py
-git diff --stat layout/drc/fixtures/trivial_poly_res/trivial_poly_res.gds   # should be empty
+git diff --stat layout/drc/fixtures/trivial_poly_res/trivial_poly_res.gds   # empty
 
-# 2. Re-run DRC and confirm the same single violation reproduces
+# Re-run DRC and confirm the same single violation reproduces
 python3 layout/drc/run_drc.py layout/drc/fixtures/trivial_poly_res/trivial_poly_res.gds
 # -> status: violations, violation_count: 1, rule_counts: {"poly2.width.1": 1}
 ```
