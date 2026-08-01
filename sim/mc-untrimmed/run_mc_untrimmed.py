@@ -78,7 +78,9 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
 import math
+import os
 import re
 import shutil
 import subprocess
@@ -100,6 +102,14 @@ N_SAMPLES = 300  # must match `let mc_runs` in the testbench
 SEED = 20260801  # must match `setseed` in the testbench
 SUPPLY_V = 3.30
 SUPPLY_ID = "3.30v"
+
+#: Default parallelism for the (group x temperature) point sweep. Each point
+#: is one blocking ngspice process in its own temp directory, so the points
+#: are embarrassingly parallel and the result is bit-identical to running
+#: them one at a time (the sample set is fixed by `setseed` in the
+#: testbench, not by execution order). Capped the same way
+#: `sim/harness/cli.py` caps `run_corners.py -j`.
+DEFAULT_JOBS = min(8, os.cpu_count() or 2)
 
 # "tt" bundle per sim/harness/corners.py -- all device families typical.
 # This is a mismatch claim (sw_stat_global=0 throughout); global process
@@ -703,6 +713,17 @@ def main() -> int:
         help="replacement text for the sentence that explains how to read a "
         "miss against the ratified untrimmed window.",
     )
+    ap.add_argument(
+        "-j",
+        "--jobs",
+        type=int,
+        default=DEFAULT_JOBS,
+        help="parallel ngspice runs, one per (group, temperature) point "
+        f"(default: {DEFAULT_JOBS}). Each point is an independent ngspice "
+        "invocation in its own temp directory with its own seed-identical "
+        "sample set, so parallelism does not change any recorded number -- "
+        "same knob, same reason, as sim/run_corners.py's -j.",
+    )
     args = ap.parse_args()
 
     RUN_CONTEXT["issue"] = args.issue
@@ -731,12 +752,25 @@ def main() -> int:
         f"record {record}: {len(GROUPS)} groups x {len(TEMPS)} temperatures "
         f"({total_points} points), N={N_SAMPLES} each"
     )
-    results: dict[str, dict[float, dict]] = {}
-    for group, cfg in GROUPS.items():
-        results[group] = {}
-        for temp in TEMPS:
+    results: dict[str, dict[float, dict]] = {group: {} for group in GROUPS}
+    points = [(group, cfg, temp) for group, cfg in GROUPS.items() for temp in TEMPS]
+    jobs = max(1, min(args.jobs, len(points)))
+    if jobs > 1:
+        print(f"  running {len(points)} points {jobs} at a time")
+    with concurrent.futures.ThreadPoolExecutor(max_workers=jobs) as pool:
+        # ThreadPool, not ProcessPool: each point's work is a blocking
+        # `subprocess.run` of ngspice in its own temp dir, so the GIL is
+        # released for the whole of it and the points share nothing.
+        futures = {
+            pool.submit(
+                run_point, deck, pdk, temp, cfg["sw_stat_mismatch"], dut_by_variant[cfg["dut"]]
+            ): (group, cfg, temp)
+            for group, cfg, temp in points
+        }
+        for future in concurrent.futures.as_completed(futures):
+            group, cfg, temp = futures[future]
             cid = dc.corner_id(group, temp, supply=SUPPLY_ID)
-            log = run_point(deck, pdk, temp, cfg["sw_stat_mismatch"], dut_by_variant[cfg["dut"]])
+            log = future.result()
             dc.write_log(
                 HERE / "corners",
                 record,
@@ -749,7 +783,8 @@ def main() -> int:
             print(
                 f"  {cid}: ok (mean={stats['mean'] * 1e3:.2f} mV "
                 f"sigma={stats['sigma'] * 1e6:.2f} uV "
-                f"degenerate={stats['degenerate_count']})"
+                f"degenerate={stats['degenerate_count']})",
+                flush=True,
             )
 
     snap_dir = HERE / "netlist-snapshots"

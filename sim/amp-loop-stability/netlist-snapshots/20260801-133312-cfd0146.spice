@@ -1,0 +1,219 @@
+* Frozen netlist snapshot for record 20260801-133312-cfd0146
+* source     : sim/amp-loop-stability/testbench/tb_loop_stability.spice
+* sha256     : b5a9389170f5d47366883112e67a6e141c2c9fe3879eb0288663fd08239c08b3
+* This is a verbatim copy taken at record time. Do not edit.
+* amp-loop-stability -- loop-gain / stability-margin sim
+*
+* Issue #10 created this bench; issue #42 re-ran it against the
+* telescopic-cascode amp and added a second, strictly-additional stability
+* check (see NYQUIST CROSSING below). #10's own criterion is retained
+* unchanged and still gated at >= 45 degrees.
+*
+* Netlist FRAGMENT for sim/harness (sim/README.md format). The harness
+* supplies .include of the gf180mcu models, the corner .lib sections,
+* .temp, the .control block and .end. Parameters available: vdd_val,
+* vdd_nom, temp_c.
+*
+* Content below is design/netlist/bandgap_core.spice and
+* design/netlist/bandgap_startup.spice, stripped of xschem comment lines
+* and re-wrapped as .subckt/.ends, followed by this experiment's own
+* stimulus. bandgap_amp is NOT defined here: it comes from the DUT netlist
+* the manifest names (sim/dut/bandgap_amp.spice, generated from
+* design/netlist/bandgap_amp.spice), which is what lets this same bench be
+* re-run unedited against #10's amp with
+*   --dut sim/dut/frozen/bandgap_amp-20260801-issue10.spice
+* The record's Netlist provenance field then names the exact amp measured,
+* by path and sha256 -- see sim/dut/README.md.
+*
+* TESTBENCH CHANGED IN #42 -- NOT BYTE-COMPARABLE WITH #10's RECORDS.
+* #10 minted its records against a pre-#11 copy of bandgap_core (7 pins,
+* no `casc` port) with NO bandgap_startup instance, seeding the intended
+* operating point with .ic. Two things forced a change here:
+*   1. `.ic` is not honoured by ngspice's .op/.ac DC solve (only by
+*      transient), so #10's seed was doing nothing at all -- the DC solver
+*      simply happened to land on the intended solution for that amp. It
+*      does not for every amp, and a testbench whose result depends on
+*      which of two physical DC solutions the solver picks is not evidence.
+*   2. bandgap_top now instantiates bandgap_startup (#11) and the 8-pin
+*      core, so the #10 fragment no longer described the shipping block.
+* Instantiating bandgap_startup removes the degenerate solution physically
+* (the kick devices hold `fb`/`casc` down until `ibias` is real), so the
+* operating point this bench linearises around is the one the block
+* actually has. The `.nodeset` below is a solver hint only; the answer no
+* longer depends on it.
+*
+* For a like-for-like comparison, the paired record in this experiment's
+* records/ directory was minted from this same testbench with
+* --dut sim/dut/frozen/bandgap_amp-20260801-issue10.spice, i.e. #10's 5T
+* OTA measured on #42's bench.
+*
+* METHOD -- single-injection loop gain. The servo loop closes through
+* exactly one wire in this topology (the amp's "out" pin directly drives
+* the core's "fb" net, the four mirror gates -- see
+* design/bandgap_operating_point.md Sec 1). Let B = fb_gates (feeds the
+* forward path: core -> amp) and A = amp_out (the forward path's own
+* result; in the closed loop A=B). Break the wire and insert an ideal AC
+* test source: B = A + vt (vt=1<0, DC=0, so the DC operating point is
+* identical to the closed loop). Measuring x = V(fb_gates)/vt gives
+* T = 1 - 1/x.
+*
+* WHAT THAT T IS AND IS NOT (corrected in #42). #10's header claimed this
+* single injection is EXACT for a one-wire break. It is not: writing
+* A = G(B) treats the forward path's output as an ideal voltage source, so
+* the result is the true return ratio only while the forward path's output
+* impedance at `out` is small against the load impedance the core's mirror
+* gates present at `fb`. At DC and through the ratified band that holds.
+* At high frequency both become capacitive and comparable, and the
+* measured T tends to the pure capacitive-divider ratio -C(fb)/C(out) --
+* which is exactly the frequency-independent high-frequency "plateau"
+* #10's header attributed to a Cgd feedthrough path. It is a
+* measurement artifact of voltage-only injection, not a gain path.
+* Middlebrook/Tian dual (voltage + current) injection is what removes it;
+* that is deliberately NOT done here, because changing the measurement
+* would break comparability with #10's records, and because the plateau
+* sits far above the ratified band and is cross-checked below.
+*
+* CRITICAL POINT, NOT THE TEXTBOOK -180 DEGREES: the closed-loop pole
+* condition here is 1-T=0 (T=+1 danger), not the classic op-amp 1+T=0
+* form, so the Nyquist danger point for THIS T is magnitude 1 AND phase 0
+* (mod 360 degrees).
+*
+* STABILITY CRITERION #1 (#10's, unchanged -- this design's own choice,
+* not a ratified spec line; see design/bandgap_error_budget.md Sec 4):
+* phase margin, defined as the angular distance of T's phase (evaluated at
+* the frequency of GLOBAL MINIMUM |T(f)| over 0.1 Hz - 2 GHz) from 0
+* degrees (mod 360), must stay >= 45 degrees at every PVT corner.
+*
+* NYQUIST CROSSING -- STABILITY CRITERION #2 (added in #42, strictly
+* stronger, nothing relaxed). Criterion #1 inspects the phase at ONE
+* frequency: the global minimum of |T|. That is blind to an encirclement
+* of the +1 critical point that happens somewhere else on the locus, and
+* #42's higher-gain amp makes that failure mode reachable: an intermediate
+* revision of this amp measured pm_deg = 179.8 degrees ("pass") at every
+* corner while its Nyquist locus crossed the POSITIVE REAL AXIS at
+* |T| = +33 dB -- i.e. it enclosed (+1,0) -- and its startup transient
+* oscillated with volts of ripple. The added measurement scans the whole
+* sweep for crossings of the positive real axis (imag(T) changing sign
+* with real(T) > 0) and reports the largest |T| in dB at any such
+* crossing, as `gm_crit_db`. For 1-T=0 the locus must cross to the LEFT of
+* +1, so gm_crit_db must be < 0 dB; -999 dB is the sentinel for "no
+* crossing anywhere in the sweep" (#10's amp, and any loop whose phase
+* never reaches 0 mod 360). This is the classical gain margin, expressed
+* for this topology's own critical point.
+*
+* The AC verdict is cross-checked physically by sim/startup/ (a full-PVT
+* transient from a real vdd ramp): an encircling loop shows up there as a
+* settled-value/ringing failure, and did, for the intermediate revision
+* above.
+*
+
+.subckt bandgap_core vdd sns1 sns2 vss fb vref ibias casc
+
+
+XM1 d1 fb vdd vdd pfet_03v3 L=6u W=60u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC1 sns1 casc d1 vdd pfet_03v3 L=6u W=60u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XQ1 vss vss sns1 pnp_05p00x05p00 m=1
+XM2 d2 fb vdd vdd pfet_03v3 L=6u W=60u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC2 sns2 casc d2 vdd pfet_03v3 L=6u W=60u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XR2 e2 sns2 vss ppolyf_u r_width=2u r_length=18u m=1
+XQ2 vss vss e2 pnp_10p00x10p00 m=1
+XM3 d3 fb vdd vdd pfet_03v3 L=6u W=60u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC3 vref casc d3 vdd pfet_03v3 L=6u W=60u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XR1 e3 vref vss ppolyf_u r_width=2u r_length=280u m=1
+XQ3 vss vss e3 pnp_05p00x05p00 m=1
+XM4 d4 fb vdd vdd pfet_03v3 L=6u W=7.5u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC4 ibias casc d4 vdd pfet_03v3 L=6u W=7.5u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XM5 ibias ibias vss vss nfet_03v3 L=2u W=2.5u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMCB casc casc vdd vdd pfet_03v3 L=12u W=4u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMNB casc ibias vss vss nfet_03v3 L=2u W=5u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+.ends
+
+.subckt bandgap_startup vdd vss fb casc ibias
+
+
+XMSENSE det ibias vss vss nfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XRPU det vdd vss ppolyf_u_1k r_width=2u r_length=4000u m=1
+XMKFB fb det vss vss nfet_03v3 L=2u W=2u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMKCASC casc det vss vss nfet_03v3 L=2u W=2u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+.ends
+
+vsup vdd 0 dc {vdd_val}
+Xcore vdd sns1 sns2 0 fb_gates vref ibias casc bandgap_core
+Xamp sns2 sns1 0 amp_out vdd ibias bandgap_amp
+Xstart vdd 0 fb_gates casc ibias bandgap_startup
+vt fb_gates amp_out AC 1 0
+
+.nodeset v(fb_gates)=2.27 v(amp_out)=2.27 v(sns1)=0.72 v(sns2)=0.72
++ v(vref)=1.23 v(ibias)=0.75 v(casc)=1.75
+
+* ---------------------------------------------------------------
+* DUT netlist included by this testbench (schematic)
+* source     : sim/dut/bandgap_amp.spice
+* sha256     : 581ebf5a454bee49d412102bf4a53823edd911ceec357532a4d911321850891f
+* ---------------------------------------------------------------
+
+* DUT netlist fragment -- GENERATED, do not edit by hand.
+*
+* source     : design/netlist/bandgap_amp.spice
+* sha256     : bb2e9bed5f9c793e6e75da7771664497366e2086b49d6ec01ce6e112c8176909
+* regenerate : python3 sim/tools/mk_dut.py design/netlist/bandgap_amp.spice <this file>
+*
+* Subcircuits defined here: bandgap_amp
+*
+* Included by the corner runner ahead of each testbench (tb.json's
+* "dut" key, or --dut). Holds subcircuit definitions only: no .end,
+* .control, .temp or .lib -- the harness owns those per PVT point.
+
+** sch_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-42/design/bandgap_amp.sch
+.subckt bandgap_amp in_p in_n vss out vdd tail_bias
+
+*.iopin vdd
+*.iopin vss
+*.iopin in_p
+*.iopin in_n
+*.iopin out
+*.iopin tail_bias
+XM3 a3 nd1 vdd vdd pfet_03v3 L=16u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XM4 a4 nd1 vdd vdd pfet_03v3 L=16u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC3 nd1 pbias a3 vdd pfet_03v3 L=16u W=40u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC4 out pbias a4 vdd pfet_03v3 L=16u W=40u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC1 nd1 ncasc n1 vss nfet_03v3 L=16u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC2 out ncasc n2 vss nfet_03v3 L=16u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XM1 n1 in_p tail vss nfet_03v3 L=4u W=200u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XM2 n2 in_n tail vss nfet_03v3 L=4u W=200u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XM5 tail tail_bias vss vss nfet_03v3 L=4u W=10u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMBN2 pbias tail_bias vss vss nfet_03v3 L=16u W=2u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMBP1 pbias pbias vdd vdd pfet_03v3 L=50u W=1u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMB1 ncasc pbias vdd vdd pfet_03v3 L=50u W=5u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMBD1 ncasc ncasc nb1 vss nfet_03v3 L=4u W=1u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMBD2 nb1 nb1 vss vss nfet_03v3 L=4u W=1u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XCC vdd out cap_mim_2f0_m4m5_noshield c_width=60u c_length=60u m=1
+.ends

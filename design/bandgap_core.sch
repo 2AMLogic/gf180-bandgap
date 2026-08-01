@@ -101,16 +101,61 @@ v {xschem version=3.4.7 file_version=1.2
 * against it stays valid. Picking the code that lands nearest 1.200 V on a
 * given die IS the 1-point trim, and that is a wafer-probe step, not a
 * schematic default -- see design/bandgap_trim_network.md.
+*
+* MIRROR/CASCODE SIZING (issue #55) -- previously provisional (drawn
+* W=20u/L=2u, "identical to the amp's pre-#42 device, never budgeted",
+* design/bandgap_operating_point.md Sec 4.3). #42 closed the amplifier's own
+* offset budget; the circuit-level mismatch Monte Carlo then showed this
+* mirror/cascode stage as the dominant unallocated term (~19 mV of 24 mV,
+* 3-sigma -- design/bandgap_error_budget.md Sec 2.8).
+*
+* M1/MC1, M2/MC2, M3/MC3 -- resized W=20u/L=2u (40 um^2) -> W=60u/L=6u
+* (360 um^2, 9x area), holding W/L = 10 fixed so Vov is unchanged (headroom-
+* neutral by construction: Id = 0.5*k*(W/L)*Vov^2 with (W/L) preserved and
+* the same shared Vgs = fb - vdd means the same Vov at any drawn size).
+* sim/core-mirror-sensitivity/ measures the resulting dVref/d(mirror-ΔVgs)
+* directly on this netlist (servoed M1-vs-M2 leg, unservoed M3 vref leg, and
+* the MC3 cascode-only mechanism) and design/bandgap_error_budget.md Sec 2.7
+* sizes against it with the same area-budget rigor Sec 2.2 used for the amp.
+*
+* M4/MC4 (the ibias-only branch feeding M5) -- deliberately NOT scaled with
+* M1-M3. sim/core-mirror-sensitivity/ confirms this leg's ΔVgs mismatch has
+* no measurable effect on vref (M4/MC4 only feed the diode-connected M5 that
+* generates the "ibias" bias node -- they never touch the output branch), so
+* M4/MC4 are free to shrink for quiescent current instead: W=20u -> W=7.5u
+* at the same new L=6u, i.e. (W/L)_M4 = 1.25 against the other legs' 10, so
+* M4 carries ~1/8 of the design current at the SAME Vov as M1-M3 (same
+* shared Vgs, so Id scales with W/L only -- still fully in saturation).
+*
+* M5 -- rescaled in step with M4 (W=20u -> W=2.5u, L=2u unchanged) so
+* (W/L)_M5 shrinks by the same 1/8 factor M4's current did: this holds M5's
+* own Vov -- and therefore the "ibias" node voltage MNB and bandgap_amp's
+* own tail mirror actually see -- at essentially its pre-#55 value. Verified
+* directly (not just derived): sim/core-mirror-sensitivity/ measures
+* v(ibias) and the amp's own tail current across the full PVT grid post-
+* resize, and sim/amp-loop-stability/ + sim/amp-psrr/ re-confirm the loop
+* has not regressed. This is the concrete, R1/R2-untouched quiescent-current
+* lever design/bandgap_error_budget.md Sec 5 asks the mirror-sizing pass for
+* -- it does NOT fully close the ratified < 50 uA row (that would require
+* lowering the ΔVBE(I)=I*R2 design current itself, which touches R1/R2 --
+* explicitly out of #55's scope, R1/R2 sizing is #14's) -- see Sec 5's
+* updated numbers for the honest residual.
+*
+* MCB/MNB -- deliberately left UNRESIZED. MCB's current is set by MNB
+* mirroring M5's Vgs, i.e. by the "ibias" node voltage the M4/M5 rescaling
+* above was chosen to preserve -- so MCB/MNB's own operating point is
+* unaffected by this issue's resize, verified (not just assumed) by
+* sim/core-mirror-sensitivity/'s full-PVT MCB saturation-margin measurement.
 }
 G {}
 K {}
 V {}
 S {}
 E {}
-C {symbols/pfet_03v3.sym} 0 300 0 0 {name=M1 model=pfet_03v3 W=20u L=2u nf=1 m=1}
+C {symbols/pfet_03v3.sym} 0 300 0 0 {name=M1 model=pfet_03v3 W=60u L=6u nf=1 m=1}
 N 20 330 20 350 {}
 C {lab_pin.sym} 20 350 0 0 {name=l1 lab=d1}
-C {symbols/pfet_03v3.sym} 0 600 0 0 {name=MC1 model=pfet_03v3 W=20u L=2u nf=1 m=1}
+C {symbols/pfet_03v3.sym} 0 600 0 0 {name=MC1 model=pfet_03v3 W=60u L=6u nf=1 m=1}
 N 20 570 20 550 {}
 C {lab_pin.sym} 20 550 0 0 {name=lc1a lab=d1}
 N -20 600 -40 600 {}
@@ -132,10 +177,10 @@ N -20 0 -40 0 {}
 C {lab_pin.sym} -40 0 0 0 {name=l6 lab=vss}
 N 20 -30 20 -50 {}
 C {lab_pin.sym} 20 -50 0 0 {name=l7 lab=sns1}
-C {symbols/pfet_03v3.sym} 300 300 0 0 {name=M2 model=pfet_03v3 W=20u L=2u nf=1 m=1}
+C {symbols/pfet_03v3.sym} 300 300 0 0 {name=M2 model=pfet_03v3 W=60u L=6u nf=1 m=1}
 N 320 330 320 350 {}
 C {lab_pin.sym} 320 350 0 0 {name=l8 lab=d2}
-C {symbols/pfet_03v3.sym} 300 600 0 0 {name=MC2 model=pfet_03v3 W=20u L=2u nf=1 m=1}
+C {symbols/pfet_03v3.sym} 300 600 0 0 {name=MC2 model=pfet_03v3 W=60u L=6u nf=1 m=1}
 N 320 570 320 550 {}
 C {lab_pin.sym} 320 550 0 0 {name=lc2a lab=d2}
 N 280 600 260 600 {}
@@ -164,10 +209,10 @@ N 280 -60 260 -60 {}
 C {lab_pin.sym} 260 -60 0 0 {name=l16 lab=vss}
 N 320 -90 320 -110 {}
 C {lab_pin.sym} 320 -110 0 0 {name=l17 lab=e2}
-C {symbols/pfet_03v3.sym} 600 300 0 0 {name=M3 model=pfet_03v3 W=20u L=2u nf=1 m=1}
+C {symbols/pfet_03v3.sym} 600 300 0 0 {name=M3 model=pfet_03v3 W=60u L=6u nf=1 m=1}
 N 620 330 620 350 {}
 C {lab_pin.sym} 620 350 0 0 {name=l18 lab=d3}
-C {symbols/pfet_03v3.sym} 600 600 0 0 {name=MC3 model=pfet_03v3 W=20u L=2u nf=1 m=1}
+C {symbols/pfet_03v3.sym} 600 600 0 0 {name=MC3 model=pfet_03v3 W=60u L=6u nf=1 m=1}
 N 620 570 620 550 {}
 C {lab_pin.sym} 620 550 0 0 {name=lc3a lab=d3}
 N 580 600 560 600 {}
@@ -196,10 +241,10 @@ N 580 -60 560 -60 {}
 C {lab_pin.sym} 560 -60 0 0 {name=l26 lab=vss}
 N 620 -90 620 -110 {}
 C {lab_pin.sym} 620 -110 0 0 {name=l27 lab=e3}
-C {symbols/pfet_03v3.sym} 900 300 0 0 {name=M4 model=pfet_03v3 W=20u L=2u nf=1 m=1}
+C {symbols/pfet_03v3.sym} 900 300 0 0 {name=M4 model=pfet_03v3 W=7.5u L=6u nf=1 m=1}
 N 920 330 920 350 {}
 C {lab_pin.sym} 920 350 0 0 {name=l28 lab=d4}
-C {symbols/pfet_03v3.sym} 900 600 0 0 {name=MC4 model=pfet_03v3 W=20u L=2u nf=1 m=1}
+C {symbols/pfet_03v3.sym} 900 600 0 0 {name=MC4 model=pfet_03v3 W=7.5u L=6u nf=1 m=1}
 N 920 570 920 550 {}
 C {lab_pin.sym} 920 550 0 0 {name=lc4a lab=d4}
 N 880 600 860 600 {}
@@ -214,7 +259,7 @@ N 920 270 920 250 {}
 C {lab_pin.sym} 920 250 0 0 {name=l30 lab=vdd}
 N 920 300 940 300 {}
 C {lab_pin.sym} 940 300 0 0 {name=l31 lab=vdd}
-C {symbols/nfet_03v3.sym} 900 0 0 0 {name=M5 model=nfet_03v3 W=20u L=2u nf=1 m=1}
+C {symbols/nfet_03v3.sym} 900 0 0 0 {name=M5 model=nfet_03v3 W=2.5u L=2u nf=1 m=1}
 N 920 -30 920 -50 {}
 C {lab_pin.sym} 920 -50 0 0 {name=l32 lab=ibias}
 N 880 0 860 0 {}
