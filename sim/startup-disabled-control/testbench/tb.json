@@ -1,0 +1,25 @@
+{
+  "name": "startup-disabled-control",
+  "description": "Issue #11 control run: bandgap_core + bandgap_amp ONLY (bandgap_startup NOT instantiated), seeded at the identical degenerate .ic as sim/startup-state-search/, supply already valid (DC, not ramped), uic transient. Answers two questions: (1) is the degenerate state physically stable (not just a numerically-convenient seed)? (2) does PVT leakage alone self-start the loop at any corner without a startup circuit? This is an evidence-gathering record, not a spec-conformance claim -- contrast its per-corner iq_total_final_ua against sim/startup-state-search/'s (same seed, startup circuit present) to see the kick actually doing the work.",
+  "claim": "design/bandgap_operating_point.md section 4.2's degenerate-state existence caveat -- the '(c) control run with the startup circuit disabled' leg of issue #11's required multi-pronged no-other-stable-state evidence (Implementation guidance)",
+  "netlist": "bandgap_startup_disabled.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0.1,
+  "temperatures_c": [-40, 27, 125],
+  "corners": ["full"],
+  "analyses": [
+    "tran 1u 3m uic",
+    "let n = length(time)\nlet vf = v(vref)[n-1]\nlet iqf = -i(vsup)[n-1]*1e6"
+  ],
+  "measure": {
+    "vref_final_v": "vf",
+    "iq_total_final_ua": "iqf"
+  },
+  "checks": {
+    "vref_final_v": {
+      "min": -0.1,
+      "max": 3.7,
+      "description": "convergence sanity bound only (the point of this record is to OBSERVE where the degenerate state persists vs. self-starts via leakage, not to gate a specific outcome) -- catches a non-convergent/blown-up simulation, nothing more."
+    }
+  }
+}

@@ -60,7 +60,18 @@ v {xschem version=3.4.7 file_version=1.2
 * design/bandgap_operating_point.md, degenerate-state caveat; startup
 * circuit itself is #11's scope).
 *
-* Pins: vdd, vss, fb, sns1, sns2, vref, ibias
+* Pins: vdd, vss, fb, sns1, sns2, vref, ibias, casc
+*
+* "casc" (the wide-swing cascode-bias node driving MC1-MC4's gates) is
+* exposed here for issue #11's startup circuit: the degenerate
+* (zero-current) state collapses BOTH fb (relaxes toward vdd) and casc
+* (relaxes toward vdd) together (see the M4/M5/MCB/MNB self-biasing
+* comment above), so a kick branch that only pulls fb low cannot start the
+* loop -- MC1-MC4 stay off (Vsg(MCn) = d<n> - casc = 0) and no current
+* reaches sns1/sns2/vref/ibias even if M1-M4 turn on. bandgap_startup.sch
+* pulls both fb and casc low during startup for exactly this reason. This
+* is an internal-wiring addition only -- bandgap_top's external pin set
+* (vdd, vss, vref) is unchanged.
 }
 G {}
 K {}
@@ -208,3 +219,4 @@ C {iopin.sym} -200 200 0 0 {name=p4 lab=sns1}
 C {iopin.sym} -200 100 0 0 {name=p5 lab=sns2}
 C {iopin.sym} 1100 300 0 0 {name=p6 lab=vref}
 C {iopin.sym} 1100 100 0 0 {name=p7 lab=ibias}
+C {iopin.sym} 1100 -100 0 0 {name=p8 lab=casc}

@@ -1,0 +1,100 @@
+* Frozen netlist snapshot for record 20260801-033024-fbfa3f1
+* source     : sim/startup-slow-ramp/testbench/bandgap_startup_ramp.spice
+* sha256     : 6fb9905d6bdf275a83954244a56439111bcde5ee3cb7aa1a1008805b321047b1
+* This is a verbatim copy taken at record time. Do not edit.
+* bandgap-startup supply-ramp testbench (issue #11).
+*
+* Netlist FRAGMENT for sim/harness (sim/README.md format). The harness
+* supplies .include of the gf180mcu models, the corner .lib sections,
+* .temp, the .control block and .end. Parameters available: vdd_val,
+* vdd_nom, temp_c, plus this manifest's own params: tramp (supply ramp
+* 10%->100% time) and tstep/tstop (transient step/stop, sized per ramp
+* rate by the sibling tb.json in sim/startup-slow-ramp/ -- this file is
+* intentionally byte-identical between sim/startup/ (fast ramp) and
+* sim/startup-slow-ramp/ (slow ramp); only the tb.json params differ).
+*
+* Content below is the ngspice output of:
+*   xschem --rcfile design/xschemrc -n -x -q design/bandgap_top.sch
+* (bandgap_core + bandgap_amp + bandgap_startup subckts, then a local
+* bandgap_top wrapper wired exactly as design/bandgap_top.sch does),
+* with ONE instrumentation addition not present in design/netlist/: a
+* zero-volt ammeter "Vsu_sense" in series between the shared vdd rail and
+* bandgap_startup's own vdd pin, so this testbench can isolate the startup
+* branch's own current draw (v.xtop.vsu_sense#branch) from the whole
+* block's total supply current (-i(vsup)) -- this is how the "disengagement
+* / residual-current itemized against the Iq budget" acceptance criterion
+* in issue #11 is measured. It does not change circuit behavior (a 0V
+* source in series is transparent).
+*
+* Supply drive: a single PWL ramp from 0V to vdd_val over {tramp} seconds,
+* then held. No .ic / .nodeset -- the transient's own t=0 operating point
+* is trivially all-zero (vdd=0 at t=0), which is the real power-up
+* condition, not a numerically-convenient seed. See
+* sim/startup/records/ and sim/startup-slow-ramp/records/ for why both a
+* fast and a slow ramp rate are run (the slow ramp is the case that can
+* mask a stall a step/fast-ramp would not expose -- see the issue's
+* Implementation guidance).
+
+.subckt bandgap_top vdd vss vref
+
+Xx1 vdd sns1 sns2 vss fb vref ibias casc bandgap_core
+Xx2 sns2 sns1 vss fb vdd ibias bandgap_amp
+Vsu_sense vdd vdd_su 0
+Xx3 vdd_su vss fb casc ibias bandgap_startup
+.ends
+.subckt bandgap_core vdd sns1 sns2 vss fb vref ibias casc
+
+XM1 d1 fb vdd vdd pfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC1 sns1 casc d1 vdd pfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XQ1 vss vss sns1 pnp_05p00x05p00 m=1
+XM2 d2 fb vdd vdd pfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC2 sns2 casc d2 vdd pfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XR2 e2 sns2 vss ppolyf_u r_width=2u r_length=18u m=1
+XQ2 vss vss e2 pnp_10p00x10p00 m=1
+XM3 d3 fb vdd vdd pfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC3 vref casc d3 vdd pfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XR1 e3 vref vss ppolyf_u r_width=2u r_length=280u m=1
+XQ3 vss vss e3 pnp_05p00x05p00 m=1
+XM4 d4 fb vdd vdd pfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC4 ibias casc d4 vdd pfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XM5 ibias ibias vss vss nfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMCB casc casc vdd vdd pfet_03v3 L=12u W=4u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMNB casc ibias vss vss nfet_03v3 L=2u W=5u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+.ends
+.subckt bandgap_amp in_p in_n vss out vdd tail_bias
+
+XM1 nd1 in_p tail vss nfet_03v3 L=4u W=10u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XM2 out in_n tail vss nfet_03v3 L=4u W=10u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XM3 nd1 nd1 vdd vdd pfet_03v3 L=4u W=10u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XM4 out nd1 vdd vdd pfet_03v3 L=4u W=10u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XM5 tail tail_bias vss vss nfet_03v3 L=4u W=10u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+.ends
+.subckt bandgap_startup vdd vss fb casc ibias
+
+XMSENSE det ibias vss vss nfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XRPU det vdd vss ppolyf_u_1k r_width=2u r_length=4000u m=1
+XMKFB fb det vss vss nfet_03v3 L=2u W=2u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMKCASC casc det vss vss nfet_03v3 L=2u W=2u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+.ends
+
+vsup vdd 0 pwl(0 0 {tramp} {vdd_val} 10 {vdd_val})
+Xtop vdd 0 vref bandgap_top

@@ -1,0 +1,41 @@
+{
+  "name": "startup",
+  "description": "Issue #11: fast supply-ramp startup transient for bandgap_top with the bandgap_startup circuit (DR-0001's current-sensing, self-disabling design) in the loop -- startup time against the ratified < 1 ms bound (README.md Target specification, Startup row), and the startup branch's own residual current after disengagement.",
+  "claim": "README.md#target-specification (Startup row: self-starting at all corners incl. SS/-40C/2.97V, < 1 ms to within 1% of final value) and DR-0001's Consequences section (startup branch's static current must be accounted for inside the < 50 uA Iq budget)",
+  "netlist": "bandgap_startup_ramp.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0.1,
+  "temperatures_c": [-40, 27, 125],
+  "corners": ["full"],
+  "analyses": [
+    "tran 1u 3m",
+    "let n = length(time)\nlet vf = v(vref)[n-1]\nlet iqf = -i(vsup)[n-1]*1e6\nlet iq_su = v.xtop.vsu_sense#branch[n-1]*1e6\nlet detf = v(xtop.xx3.det)[n-1]\nlet tol = 0.01 * abs(vf)\nlet lo = vf - tol\nlet hi = vf + tol\nlet idx = n-1\nlet inband = 1\nwhile inband = 1 AND idx > 0\n  if v(vref)[idx-1] < lo | v(vref)[idx-1] > hi\n    let inband = 0\n  else\n    let idx = idx - 1\n  end\nend\nlet t_settle = time[idx]\nlet vdd_final = v(vdd)[n-1]\nlet thresh = 0.9*vdd_final\nlet j = 0\nlet above = 0\nwhile above = 0 AND j < n-1\n  if v(vdd)[j] >= thresh\n    let above = 1\n  else\n    let j = j + 1\n  end\nend\nlet t0 = time[j]\nlet startup_time = t_settle - t0"
+  ],
+  "params": {
+    "tramp": "1u"
+  },
+  "measure": {
+    "startup_time_s": "startup_time",
+    "vref_final_v": "vf",
+    "iq_total_final_ua": "iqf",
+    "iq_startup_branch_final_ua": "iq_su",
+    "det_final_v": "detf",
+    "t0_s": "t0",
+    "t_settle_s": "t_settle"
+  },
+  "checks": {
+    "startup_time_s": {
+      "max": 0.001,
+      "description": "ratified spec: self-starting < 1 ms (README.md Target specification, Startup row). Measurement convention: t=0 is the time vdd crosses 90% of its final (PVT-point) value; settled is the last time v(vref) exits +/-1% of its OWN final simulated value at that PVT point (per the ratified spec's 'within 1% of final value' wording) -- computed as a genuine backward scan from the end of the run, so any late re-entry (chattering) after an earlier apparent settle pushes t_settle later rather than being missed. A negative value means the loop was already inside the 1% band before vdd even reached 90% of final (the best possible outcome for a slow ramp) -- see sim/startup-slow-ramp/."
+    },
+    "vref_final_v": {
+      "min": 1.15,
+      "max": 1.35,
+      "description": "sanity window, same bound as sim/bandgap-loop-smoke/ (issue #8) -- an untrimmed, unsized-amp existence-proof bound, not the ratified +/-2% spec window; catches a gross convergence failure, not a spec-conformance claim (amp sizing is #10)."
+    },
+    "det_final_v": {
+      "max": 0.3,
+      "description": "clean-disengagement sanity bound: the startup branch's detect node should sit well below nfet_03v3's Vth (0.53-0.89V over the full PVT matrix per design/device-characterization.md section 3) once the core is running, i.e. MKFB/MKCASC are firmly off, not partially conducting."
+    }
+  }
+}

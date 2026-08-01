@@ -1,0 +1,36 @@
+{
+  "name": "startup-state-search",
+  "description": "Issue #11: adversarial degenerate-state settle search -- bandgap_top seeded (via .ic + uic) exactly at the degenerate zero-current state, supply already valid (DC, not ramped), startup circuit ENABLED. Proves the degenerate state is not a trap the startup circuit fails to recover from, complementing the from-zero ramp records in sim/startup/ and sim/startup-slow-ramp/ and the disabled-circuit control in sim/startup-disabled-control/.",
+  "claim": "DR-0001 (spec/decision-records/0001-bandgap-topology-selection.md) Consequences section and design/bandgap_operating_point.md section 4.2's degenerate-state existence caveat -- no-other-stable-state evidence for the startup circuit's design, not a restatement of the README.md startup-time spec line (recovery_time_s is reported and sanity-checked against the same 1 ms bound as a bonus, but this record's primary claim is state-existence, not startup timing from power-up).",
+  "netlist": "bandgap_startup_state_search.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0.1,
+  "temperatures_c": [-40, 27, 125],
+  "corners": ["full"],
+  "analyses": [
+    "tran 1u 3m uic",
+    "let n = length(time)\nlet vf = v(vref)[n-1]\nlet iqf = -i(vsup)[n-1]*1e6\nlet iq_su = v.xtop.vsu_sense#branch[n-1]*1e6\nlet detf = v(xtop.xx3.det)[n-1]\nlet tol = 0.01 * abs(vf)\nlet lo = vf - tol\nlet hi = vf + tol\nlet idx = n-1\nlet inband = 1\nwhile inband = 1 AND idx > 0\n  if v(vref)[idx-1] < lo | v(vref)[idx-1] > hi\n    let inband = 0\n  else\n    let idx = idx - 1\n  end\nend\nlet recovery_time = time[idx]"
+  ],
+  "measure": {
+    "recovery_time_s": "recovery_time",
+    "vref_final_v": "vf",
+    "iq_total_final_ua": "iqf",
+    "iq_startup_branch_final_ua": "iq_su",
+    "det_final_v": "detf"
+  },
+  "checks": {
+    "iq_total_final_ua": {
+      "min": 5.0,
+      "description": "existence-proof gate: the block must reach a genuine nonzero operating current (tens of uA), not stay near the degenerate state's pA/nA-scale current (see sim/startup-disabled-control/ for what that looks like at the same seed with the startup circuit removed). 5 uA is comfortably below every corner's expected operating current and comfortably above any degenerate-state leakage level."
+    },
+    "vref_final_v": {
+      "min": 1.15,
+      "max": 1.35,
+      "description": "sanity window, same bound as sim/bandgap-loop-smoke/ (issue #8) -- confirms the recovered state is the intended Brokaw-sum operating point, not some other spurious equilibrium; not the ratified +/-2% spec window (amp sizing is #10)."
+    },
+    "recovery_time_s": {
+      "max": 0.001,
+      "description": "bonus check against the same ratified 1 ms bound as sim/startup/ -- informational for this record (whose primary claim is state-existence, not startup timing), computed with the same robust backward-scan settle definition."
+    }
+  }
+}

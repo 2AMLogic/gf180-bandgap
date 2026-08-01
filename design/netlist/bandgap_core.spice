@@ -1,5 +1,5 @@
-** sch_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-8/design/bandgap_core.sch
-**.subckt bandgap_core vdd sns1 sns2 vss fb vref ibias
+** sch_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-11/design/bandgap_core.sch
+**.subckt bandgap_core vdd sns1 sns2 vss fb vref ibias casc
 
 *.iopin vdd
 *.iopin vss
@@ -8,6 +8,7 @@
 *.iopin sns2
 *.iopin vref
 *.iopin ibias
+*.iopin casc
 XM1 d1 fb vdd vdd pfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
 XMC1 sns1 casc d1 vdd pfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
