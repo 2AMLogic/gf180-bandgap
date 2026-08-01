@@ -1,0 +1,145 @@
+* Frozen netlist snapshot for record 20260801-032726-82ea7db
+* source     : sim/psrr-dc/testbench/tb_psrr_dc.spice
+* sha256     : 3a675bf0ad74546b5159e566bb57b57b03c4bc1602e720a85ebb637ddc52121e
+* This is a verbatim copy taken at record time. Do not edit.
+* psrr-dc -- power-supply rejection of bandgap_top, DC figure + curve
+*
+* Netlist FRAGMENT for sim/harness (see sim/harness/README.md). The harness
+* supplies the models, corner .lib sections, .temp, the .control block and
+* .end. The DUT is .include-d from the manifest's "dut" key, so this
+* testbench re-runs unedited against a frozen or extracted netlist via
+* `--dut <path>` -- see sim/dut/README.md.
+*
+* Measurement convention (the part that is easy to get wrong):
+*
+*   - The perturbation is on the SUPPLY: vsup carries `ac 1`, so the AC
+*     source is a 1 V small-signal ripple on vdd at every frequency, on top
+*     of the DC operating point the harness set for this PVT point.
+*   - The output is vref, the block's actual output pin.
+*   - With a 1 V supply perturbation |v(vref)| *is* the supply-to-output
+*     gain, so PSRR(f) = -20*log10(|v(vref)|) = -db(v(vref)) dB. A positive
+*     number is rejection.
+*   - The DC figure claimed against the spec is the low-frequency
+*     asymptote, evaluated at 1 Hz (index 20 of `ac dec 20 0.1 10meg`).
+*     "DC" cannot be evaluated at exactly 0 Hz in an AC analysis, so the
+*     record states the frequency it used rather than implying a 0 Hz
+*     measurement.
+*   - The ratified row reads "> 60 dB DC-1 kHz", so 1 kHz is checked as
+*     well as 1 Hz: a part that rejects at 1 Hz but falls apart by 1 kHz
+*     does not meet that row.
+*   - The rest of the curve -- the 10 Hz ... 1 MHz spot columns in the
+*     record's per-corner table, and the full 161-point sweep printed into
+*     each raw corner log -- is REFERENCE DATA, not a pass/fail claim. The
+*     1 MHz column is the ratified table's *stretch* goal (> 30 dB @ 1 MHz):
+*     recorded, not gated.
+*
+* Load condition: none. The ratified PSRR row's load condition is an
+* explicit open item (amendment A4, README.md), to be fixed when the output
+* stage is designed (#10), so this bench measures the unloaded block and
+* says so. When A4 closes, add the load here and mint a new record set --
+* do not reinterpret these records as if they had carried a load.
+
+vsup vdd 0 dc {vdd_val} ac 1
+Xdut vdd 0 vref bandgap_top
+
+* Convergence seeding for the operating point the AC analysis linearizes
+* around; see design/bandgap_operating_point.md 4.2 and #11. vref_op is
+* measured so a corner that linearized around the degenerate state is
+* visible in the record instead of contributing a meaningless PSRR number.
+.ic v(xdut.fb)=1.0 v(xdut.sns1)=0.6 v(xdut.sns2)=0.6 v(vref)=1.2
++ v(xdut.ibias)=0.6 v(xdut.xx1.casc)=1.8
+
+* ---------------------------------------------------------------
+* DUT netlist included by this testbench (schematic)
+* source     : sim/dut/bandgap_top.spice
+* sha256     : 324384fd617fed86b7699c10b3d1bf354c0716c607495042f8274aec8f9a9733
+* ---------------------------------------------------------------
+
+* DUT netlist fragment -- GENERATED, do not edit by hand.
+*
+* source     : design/netlist/bandgap_top.spice
+* sha256     : 16a219236ffbda6454eeafca3270965a8743ce5979d82b6c36c4312621990149
+* regenerate : python3 sim/tools/mk_dut.py design/netlist/bandgap_top.spice <this file>
+*
+* Subcircuits defined here: bandgap_top, bandgap_core, bandgap_amp
+*
+* Included by the corner runner ahead of each testbench (tb.json's
+* "dut" key, or --dut). Holds subcircuit definitions only: no .end,
+* .control, .temp or .lib -- the harness owns those per PVT point.
+
+** sch_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-8/design/bandgap_top.sch
+.subckt bandgap_top vdd vss vref
+
+*.iopin vdd
+*.iopin vss
+*.iopin vref
+Xx1 vdd sns1 sns2 vss fb vref ibias bandgap_core
+Xx2 sns2 sns1 vss fb vdd ibias bandgap_amp
+.ends
+
+* expanding   symbol:  bandgap_core.sym # of pins=7
+** sym_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-8/design/bandgap_core.sym
+** sch_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-8/design/bandgap_core.sch
+.subckt bandgap_core vdd sns1 sns2 vss fb vref ibias
+
+
+*.iopin vdd
+*.iopin vss
+*.iopin fb
+*.iopin sns1
+*.iopin sns2
+*.iopin vref
+*.iopin ibias
+XM1 d1 fb vdd vdd pfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC1 sns1 casc d1 vdd pfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XQ1 vss vss sns1 pnp_05p00x05p00 m=1
+XM2 d2 fb vdd vdd pfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC2 sns2 casc d2 vdd pfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XR2 e2 sns2 vss ppolyf_u r_width=2u r_length=18u m=1
+XQ2 vss vss e2 pnp_10p00x10p00 m=1
+XM3 d3 fb vdd vdd pfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC3 vref casc d3 vdd pfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XR1 e3 vref vss ppolyf_u r_width=2u r_length=280u m=1
+XQ3 vss vss e3 pnp_05p00x05p00 m=1
+XM4 d4 fb vdd vdd pfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC4 ibias casc d4 vdd pfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XM5 ibias ibias vss vss nfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMCB casc casc vdd vdd pfet_03v3 L=12u W=4u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMNB casc ibias vss vss nfet_03v3 L=2u W=5u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+.ends
+
+
+* expanding   symbol:  bandgap_amp.sym # of pins=6
+** sym_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-8/design/bandgap_amp.sym
+** sch_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-8/design/bandgap_amp.sch
+.subckt bandgap_amp in_p in_n vss out vdd tail_bias
+
+
+*.iopin vdd
+*.iopin vss
+*.iopin in_p
+*.iopin in_n
+*.iopin out
+*.iopin tail_bias
+XM1 nd1 in_p tail vss nfet_03v3 L=4u W=10u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XM2 out in_n tail vss nfet_03v3 L=4u W=10u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XM3 nd1 nd1 vdd vdd pfet_03v3 L=4u W=10u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XM4 out nd1 vdd vdd pfet_03v3 L=4u W=10u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XM5 tail tail_bias vss vss nfet_03v3 L=4u W=10u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+.ends

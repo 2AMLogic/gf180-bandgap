@@ -1,0 +1,152 @@
+* Frozen netlist snapshot for record 20260801-032252-82ea7db
+* source     : sim/output-voltage-tc/testbench/tb_output_voltage_tc.spice
+* sha256     : ad8fd45d5689a9ede5dbe706b00ccb73cf79c7fcca5c534ef0fbe6ea92098f58
+* This is a verbatim copy taken at record time. Do not edit.
+* output-voltage-tc -- Vref accuracy and box-method temperature coefficient
+*
+* Netlist FRAGMENT for sim/harness (see sim/harness/README.md). The harness
+* supplies the gf180mcu models, the corner .lib sections, .temp, the
+* .control block and .end, and hands this file vdd_val / vdd_nom / temp_c.
+* The DUT is NOT defined here: it is .include-d from the manifest's "dut"
+* key (sim/dut/bandgap_top.spice by default), so this same testbench re-runs
+* unedited against a frozen or post-layout extracted netlist with
+* `--dut <path>` -- see sim/dut/README.md.
+*
+* Claims two rows of README.md's ratified target-spec table:
+*
+*   1. Output reference 1.20 V +/-2% untrimmed -- the *corner* portion of
+*      that row. `vref` is the operating point at this PVT point, i.e. at
+*      the harness's own temperature/supply/process axes. The row's 3-sigma
+*      mismatch-MC portion is #13's Monte Carlo bench, not this one; a
+*      passing record here is necessary, not sufficient, for that row.
+*
+*   2. Temp coefficient < 50 ppm/degC by the BOX method. The box is taken
+*      over an internal `dc temp -40 125 1` sweep (1 degC steps, 166 points)
+*      run at every process/supply point, NOT over the harness's three-point
+*      temperature axis:
+*
+*        TC = (Vref_max - Vref_min) / (Vref_27C * 165 degC) * 1e6  [ppm/degC]
+*
+*      A bandgap's Vref(T) is parabolic; an endpoint-only (3-point)
+*      evaluation misses the curvature peak whenever the peak falls between
+*      -40, 27 and 125 degC, and reports a TC lower than the part actually
+*      has. The fine sweep is what makes the recorded number honest. The
+*      three endpoint values are measured too (vref_m40 / vref_27 /
+*      vref_125) so the record itself shows what a 3-point evaluation would
+*      have claimed at each corner; sim/run_suite.py reports the difference.
+*
+* Note on redundancy: the box figures (tc_ppm, vref_box_*, vref_m40/27/125)
+* are computed inside one ngspice invocation and therefore repeat
+* identically across the harness's outer temperature axis at a given
+* process/supply point. Only `vref` varies along that axis. This is
+* deliberate -- the outer axis is what makes the accuracy claim a full-PVT
+* claim, and the record's per-corner table is read column by column.
+
+vsup vdd 0 dc {vdd_val}
+Xdut vdd 0 vref bandgap_top
+
+* Seed the DC solver toward the intended (nonzero-current) equilibrium.
+* Per design/bandgap_operating_point.md 4.2 this self-biased loop also has a
+* degenerate near-zero-current solution and no startup circuit exists yet
+* (#11); seeding is a convergence aid for THIS measurement, not evidence of
+* self-starting behavior -- that claim belongs to #11's transient bench.
+* A corner that collapsed into the degenerate state anyway shows up as a
+* vref far outside the accuracy window rather than as a suspiciously
+* excellent TC, because both are checked.
+.ic v(xdut.fb)=1.0 v(xdut.sns1)=0.6 v(xdut.sns2)=0.6 v(vref)=1.2
++ v(xdut.ibias)=0.6 v(xdut.xx1.casc)=1.8
+
+* ---------------------------------------------------------------
+* DUT netlist included by this testbench (schematic)
+* source     : sim/dut/bandgap_top.spice
+* sha256     : 324384fd617fed86b7699c10b3d1bf354c0716c607495042f8274aec8f9a9733
+* ---------------------------------------------------------------
+
+* DUT netlist fragment -- GENERATED, do not edit by hand.
+*
+* source     : design/netlist/bandgap_top.spice
+* sha256     : 16a219236ffbda6454eeafca3270965a8743ce5979d82b6c36c4312621990149
+* regenerate : python3 sim/tools/mk_dut.py design/netlist/bandgap_top.spice <this file>
+*
+* Subcircuits defined here: bandgap_top, bandgap_core, bandgap_amp
+*
+* Included by the corner runner ahead of each testbench (tb.json's
+* "dut" key, or --dut). Holds subcircuit definitions only: no .end,
+* .control, .temp or .lib -- the harness owns those per PVT point.
+
+** sch_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-8/design/bandgap_top.sch
+.subckt bandgap_top vdd vss vref
+
+*.iopin vdd
+*.iopin vss
+*.iopin vref
+Xx1 vdd sns1 sns2 vss fb vref ibias bandgap_core
+Xx2 sns2 sns1 vss fb vdd ibias bandgap_amp
+.ends
+
+* expanding   symbol:  bandgap_core.sym # of pins=7
+** sym_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-8/design/bandgap_core.sym
+** sch_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-8/design/bandgap_core.sch
+.subckt bandgap_core vdd sns1 sns2 vss fb vref ibias
+
+
+*.iopin vdd
+*.iopin vss
+*.iopin fb
+*.iopin sns1
+*.iopin sns2
+*.iopin vref
+*.iopin ibias
+XM1 d1 fb vdd vdd pfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC1 sns1 casc d1 vdd pfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XQ1 vss vss sns1 pnp_05p00x05p00 m=1
+XM2 d2 fb vdd vdd pfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC2 sns2 casc d2 vdd pfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XR2 e2 sns2 vss ppolyf_u r_width=2u r_length=18u m=1
+XQ2 vss vss e2 pnp_10p00x10p00 m=1
+XM3 d3 fb vdd vdd pfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC3 vref casc d3 vdd pfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XR1 e3 vref vss ppolyf_u r_width=2u r_length=280u m=1
+XQ3 vss vss e3 pnp_05p00x05p00 m=1
+XM4 d4 fb vdd vdd pfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC4 ibias casc d4 vdd pfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XM5 ibias ibias vss vss nfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMCB casc casc vdd vdd pfet_03v3 L=12u W=4u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMNB casc ibias vss vss nfet_03v3 L=2u W=5u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+.ends
+
+
+* expanding   symbol:  bandgap_amp.sym # of pins=6
+** sym_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-8/design/bandgap_amp.sym
+** sch_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-8/design/bandgap_amp.sch
+.subckt bandgap_amp in_p in_n vss out vdd tail_bias
+
+
+*.iopin vdd
+*.iopin vss
+*.iopin in_p
+*.iopin in_n
+*.iopin out
+*.iopin tail_bias
+XM1 nd1 in_p tail vss nfet_03v3 L=4u W=10u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XM2 out in_n tail vss nfet_03v3 L=4u W=10u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XM3 nd1 nd1 vdd vdd pfet_03v3 L=4u W=10u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XM4 out nd1 vdd vdd pfet_03v3 L=4u W=10u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XM5 tail tail_bias vss vss nfet_03v3 L=4u W=10u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+.ends
