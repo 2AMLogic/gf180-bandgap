@@ -1,0 +1,102 @@
+{
+  "name": "core-mirror-sensitivity",
+  "description": "Issue #55: dVref/d(mirror or cascode ΔVgs) measured directly on bandgap_core's own netlist, with a series offset source injected one gate at a time -- M1 and M2 (the servoed sns1/sns2 pair), M3 (unservoed vref branch), M4 (unservoed ibias branch), and MC3 (cascode-only mismatch on the vref branch vs MC1). The four mirror sensitivities S1..S4 are the per-device coefficients design/bandgap_error_budget.md Sec 2.7's core-mirror budget line RSSes; their sum is checked against the servo's common-mode null.",
+  "claim": "design/bandgap_error_budget.md Sec 2.7 (core-mirror ΔVgs -> Vref sensitivity line); not a ratified spec line.",
+  "netlist": "tb_core_mirror_sensitivity.spice",
+  "dut": "sim/dut/bandgap_amp.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0.1,
+  "temperatures_c": [
+    -40,
+    27,
+    125
+  ],
+  "corners": [
+    "full"
+  ],
+  "analyses": [
+    "dc vos_m_servo -2m 2m 4m",
+    "dc vos_m_vref -2m 2m 4m",
+    "dc vos_m_ibias -2m 2m 4m",
+    "dc vos_mc_vref -2m 2m 4m",
+    "dc vos_m_sns1 -2m 2m 4m",
+    "op"
+  ],
+  "measure": {
+    "dvref_dvos_m_servo": "(dc1.v(vref)[1] - dc1.v(vref)[0]) / 4m",
+    "dvref_dvos_m_vref": "(dc2.v(vref)[1] - dc2.v(vref)[0]) / 4m",
+    "dvref_dvos_m_ibias": "(dc3.v(vref)[1] - dc3.v(vref)[0]) / 4m",
+    "dvref_dvos_mc_vref": "(dc4.v(vref)[1] - dc4.v(vref)[0]) / 4m",
+    "dvref_dvos_m_sns1": "(dc5.v(vref)[1] - dc5.v(vref)[0]) / 4m",
+    "dvref_dvos_m_sum": "(dc5.v(vref)[1] - dc5.v(vref)[0]) / 4m + (dc1.v(vref)[1] - dc1.v(vref)[0]) / 4m + (dc2.v(vref)[1] - dc2.v(vref)[0]) / 4m + (dc3.v(vref)[1] - dc3.v(vref)[0]) / 4m",
+    "margin_m1_mv": "(@m.xm1.m0[vds] - @m.xm1.m0[vdsat]) * 1e3",
+    "margin_mc1_mv": "(@m.xmc1.m0[vds] - @m.xmc1.m0[vdsat]) * 1e3",
+    "margin_m4_mv": "(@m.xm4.m0[vds] - @m.xm4.m0[vdsat]) * 1e3",
+    "margin_mc4_mv": "(@m.xmc4.m0[vds] - @m.xmc4.m0[vdsat]) * 1e3",
+    "margin_mcb_mv": "(@m.xmcb.m0[vds] - @m.xmcb.m0[vdsat]) * 1e3",
+    "v_ibias_op": "v(ibias)",
+    "amp_tail_ua": "@m.xamp.xm5.m0[id] * 1e6"
+  },
+  "checks": {
+    "dvref_dvos_m_servo": {
+      "min": 3.0,
+      "max": 12.0,
+      "description": "Servoed-leg (M1 vs M2) mirror ΔVgs shifts the fb node the amp settles on, which moves EVERY leg tied to fb (including the unservoed M3 output leg) together -- first measured at 6.71 mV/mV (40 um^2 sizing) and 6.52 mV/mV (360 um^2 sizing); band allows for the modest PVT/sizing spread this compound mechanism shows without being a loose sanity-only bound."
+    },
+    "dvref_dvos_m_vref": {
+      "min": -8.0,
+      "max": -1.0,
+      "description": "Unservoed vref-branch (M3) mirror ΔVgs steers the output branch's own current directly (Vref = VEB(Q3) + I3*R1) with no loop-gain division -- first measured at -3.75 mV/mV (40 um^2) and -3.65 mV/mV (360 um^2 sizing); negative sign because a more positive M3 gate (relative to fb) reduces this PMOS's current, which reduces I3*R1 and therefore Vref."
+    },
+    "dvref_dvos_m_ibias": {
+      "min": -5.0,
+      "max": 5.0,
+      "description": "Unservoed ibias-branch (M4) mirror ΔVgs does not touch the Vref node at all (M4/MC4 only feed the diode-connected M5 that generates the ibias bias node) -- measured -2.0e-4 mV/mV (40 um^2) and -7.6e-5 mV/mV (360/7.5x2.5 um^2), confirming this leg is a legitimate quiescent-current lever independent of the accuracy budget."
+    },
+    "dvref_dvos_mc_vref": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "Cascode-only (MC3) ΔVgs on the vref branch only perturbs the mirror-drain node (d3), which then acts through M3's own finite output impedance -- measured -0.0207 mV/mV (40 um^2) and -0.0133 mV/mV (360 um^2 sizing), roughly two orders of magnitude smaller than the M3 (mirror) sensitivity, consistent with the ~130x leg-matching improvement the cascode already measured in design/bandgap_operating_point.md Sec 3."
+    },
+    "dvref_dvos_m_sns1": {
+      "min": -12.0,
+      "max": -0.5,
+      "description": "The fourth mirror device's own sensitivity, measured rather than inferred: M1 sits in the servoed sns1 leg, so its ΔVgs steers the Q1 branch current directly against the Q2 branch the amp is servoing it to. Sign is opposite to M2's for that reason. Together with dvref_dvos_m_servo / _m_vref / _m_ibias this completes the four independent per-device coefficients design/bandgap_error_budget.md Sec 2.7 RSSes; the band is a PVT envelope, not a design target."
+    },
+    "dvref_dvos_m_sum": {
+      "min": -0.05,
+      "max": 0.05,
+      "description": "Common-mode null: a ΔVgs shift common to all four mirror gates is electrically identical to shifting the amp output fb by the same amount, which the servo loop absorbs, so S1+S2+S3+S4 must be zero. This is the consistency check that makes the four separately-measured coefficients trustworthy as an orthogonal decomposition -- if it did not hold, the RSS in design/bandgap_error_budget.md Sec 2.7 would be summing overlapping mechanisms."
+    },
+    "margin_m1_mv": {
+      "min": 0.0,
+      "description": "AC#3 headroom re-verification: M1 (Vds - Vdsat) must stay >= 0 (saturation) at every one of the 81 PVT corners, not just the 7-point spot-check design/bandgap_operating_point.md Sec 3/Sec 4.3 previously relied on."
+    },
+    "margin_mc1_mv": {
+      "min": 0.0,
+      "description": "AC#3 headroom re-verification: MC1 (Vds - Vdsat) must stay >= 0 across the full PVT grid."
+    },
+    "margin_m4_mv": {
+      "min": 0.0,
+      "description": "AC#3 headroom re-verification: M4 (Vds - Vdsat) must stay >= 0 -- the scaled-down ibias-branch device (W=7.5 um vs M1's 60 um, same L, same Vov by construction -- see design/bandgap_error_budget.md Sec 2.7's quiescent-current lever) must remain in saturation at every corner too."
+    },
+    "margin_mc4_mv": {
+      "min": 0.0,
+      "description": "AC#3 headroom re-verification: MC4 (Vds - Vdsat) must stay >= 0 across the full PVT grid."
+    },
+    "margin_mcb_mv": {
+      "min": 0.0,
+      "description": "AC#3 headroom re-verification: MCB's own wide-swing cascode-bias device (design/bandgap_operating_point.md Sec 2's Vsg ~ Vth + 2*Vov derivation) must stay in saturation at every corner. MCB itself is unresized by this issue (its current is set by MNB mirroring M5's Vgs, which the M4/M5 resize deliberately preserves -- see the sizing note in bandgap_core.sch), so this check confirms that assumption holds under real PVT variation rather than just at the nominal spot-check."
+    },
+    "v_ibias_op": {
+      "min": 0.3,
+      "max": 1.3,
+      "description": "AC#3: the ibias node's own operating point, re-checked post-resize. Prior nominal figure (pre-#55): 0.75 V (design/bandgap_operating_point.md Sec 3). Bound is a PVT sanity envelope, not a design target."
+    },
+    "amp_tail_ua": {
+      "min": 0.5,
+      "max": 6.0,
+      "description": "AC#3: bandgap_amp's own tail current (M5, mirrored off tail_bias=ibias), re-checked post-resize -- prior nominal figure (pre-#55) was 2.559-2.775 uA depending on netlist snapshot (design/bandgap_error_budget.md Sec 2.1). Bound is a PVT sanity envelope confirming the amp's bias point has not collapsed or run away, not a design target."
+    }
+  }
+}

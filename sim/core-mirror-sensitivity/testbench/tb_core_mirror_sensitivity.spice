@@ -1,0 +1,205 @@
+* core-mirror-sensitivity -- dVref/d(mirror ΔVgs) verification, plus
+* saturation-headroom and amp tail_bias/ibias re-verification (issue #55)
+*
+* design/bandgap_error_budget.md Sec 2.8 identified bandgap_core's own
+* M1..M4/MC1..MC4 mirror/cascode mismatch as the largest unallocated term in
+* the circuit-level untrimmed-accuracy Monte Carlo once #42 closed the
+* amplifier's own budget. This bench measures the missing sensitivity
+* directly, distinguishing the mechanisms the issue calls out:
+*
+*   - SERVOED legs (M1 vs M2): the amp forces sns1 = sns2, so a ΔVgs
+*     mismatch between the two mirror devices feeding the sensed pair acts
+*     like an equivalent input offset -- injected here as vos_m_servo, a
+*     series source between "fb" and M2's own gate only. M1 gets its own
+*     independent source (vos_m_sns1) rather than being hard-wired to fb,
+*     so all four mirror devices are measured symmetrically: the budget in
+*     design/bandgap_error_budget.md Sec 2.7 needs four independent
+*     per-device sensitivities S1..S4 to RSS, not three plus an inferred
+*     one. Measuring S1 also *tests* the common-mode-null argument the
+*     budget relies on -- a ΔVgs shift common to all four gates is
+*     electrically the same as shifting the amp output "fb" by the same
+*     amount, which the servo absorbs, so S1+S2+S3+S4 must come out at
+*     zero. tb.json checks that sum explicitly (dvref_dvos_m_sum) instead
+*     of assuming it.
+*   - UNSERVOED legs (M3 -> vref branch, M4 -> ibias branch): nothing
+*     forces these legs' current to track the servoed pair except the
+*     shared gate node and the cascode's own output-impedance shielding.
+*     vos_m_vref and vos_m_ibias inject the same kind of series mismatch
+*     source into M3's and M4's gates respectively.
+*   - CASCODE-only mismatch (MC3 vs MC1): a ΔVgs mismatch between cascode
+*     devices does not steer branch current directly (each cascode carries
+*     whatever current its own mirror device below it sets) -- it only
+*     perturbs the mirror-drain node voltage (d3), which then feeds back
+*     through the mirror device's own finite output impedance. vos_mc_vref
+*     isolates this weaker mechanism by injecting the mismatch source into
+*     MC3's gate (relative to "casc") instead of M3's.
+*
+* All five offsets default to 0 V and are swept one at a time via five
+* separate two-point .dc sweeps in the same deck (ngspice retains each as
+* its own "dcN" plot, so a later sweep does not clobber an earlier one's
+* result -- see the "measure" section of tb.json for the dcN.v(vref)[i]
+* references).
+*
+* Netlist FRAGMENT for sim/harness (sim/README.md format): the harness
+* supplies .include of the gf180mcu models, the corner .lib sections,
+* .temp, the .control block and .end. Parameters available: vdd_val,
+* vdd_nom, temp_c.
+*
+* bandgap_core is spelled out here (not taken from a DUT file) because the
+* offset sources must tap gate nodes that are internal to it and not
+* exposed on its 8-pin interface. bandgap_amp comes from the DUT manifest
+* key (sim/dut/bandgap_amp.spice, generated from design/netlist/bandgap_amp.spice)
+* so this bench always measures against the final, #42 amplifier.
+*
+* METHOD: same two-point DC linearisation sim/amp-offset-sensitivity uses --
+* dVref/dVos = (vref(+2mV) - vref(-2mV)) / 4mV, well inside every injected
+* leg's linear range. bandgap_startup is instantiated (not .ic-seeded) for
+* the same reason sim/amp-offset-sensitivity's header explains: .ic is not
+* honoured by ngspice's DC solve, and the real block does not have an
+* independent bias forcing the intended solution without it.
+*
+* bandgap_core is NOT wrapped in its own .subckt here (unlike
+* sim/amp-offset-sensitivity's copy) -- ngspice's `dc` analysis can only
+* sweep a source that is a top-level circuit element, not one nested inside
+* a subcircuit instance, and the four offset sources below must tap M2/M3/
+* M4/MC3's gates, which are internal to bandgap_core and not on its 8-pin
+* interface. The core is flattened directly into the top-level deck instead,
+* using the same node names (vdd, sns1, sns2, 0=vss, fb, vref, ibias, casc)
+* bandgap_top.spice ties it to, so it wires up identically either way.
+
+XM1 d1 fbm1 vdd vdd pfet_03v3 L=6u W=60u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+vos_m_sns1 fbm1 fb dc 0
+XMC1 sns1 casc d1 vdd pfet_03v3 L=6u W=60u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XQ1 0 0 sns1 pnp_05p00x05p00 m=1
+XM2 d2 fbm2 vdd vdd pfet_03v3 L=6u W=60u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC2 sns2 casc d2 vdd pfet_03v3 L=6u W=60u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+vos_m_servo fbm2 fb dc 0
+XR2 e2 sns2 0 ppolyf_u r_width=2u r_length=18u m=1
+XQ2 0 0 e2 pnp_10p00x10p00 m=1
+XM3 d3 fbm3 vdd vdd pfet_03v3 L=6u W=60u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC3 vref cascmc3 d3 vdd pfet_03v3 L=6u W=60u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+vos_m_vref fbm3 fb dc 0
+vos_mc_vref cascmc3 casc dc 0
+XR1 e3 tn0 0 ppolyf_u r_width=2u r_length=230.180u m=1
+XQ3 0 0 e3 pnp_05p00x05p00 m=1
+XM4 d4 fbm4 vdd vdd pfet_03v3 L=6u W=7.5u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC4 ibias casc d4 vdd pfet_03v3 L=6u W=7.5u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+vos_m_ibias fbm4 fb dc 0
+XM5 ibias ibias 0 0 nfet_03v3 L=2u W=2.5u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMCB casc casc vdd vdd pfet_03v3 L=12u W=4u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMNB casc ibias 0 0 nfet_03v3 L=2u W=5u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XXTRIM tn0 vref 0 bandgap_trim
+
+.subckt bandgap_trim bot top sub
+
+.param trim_code=32
+
+XRU0 bot tn1 sub ppolyf_u r_width=2u r_length=1.215u m=1
+RS0 tn1 bot {1e-3 + 1e12*(floor(trim_code/1)-2*floor(trim_code/2))} m=1
+XRU1 tn1 u1_0 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU2 u1_0 tn2 sub ppolyf_u r_width=2u r_length=1.215u m=1
+RS1 tn2 tn1 {1e-3 + 1e12*(floor(trim_code/2)-2*floor(trim_code/4))} m=1
+XRU3 tn2 u2_0 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU4 u2_0 u2_1 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU5 u2_1 u2_2 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU6 u2_2 tn3 sub ppolyf_u r_width=2u r_length=1.215u m=1
+RS2 tn3 tn2 {1e-3 + 1e12*(floor(trim_code/4)-2*floor(trim_code/8))} m=1
+XRU7 tn3 u3_0 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU8 u3_0 u3_1 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU9 u3_1 u3_2 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU10 u3_2 u3_3 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU11 u3_3 u3_4 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU12 u3_4 u3_5 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU13 u3_5 u3_6 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU14 u3_6 tn4 sub ppolyf_u r_width=2u r_length=1.215u m=1
+RS3 tn4 tn3 {1e-3 + 1e12*(floor(trim_code/8)-2*floor(trim_code/16))} m=1
+XRU15 tn4 u4_0 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU16 u4_0 u4_1 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU17 u4_1 u4_2 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU18 u4_2 u4_3 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU19 u4_3 u4_4 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU20 u4_4 u4_5 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU21 u4_5 u4_6 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU22 u4_6 u4_7 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU23 u4_7 u4_8 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU24 u4_8 u4_9 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU25 u4_9 u4_10 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU26 u4_10 u4_11 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU27 u4_11 u4_12 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU28 u4_12 u4_13 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU29 u4_13 u4_14 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU30 u4_14 tn5 sub ppolyf_u r_width=2u r_length=1.215u m=1
+RS4 tn5 tn4 {1e-3 + 1e12*(floor(trim_code/16)-2*floor(trim_code/32))} m=1
+XRU31 tn5 u5_0 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU32 u5_0 u5_1 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU33 u5_1 u5_2 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU34 u5_2 u5_3 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU35 u5_3 u5_4 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU36 u5_4 u5_5 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU37 u5_5 u5_6 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU38 u5_6 u5_7 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU39 u5_7 u5_8 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU40 u5_8 u5_9 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU41 u5_9 u5_10 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU42 u5_10 u5_11 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU43 u5_11 u5_12 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU44 u5_12 u5_13 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU45 u5_13 u5_14 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU46 u5_14 u5_15 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU47 u5_15 u5_16 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU48 u5_16 u5_17 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU49 u5_17 u5_18 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU50 u5_18 u5_19 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU51 u5_19 u5_20 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU52 u5_20 u5_21 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU53 u5_21 u5_22 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU54 u5_22 u5_23 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU55 u5_23 u5_24 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU56 u5_24 u5_25 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU57 u5_25 u5_26 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU58 u5_26 u5_27 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU59 u5_27 u5_28 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU60 u5_28 u5_29 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU61 u5_29 u5_30 sub ppolyf_u r_width=2u r_length=1.215u m=1
+XRU62 u5_30 top sub ppolyf_u r_width=2u r_length=1.215u m=1
+RS5 top tn5 {1e-3 + 1e12*(floor(trim_code/32)-2*floor(trim_code/64))} m=1
+.ends
+
+.subckt bandgap_startup vdd vss fb casc ibias
+
+
+XMSENSE det ibias vss vss nfet_03v3 L=2u W=20u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XRPU det vdd vss ppolyf_u_1k r_width=2u r_length=4000u m=1
+XMKFB fb det vss vss nfet_03v3 L=2u W=2u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMKCASC casc det vss vss nfet_03v3 L=2u W=2u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+.ends
+
+vsup vdd 0 dc {vdd_val}
+Xamp sns2 sns1 0 fb vdd ibias bandgap_amp
+Xstart vdd 0 fb casc ibias bandgap_startup
+
+.nodeset v(fb)=2.27 v(sns1)=0.72 v(sns2)=0.72 v(vref)=1.23 v(ibias)=0.75
++ v(casc)=1.75
+
+* A final, unperturbed .op (all five vos_* sources at their own "dc 0"
+* default) supplies the saturation-headroom and amp tail_bias/ibias
+* operating-point measures in tb.json: AC#3 ("re-verify headroom across the
+* full PVT grid ... including MCB's W/L and the amp's tail_bias/ibias
+* operating point, which moves with any core resize"). Margin = Vds - Vdsat
+* (PMOS: Vsd - Vdsat, both reported by ngspice as positive magnitudes for a
+* device in saturation) -- must stay >= 0 at every corner for the device to
+* remain in saturation.
