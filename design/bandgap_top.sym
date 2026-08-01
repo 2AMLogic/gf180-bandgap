@@ -1,0 +1,25 @@
+v {xschem version=3.4.7 file_version=1.2
+* bandgap_top symbol -- top-level wrapper for the testbench suite (issue #8)
+* Pins: vdd, vss, vref
+}
+G {}
+K {type=subcircuit
+format="@spiceprefix@name @pinlist bandgap_top"
+template="name=x1
+spiceprefix=X"
+}
+V {}
+S {}
+E {}
+L 4 -30 -50 30 -50 {}
+L 4 -30 50 30 50 {}
+L 4 -30 -50 -30 50 {}
+L 4 30 -50 30 50 {}
+B 5 -32 22 -28 26 {name=vdd dir=inout pinnumber=1}
+B 5 -32 -28 -28 -24 {name=vss dir=inout pinnumber=2}
+B 5 28 -2 32 2 {name=vref dir=out pinnumber=3}
+T {vdd} -25 24 0 1 0.2 0.2 {}
+T {vss} -25 -26 0 1 0.2 0.2 {}
+T {vref} 25 0 0 0 0.2 0.2 {}
+T {@name} -28 55 0 0 0.2 0.2 {}
+T {bandgap_top} -22 0 0 0 0.2 0.2 {}

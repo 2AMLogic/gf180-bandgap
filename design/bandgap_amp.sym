@@ -1,0 +1,31 @@
+v {xschem version=3.4.7 file_version=1.2
+* bandgap_amp symbol -- provisional 5T servo op-amp (issue #8)
+* Pins: vdd, vss, in_p, in_n, out, tail_bias
+}
+G {}
+K {type=subcircuit
+format="@spiceprefix@name @pinlist bandgap_amp"
+template="name=x1
+spiceprefix=X"
+}
+V {}
+S {}
+E {}
+L 4 -30 -60 30 -60 {}
+L 4 -30 60 30 60 {}
+L 4 -30 -60 -30 60 {}
+L 4 30 -60 30 60 {}
+B 5 -32 22 -28 26 {name=in_p dir=in pinnumber=1}
+B 5 -32 -6 -28 -2 {name=in_n dir=in pinnumber=2}
+B 5 -32 -32 -28 -28 {name=vss dir=inout pinnumber=3}
+B 5 28 22 32 26 {name=out dir=out pinnumber=4}
+B 5 28 -32 32 -28 {name=vdd dir=inout pinnumber=5}
+B 5 -2 -62 2 -58 {name=tail_bias dir=in pinnumber=6}
+T {in_p} -25 24 0 1 0.2 0.2 {}
+T {in_n} -25 -4 0 1 0.2 0.2 {}
+T {vss} -25 -30 0 1 0.2 0.2 {}
+T {out} 25 24 0 0 0.2 0.2 {}
+T {vdd} 25 -30 0 0 0.2 0.2 {}
+T {tail_bias} 4 -55 0 0 0.15 0.15 {}
+T {@name} -28 65 0 0 0.2 0.2 {}
+T {bandgap_amp} -20 0 0 0 0.2 0.2 {}
