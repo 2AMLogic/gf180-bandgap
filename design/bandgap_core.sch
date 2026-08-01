@@ -72,6 +72,35 @@ v {xschem version=3.4.7 file_version=1.2
 * pulls both fb and casc low during startup for exactly this reason. This
 * is an internal-wiring addition only -- bandgap_top's external pin set
 * (vdd, vss, vref) is unchanged.
+*
+* TRIM LADDER (issue #14) -- DR-0001's ratified "minimal resistor-trim
+* network ... a small number of binary-weighted trim resistor segments,
+* switched in via probe-pad straps or a simple fuse/metal-option selection
+* at test", sized against README.md's ratified Trim row (1-point resistor
+* trim, range >= +/-5%, resolution <= 0.25%/step, >=5 bits equivalent,
+* magnitude only, performed at 27 C). Full sizing derivation and the
+* coverage argument: design/bandgap_trim_network.md.
+*
+* The output-branch summing resistor is no longer one device. It is a fixed
+* base R1 (e3 -> tn0) in series with XTRIM, a 6-bit binary-weighted unit-
+* segment ladder (bandgap_trim.sch, tn0 -> vref). Trim acts on vref alone:
+* vref = VEB(Q3) + I*(R1 + Rtrim) and the PTAT current I = dVBE/R2 is set
+* entirely by the R2/Q1/Q2 loop, independent of what sits in the output
+* branch. Adding series resistance here therefore moves the reference
+* MAGNITUDE ONLY, as the ratified Trim row requires -- and the trim curve is
+* exactly linear in the selected segment resistance, which
+* sim/trim-coverage/ measures rather than assumes.
+*
+* tn0 is the reserved base tap point; the ladder's own six taps are internal
+* to bandgap_trim.sch. No active device is added to the reference path.
+*
+* THE DEFAULT CODE IS THE MID CODE (32 of 0..63), NOT the code that centres
+* vref on 1.200 V: R1 + 32 trim units reproduces the pre-trim drawn 280 um
+* summing resistor to within 0.04 ohm (under 1 ppm), so the default
+* schematic is electrically the #8/#10/#11 circuit and every record taken
+* against it stays valid. Picking the code that lands nearest 1.200 V on a
+* given die IS the 1-point trim, and that is a wafer-probe step, not a
+* schematic default -- see design/bandgap_trim_network.md.
 }
 G {}
 K {}
@@ -153,9 +182,9 @@ N 620 270 620 250 {}
 C {lab_pin.sym} 620 250 0 0 {name=l20 lab=vdd}
 N 620 300 640 300 {}
 C {lab_pin.sym} 640 300 0 0 {name=l21 lab=vdd}
-C {symbols/ppolyf_u.sym} 600 90 0 0 {name=R1 model=ppolyf_u W=2u L=280u m=1}
+C {symbols/ppolyf_u.sym} 600 90 0 0 {name=R1 model=ppolyf_u W=2u L=230.180u m=1}
 N 600 60 600 40 {}
-C {lab_pin.sym} 600 40 0 0 {name=l22 lab=vref}
+C {lab_pin.sym} 600 40 0 0 {name=l22 lab=tn0}
 N 600 120 600 140 {}
 C {lab_pin.sym} 600 140 0 0 {name=l23 lab=e3}
 N 580 90 560 90 {}
@@ -212,6 +241,13 @@ N 1220 630 1220 650 {}
 C {lab_pin.sym} 1220 650 0 0 {name=lb7 lab=vss}
 N 1220 600 1240 600 {}
 C {lab_pin.sym} 1240 600 0 0 {name=lb8 lab=vss}
+C {bandgap_trim.sym} 600 -250 0 0 {name=XTRIM}
+N 600 -290 600 -310 {}
+C {lab_pin.sym} 600 -310 0 0 {name=ltrt lab=vref}
+N 600 -210 600 -190 {}
+C {lab_pin.sym} 600 -190 0 0 {name=ltrb lab=tn0}
+N 560 -250 540 -250 {}
+C {lab_pin.sym} 540 -250 0 0 {name=ltrs lab=vss}
 C {iopin.sym} -200 300 0 0 {name=p1 lab=vdd}
 C {iopin.sym} -200 -60 0 0 {name=p2 lab=vss}
 C {iopin.sym} -200 500 0 0 {name=p3 lab=fb}

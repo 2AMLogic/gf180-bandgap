@@ -1,0 +1,25 @@
+v {xschem version=3.4.7 file_version=1.2
+* bandgap_trim symbol -- 6-bit binary-weighted unit-segment trim ladder
+* (issue #14). Pins: bot, top, sub. See bandgap_trim.sch.
+}
+G {}
+K {type=subcircuit
+format="@spiceprefix@name @pinlist bandgap_trim"
+template="name=x1
+spiceprefix=X"
+}
+V {}
+S {}
+E {}
+L 4 -40 -40 40 -40 {}
+L 4 -40 40 40 40 {}
+L 4 -40 -40 -40 40 {}
+L 4 40 -40 40 40 {}
+B 5 -2.5 37.5 2.5 42.5 {name=bot dir=inout pinnumber=1}
+B 5 -2.5 -42.5 2.5 -37.5 {name=top dir=inout pinnumber=2}
+B 5 -42.5 -2.5 -37.5 2.5 {name=sub dir=inout pinnumber=3}
+T {bot} -5 25 0 0 0.2 0.2 {}
+T {top} -5 -32 0 0 0.2 0.2 {}
+T {sub} -35 -6 0 0 0.2 0.2 {}
+T {@name} -38 45 0 0 0.2 0.2 {}
+T {bandgap_trim} -35 0 0 0 0.15 0.15 {}

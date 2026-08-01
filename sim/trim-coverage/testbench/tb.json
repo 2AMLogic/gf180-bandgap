@@ -1,0 +1,74 @@
+{
+  "name": "trim-coverage",
+  "description": "Binary-weighted trim-ladder range, resolution, binary weighting and linearity on bandgap_top over the full PVT grid, against README.md's ratified Trim row (issue #14).",
+  "claim": "README.md 'Target specification (RATIFIED 2026-07-31)' -> row 'Trim': '1-point resistor trim (binary-weighted segments per DR-0001), range >= +/-5%, resolution <= 0.25%/step (>=5 bits equiv.), magnitude only', corner binding 'performed at 27 C'. Substantiates the trim network delivered by design/bandgap_trim.sch -- a 6-bit binary-weighted ladder of 63 identical ppolyf_u unit segments grouped 1/2/4/8/16/32, each group shunted by one metal-option/probe-pad strap RS0..RS5 -- in series with bandgap_core's fixed base R1. Also substantiates the coverage argument in design/bandgap_trim_network.md: that the implemented range absorbs the untrimmed mismatch spread recorded in sim/mc-untrimmed/.",
+  "netlist": "tb_trim_coverage.spice",
+  "dut": "sim/dut/bandgap_top.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0.1,
+  "temperatures_c": [
+    -40,
+    27,
+    125
+  ],
+  "corners": [
+    "full"
+  ],
+  "analyses": [
+    "let vv = unitvec(9)",
+    "let k = 0",
+    "foreach c 0 1 2 4 8 16 32 63 22",
+    "  alterparam bandgap_trim trim_code = $c",
+    "  reset",
+    "  op",
+    "  let vv[k] = v(vref)",
+    "  let k = k + 1",
+    "end"
+  ],
+  "measure": {
+    "vref_c0": "vv[0]",
+    "vref_c1": "vv[1]",
+    "vref_c32": "vv[6]",
+    "vref_c63": "vv[7]",
+    "vref_c22": "vv[8]",
+    "trimmed_err_pct": "(vv[8]-1.2)/1.2*100",
+    "lsb_mv": "(vv[1]-vv[0])*1e3",
+    "span_mv": "(vv[7]-vv[0])*1e3",
+    "trim_down_mv": "(vv[6]-vv[0])*1e3",
+    "trim_up_mv": "(vv[7]-vv[6])*1e3",
+    "w5_lsb": "(vv[6]-vv[0])/(vv[1]-vv[0])",
+    "lin_resid_mv": "(vv[7]-(vv[0]+(vv[1]-vv[0])+(vv[2]-vv[0])+(vv[3]-vv[0])+(vv[4]-vv[0])+(vv[5]-vv[0])+(vv[6]-vv[0])))*1e3",
+    "iq_ua": "-i(vsup)*1e6"
+  },
+  "checks": {
+    "span_mv": {
+      "min": 120.0,
+      "description": "RATIFIED spec: trim range >= +/-5%. Read against the 1.20 V target that is +/-60 mV either side of the trimmed centre, so the reachable code-0-to-code-63 span must be at least 120 mV. The ratified row binds at 27 C; applying the check at EVERY grid point is strictly stronger, because the ladder's step is PTAT (see lsb_mv) and the span is therefore smallest at -40 C."
+    },
+    "lsb_mv": {
+      "min": 0.5,
+      "max": 4.2,
+      "description": "Resolution and monotonicity. The RATIFIED cap is 0.25%/step of 1.20 V = 3.00 mV and it binds at 27 C only; the ladder's step is one unit segment's resistance times the PTAT branch current, so it scales roughly 0.77x at -40 C and 1.34x at 125 C. This grid-wide envelope check is therefore 4.2 mV -- the 3.00 mV ratified cap is evaluated against the 27 C rows in the record, where the spec actually binds. min=0.5 mV fails any corner where the LSB collapsed or went negative, i.e. a non-monotonic or broken ladder."
+    },
+    "lin_resid_mv": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "Linearity: measured full scale (code 63) minus the superposition of the six measured single-bit-group weights. A non-zero residual would mean the trim is NOT a pure series-resistance magnitude trim -- e.g. the added series resistance shifting the PTAT current, which would make the trim interact with the temperature coefficient and violate the ratified row's 'magnitude only'."
+    },
+    "iq_ua": {
+      "min": 1.0,
+      "max": 120.0,
+      "description": "Not a spec check -- the Iq claim lives in sim/iq/. This only asserts the loop was in its intended non-degenerate operating state for the last code of the sweep (code 22); a corner that collapsed would otherwise report a meaningless trim curve."
+    },
+    "w5_lsb": {
+      "min": 31.9,
+      "max": 32.1,
+      "description": "Binary weighting: the MSB group (32 unit segments) must weigh exactly 32 LSBs (1 unit) at every corner. The +/-0.1 LSB window is tight on purpose -- with identical unit segments the ratio is exact by construction and any real deviation would mean the ladder is not what the schematic says it is. An earlier six-different-lengths version of this ladder read 58.6-68.9 instead of 64.0 across this same grid; see design/bandgap_trim.sch's header for why that structure was rejected."
+    },
+    "vref_c22": {
+      "min": 1.0,
+      "max": 1.4,
+      "description": "Not a spec check -- a sanity window on the code a 1-point trim picks at tt/27 C. The trimmed-accuracy numbers themselves are reported in the record, against the +/-0.5% stretch target, without being used to gate this bench."
+    }
+  }
+}
