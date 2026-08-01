@@ -1,0 +1,25 @@
+{
+  "name": "amp-offset-sensitivity",
+  "description": "Issue #10: measured dVref/dVos with a small offset source inserted in series in the amp's in_n path (electrically identical to an amp input-referred offset), verifying the error budget's amp-offset sensitivity line (design/bandgap_error_budget.md Sec 2) against the real closed loop.",
+  "claim": "design/bandgap_error_budget.md Sec 2 (amp input-referred offset -> Vref sensitivity line); not a ratified spec line.",
+  "netlist": "tb_offset_sensitivity.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0.1,
+  "temperatures_c": [-40, 27, 125],
+  "corners": ["full"],
+  "analyses": [
+    "dc vos -2m 2m 4m",
+    "let dvref_dvos = (v(vref)[1] - v(vref)[0]) / 4m"
+  ],
+  "measure": {
+    "dvref_dvos": "dvref_dvos",
+    "vref_at_zero_ish": "(v(vref)[0] + v(vref)[1]) / 2"
+  },
+  "checks": {
+    "dvref_dvos": {
+      "min": 8.0,
+      "max": 25.0,
+      "description": "Sanity bound around the R1/R2-based Brokaw-gain estimate (magnitude ~15.28, design/bandgap_operating_point.md Sec 2; also consistent with the ~14.3 gain figure derived independently in spec/decision-records/0003-target-spec-ratification.md's spec-review input): the measured closed-loop sensitivity should land in the same order of magnitude at every corner. Sign is POSITIVE, not negative as a first guess from the R1/R2 magnitude alone might suggest: in_n = vos_node = sns1 + vos increases with vos, and this amp's in_n is the inverting input for its own output (see design/bandgap_amp.sch's M1/M2/M3/M4 topology -- M1's drain is the diode-referenced mirror node, M2's drain is the high-impedance output node, so increasing in_n pulls the amp's output/fb node down), which decreases the PMOS mirror Vsg headroom the wrong way -- i.e. fb falling *increases* every core mirror leg's current, and Vref = VEB(Q3) + I*R1 is dominated by the I*R1 term, so higher I means higher Vref. Net: dVref/dVos is positive. Not a ratified spec line -- see design/bandgap_error_budget.md Sec 2 for how this feeds the offset budget and Sec 4 for the loop's sign convention."
+    }
+  }
+}

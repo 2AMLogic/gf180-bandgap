@@ -1,0 +1,34 @@
+{
+  "name": "core-psrr-ideal-amp",
+  "description": "Issue #10 diagnostic: bandgap_core's own PSRR contribution with an idealized (infinite-gain, zero supply-sensitivity) servo replacing bandgap_amp entirely -- decomposes sim/amp-psrr/'s shortfall into a core (DR-0001) share and an amp (#10) share. NOT a spec claim -- see design/bandgap_error_budget.md Sec 3 and testbench header.",
+  "claim": "Diagnostic only, not a ratified spec line -- see design/bandgap_error_budget.md Sec 3.",
+  "netlist": "tb_core_psrr_ideal_amp.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0.1,
+  "temperatures_c": [-40, 27, 125],
+  "corners": ["full"],
+  "analyses": [
+    "ac dec 20 0.01 1k",
+    "let hdb = db(mag(v(vref)))",
+    "let psrr_db = -1 * hdb",
+    "let nfreq = length(frequency)",
+    "let worst = psrr_db[0]",
+    "let i = 0",
+    "while i < nfreq",
+    "  if psrr_db[i] < worst",
+    "    let worst = psrr_db[i]",
+    "  end",
+    "  let i = i + 1",
+    "end"
+  ],
+  "measure": {
+    "psrr_dc_db": "psrr_db[0]",
+    "psrr_worst_db": "worst"
+  },
+  "checks": {
+    "psrr_worst_db": {
+      "min": 60.0,
+      "description": "Not a spec claim (see Claim field) -- checked only so the record's own Result table shows at a glance whether bandgap_core's own contribution alone would already clear the ratified >60dB bar if the amp were ideal."
+    }
+  }
+}
