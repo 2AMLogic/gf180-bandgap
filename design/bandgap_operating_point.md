@@ -1,4 +1,4 @@
-# bandgap_top operating point (issue #8)
+# bandgap_top operating point (issues #8, #10)
 
 Schematic entry for the ratified Brokaw-cell bandgap
 ([DR-0001](../spec/decision-records/0001-bandgap-topology-selection.md)):
@@ -7,11 +7,17 @@ Schematic entry for the ratified Brokaw-cell bandgap
 assumptions, cites the `sim/` evidence they are grounded in, and states every
 caveat that applies before the numbers here can be treated as final.
 
-**Scope**: schematic entry and a nominal smoke test only. No final amp
-sizing/offset budget (#10), no startup circuit (#11), no per-spec-line
-testbenches (#12), no Monte Carlo (#13), no trim network (#14). Nothing here
-is a claim against the ratified target spec (`README.md`, "Target
-specification") — see the caveats below for why.
+**Scope**: schematic entry (#8) plus the amplifier offset/mismatch budget,
+final amplifier sizing, loop-stability and PSRR verification (#10, see
+[`design/bandgap_error_budget.md`](bandgap_error_budget.md) for the full
+derivation). No startup circuit (#11), no per-spec-line testbenches (#12),
+no Monte Carlo (#13), no trim network (#14). **This is still not a
+pass/fail claim against the ratified target spec's accuracy or PSRR rows**
+— #10's own budget work found both fall short of the ratified target at
+this amplifier's sizing (see `bandgap_error_budget.md` Sec 5); see the
+caveats in Section 4 below for the remaining reasons (no startup circuit,
+no trim, no PVT/mismatch sweep of the whole assembled circuit) a
+conformance claim would be premature even where the budget did close.
 
 ## 1. Topology
 
@@ -140,18 +146,27 @@ simulation of the actual drawn geometry removes that interpolation error.
 Final sizing/trim (#10/#14) should re-derive from the full corner/mismatch
 sweep rather than this single nominal measurement.
 
-### Mirror and amp devices (provisional)
+### Mirror (core) and amp devices
+
+Core mirror/cascode-bias sizing (rows 1–5) is still **provisional** — see
+§4.3, unchanged by #10. Amp sizing (rows 6–8) is **final**, this issue's
+own offset-budgeted result — see
+[`design/bandgap_error_budget.md`](bandgap_error_budget.md) Sec 2 for the
+full derivation, sensitivity measurement, and why sizing was not pushed
+further. Device names `M1`–`M5` are reused independently inside
+`bandgap_core` and `bandgap_amp` (each subcircuit's own local numbering);
+the `(core)`/`(amp)` qualifiers below disambiguate.
 
 | Device | Type | Size | Role |
 |---|---|---|---|
-| M1–M4 | `pfet_03v3` | W=20 µm, L=2 µm, m=1 | Core current mirror (lower devices) |
-| MC1–MC4 | `pfet_03v3` | W=20 µm, L=2 µm, m=1 | Cascode devices, one per mirror leg — deliberately identical to M1–M4 so the whole stage is one matching group for #16's common-centroid layout |
-| MCB | `pfet_03v3` | W=4 µm, L=12 µm | Diode-connected cascode-bias device (see sizing derivation below) |
-| MNB | `nfet_03v3` | W=5 µm, L=2 µm | Cascode-bias current sink; 1/4 of Mn5's W/L, so it draws ≈ I/4 (measured 2.533 µA, §3) |
-| Mn5 | `nfet_03v3` | W=20 µm, L=2 µm | Diode-connected tail-bias generator for the amp |
-| M1, M2 (amp input pair) | `nfet_03v3` | W=10 µm, L=4 µm | Sized to match the #4 MOS-mismatch geometry (`20260731-031718-8fb0ea6`) so the amp's own input-referred offset is directly citable, not re-measured |
-| M3, M4 (amp mirror load) | `pfet_03v3` | W=10 µm, L=4 µm | — |
-| M5 (amp tail) | `nfet_03v3` | W=10 µm, L=4 µm | Gate driven by `bandgap_core.ibias`, not an independent bias — see §4 |
+| M1–M4 (core) | `pfet_03v3` | W=20 µm, L=2 µm, m=1 | Core current mirror (lower devices) — provisional, §4.3 |
+| MC1–MC4 (core) | `pfet_03v3` | W=20 µm, L=2 µm, m=1 | Cascode devices, one per mirror leg — deliberately identical to M1–M4 so the whole stage is one matching group for #16's common-centroid layout — provisional, §4.3 |
+| MCB (core) | `pfet_03v3` | W=4 µm, L=12 µm | Diode-connected cascode-bias device (see sizing derivation below) — provisional, §4.3 |
+| MNB (core) | `nfet_03v3` | W=5 µm, L=2 µm | Cascode-bias current sink; 1/4 of Mn5's W/L, so it draws ≈ I/4 (measured 2.533 µA, §3) — provisional, §4.3 |
+| Mn5 (core) | `nfet_03v3` | W=20 µm, L=2 µm | Diode-connected tail-bias generator for the amp — provisional, §4.3 |
+| M1, M2 (amp input pair) | `nfet_03v3` | W=100 µm, L=4 µm, nf=2 | **Final (#10).** 10x the #8 provisional 10 µm/4 µm area; L unchanged from the #4 MOS-mismatch characterization geometry (`20260731-031718-8fb0ea6`) so `A_pair` applies with no L-extrapolation; `nf=2` because a single finger tops out at 100 µm in this PDK. Dominant term in the offset budget even after this resize — see `bandgap_error_budget.md` Sec 2.2, 2.7 |
+| M3, M4 (amp mirror load) | `pfet_03v3` | W=40 µm, L=4 µm | **Final (#10).** 4x the #8 provisional area; smaller increase than the input pair because mirror-load mismatch is attenuated at the input by the measured `gm3/gm1 ≈ 0.69` — see `bandgap_error_budget.md` Sec 2.2 |
+| M5 (amp tail) | `nfet_03v3` | W=10 µm, L=4 µm | Unchanged from #8. Gate driven by `bandgap_core.ibias`, not an independent bias — see §4. Sizing here sets the amp/core current-mirror ratio (Iq), not the offset-budget's limiting term, so #10 left it as-is |
 
 **MCB sizing derivation.** Wide-swing cascode bias wants
 `Vsg(MCB) ≈ Vth + 2·Vov`, i.e. `Vov(MCB) ≈ 2·Vov(M1)` at MCB's own current.
@@ -182,6 +197,16 @@ unedited per `sim/README.md`'s append-only convention). If the smoke test is
 re-run, the new record supersedes this one — check that experiment's
 `records/` directory for the latest ID rather than assuming this citation is
 current forever.
+
+**Note (#10):** the table below predates #10's amplifier resize (Section 2)
+and reflects #8's provisional 10 µm/4 µm amp, not the final sizing —
+`sim/bandgap-loop-smoke/` is #8's own experiment and re-running it against
+the resized amp is out of #10's scope. For a nominal op-point against the
+*current* (final) amp, see `sim/amp-offset-sensitivity/records/20260801-034212-c26da47.md`'s
+`vref_at_zero_ish` column (≈1.227 V at `tt`/27 °C/3.30 V, within ~0.15 % of
+the number below — the resize did not materially move the nominal
+operating point) or `design/bandgap_error_budget.md` Sec 2.5's directly
+cited `R1·I = 0.506 V` nominal figure.
 
 | Node | Simulated value |
 |---|---|
@@ -266,13 +291,32 @@ nominal.
 
 ## 4. Caveats (read before reusing these values)
 
-### 4.1 Provisional amp
+### 4.1 Amp offset budget, stability and PSRR (#10 — closed, with a recorded shortfall)
 
 `bandgap_amp` is a plain 5-transistor OTA (differential pair + mirror load +
-tail), sized only for loop closure, using real devices rather than a
-behavioral source (see §4.2 for why). No offset budget, no PSRR/headroom
-analysis, no compensation/stability analysis has been done. Final sizing is
-**#10**.
+tail), using real devices rather than a behavioral source (see §4.2 for
+why). Sizing is now **final** (#10, replacing #8's provisional 10 µm/4 µm
+placeholder) — see
+[`design/bandgap_error_budget.md`](bandgap_error_budget.md) for the full
+derivation. Loop stability is verified and passes with wide margin across
+the full PVT grid (132.5° minimum phase margin against a 45° criterion,
+`bandgap_error_budget.md` Sec 4). **Two things do not close**, per
+CLAUDE.md's "no spec relaxation" rule and this issue's explicit escalation
+requirement rather than being silently declared passing:
+
+- The untrimmed accuracy budget (amp offset + resistor + PNP mismatch, RSS)
+  comes in at ~106–115 % of the ratified ±2 % (3σ) target — the amp's own
+  random offset alone, even after a 10x/4x area increase, is the dominant
+  term (`bandgap_error_budget.md` Sec 2.7).
+- PSRR falls 5–28 dB short of the ratified >60 dB DC–1 kHz target across
+  the PVT grid, traced to the amp (not `bandgap_core`'s cascode) as the
+  limiter (`bandgap_error_budget.md` Sec 3).
+
+Both are escalated (`bandgap_error_budget.md` Sec 5) rather than fixed by
+further sizing changes, because further area growth on this amp topology
+measurably erodes loop stability at this circuit's specific corners
+(`bandgap_error_budget.md` Sec 2.1) — closing either gap needs a
+topology/compensation change that is out of this issue's scope.
 
 ### 4.2 Degenerate (near-zero-current) state — no startup circuit yet
 
@@ -315,20 +359,27 @@ the same sense the amp's is not (§4.1):
 - MC1–MC4 are drawn identical to M1–M4 for matching-group simplicity. A
   sizing pass may well want different cascode geometry (e.g. shorter
   cascodes to recover headroom, or wider ones to lower `Vdsat`).
-- No PSRR analysis has been run on the cascoded stage — the DC
-  line-sensitivity spot-check in §3 shows the benefit is currently masked by
-  the provisional amp, and the real evaluation needs a PSRR testbench
-  (**#12**) against a sized amp (**#10**).
+- **PSRR has now been measured against the sized amp (#10)** —
+  `design/bandgap_error_budget.md` Sec 3 runs a full-PVT PSRR sweep against
+  the final amp and a diagnostic isolating `bandgap_core`'s own
+  contribution (an idealized-amp variant, majority of the PVT grid reading
+  80–99 dB). That diagnostic result is consistent with the cascoded stage's
+  own PSRR being adequate — **the amp, not the cascode, is where the
+  ratified >60 dB target's shortfall traces to.** The cascode's own
+  headroom-margin budget (as opposed to its PSRR contribution) is still
+  unbudgeted — this bullet's first point (MCB sizing, no margin budget)
+  remains open, unaddressed by #10.
 - The cascode adds one bias branch (≈2.5 µA) to the Iq budget; that is
   inside the ratified < 50 µA line at nominal today (44.3 µA total) but has
   not been budgeted across corners — at `ff`/125 °C/3.63 V the informal
-  spot-check already reads 73.5 µA, which is a sizing problem for **#10**
-  (it was 69.2 µA pre-cascode, so this is not a cascode-introduced
-  regression so much as a pre-existing untrimmed-sizing issue).
+  spot-check already reads 73.5 µA. #10 did not change the core/cascode
+  sizing (only the amp — see §2's table), so this Iq-across-corners gap is
+  unchanged and still open; the amp's own resize did not add materially to
+  Iq (§2's Mirror/amp devices table).
 
-Final sizing of the cascode stack, its headroom budget, and its PSRR
-verification are **#10**/**#12**'s scope, consistent with how the amp itself
-is handled.
+Final sizing of the cascode stack and its headroom budget remain open
+(unaddressed by #10, which was scoped to the amp — see Section 4.1); its
+PSRR contribution has now been measured, per above.
 
 ### 4.4 Base-current loading
 
@@ -364,10 +415,24 @@ testable from outside.
 ## 6. Why this is not a spec-conformance claim
 
 Per CLAUDE.md ("no claim without a testbench") and this issue's explicit
-scope: the spec (`README.md`) is ratified, but (a) the amp here is
-provisional/unsized, (b) no startup circuit exists, (c) no PVT or mismatch
-sweep has been performed, and (d) R1/R2 are a first-pass hand calculation,
-not a trimmed/budgeted design. A pass/fail claim against the ratified
-±2%/50 ppm/°C/etc. target-spec rows would therefore be premature. The
-smoke-test acceptance bound in §3 (1.15–1.35 V) is intentionally wider than
-and independent of the ratified spec window for exactly this reason.
+scope: the spec (`README.md`) is ratified, and #10 (Section 4.1) now
+directly evaluates two of its rows — with an honest **shortfall**, not a
+pass, on both:
+
+- **Untrimmed accuracy**: `design/bandgap_error_budget.md` Sec 2 finds the
+  RSS'd offset/mismatch budget at ~106–115 % of the ratified ±2 % (3σ)
+  target, dominated by the amp's own random offset.
+- **PSRR**: `bandgap_error_budget.md` Sec 3 finds the amp's own
+  contribution falls 5–28 dB short of the ratified >60 dB DC–1 kHz target
+  across the PVT grid.
+
+Beyond these two, a full pass/fail claim against the remaining ratified
+rows (TC, line regulation, Iq across the full corner grid, etc.) is still
+premature: (a) no startup circuit exists yet (#11), (b) no per-spec-line
+testbench suite or whole-circuit PVT/mismatch sweep has been run against
+every row (#12/#13), and (c) R1/R2 are still a first-pass hand calculation
+(Section 2 of this doc), not a trimmed design (#14). The smoke-test
+acceptance bound in §3 (1.15–1.35 V) remains intentionally wider than and
+independent of the ratified spec window for exactly this reason — it
+predates #10 and was never meant to stand in for the accuracy budget now
+recorded in `bandgap_error_budget.md`.

@@ -1,0 +1,46 @@
+{
+  "name": "amp-loop-stability",
+  "description": "Issue #10: bandgap_top servo-loop gain and stability margin with the offset-budgeted amp (design/bandgap_amp.sch). Single-injection loop-gain probe (exact for this topology's single-wire loop break -- see testbench header) swept 0.1 Hz - 2 GHz; the record's stability criterion is the worst-case (global-minimum) loop-gain magnitude across that sweep, not a classical 0dB-crossing phase margin (this topology's Bode response never crosses 0dB -- see design/bandgap_error_budget.md Sec 4).",
+  "claim": "This design's own stability criterion (not a ratified spec line -- see design/bandgap_error_budget.md Sec 4): worst-case loop-gain magnitude over 0.1 Hz - 2 GHz stays >= 0 dB at every PVT corner.",
+  "netlist": "tb_loop_stability.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0.1,
+  "temperatures_c": [-40, 27, 125],
+  "corners": ["full"],
+  "analyses": [
+    "ac dec 15 0.1 2000meg",
+    "let x = v(fb_gates)",
+    "let t = 1 - (1/x)",
+    "let tmagdb = db(mag(t))",
+    "let tph = cph(t) * 180 / 3.14159265",
+    "let nfreq = length(frequency)",
+    "let minval = tmagdb[0]",
+    "let minidx = 0",
+    "let i = 0",
+    "while i < nfreq",
+    "  if tmagdb[i] < minval",
+    "    let minval = tmagdb[i]",
+    "    let minidx = i",
+    "  end",
+    "  let i = i + 1",
+    "end",
+    "let wrapped = tph[minidx] - 360*floor(tph[minidx]/360)",
+    "let pm_from_crit = 180 - abs(180 - wrapped)"
+  ],
+  "measure": {
+    "dc_gain_db": "tmagdb[0]",
+    "min_loopgain_db": "minval",
+    "min_loopgain_freq_hz": "real(frequency[minidx])",
+    "pm_deg": "pm_from_crit"
+  },
+  "checks": {
+    "pm_deg": {
+      "min": 45.0,
+      "description": "This design's stability criterion (design/bandgap_error_budget.md Sec 4): phase margin -- the angular distance of T's phase (evaluated at the frequency of minimum loop-gain magnitude, the worst-case approach to the Nyquist critical point) from the critical point's phase for this topology's characteristic equation 1-T=0, i.e. 0 degrees (mod 360), not the textbook -180 degrees that applies to a 1+T=0 loop -- must stay >= 45 degrees (a standard minimum-PM bar) at every PVT corner."
+    },
+    "dc_gain_db": {
+      "min": 10.0,
+      "description": "Sanity floor, not a spec claim: the .ic seed must still be finding the intended nonzero-current operating point at every corner (AC analysis linearizes around whatever DC point converges; a collapse to the degenerate near-zero-current state -- Sec 4.2 of design/bandgap_operating_point.md -- would show up as near-zero small-signal gm everywhere and a much lower DC loop gain than any nonzero-current corner should show)."
+    }
+  }
+}
