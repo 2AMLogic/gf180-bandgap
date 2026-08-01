@@ -1,0 +1,10 @@
+file: layout/drc/fixtures/trivial_poly_res/trivial_poly_res.gds
+deck: gf180mcu
+dbu_um: 0.001
+status: violations
+violations: 1
+
+rule_counts:
+  poly2.width.1: 1
+
+poly2.width.1  TRIVIAL_POLY_RES  Poly2  (1100,0)-(1200,3000)  minimum poly2 interconnect width (3.3V)
