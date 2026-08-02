@@ -74,27 +74,26 @@ Matching plan realised here (floorplan §0's priority order)
   common-centroid group for process-gradient consistency", which §4.2 itself
   distinguishes from the routing/placement symmetry ``Q1``/``Q2`` needs.
 
-Deliberate, documented deviation from the netlist
--------------------------------------------------
+Former schematic/layout finger-count deviation (resolved by #65)
+------------------------------------------------------------------
 
-Fifteen devices are drawn with a **different finger count** than
-``design/netlist/bandgap_top.spice`` carries (:data:`LAYOUT_FOLDS`). Total
-``W`` and ``L`` are unchanged in every case — only the finger count differs
-(e.g. ``core.M1`` is drawn 4 x 15 um instead of 1 x 60 um).
+Fifteen devices used to be drawn with a **different finger count** than
+``design/netlist/bandgap_top.spice`` carried (:data:`LAYOUT_FOLDS`), because
+the schematic's ``nf`` (e.g. ``core.M1`` at ``nf=1``, 1 x 60 um) had never
+been updated to match what this module always needed to draw (4 x 15 um, for
+two layout-driven reasons: a single-finger device cannot be interdigitated
+with anything, and a 60 um/200 um single-finger transistor is not a shape
+anyone draws). Since ``ad``/``as``/``pd``/``ps`` are written as expressions
+in ``nf``, that meant every simulated drain/source junction capacitance for
+those 15 devices corresponded to geometry this module could not draw.
 
-Two reasons, both layout-driven:
-
-* A single-finger device **cannot be interdigitated with anything**, so the
-  netlist's ``nf=1`` makes the common-centroid arrays that floorplan §0 ranks
-  as the *highest* matching priority impossible to draw.
-* A 60 um (or 200 um) wide single-finger transistor is not a shape anyone
-  draws; fingering wide devices is ordinary analog-layout practice.
-
-This is a real schematic/layout inconsistency and is **reported, not
-silently absorbed**: ``nf`` (and the ``ad``/``as``/``pd``/``ps`` expressions
-derived from it, which set the junction-capacitance the simulated results
-depend on) should be updated in the schematic to match the drawn layout. See
-``layout/README.md`` § "Findings and escalations".
+#65 corrected ``nf`` in the schematic to match the drawn finger counts (total
+``W``/``L`` unchanged), re-emitted ``design/netlist/*.spice``, and re-ran the
+affected ``sim/`` suites against the corrected netlist. :data:`LAYOUT_FOLDS`
+is therefore empty: ``fingers()``'s fallback to ``device.nf`` already returns
+the drawn count for every device now that the schematic and the layout agree.
+See ``layout/README.md`` § "Findings and escalations" for the historical
+record of the finding.
 """
 
 from __future__ import annotations
@@ -110,31 +109,22 @@ from netlist_model import Device, FlatNetlist, load, nm
 DRAWN_TRIM_CODE = 32
 
 #: Layout finger counts that differ from the netlist's ``nf`` — see the
-#: module docstring's "Deliberate, documented deviation" section. Keys are
-#: flattened device paths.
-LAYOUT_FOLDS: dict[str, int] = {
-    # Core mirror + cascode (floorplan §0 tier 1): 60 um / 4 = 15 um fingers.
-    "core.M1": 4,
-    "core.M2": 4,
-    "core.M3": 4,
-    "core.MC1": 4,
-    "core.MC2": 4,
-    "core.MC3": 4,
-    # Amp input pair (floorplan §0 tier 1): 200 um / 8 = 25 um fingers.
-    "amp.M1": 8,
-    "amp.M2": 8,
-    # Amp mirror load and cascodes: 2 fingers is the minimum that permits an
-    # A B B A common-centroid interleave.
-    "amp.M3": 2,
-    "amp.M4": 2,
-    "amp.MC3": 2,
-    "amp.MC4": 2,
-    "amp.MC1": 2,
-    "amp.MC2": 2,
-    # Not a matching group -- fingered only because a 20 um single-finger
-    # device is an unreasonable aspect ratio to draw.
-    "startup.MSENSE": 2,
-}
+#: module docstring's "Former schematic/layout finger-count deviation"
+#: section. Keys are flattened device paths.
+#:
+#: Empty as of issue #65: the 15 entries this dict used to carry (core
+#: mirror/cascode at nf=4, amp input pair at nf=8, amp mirror load/cascodes
+#: at nf=2, startup.MSENSE at nf=2) existed solely to reconcile a
+#: schematic/layout mismatch -- the schematic declared nf=1 (or, for the amp
+#: input pair, nf=4) while this module always needed to draw more fingers
+#: for interdigitation/matching or reasonable aspect ratio. #65 corrected
+#: the schematic's nf to match what this module draws, so ``fingers()``'s
+#: fallback to ``device.nf`` now already returns the drawn count for every
+#: device and no override is needed. Kept as a live (empty) dict rather than
+#: removed so a future genuine layout-driven fold has a documented place to
+#: go, with the same "report it, do not silently absorb it" discipline #65
+#: itself was filed under.
+LAYOUT_FOLDS: dict[str, int] = {}
 
 #: Geometry of the dummy devices placed at every matched-array edge. Dummies
 #: are drawn at the same L as the array they guard (set per row below) and at

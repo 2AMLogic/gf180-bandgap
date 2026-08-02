@@ -48,10 +48,19 @@ v {xschem version=3.4.7 file_version=1.2
 * stay saturated with less Vsd headroom -- the wide-swing PMOS cascode
 * (MC3/MC4 off `pbias`) is what buys that headroom back, and it also
 * removes the systematic Vsd(M3) != Vsd(M4) mirror error the uncascoded
-* load had. The input pair grows 100 um -> 200 um (nf=4; a single finger
-* tops out at 100 um in this width-binned PDK, and 200/4 = 50 um stays
-* inside the same bin as #10's 100/2). Together: 3-sigma amp offset
+* load had. The input pair grows 100 um -> 200 um (a single finger tops
+* out at 100 um in this width-binned PDK). Together: 3-sigma amp offset
 * 25.06 mV -> 12.6 mV referred to Vref.
+*
+* NF CORRECTION (issue #65) -- M1/M2 are drawn nf=8 (25 um/finger), not the
+* nf=4 this comment's original draft assumed: layout/bandgap_top/plan.py's
+* common-centroid interdigitation for the input pair needs 8 fingers
+* (D (A B B A) x4 D), and #65 found the schematic's nf had never been
+* updated to match what the layout actually draws. M3/M4/MC1-MC4 are
+* likewise drawn nf=2 (the minimum that permits an A B B A interleave), up
+* from nf=1. ad/as/pd/ps are already nf-parameterized expressions, so
+* correcting nf here is what makes the simulated junction capacitance
+* match the drawn geometry -- see sim/ records re-run under #65.
 *
 * --------------------------------------------------- why the explicit cap
 * Cascoding buys ~50 dB of extra DC loop gain, which #10's compensation
@@ -95,7 +104,7 @@ K {}
 V {}
 S {}
 E {}
-C {symbols/pfet_03v3.sym} 0 -400 0 0 {name=M3 model=pfet_03v3 W=20u L=16u nf=1 m=1}
+C {symbols/pfet_03v3.sym} 0 -400 0 0 {name=M3 model=pfet_03v3 W=20u L=16u nf=2 m=1}
 N 20 -430 20 -450 {}
 C {lab_pin.sym} 20 -450 0 0 {name=l1 lab=vdd}
 N -20 -400 -40 -400 {}
@@ -104,7 +113,7 @@ N 20 -370 20 -350 {}
 C {lab_pin.sym} 20 -350 0 0 {name=l3 lab=a3}
 N 20 -400 40 -400 {}
 C {lab_pin.sym} 40 -400 0 0 {name=l4 lab=vdd}
-C {symbols/pfet_03v3.sym} 250 -400 0 0 {name=M4 model=pfet_03v3 W=20u L=16u nf=1 m=1}
+C {symbols/pfet_03v3.sym} 250 -400 0 0 {name=M4 model=pfet_03v3 W=20u L=16u nf=2 m=1}
 N 270 -430 270 -450 {}
 C {lab_pin.sym} 270 -450 0 0 {name=l5 lab=vdd}
 N 230 -400 210 -400 {}
@@ -113,7 +122,7 @@ N 270 -370 270 -350 {}
 C {lab_pin.sym} 270 -350 0 0 {name=l7 lab=a4}
 N 270 -400 290 -400 {}
 C {lab_pin.sym} 290 -400 0 0 {name=l8 lab=vdd}
-C {symbols/pfet_03v3.sym} 0 -250 0 0 {name=MC3 model=pfet_03v3 W=40u L=16u nf=1 m=1}
+C {symbols/pfet_03v3.sym} 0 -250 0 0 {name=MC3 model=pfet_03v3 W=40u L=16u nf=2 m=1}
 N 20 -280 20 -300 {}
 C {lab_pin.sym} 20 -300 0 0 {name=l9 lab=a3}
 N -20 -250 -40 -250 {}
@@ -122,7 +131,7 @@ N 20 -220 20 -200 {}
 C {lab_pin.sym} 20 -200 0 0 {name=l11 lab=nd1}
 N 20 -250 40 -250 {}
 C {lab_pin.sym} 40 -250 0 0 {name=l12 lab=vdd}
-C {symbols/pfet_03v3.sym} 250 -250 0 0 {name=MC4 model=pfet_03v3 W=40u L=16u nf=1 m=1}
+C {symbols/pfet_03v3.sym} 250 -250 0 0 {name=MC4 model=pfet_03v3 W=40u L=16u nf=2 m=1}
 N 270 -280 270 -300 {}
 C {lab_pin.sym} 270 -300 0 0 {name=l13 lab=a4}
 N 230 -250 210 -250 {}
@@ -131,7 +140,7 @@ N 270 -220 270 -200 {}
 C {lab_pin.sym} 270 -200 0 0 {name=l15 lab=out}
 N 270 -250 290 -250 {}
 C {lab_pin.sym} 290 -250 0 0 {name=l16 lab=vdd}
-C {symbols/nfet_03v3.sym} 0 -100 0 0 {name=MC1 model=nfet_03v3 W=20u L=16u nf=1 m=1}
+C {symbols/nfet_03v3.sym} 0 -100 0 0 {name=MC1 model=nfet_03v3 W=20u L=16u nf=2 m=1}
 N 20 -130 20 -150 {}
 C {lab_pin.sym} 20 -150 0 0 {name=l17 lab=nd1}
 N -20 -100 -40 -100 {}
@@ -140,7 +149,7 @@ N 20 -70 20 -50 {}
 C {lab_pin.sym} 20 -50 0 0 {name=l19 lab=n1}
 N 20 -100 40 -100 {}
 C {lab_pin.sym} 40 -100 0 0 {name=l20 lab=vss}
-C {symbols/nfet_03v3.sym} 250 -100 0 0 {name=MC2 model=nfet_03v3 W=20u L=16u nf=1 m=1}
+C {symbols/nfet_03v3.sym} 250 -100 0 0 {name=MC2 model=nfet_03v3 W=20u L=16u nf=2 m=1}
 N 270 -130 270 -150 {}
 C {lab_pin.sym} 270 -150 0 0 {name=l21 lab=out}
 N 230 -100 210 -100 {}
@@ -149,7 +158,7 @@ N 270 -70 270 -50 {}
 C {lab_pin.sym} 270 -50 0 0 {name=l23 lab=n2}
 N 270 -100 290 -100 {}
 C {lab_pin.sym} 290 -100 0 0 {name=l24 lab=vss}
-C {symbols/nfet_03v3.sym} 0 50 0 0 {name=M1 model=nfet_03v3 W=200u L=4u nf=4 m=1}
+C {symbols/nfet_03v3.sym} 0 50 0 0 {name=M1 model=nfet_03v3 W=200u L=4u nf=8 m=1}
 N 20 20 20 0 {}
 C {lab_pin.sym} 20 0 0 0 {name=l25 lab=n1}
 N -20 50 -40 50 {}
@@ -158,7 +167,7 @@ N 20 80 20 100 {}
 C {lab_pin.sym} 20 100 0 0 {name=l27 lab=tail}
 N 20 50 40 50 {}
 C {lab_pin.sym} 40 50 0 0 {name=l28 lab=vss}
-C {symbols/nfet_03v3.sym} 250 50 0 0 {name=M2 model=nfet_03v3 W=200u L=4u nf=4 m=1}
+C {symbols/nfet_03v3.sym} 250 50 0 0 {name=M2 model=nfet_03v3 W=200u L=4u nf=8 m=1}
 N 270 20 270 0 {}
 C {lab_pin.sym} 270 0 0 0 {name=l29 lab=n2}
 N 230 50 210 50 {}
