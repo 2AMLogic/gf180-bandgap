@@ -1,4 +1,4 @@
-# bandgap_top operating point (issues #8, #10, #11, #42, #55)
+# bandgap_top operating point (issues #8, #10, #11, #42, #55, #61)
 
 Schematic entry for the ratified Brokaw-cell bandgap
 ([DR-0001](../spec/decision-records/0001-bandgap-topology-selection.md)):
@@ -11,37 +11,46 @@ be treated as final.
 **Scope**: schematic entry (#8); the amplifier offset/mismatch budget and
 loop-stability/PSRR verification (#10, then **#42**); the **core
 mirror/cascode mismatch budget and sizing (#55)** — both in
-[`design/bandgap_error_budget.md`](bandgap_error_budget.md); and a
+[`design/bandgap_error_budget.md`](bandgap_error_budget.md); a
 current-sensing, self-disabling startup circuit verified across the full PVT
-matrix (#11).
+matrix (#11); and **co-scaling `R1`/`R2`/the trim network by `k = 2` to close
+the ratified quiescent-current row (#61)**, which #55 proved mirror sizing
+alone could not do — `bandgap_error_budget.md` Sec 5/5a.
 
-Three ratified target-spec rows are now directly evaluated here, and
-nothing else is:
+Four ratified target-spec rows are now directly evaluated here, and nothing
+else is:
 
 - **Startup time** (README.md's Startup row) — verified by #11's benches,
-  re-verified in #42 against the redesigned amplifier and again in #55
-  against the resized core; **passes** (9.3–31.1 µs against 1 ms), see
-  §3a and §4.2.
+  re-verified in #42 against the redesigned amplifier, again in #55 against
+  the resized core, and again in #61 against the co-scaled `R1`/`R2`/trim
+  network; **passes** (8.96–28.19 µs against 1 ms, #61), see §3a and §4.2.
 - **PSRR** — **passes** as of #42 and improves again in #55 (86.98 dB worst
   of 81 PVT points on the amp-loop bench, 87.07 dB on the whole-block
   `sim/psrr-dc/` bench, against the ratified >60 dB DC–1 kHz row); #10's
-  recorded shortfall is closed. See §4.1, §4.3 and
-  `bandgap_error_budget.md` Sec 3.
+  recorded shortfall is closed and #61's re-run confirms it holds (worst
+  73.805 dB on `sim/amp-psrr/`'s own per-band figure) at the halved current.
+  See §4.1, §4.3 and `bandgap_error_budget.md` Sec 3.
+- **Quiescent current** — **passes as of #61**: co-scaling `R1`/`R2`/the
+  trim network by `k = 2` halves the design current and closes the row at
+  **34.01 µA** worst-corner against < 50 µA (was 65.71 µA after #55, a known
+  miss). §4.3 and `bandgap_error_budget.md` Sec 5/5a give the closed-form
+  reason mirror sizing alone could not do this, and the resistor-based lever
+  that did.
 - **Untrimmed accuracy** — the *mismatch spread* allocation now covers
-  every device group in the block and closes at **17.19 mV against the
-  ratified 24.0 mV (3σ)**, with `bandgap_core`'s mirror — the term #42 left
-  unallocated — budgeted and sized in #55 (§2, §4.3); the circuit-level
-  mismatch Monte Carlo over *all* devices measures **14.89 / 15.12 /
-  15.82 mV (3σ)** at −40/27/125 °C, passing at every temperature (was
-  23.6–24.3 mV). What still misses is
-  the distribution's **centre**: 1.22–1.25 V untrimmed against 1.200 V,
-  from R1/R2's first-pass hand sizing, which is a trim/resistor question and
-  not a mismatch one. See `bandgap_error_budget.md` Sec 2.6a, 2.7, 2.8, 5.
-
-**The ratified quiescent-current row is a known miss** — 65.71 µA at the
-binding corner against < 50 µA, down from 80.5 µA before #55. §4.3 and
-`bandgap_error_budget.md` Sec 5 state why mirror sizing cannot close the
-remainder and what can. See §6.
+  every device group in the block and closed at 17.19 mV against the
+  ratified 24.0 mV (3σ) as of #55; the circuit-level mismatch Monte Carlo
+  over *all* devices measured 14.89 / 15.12 / 15.82 mV (3σ) at
+  −40/27/125 °C there, and **#61's re-run measures 16.22 / 16.36 / 16.81 mV
+  (3σ)**, still passing at every temperature with 30–32 % margin — the small
+  rise is the MOS/BJT mismatch line's `gm/Id` effect at the lower operating
+  current, only partly offset by the resistor line's Pelgrom-law
+  improvement; `bandgap_error_budget.md` Sec 5a has the full breakdown. What
+  still misses is the distribution's **centre**: the mean moved from
+  1.222–1.244 V (pre-#61) to **1.207–1.219 V** untrimmed against 1.200 V —
+  closer, from the `−VT·ln k` shift of `VEB(Q3)`, but still a trim/resistor
+  question rather than a mismatch one, and #61 deliberately did not
+  re-centre it (see "Not in scope" in issue #61). See
+  `bandgap_error_budget.md` Sec 2.6a, 2.7, 2.8, 5, 5a.
 
 
 ## 1. Topology
@@ -189,6 +198,24 @@ falls out of solving `ΔVBE(I) = I·R2` for the fixed R2 below; R2 was picked
 so that the resulting equilibrium current lands on the characterized 10 µA
 point.
 
+**Update (#61).** The design current is no longer 10 µA. `bandgap_error_budget.md`
+Sec 5 shows in closed form that no mirror-sizing lever can close the ratified
+quiescent-current row, because `I = ΔVBE/R2` has no mirror-geometry
+dependence — the only lever is `R1`/`R2` (and the trim network) themselves.
+`R1`, `R2` and `bandgap_trim.sch`'s 63 unit segments are co-scaled by
+`k = 2`, halving the per-branch current to **≈ 5 µA** at `tt`/27 °C (measured
+5.05 µA, `sim/iq/` and `sim/startup/` per-branch figures agree with the
+`ΔVBE/R2` prediction to within 0.3 %). This moves the design current off the
+exactly-10 µA point the citations above were taken at, but not off the
+characterized *window*: 5 µA remains deep inside the ≈0.07 nA…28 µA usable
+emitter range the same record (`20260731-030932-8fb0ea6`) reports, more than
+three decades from either edge. `ΔVBE` and `VEB`'s CTAT slope are otherwise
+unaffected in this document's first-order model — they are the PNP pair's
+own diode-law behaviour at whatever current a Brokaw cell servos to — and
+`sim/output-voltage-tc/`'s re-run (§6, `bandgap_error_budget.md` Sec 5a) is
+the actual check that the block's TC did not regress off that assumption
+rather than take it on faith.
+
 ### Resistors
 
 `ppolyf_u`, `W = 2 µm` (≥ 2 µm per device-characterization.md §2's matching
@@ -208,6 +235,19 @@ was not characterized there, and re-deriving the value from a first-principles
 simulation of the actual drawn geometry removes that interpolation error.
 Final sizing/trim (#10/#14) should re-derive from the full corner/mismatch
 sweep rather than this single nominal measurement.
+
+**Update (#61).** This table is #8's pre-trim baseline and is retained
+unedited; the drawn geometry above is no longer what is on the schematic.
+`R2` is now `L=36.341871 µm` (6586.5 Ω) and `R1` is `L=460.701871 µm`
+(82779.0 Ω) — each length *solved* for the target resistance rather than
+doubled directly, because `ppolyf_u` is a compound device
+(`R = 179.547·L_um + 61.382 Ω` at `W=2 µm`, `tt`/27 °C) and a 2× length is
+not a 2× resistance for one. `R1_total/R2 = 15.28425` to 5 decimal places,
+unchanged from the ratio above. `bandgap_trim.sch`'s 63 unit segments are
+co-scaled the same way (`L=1.215 µm → 2.771871 µm`, 279.53 Ω → 559.06 Ω) so
+a trim step keeps its value in volts. Full derivation, measured results and
+the closed-form reason mirror sizing could not have done this instead:
+`bandgap_error_budget.md` Sec 5/5a.
 
 ### Mirror (core) and amp devices
 
@@ -690,18 +730,22 @@ item, against how this section previously read:
   impedance and the amp-loop PSRR bench moves 77.61 → **86.98 dB** worst
   corner, with the whole-block `sim/psrr-dc/` spec bench at **87.07 dB**
   (1 kHz), 81/81 PASS.
-- **Iq**: the cascode adds one bias branch (≈2.5 µA). The whole block now
-  reads **39.32 µA at `tt`/27 °C/3.30 V and 65.71 µA at the binding
-  `ff`/125 °C/3.63 V corner** (`sim/startup/` record
+- **Iq**: the cascode adds one bias branch (≈2.5 µA at the #55 current). The
+  block read **39.32 µA at `tt`/27 °C/3.30 V and 65.71 µA at the binding
+  `ff`/125 °C/3.63 V corner** after #55 (`sim/startup/` record
   [`20260801-145517-cfd0146`](../sim/startup/records/20260801-145517-cfd0146.md),
-  `iq_total_final_ua`), from 48.24 / 80.5 µA before #55 — a 18 % cut at the
+  `iq_total_final_ua`), from 48.24 / 80.5 µA before #55 — an 18 % cut at the
   binding corner, from scaling the `ibias` leg to 1/8 of the design current.
-  **The row still fails** (< 50 µA ratified). `bandgap_error_budget.md`
-  Sec 5 now shows in closed form *why* no further mirror sizing can close
+  **That row still failed** (< 50 µA ratified), and `bandgap_error_budget.md`
+  Sec 5 showed in closed form *why* no further mirror sizing could close
   it — the three signal branches each carry `I = ΔVBE/R2`, which is not a
-  function of mirror geometry — and quantifies the resistor co-scaling that
-  would (`R1`,`R2` × ~1.5 ⇒ ~44.6 µA). That is a resistor/trim-network
-  sizing pass, not a mirror one.
+  function of mirror geometry — leaving the resistor co-scaling that would.
+  **#61 took that pass**: `R1`/`R2`/the trim network co-scaled by `k = 2`
+  halves every branch current, and the row now **passes** at
+  **20.72 µA / 34.01 µA** (same bench, same two columns, record
+  [`20260801-230933-960f726`](../sim/startup/records/20260801-230933-960f726.md)) —
+  31 % of margin against < 50 µA at the binding corner. Full derivation and
+  the full set of re-verified benches: `bandgap_error_budget.md` Sec 5/5a.
 
 **What remains open in this section**: MCB's derived-vs-picked `W/L` (with
 a measured ≥858 mV margin), and the startup devices' own budget (§2's
@@ -770,35 +814,53 @@ The whole-block spec bench `sim/psrr-dc/` agrees at
 recorded and not gated. The PSRR row's load condition is still the ratified
 table's own open item A4.
 
-**Failing — the Quiescent-current row.** **39.32 µA at nominal and 65.71 µA
-at the binding `ff`/125 °C/3.63 V corner**, against < 50 µA (records
-[`20260801-145326-cfd0146`](../sim/iq/records/20260801-145326-cfd0146.md),
-[`20260801-145517-cfd0146`](../sim/startup/records/20260801-145517-cfd0146.md)).
-Failing since before #10, but −18 % at the binding corner as of #55's
-`ibias`-leg rescale (80.5 → 65.71 µA). §4.3 and
-`bandgap_error_budget.md` Sec 5 show in closed form why no further *mirror*
-sizing can close it, and quantify the resistor co-scaling that would.
+**Passing as of #61 — the Quiescent-current row.** Failing since before #10,
+cut −18 % at the binding corner by #55's `ibias`-leg rescale (80.5 →
+65.71 µA), and **closed by #61**: co-scaling `R1`/`R2`/the trim network by
+`k = 2` halves every branch current and the row now reads **20.72 µA at
+nominal and 34.01 µA at the binding `ff`/125 °C/3.63 V corner**, against
+< 50 µA (records
+[`20260801-230754-960f726`](../sim/iq/records/20260801-230754-960f726.md),
+[`20260801-230933-960f726`](../sim/startup/records/20260801-230933-960f726.md)) —
+31 % of margin at the binding corner. §4.3 and `bandgap_error_budget.md`
+Sec 5/5a give the closed-form reason no further *mirror* sizing could have
+closed it, and the resistor/trim co-scaling that did.
 
-**Output-reference (untrimmed accuracy) row — the mismatch *spread* now
-closes; the *centre* does not.** The ratified basis is "3σ, mismatch MC
+**Output-reference (untrimmed accuracy) row — the mismatch *spread* still
+closes; the *centre* still does not.** The ratified basis is "3σ, mismatch MC
 N≥300 **+** process corners, −40…125 °C". `bandgap_error_budget.md` Sec 2.7
-now allocates every device group in the block, not just the amplifier's, and
-closes at 17.19 mV against 24.0 mV; Sec 2.8's `sim/mc-untrimmed/` re-run
-against the trim-inclusive, resized DUT measures the same quantity live.
-What remains outside the ±2 % window is the distribution's centre
-(1.22–1.25 V untrimmed against 1.200 V, from R1/R2's first-pass hand sizing
-at the trim network's mid-code), which is what the 1-point wafer-probe trim
-exists to remove — see `design/bandgap_trim_network.md`. The bench's own
-verdict folds centre and width together and therefore still reads FAIL. The
-process-corner leg is #12's, and combining the two legs into a single
-verdict is a follow-on step this document does not attempt.
+allocates every device group in the block, not just the amplifier's, and
+closed at 17.19 mV against 24.0 mV as of #55; Sec 2.8's `sim/mc-untrimmed/`
+re-run against the trim-inclusive, resized DUT measured 14.89/15.12/15.82 mV
+(3σ) there, and **#61's re-run measures 16.22/16.36/16.81 mV (3σ)**
+(record [`20260801-232002-960f726`](../sim/mc-untrimmed/records/20260801-232002-960f726.md)) —
+still passing at every temperature with 30–32 % margin. The rise (rather
+than a flat hold) is real and explained in Sec 5a: the resistor mismatch
+line *improved* (Pelgrom law, halved current at doubled `R`) but the
+MOS/BJT line *rose slightly* (`gm/Id` at the mirror devices' fixed `W/L`
+increases as current drops), and the latter effect is not fully offset by
+the former. What remains outside the ±2 % window is the distribution's
+centre — 1.207–1.219 V untrimmed against 1.200 V (was 1.222–1.244 V before
+#61, moved closer by the `−VT·ln k` shift of `VEB(Q3)`), from R1/R2's
+first-pass hand sizing at the trim network's mid-code, which is what the
+1-point wafer-probe trim exists to remove — see
+`design/bandgap_trim_network.md`. The bench's own verdict folds centre and
+width together and therefore still reads FAIL. The process-corner leg is
+#12's, and combining the two legs into a single verdict is a follow-on step
+this document does not attempt.
 
-Beyond those, a pass/fail claim against the remaining ratified rows (TC,
-line regulation, output noise, area, load) is still premature: the
-per-spec-line testbench suite (#12) has not been re-run end-to-end against
-the current netlist — #55 regenerated `sim/dut/bandgap_top.spice` and
-re-minted the `psrr-dc`, `iq` and `startup` records off it, but
-`output-voltage-tc` and `line-regulation` still cite a pre-#42 DUT (#58's
-scope). R1/R2 also remain a first-pass hand calculation (Section 2). The
-smoke-test acceptance bound in §3 (1.15–1.35 V) remains intentionally wider
-than and independent of the ratified spec window for exactly that reason.
+Beyond those, a pass/fail claim against the remaining ratified rows (line
+regulation, output noise, area, load) is still premature: R1/R2 remain a
+first-pass hand calculation (Section 2) and the untrimmed mean is not
+re-centred. `output-voltage-tc` (TC row) was re-run against the current,
+#61-resized DUT as one of #61's required regression checks: the `tc_ppm`
+envelope over all 81 PVT points **improved**, from 86.32–137.75 ppm/°C to
+**36.37–90.50 ppm/°C** (record
+[`20260801-234837-960f726`](../sim/output-voltage-tc/records/20260801-234837-960f726.md)) —
+still failing the ratified `≤ 50 ppm/°C` bound, as it did before #61, since
+`R1`/`R2` have never been corner-swept and re-nulled against a TC target.
+That re-verification is a "did this regress" check, not a claim that this
+narrative section now tracks TC as a fifth row; `bandgap_error_budget.md`
+Sec 5a has the full result. The smoke-test acceptance bound in §3
+(1.15–1.35 V) remains intentionally wider than and independent of the
+ratified spec window for exactly that reason.

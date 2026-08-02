@@ -96,11 +96,62 @@ v {xschem version=3.4.7 file_version=1.2
 *
 * THE DEFAULT CODE IS THE MID CODE (32 of 0..63), NOT the code that centres
 * vref on 1.200 V: R1 + 32 trim units reproduces the pre-trim drawn 280 um
-* summing resistor to within 0.04 ohm (under 1 ppm), so the default
-* schematic is electrically the #8/#10/#11 circuit and every record taken
-* against it stays valid. Picking the code that lands nearest 1.200 V on a
-* given die IS the 1-point trim, and that is a wafer-probe step, not a
+* summing resistor (scaled by #61's k, see below) to within 0.04 ohm (under
+* 1 ppm), so the default schematic is electrically the #8/#10/#11 circuit
+* with its currents scaled, and the code-32 default remains the reference
+* state every bench measures. Picking the code that lands nearest 1.200 V on
+* a given die IS the 1-point trim, and that is a wafer-probe step, not a
 * schematic default -- see design/bandgap_trim_network.md.
+*
+* R1/R2 CO-SCALING (issue #61) -- the quiescent-current lever #55 proved
+* mirror sizing structurally cannot pull. The design current is
+*
+*     I = dVBE / R2 = VT*ln(A) / R2        (A = 3.634, the PNP area ratio)
+*
+* which contains no mirror geometry at all: widening M1/M2 changes Vov, not
+* I. The only lever that lowers I without touching dVBE is R2 itself, and
+* raising R2 alone would collapse the PTAT term I*R1. So R1 AND R2 are
+* co-scaled by one common factor k = 2:
+*
+*   R2      L=18u       -> 36.341871u   (3293.2  -> 6586.5  ohm)
+*   R1      L=230.180u  -> 460.701871u  (41389.5 -> 82779.0 ohm)
+*   R_unit  L=1.215u    -> 2.771871u    (279.53  -> 559.06  ohm, bandgap_trim.sch)
+*
+* ppolyf_u is a compound device (R = 179.547*L_um + 61.382 ohm at W=2u,
+* tt/27 C -- see bandgap_trim.sch), so each length is SOLVED for the target
+* resistance rather than scaled directly; a 2x length would not be a 2x
+* resistance. The result is exact to 5 decimal places on the quantity that
+* matters: R1_total/R2 = 15.28425 before and after.
+*
+* What this preserves, by construction:
+*   - I*R1 (the PTAT term of vref) and R1/R2 (the first-order TC balance);
+*   - the resistor- and PNP-derived mismatch coefficients in
+*     design/bandgap_error_budget.md Sec 2.5/2.6, which are ratios or
+*     ln-of-area-ratio quantities with no current dependence (measured:
+*     resistor-mismatch line IMPROVED, 3.20/4.17/5.59 -> 2.27/2.95/3.95 mV,
+*     3 sigma, Pelgrom law at the doubled R). The MOS mismatch coefficients
+*     of Sec 2.6a are NOT current-invariant (gm/Id effect) and rose
+*     slightly (13.64/13.64/13.90 -> 14.92/14.96/15.19 mV); net mm_all
+*     3 sigma 14.89/15.12/15.82 -> 16.22/16.36/16.81 mV, still passing the
+*     24.0 mV target with 30-32% margin -- see Sec 5a;
+*   - the trim step in volts, I*R_unit, hence the ratified trim range and
+*     resolution (sim/trim-coverage/ confirms: span/lsb unchanged within
+*     simulation noise).
+* What it moves:
+*   - I -> I/2 (~10.1 uA -> ~5.05 uA at tt/27 C), and with it the whole
+*     block's quiescent current: 65.47 -> 34.01 uA at the binding
+*     ff/125 C/3.63 V corner, i.e. 32% margin against the ratified < 50 uA;
+*   - vref by the -VT*ln(k) = -17.9 mV of VEB(Q3) -- TOWARD 1.200 V, and it
+*     makes VEB's CTAT slope slightly steeper, which measurably reduces the
+*     block's residual PTAT drift: sim/output-voltage-tc/'s tc_ppm envelope
+*     improves 86.32-137.75 -> 36.37-90.50 ppm/C (still fails the ratified
+*     <=50 ppm/C row, as it did before this issue -- not closed by this
+*     issue's scope -- see design/bandgap_error_budget.md Sec 5/5a).
+* The design current leaves the exactly-10 uA point the VEB/dVBE/CTAT-slope
+* citations in design/bandgap_operating_point.md Sec 2 were taken at; ~5 uA
+* is still well inside the 0.07 nA..28 uA usable emitter window
+* design/device-characterization.md Sec 1 characterizes, and every affected
+* row is re-verified over the full PVT grid rather than extrapolated.
 *
 * MIRROR/CASCODE SIZING (issue #55) -- previously provisional (drawn
 * W=20u/L=2u, "identical to the amp's pre-#42 device, never budgeted",
@@ -195,7 +246,7 @@ N 320 270 320 250 {}
 C {lab_pin.sym} 320 250 0 0 {name=l10 lab=vdd}
 N 320 300 340 300 {}
 C {lab_pin.sym} 340 300 0 0 {name=l11 lab=vdd}
-C {symbols/ppolyf_u.sym} 300 90 0 0 {name=R2 model=ppolyf_u W=2u L=18u m=1}
+C {symbols/ppolyf_u.sym} 300 90 0 0 {name=R2 model=ppolyf_u W=2u L=36.341871u m=1}
 N 300 60 300 40 {}
 C {lab_pin.sym} 300 40 0 0 {name=l12 lab=sns2}
 N 300 120 300 140 {}
@@ -227,7 +278,7 @@ N 620 270 620 250 {}
 C {lab_pin.sym} 620 250 0 0 {name=l20 lab=vdd}
 N 620 300 640 300 {}
 C {lab_pin.sym} 640 300 0 0 {name=l21 lab=vdd}
-C {symbols/ppolyf_u.sym} 600 90 0 0 {name=R1 model=ppolyf_u W=2u L=230.180u m=1}
+C {symbols/ppolyf_u.sym} 600 90 0 0 {name=R1 model=ppolyf_u W=2u L=460.701871u m=1}
 N 600 60 600 40 {}
 C {lab_pin.sym} 600 40 0 0 {name=l22 lab=tn0}
 N 600 120 600 140 {}

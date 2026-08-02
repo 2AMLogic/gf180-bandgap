@@ -1,5 +1,13 @@
 * amp-loop-stability -- loop-gain / stability-margin sim
 *
+* CORE RESIZED IN #61 -- RECORDS TAKEN BEFORE AND AFTER ARE NOT COMPARABLE.
+* The bandgap_core copy embedded below carries #61's R1/R2 co-scaling: both
+* the PTAT resistor R2 and the output-branch summing resistor R1 (here in
+* its pre-trim lumped form, electrically R1 + 32 trim units at the default
+* code) are scaled by k = 2, halving the design current I = dVBE/R2 while
+* holding I*R1 and the R1/R2 ratio fixed. See design/bandgap_core.sch's
+* header and design/bandgap_error_budget.md Sec 5 for the derivation.
+*
 * Issue #10 created this bench; issue #42 re-ran it against the
 * telescopic-cascode amp and added a second, strictly-additional stability
 * check (see NYQUIST CROSSING below). #10's own criterion is retained
@@ -115,13 +123,13 @@ XM2 d2 fb vdd vdd pfet_03v3 L=6u W=60u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
 XMC2 sns2 casc d2 vdd pfet_03v3 L=6u W=60u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
-XR2 e2 sns2 vss ppolyf_u r_width=2u r_length=18u m=1
+XR2 e2 sns2 vss ppolyf_u r_width=2u r_length=36.341871u m=1
 XQ2 vss vss e2 pnp_10p00x10p00 m=1
 XM3 d3 fb vdd vdd pfet_03v3 L=6u W=60u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
 XMC3 vref casc d3 vdd pfet_03v3 L=6u W=60u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
-XR1 e3 vref vss ppolyf_u r_width=2u r_length=280u m=1
+XR1 e3 vref vss ppolyf_u r_width=2u r_length=560.341647u m=1
 XQ3 vss vss e3 pnp_05p00x05p00 m=1
 XM4 d4 fb vdd vdd pfet_03v3 L=6u W=7.5u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1

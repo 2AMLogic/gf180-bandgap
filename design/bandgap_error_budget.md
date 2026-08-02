@@ -1,4 +1,4 @@
-# Offset/mismatch budget: error amplifier and core mirror (issues #10, #42, #55)
+# Offset/mismatch budget: error amplifier and core mirror (issues #10, #42, #55, #61)
 
 This document allocates the ratified untrimmed output-accuracy target
 (`README.md` "Target specification": **1.20 V ±2 % untrimmed, 3σ, mismatch
@@ -38,7 +38,7 @@ resized to 360 µm² against it.
 | PSRR, worst of 81 PVT points | 31.87 dB (19/81 corners pass) | 77.61 dB (81/81) | **86.98 dB (81/81)** | > 60 dB DC–1 kHz |
 | Loop phase margin, worst corner | 119.1° | 177.8° | **108.9°** | ≥ 45° (this design's own criterion) |
 | Loop Nyquist gain margin, worst corner | no critical-axis crossing | −7.0 dB | **no critical-axis crossing** | < 0 dB (added in #42, Section 4.4) |
-| Quiescent current, `ff`/125 °C/3.63 V | 77.5 µA | 80.5 µA | **65.71 µA** | < 50 µA — **still fails**, Section 5 |
+| Quiescent current, `ff`/125 °C/3.63 V | 77.5 µA | 80.5 µA | 65.71 µA (#55) → **34.01 µA (#61)** | < 50 µA — **passes as of #61**, Section 5 |
 
 The **all allocated terms** row is the honest one, and it is new in #55: the
 #10 and #42 entries are those issues' own RSS re-computed with Section 2.6a's
@@ -47,11 +47,12 @@ core-mirror line included at the sizing each of them shipped (both left it at
 "closing" — they were omitting a term, which Section 2.8's Monte Carlo
 cross-check said so at the time and now says quantitatively.
 
-**One ratified row still does not pass: quiescent current.** It was failing
-before #42, #42 made it ~3 µA worse, and #55's core resize takes a large bite
-out of it without closing it. Section 5 states the residual in full, and
-gives the closed-form reason why *mirror sizing* — this issue's lever —
-cannot close it on its own.
+**Every ratified row this document is responsible for now passes.** Quiescent
+current failed before #42, #42 made it ~3 µA worse, #55's core resize took the
+largest single bite any issue had taken out of it without closing it, and
+**#61 closes it** by co-scaling `R1`/`R2`/the trim network by `k = 2` rather
+than by any further mirror change — Section 5 states the full history and the
+closed-form reason why *mirror sizing* could not have closed it on its own.
 
 ## 1. What is and is not in scope here
 
@@ -954,8 +955,13 @@ the pole without costing settling behaviour, and the loop is not ringing.
 ## 5. What still does not close (no spec relaxation)
 
 Per CLAUDE.md's "agents do not relax the ratified spec to make results
-pass", **one** ratified row is reported here as a miss rather than fudged,
-plus one out-of-scope item that is stated so it is not mistaken for closed.
+pass": as of **#61**, every ratified row this document is responsible for
+passes. The section below is kept as a full history rather than trimmed to
+the current state — the closed-form reasoning that #55 could not close
+quiescent current by mirror sizing, and the quantified `k` that #61 used to
+close it instead, are load-bearing for the next issue that touches this
+circuit's current or resistor sizing. One out-of-scope item (the untrimmed
+mean) remains, stated so it is not mistaken for closed.
 
 **Untrimmed accuracy: the mismatch *spread* closes; the untrimmed *mean*
 does not, and is not this document's.** Section 2.7's allocation now covers
@@ -969,16 +975,16 @@ remove (`design/bandgap_trim_network.md`). The `mc-untrimmed` bench's own
 verdict folds centre and width together and therefore still reads FAIL; both
 quantities are in the record separately, and neither threshold was adjusted.
 
-**Quiescent current** — the miss. Ratified `< 50 µA`, binding at
-`ff`/125 °C/3.63 V. Measured on `sim/startup/`'s `iq_total_final_ua` (the
-same bench and measurement across all three columns, so these are
-comparable):
+**Quiescent current** — the miss, until #61 (Section 5a). Ratified `< 50 µA`,
+binding at `ff`/125 °C/3.63 V. Measured on `sim/startup/`'s
+`iq_total_final_ua` (the same bench and measurement across all three
+columns, so these are comparable):
 
-| | before #42 | after #42 | **after #55** | ratified |
-|---|---|---|---|---|
-| `tt`/27 °C/3.30 V | 46.78 µA | 48.24 µA | **39.32 µA** | — |
-| `ff`/125 °C/3.63 V (binding) | 77.5 µA | 80.5 µA | **65.71 µA** | < 50 µA |
-| overshoot at the binding corner | +55 % | +61 % | **+31 %** | |
+| | before #42 | after #42 | after #55 | **after #61** | ratified |
+|---|---|---|---|---|---|
+| `tt`/27 °C/3.30 V | 46.78 µA | 48.24 µA | 39.32 µA | **20.72 µA** | — |
+| `ff`/125 °C/3.63 V (binding) | 77.5 µA | 80.5 µA | 65.71 µA | **34.41 µA** | < 50 µA |
+| overshoot / margin at the binding corner | +55 % | +61 % | +31 % | **−31 % (31 % margin)** | |
 
 - #55 records: [`20260801-145326-cfd0146`](../sim/iq/records/20260801-145326-cfd0146.md)
   (`sim/iq/`, the spec-line bench: 65.473 µA at `ff`/125 °C/3.63 V) and
@@ -1014,11 +1020,17 @@ apparent escapes, both closed:
   is a resistor change, not a mirror change.
 
 ⇒ The one lever that reduces total current while leaving `ΔVBE`, the `R1/R2`
-ratio, the untrimmed mean and every sensitivity in Section 2.6a untouched is
-**co-scaling `R1` and `R2` by a common factor `k`**: `I → I/k`, `I·R1`
-unchanged, `R1/R2` unchanged, and `Vref` shifts only by the `−VT·ln k` of
-`VEB(Q3)` (for `k = 1.5`, −10.5 mV — *toward* the 1.200 V target). Every
-mismatch coefficient in this document is a ratio and is invariant under it.
+ratio and the untrimmed mean untouched is **co-scaling `R1` and `R2` by a
+common factor `k`**: `I → I/k`, `I·R1` unchanged, `R1/R2` unchanged, and
+`Vref` shifts only by the `−VT·ln k` of `VEB(Q3)` (for `k = 1.5`, −10.5 mV —
+*toward* the 1.200 V target). Every **resistor**-ratio and **PNP**-derived
+mismatch coefficient in this document (Sections 2.5, 2.6) is invariant under
+`k` by construction — those are geometric or `ln`-of-area-ratio quantities
+with no dependence on absolute current. The **MOS** mismatch coefficients of
+Section 2.6a are not: they scale with `gm/Id` at the mirror devices' fixed
+`W/L`, which moves (mildly) with the operating current, so halving `I` was
+not guaranteed in advance to leave them exactly fixed — #61's Section 5a
+measures by how much.
 
 **Quantified, so the next issue does not have to re-derive it.** At the
 binding corner the startup branch's 2.39 µA does not scale with `I` (it is
@@ -1036,9 +1048,100 @@ a design current of ~6.7 µA — still inside the 0.07 nA…28 µA usable emitte
 window `design/device-characterization.md` §1 characterizes, though off the
 exactly-10 µA point the `VEB`/`ΔVBE`/slope citations were taken at, so the
 temperature-coefficient row would need re-verifying with it. **That is a
-resistor/trim-network sizing pass, not a mirror sizing pass**, and it is
-deliberately not taken here: it moves `design/bandgap_trim.sch` and the
-`R1`/`R2` values, which #55 is explicitly scoped out of.
+resistor/trim-network sizing pass, not a mirror sizing pass**, and #55
+deliberately did not take it: it moves `design/bandgap_trim.sch` and the
+`R1`/`R2` values, which #55 scoped itself out of. **#61 is that pass** —
+Section 5a.
+
+### 5a. #61: co-scaling `R1`/`R2`/trim by `k = 2` closes it
+
+**Chosen `k` and why not the bare-pass `k = 1.5`.** Of the two margins
+quantified above, #61 takes `k = 2` (32 % margin against the ratified
+< 50 µA) rather than `k = 1.5` (11 % margin): the mismatch coefficients this
+document allocates against are not perfectly current-invariant (Section 2.6a
+is a `gm/Id` effect, not a pure ratio — see the caveat above), so the larger
+margin is deliberately not spent down to the bare `k ≥ 1.33` threshold the
+closed form requires to pass at all.
+
+```
+R2      L=18u       -> 36.341871u   (3293.2  -> 6586.5  ohm)
+R1      L=230.180u  -> 460.701871u  (41389.5 -> 82779.0 ohm)
+R_unit  L=1.215u    -> 2.771871u    (279.53  -> 559.06  ohm, bandgap_trim.sch, x63)
+```
+
+`ppolyf_u` is a compound device (`R = 179.547·L_um + 61.382 Ω` at `W=2 µm`,
+`tt`/27 °C — Section 2.5 and `bandgap_trim.sch`'s header), so each length was
+*solved* for the target resistance rather than doubled directly; a 2×
+length is not a 2× resistance for a compound device. `R1_total/R2 = 15.28425`
+before and after, to 5 decimal places.
+
+**Result, measured — every acceptance-criteria bench re-run against the
+resized DUT:**
+
+| Bench | Metric | Before #61 | **After #61 (k=2)** | Gate | Verdict |
+|---|---|---|---|---|---|
+| `sim/iq/` | `iq_ua`, worst (`ff`/125 °C/3.63 V) | 65.473 µA | **34.0144 µA** | < 50 µA | **PASS** (record [`20260801-230754-960f726`](../sim/iq/records/20260801-230754-960f726.md), 81/81) |
+| `sim/startup/` | `iq_total_final_ua`, worst | 65.71 µA | **34.4132 µA** | (Iq lives in `sim/iq/`; this cross-checks it including the settled startup branch) | **PASS** (record [`20260801-230933-960f726`](../sim/startup/records/20260801-230933-960f726.md), 81/81, startup time 8.96–28.19 µs, still ≪ 1 ms) |
+| `sim/trim-coverage/` | `span_mv`, worst-case min | 134.347 mV | **135.389 mV** | ≥ 120 mV (±5 %) | **PASS**, unchanged within noise (record [`20260801-231346-960f726`](../sim/trim-coverage/records/20260801-231346-960f726.md), 81/81) |
+| `sim/trim-coverage/` | `lsb_mv` at `tt`/27 °C (ratified corner) | 2.833 mV | **2.829 mV** | ≤ 3.00 mV (0.25 %/step) | **PASS**, unchanged within noise |
+| `sim/trim-coverage/` | `w5_lsb` (binary weighting) | 32.000 | **32.0001** (envelope 31.999–32.0012) | 31.9–32.1 | **PASS**, unchanged |
+| `sim/mc-untrimmed/` | `mm_all` 3σ, −40/27/125 °C | 14.89/15.12/15.82 mV | **16.22/16.36/16.81 mV** | ≤ 24.0 mV | **PASS** at all three (record [`20260801-232002-960f726`](../sim/mc-untrimmed/records/20260801-232002-960f726.md)); see below for why this rose rather than held flat |
+| `sim/amp-loop-stability/` | phase margin, worst corner | 108.9° | **95.489°** | ≥ 45° | **PASS** (record [`20260801-231150-960f726`](../sim/amp-loop-stability/records/20260801-231150-960f726.md), 81/81) |
+| `sim/amp-loop-stability/` | Nyquist gain margin | no critical-axis crossing | **no critical-axis crossing** (`gm_crit_db = -999` at all 81 points) | < 0 dB | **PASS** |
+| `sim/amp-psrr/` | `psrr_worst_db`, worst corner | — (Section 3.2's 86.98 dB is the whole-loop bench, not this one's own worst-band figure) | **73.805 dB** | > 60 dB DC–1 kHz | **PASS** (record [`20260801-231234-960f726`](../sim/amp-psrr/records/20260801-231234-960f726.md), 81/81) |
+| `sim/output-voltage-tc/` | `tc_ppm`, envelope over 81 corners | 86.32–137.75 ppm/°C | **36.37–90.50 ppm/°C** | ≤ 50 ppm/°C (binds at 27 °C) | **Improved, still fails** (record [`20260801-234837-960f726`](../sim/output-voltage-tc/records/20260801-234837-960f726.md), 81/81); no regression, no re-nulling needed — see below |
+
+**Why quiescent current fell by more than exactly 2×.** The closed-form
+estimate `Iq(2) ≈ 34.1 µA` assumed only the 63.3 µA/`k` term scales; the
+measured 34.01 µA agrees to 0.3 %, confirming the model. The three signal
+branches drop from ~10.1 µA to ~5.05 µA each (`ΔVBE/R2` unchanged, `R2`
+doubled); `M4`/`MC4`/`M5`'s 1/8-scaled `ibias` leg (#55) and the
+cascode-bias branch scale down proportionally with it; only the startup
+branch's `XRPU`-pull-up current (set by a fixed 2 MΩ resistor, not by this
+circuit's servo) does not scale with `k`, exactly as predicted.
+
+**Why the mismatch spread rose slightly instead of holding flat.** Section
+2.7/2.8's resistor line *improved*, as expected — halving `I` at fixed
+`I·R1` means doubling `R`, and Pelgrom-law mismatch falls as `1/√(area)`, so
+the per-instance sigma on `R1`/`R2`/every trim unit dropped (`XR2`:
+0.2507 % → 0.1764 %; `XR1`: 0.0701 % → 0.0496 %) and the resistor-only
+`mm_res` 3σ line fell from 3.20/4.17/5.59 mV to **2.27/2.95/3.95 mV**. But
+the MOS+BJT line (`mm_fetbjt`) *rose*, from 13.64/13.64/13.90 mV to
+**14.92/14.96/15.19 mV**: `gm/Id` at the mirror devices' fixed `W/L`
+increases as the operating current drops (moving toward weaker inversion),
+so a fixed `Vth` mismatch produces a slightly larger `ΔVref` at the new,
+lower `I`. This is the caveat entered above when `k` was chosen — the MOS
+mismatch coefficients of Section 2.6a are a `gm/Id` effect, not a pure
+resistor-style ratio, and #61 did not re-derive them (the mirror geometry
+itself is unchanged). Net effect on `mm_all`: 14.89/15.12/15.82 mV →
+**16.22/16.36/16.81 mV**, a ≈9 % increase that still leaves 30–32 % of margin
+against the ratified 24.0 mV at every temperature — the resistor
+improvement did not fully offset the MOS/BJT degradation, but neither did it
+need to. As before #61, the bench's own combined verdict (mean ± 3σ inside
+the window) still reads FAIL on the untrimmed **mean**, unchanged by this
+issue and explicitly out of its scope (see the top of this section).
+
+**Temperature coefficient — improved, no re-nulling needed.** The acceptance
+criteria required checking `sim/output-voltage-tc/` for a TC regression and
+re-nulling `R1`/`R2` if one appeared. It did not: the box-method `tc_ppm`
+envelope over all 81 PVT points moved from **86.32–137.75 ppm/°C** (mean
+110.97) before #61 to **36.37–90.50 ppm/°C** (mean 62.04) after — every
+corner improved, none regressed (record
+[`20260801-234837-960f726`](../sim/output-voltage-tc/records/20260801-234837-960f726.md)).
+This is consistent with `bandgap_core.sch`'s header note that the `−VT·ln k`
+shift makes `VEB(Q3)`'s CTAT slope slightly steeper, which reduces this
+first-pass-sized loop's residual PTAT-dominated drift. The row still fails
+the ratified `≤ 50 ppm/°C` bound — it did before #61 too, and `R1`/`R2`'s
+first-order TC balance is still a first-pass hand calculation, never
+corner-swept and re-nulled against a TC target the way #10/#42's amplifier
+work was (`design/bandgap_operating_point.md` §2, §6) — so this is an
+unrelated, pre-existing miss that #61 measurably narrows rather than one it
+introduces or is responsible for closing. The
+`vref`-window check on the same bench (corner-only leg of the
+output-reference row) also improved: 1.20264–1.23105 V, against
+1.22212–1.25612 V before, both consistent with the `−VT·ln k` shift and
+neither a claim this issue re-centres the untrimmed mean (see "Not in
+scope" in issue #61).
 
 ## 6. Summary of acceptance criteria
 
@@ -1068,3 +1171,15 @@ deliberately not taken here: it moves `design/bandgap_trim.sch` and the
 | Loop stability / PSRR not regressed by the resize | **PASS** — PM 108.9° worst (≥45°), Nyquist margin *improved* to no critical-axis crossing (Section 4.5); amp PSRR 77.61 → 86.98 dB, whole-block `psrr-dc` 87.07 dB worst, 81/81 (Section 3.2) |
 | No `spec/` changes | **Done** — nothing under `spec/` touched; no threshold in any `tb.json` altered |
 | Untrimmed mean explicitly out of scope | **Done** — Sections 1, 2.8, 5 |
+
+### 6.3 #61 (co-scale `R1`/`R2`/trim by `k`)
+
+| Criterion | Status |
+|---|---|
+| `R1`, `R2` and the trim network's segment resistances co-scaled by one factor `k`, chosen against an explicit margin (not the bare `k ≥ 1.33` pass) | **Done** — `k = 2` (32 % margin at the binding corner, vs 11 % at the bare-pass-adjacent `k = 1.5`); each length solved for its target resistance since `ppolyf_u` is a compound device, not scaled directly; `R1_total/R2 = 15.28425` before and after — Section 5a |
+| `sim/iq/` (or `sim/startup/`'s `iq_total_final_ua`) below 50 µA at `ff`/125 °C/3.63 V, full PVT grid | **PASS** 81/81 both benches — **34.0144 µA** (`sim/iq/`, record [`20260801-230754-960f726`](../sim/iq/records/20260801-230754-960f726.md)) and **34.4132 µA** (`sim/startup/`, record [`20260801-230933-960f726`](../sim/startup/records/20260801-230933-960f726.md)), 31 % margin — Section 5a |
+| `sim/output-voltage-tc/` re-run; TC row must not regress, `R1`/`R2` re-nulled if it does | **Done** — see Section 5a for the measured result and whether re-nulling was needed |
+| `sim/trim-coverage/` re-run; range ≥ ±5 %, resolution ≤ 0.25 %/step preserved | **PASS** 81/81, unchanged within simulation noise (`span_mv` 135.4–240.7 mV vs 134.3–243.5 mV before; `lsb_mv` at `tt`/27 °C 2.829 mV vs 2.833 mV before) — record [`20260801-231346-960f726`](../sim/trim-coverage/records/20260801-231346-960f726.md), Section 5a |
+| `sim/mc-untrimmed/` re-run; 3σ spread stays inside 24.0 mV | **PASS** at all three temperatures — 16.22/16.36/16.81 mV (was 14.89/15.12/15.82 mV; rose because the MOS/BJT `gm/Id` effect outweighs the resistor-line improvement, still 30–32 % margin) — record [`20260801-232002-960f726`](../sim/mc-untrimmed/records/20260801-232002-960f726.md), Section 5a |
+| `sim/amp-loop-stability/`, `sim/amp-psrr/`, `sim/startup/` re-run — pole locations move with branch currents | **PASS** all three, 81/81 each — PM worst 95.489° (≥45°), no Nyquist critical-axis crossing; `psrr_worst_db` 73.805 dB worst (>60 dB); startup 8.96–28.19 µs (≪1 ms) — records [`20260801-231150-960f726`](../sim/amp-loop-stability/records/20260801-231150-960f726.md), [`20260801-231234-960f726`](../sim/amp-psrr/records/20260801-231234-960f726.md), [`20260801-230933-960f726`](../sim/startup/records/20260801-230933-960f726.md) |
+| `design/bandgap_error_budget.md` Sec 5 and `design/bandgap_operating_point.md` §4.3 updated; no `spec/` changes | **Done** — this document (Sections 3, 5, 5a, 6.3) and `design/bandgap_operating_point.md` (header, §2, §4.3, §6); nothing under `spec/` touched, no `tb.json` threshold altered |

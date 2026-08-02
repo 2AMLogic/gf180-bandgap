@@ -97,6 +97,20 @@ record from #8/#10/#11 and this repo's whole existing test suite) stays
 electrically valid; the code that actually centers a given die's `vref`
 near 1.200 V is the wafer-probe 1-point trim, not the schematic default.
 
+**Update (#61).** The unit-segment length and `R1`'s length above are #8's
+pre-trim baseline geometry and are retained unedited here. Both were
+co-scaled by `k = 2` in #61 to close the ratified quiescent-current row
+(`R1`: 230.180 µm → 460.701871 µm; unit segment: 1.215 µm → 2.771871 µm,
+each length *solved* for double the resistance rather than doubled directly,
+since `ppolyf_u` is a compound device) — see
+`design/bandgap_error_budget.md` Sec 5a. This is a current-and-resistance
+rescaling, not a ladder-structure change: the unit segments are still
+identical, the group weights are still exact powers of two by construction,
+and the trim step's value in volts (`I·R_unit`) is unchanged because `R_unit`
+doubled exactly as `I` halved — `sim/trim-coverage/`'s re-run confirms this
+(span and per-step resolution both unchanged within simulation noise,
+record [`20260801-231346-960f726`](../sim/trim-coverage/records/20260801-231346-960f726.md)).
+
 **Why identical unit segments and not six differently-sized resistors**: a
 `ppolyf_u` instance is a compound device — body resistance proportional to
 drawn length, plus a fixed per-instance terminal/contact resistance
