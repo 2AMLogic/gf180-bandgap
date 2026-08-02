@@ -4,7 +4,7 @@
 `bandgap_top` via `klt extract --parasitics`, for #17's "post-layout
 extracted re-run of the full verification suite". This directory holds the
 extraction tooling and its append-only reports; it does **not** hold a
-`sim/dut`-ready netlist yet — see "Blocking finding" below for why.
+`sim/dut`-ready netlist yet — see "Still blocking" below for why.
 
 ```
 layout/netlist/
@@ -62,71 +62,153 @@ extract` bind each extracted MOS device to the real gf180mcu
 instead of the deck's generic `nfet`/`pfet` class token, which is not a
 simulatable model name on its own.
 
-## Confirmed device coverage against this layout
+## RESOLVED (#73): the layout now draws the resistor/MiM-cap recognition markers
+
+The original finding below (kept verbatim as the append-only record of what
+was discovered and why) reported that `layout/bandgap_top/generate.py` drew
+`Pplus` around every `ppolyf_u` resistor body and `MIM_L_MK` on the
+compensation cap's top plate, but not the additional marker layers
+(`RES_MK`/`SAB`/`CAP_MK`) the deck's resistor/MiM-capacitor recognisers also
+require — so every resistor extracted as a short and the cap as absent.
+[gf180-bandgap#73](https://github.com/2AMLogic/gf180-bandgap/issues/73) drew
+those markers (plus a from-scratch check of the resulting geometry against
+what KLayout's native `DeviceExtractorResistor` actually requires — see that
+PR's `generate.py` diff for the two things a literal "just add the marker
+boxes" reading of the finding above would have missed):
+
+- **A contact landing *inside* a RES_MK-marked body does not recognise the
+  device.** `DeviceExtractorResistor` needs its two-terminal ("C") region to
+  *directly abut* the marked ("R") body — a contact that only reaches the
+  body via a Metal1 bridge (this layout's original `draw_res`/`draw_trim`
+  free-end design) leaves the extractor logging "Expected two polygons on
+  contacts interacting with one resistor shape (found 0)" and the body still
+  extracting as a short, even with every marker layer present. `draw_res`
+  now draws a small unmarked poly pad directly past each resistor's true
+  free edge (`RES_PAD`, kept outside the marker box); `draw_trim`'s `TRIM_PAD`
+  contact-pad allowance at each unit's ends already had exactly this
+  property once `RES_MK` itself was narrowed to the unit's `unit_length_nm`
+  centre (it was previously drawn to the pad-inclusive full footprint,
+  covering the very contacts it needed to stay clear of).
+- **`startup.RPU` must *not* pick up the same `RES_MK`/`SAB` markers.**
+  `RPU`'s schematic model is `ppolyf_u_1k` (a high-sheet-rho flavor this
+  deck's `resistors` list has no entry for — klayout-tools#299, unchanged by
+  this issue), not the base `ppolyf_u` this repo's other resistors use.
+  Marking its body identically would have gotten it recognised as a *base*
+  `ppolyf_u` device at the wrong (350 Ω/□ vs. its real ~1000 Ω/□) sheet
+  resistance — silently wrong, worse than the documented-short status quo.
+  `generate.py`'s `ResItem.high_rho` flag (set from the schematic's own
+  `Device.model`) makes `draw_res` mark `RPU`'s body with `Resistor` (62/0)
+  instead — one of `ResistorDevice.excludes` for the base flavor — so it
+  stays a short, exactly as klayout-tools#299 says it should.
+
+**Current coverage**, from `<record-id>` `20260802-162845-9448069`'s
+committed report:
 
 ```
-extracted devices: 97 {'bjt': 16, 'nfet': 34, 'pfet': 47}
-net_count        : 31   (pin_count 4: vdd, vref, vss, vsubs)
-device_classes   : [nfet, pfet, bjt, cap_mim_2f0_m4m5_noshield, resistor]
-warning          : 279 poly-layer shapes not part of any recognised
+extracted devices: 163 {'bjt': 16, 'cap_mim_2f0_m4m5_noshield': 1,
+                        'nfet': 34, 'pfet': 47, 'ppolyf_u': 65}
+net_count        : 97   (pin_count 4: vdd, vref, vss, vsubs)
+warning          : 213 poly-layer shapes not part of any recognised
                    nfet/pfet gate touch contact at 2+ separate points (the
-                   resistor-body signature); this deck may not model the
-                   device class drawn here, and its terminals have been
-                   absorbed into ordinary interconnect as an unintended
-                   short -- see docs/cli/extract.md's 'Known limitation:
-                   unmodelled device geometry'.
+                   resistor-body signature) and carry no resistor-marker
+                   layer at all; ... -- see docs/cli/extract.md's 'Known
+                   limitation: unmodelled device geometry'.
 ```
 
-- **MOS (81 devices: 34 nfet + 47 pfet)** — recognised, real drawn
-  W/L, bound to the real `nfet_03v3`/`pfet_03v3` models via `--pdk`.
-- **Bipolar (16 `bjt` devices)** — newly recognised (klayout-tools#223).
-  This is a genuine improvement over the MOS-only extraction #62/PR#66's
-  LVS work used: the compensation PNP array's unit devices now extract as
-  real `DeviceExtractorBJT3Transistor` devices with drawn `AE`/`PE`/etc.,
-  not a short.
-- **Resistor (`ppolyf_u`, klayout-tools#222) — 0 recognised.** Confirmed by
-  `grep -c '^R' <extracted netlist>` = 21, all of which are the
-  `--parasitics` Γ-section cards (`R$N node node__par <ohms>`), not device
-  resistors — no `R$N a b <value> ppolyf_u` card exists anywhere in the
-  output.
-- **MiM capacitor (`cap_mim_2f0_m4m5_noshield`, klayout-tools#225) — 0
-  recognised.** No `C$N ... cap_mim_2f0_m4m5_noshield` device card exists
-  (only the `--parasitics` ground-C cards).
+- **Resistor (`ppolyf_u`) — 65/65 recognised**: `core.R1`, `core.R2`, and all
+  63 trim-ladder segments, each a real `DeviceExtractorResistorWithBulk`
+  device with drawn `L`/`W` (`r_ohm`/`l_um`/`w_um`/`area_um2` params).
+  `startup.RPU` is *not* among them — see above — and is exactly the kind of
+  shape the remaining warning (213 shapes, down from the pre-#73 finding's
+  279) flags: real drawn poly this deck has no device extractor for.
+- **MiM capacitor (`cap_mim_2f0_m4m5_noshield`) — 1/1 recognised**: the
+  compensation cap now extracts as a real `DeviceExtractorCapacitor` device
+  instead of absent/disconnected plates.
+- **Bipolar (`bjt`) — 16/16, unchanged by #73** (already recognised before
+  this issue; see the original finding below).
+- **MOS — 81/81, unchanged by #73.**
 
-## Blocking finding: this layout does not draw the marker geometry the new recognisers require
+## Still blocking: `layout/lvs/run_lvs.py`'s reference netlist now mismatches
 
-This is **not** a klayout-tools defect — the tool's behaviour here is
-correct and documented ("unmarked conductor is never reclassified", and it
-prints an explicit warning rather than silently guessing). It is a gap in
-**this repo's own committed layout**, drawn under `#62`/PR#66 before the
-resistor/capacitor device-class recognisers existed upstream:
+Recognising these device classes is what #73 set out to do, and
+`layout/drc/run_drc.py`, `layout/bandgap_top/matching_report.py` and
+`layout/bandgap_top/area_report.py` all stay clean/PASS against the
+regenerated GDS (see #73's PR). `layout/lvs/run_lvs.py`, however, now
+reports `mismatch` — and this is **not** something #73's own layout changes
+caused. `layout/lvs/make_reference.py`'s reference netlist was mechanically
+derived, under #62/PR#66, on the premise that `klt`'s gf180mcu extraction
+deck "recognises only `nfet`/`pfet`" — that premise was already false by the
+time this issue reinstalled `klt` (bipolar recognition, klayout-tools#223,
+was already merged upstream), and reproducibly false against `main` *before*
+any of #73's own changes:
 
-- `klayout_tools.decks.gf180mcu.EXTRACTION_DECK.resistors` recognises a
-  `ppolyf_u` resistor body as `Poly2 & RES_MK (110/5)`, additionally
-  requiring `Pplus (31/0)` + `SAB (49/0)` over the same segment.
-  `layout/bandgap_top/generate.py`'s `draw_res`/`draw_trim` **do** draw
-  `Pplus` around every resistor body (`# A ppolyf_u body is p+ implanted,
-  unsalicided poly` — the design intent already matches the real device),
-  but draw neither `RES_MK` nor `SAB`. Without the `RES_MK` marker
-  specifically, the deck has no segment to intersect against `Pplus`/`SAB`
-  at all, so the resistor bodies of `core.R1`, `core.R2` and all 63
-  trim-ladder segments extract as ordinary Poly2 interconnect — i.e. a
-  dead short between each resistor's two heads.
+```bash
+git checkout main -- layout/bandgap_top/bandgap_top.gds layout/bandgap_top/generate.py
+python3 layout/lvs/make_reference.py -o layout/lvs/bandgap_top.ref.spice
+python3 layout/lvs/run_lvs.py layout/bandgap_top/bandgap_top.gds
+# -> lvs status: mismatch, 27 mismatches, 81/81 devices matched, 18/23 nets
+#    (the 16 recognised `bjt` devices/nets the MOS-only reference doesn't model)
+```
+
+#73's own fix makes the same structural gap larger (65 more recognised
+`ppolyf_u` devices, plus the 1 MiM cap, the reference also doesn't model),
+but the underlying cause — `make_reference.py` assuming a MOS-only deck that
+hasn't been true since klayout-tools#223/#225 merged — predates and is
+independent of #73's changes. Updating `make_reference.py` to emit matching
+`bjt`/`ppolyf_u`/MiM-cap reference cards from the same `plan.py` rows/items
+`generate.py` draws from (mirroring how it already does this for MOS) is
+real, valuable, separately-scoped work, tracked as
+[gf180-bandgap#75](https://github.com/2AMLogic/gf180-bandgap/issues/75)
+rather than folded into #73. `layout/lvs/reports/bandgap_top/`'s newest
+report (regenerated by #73, per that directory's own append-only-evidence
+convention) honestly records the current `mismatch` verdict rather than
+masking it by pinning `klt` to a stale version.
+
+## Original finding (#17): this layout did not draw the marker geometry the new recognisers require
+
+Re-running `klt extract --parasitics --deck gf180mcu --pdk gf180mcuD` against
+the `bandgap_top.gds` committed at the time (see #62/PR#66) confirmed:
+
+- **Bipolar: works.** 16 real `bjt` devices recognised with drawn
+  `AE`/`PE`/etc. — a genuine improvement over the MOS-only extraction #62
+  used.
+- **Resistor: 0 recognised.** `klt extract` warns: "279 poly-layer shapes
+  not part of any recognised nfet/pfet gate touch contact at 2+ separate
+  points (the resistor-body signature) ... absorbed into ordinary
+  interconnect as an unintended short." Every discrete `ppolyf_u` resistor
+  (`core.R1`, `core.R2`, all 63 trim-ladder segments) extracts as a 0 ohm
+  short between its two heads.
+- **MiM capacitor: 0 recognised.** The compensation cap's plates extract as
+  disconnected/absent rather than a device.
+
+This was **not** a klayout-tools defect — the deck's resistor/capacitor
+recognisers require specific marker geometry, and `layout/bandgap_top/generate.py`
+did not draw all of it:
+
+- `klayout_tools.decks.gf180mcu.EXTRACTION_DECK.resistors`'s `ppolyf_u`
+  entry recognises `Poly2 & RES_MK (110/5)`, requiring `Pplus (31/0)` +
+  `SAB (49/0)` over that same segment. `generate.py`'s `draw_res`/`draw_trim`
+  **already drew `Pplus`** around every resistor body (correctly modeling
+  the unsalicided p+ poly device) but drew neither `RES_MK` nor `SAB`.
+  Without the `RES_MK` marker specifically, the deck had no segment to
+  intersect against `Pplus`/`SAB` at all, so the resistor bodies of
+  `core.R1`, `core.R2` and all 63 trim-ladder segments extracted as ordinary
+  Poly2 interconnect — i.e. a dead short between each resistor's two heads.
 - `klayout_tools.decks.gf180mcu.EXTRACTION_DECK.capacitors` requires **both**
   `CAP_MK (117/5)` and `MIM_L_MK (117/10)` on the MiM cap's `FuseTop` top
-  plate. `layout/bandgap_top/generate.py`'s `_mim_cap` draws `MIM_L_MK`
-  already but not `CAP_MK`, so the compensation cap's plates extract as
+  plate. `generate.py`'s `_mim_cap` drew `MIM_L_MK` already but not
+  `CAP_MK`, so the compensation cap's plates extracted as
   unconnected/absent rather than a recognised device.
 - Separately: `startup.RPU` uses the `ppolyf_u_1k` high-sheet-rho poly
   resistor variant (schematic: `XRPU det vdd vss ppolyf_u_1k ...`), which
-  has **no** entry in `EXTRACTION_DECK.resistors` at all yet (only the base
-  `ppolyf_u` flavor is wired) — even after the marker-layer fix above,
-  `RPU` would still extract as a short. This half **is** a klayout-tools
-  coverage gap (the deck's resistor list covers one sheet-rho flavor per
-  PDK, not the full family), reported upstream generically (see "Friction
-  filed" below).
+  has **no** entry in `EXTRACTION_DECK.resistors` at all (only the base
+  `ppolyf_u` flavor is wired) — even after the marker-layer fix, `RPU` still
+  extracts as a short, by design (see "RESOLVED (#73)" above). This half
+  **is** a klayout-tools coverage gap (the deck's resistor list covers one
+  sheet-rho flavor per PDK, not the full family), reported upstream
+  generically (see "Friction filed" below).
 
-**Why this blocks a meaningful full-PVT extracted-netlist re-run**: a
+**Why this blocked a meaningful full-PVT extracted-netlist re-run**: a
 bandgap reference's entire PTAT/CTAT combination, feedback network and trim
 mechanism is resistor-mediated. A netlist where `R1`/`R2`/the trim ladder
 are literal 0 Ω shorts and the compensation cap is absent does not
@@ -139,19 +221,16 @@ CLAUDE.md's "no claim without a testbench" / no-relaxation rule by
 presenting a non-representative circuit's results as this block's
 post-layout behavior.
 
-**This issue's remaining scope (full #12 suite re-run over the full PVT
-matrix, #13 Monte Carlo re-run, the schematic-vs-extracted delta summary,
-and the #11 startup re-check) is therefore blocked** on a follow-up layout
-change that draws the missing marker layers, regenerates `bandgap_top.gds`,
-and re-passes DRC/LVS/matching/area-budget. That follow-up is tracked as
-[gf180-bandgap#73](https://github.com/2AMLogic/gf180-bandgap/issues/73)
-(filed alongside this finding) rather than done inline here: it changes
-`layout/bandgap_top/generate.py` and the committed GDS, which `#17`'s own
-Affected Files scope this issue as "reference only" against, and it carries
-its own DRC/LVS/matching/area re-verification acceptance criteria distinct
-from #17's.
+**#17's remaining scope (full #12 suite re-run over the full PVT matrix,
+#13 Monte Carlo re-run, the schematic-vs-extracted delta summary, and the
+#11 startup re-check) is therefore still blocked** — no longer on the
+marker-layer gap #73 closed, but on the `layout/lvs` reference staleness
+tracked as #75 above (a `sim/dut`-ready extracted netlist built on a layout
+whose own LVS can't yet confirm connectivity end-to-end is not solid enough
+evidence to run #12/#13 against, per the same no-claim-without-a-testbench
+reasoning).
 
-## Known additional fidelity gaps (once recognition itself is fixed)
+## Known additional fidelity gaps
 
 Worth recording now so a future increment does not re-discover them:
 
@@ -161,14 +240,14 @@ Worth recording now so a future increment does not re-discover them:
   junction capacitances would be geometry-accurate. `klt extract`'s own
   docs mark this as a deliberate scope limit of the PDK-model-binding
   feature (schematic-equivalent, no-parasitics scope), not a bug.
-- Even once `RES_MK`/`SAB`/`CAP_MK` are drawn, `DeviceExtractorResistor`
-  emits a **linear, value-only** `R` card (`R = L/W · sheet_rho`, a single
-  ohms figure) — not a call into the real `ppolyf_u` SPICE subcircuit the
-  schematic uses, which carries its own temperature-coefficient and
-  mismatch modeling. This is a real fidelity gap the extracted netlist will
-  carry going forward; not something this repo's layout can fix, since the
-  extraction engine's resistor recognizer is defined upstream to write a
-  bare `R` card.
+- Now that `RES_MK`/`SAB`/`CAP_MK` are drawn (#73), `DeviceExtractorResistor`
+  still emits a **linear, value-only** `R` card (`R = L/W · sheet_rho`, a
+  single ohms figure) — not a call into the real `ppolyf_u` SPICE subcircuit
+  the schematic uses, which carries its own temperature-coefficient and
+  mismatch modeling. This is a real fidelity gap the extracted netlist
+  carries going forward; not something this repo's layout can fix, since
+  the extraction engine's resistor recognizer is defined upstream to write
+  a bare `R` card.
 - The extracted top-level pin list is `vdd vref vss vsubs` (four pins) vs.
   `sim/dut/README.md`'s three-pin (`vdd`, `vss`, `vref`) convention — a
   `sim/dut`-ready wrapper will need to tie `vsubs` to `vss` (or expose it)

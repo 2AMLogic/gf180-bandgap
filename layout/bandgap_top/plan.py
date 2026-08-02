@@ -160,6 +160,16 @@ class ResItem:
     segments: int
     nets: tuple[str, str]
     devices: tuple[str, ...] = ()
+    #: True for a schematic ``ppolyf_u_1k`` (or other high-sheet-rho) device,
+    #: e.g. ``startup.RPU``. klayout-tools' gf180mcu extraction deck only
+    #: models the base ``ppolyf_u`` flavour (klayout-tools#299) -- drawing
+    #: this body with the same RES_MK/Pplus/SAB recognition markers as a
+    #: real base-flavour resistor would get it mis-recognised at the wrong
+    #: (350 ohm/sq) sheet resistance, so `generate.py` additionally marks a
+    #: high-rho body with `Resistor` (62/0), one of the deck's declared
+    #: `excludes` layers for its `ppolyf_u` entry -- keeping it a short,
+    #: same as an unmarked device, rather than silently wrong (#73).
+    high_rho: bool = False
 
     is_mos = False
 
@@ -316,6 +326,7 @@ def build_rows(flat: FlatNetlist) -> list[Row]:
                     segments=57,
                     nets=("startup.det", "vdd"),
                     devices=("startup.RPU",),
+                    high_rho=flat.get("startup.RPU").model != "ppolyf_u",
                 )
             ],
             note="start-up pull-up bleeder, folded serpentine (floorplan §7/§11.3)",

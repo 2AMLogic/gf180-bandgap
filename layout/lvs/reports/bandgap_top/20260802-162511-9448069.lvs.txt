@@ -1,0 +1,177 @@
+layout: ../../../bandgap_top/bandgap_top.gds
+reference: ../../bandgap_top.ref.spice
+top: bandgap_top
+engine: klayout
+status: mismatch
+mismatches: 161
+  nets: layout=97  reference=23  matched=18
+  devices: layout=163  reference=81  matched=81
+  pins: layout=4  reference=5  matched=5
+
+category_counts:
+  device.body_unverified: 2
+  device.unmatched: 82
+  net.split: 74
+  topology: 3
+
+[warning] device.body_unverified  (layout)  34 NMOS device body terminal(s) were compared against the 'vsubs' deck-synthesized substrate net, not a real schematic net -- this deck draws no distinct NMOS substrate/tap layer (see docs/cli/extract.md, "Coverage")
+[warning] device.body_unverified  (layout)  47 PMOS device body terminal(s) were compared against an anonymous, deck-synthesized well net, not a real schematic net -- this deck has no distinct well-tap layer (see docs/cli/extract.md, "Coverage")
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[error] topology  (layout)  device class could not be mapped to a counterpart
+[error] topology  (layout)  device class could not be mapped to a counterpart
+[error] topology  (layout)  device class could not be mapped to a counterpart
