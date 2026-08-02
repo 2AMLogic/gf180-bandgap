@@ -187,10 +187,12 @@ deck was never Metal1-only, and is even less so today — since
 [`klayout-tools#188`](https://github.com/2AMLogic/klayout-tools/issues/188)
 it also carries `metal2`/`metal3`/`metal5`.width|space, `metaltop`.* and
 `mim.space.1`/`mim.enclosing.fusetop.1` rules; see "The gf180mcu DRC deck:
-coverage" below for the current, non-stale list. Only the **via** layers
-(`Via1`..`Via4`, 35/0/38/0/40/0/41/0) are genuinely rule-free there —
+coverage" below for the current, non-stale list. **Above Metal1** the only
+rule-free layers are the four vias (`Via1`..`Via4`, 35/0/38/0/40/0/41/0) —
 everything else drawn above Metal1, including `Metal4`/`FuseTop`, is
-checked.
+checked. (Taken over the whole stream the rule-free set is larger — twelve
+layers, including the implant and device-marker layers; the coverage section
+below enumerates them from the report itself.)
 
 **One exception**: the compensation MIM capacitor's `Metal4`/`FuseTop` plates
 are wired down to the Metal1 `vdd`/`fb` rails through a real `Via1`..`Via4`
@@ -232,7 +234,10 @@ none is a design simplification, and nothing in the reference is hand-written.
   W/L; every drawn `ppolyf_u` resistor body (`core.R1`, `core.R2` and all 63
   trim units) and its extracted `R`; the drawn `ppolyf_u_1k` body
   (`startup.RPU`) and its extracted `R`; all 16 recognised `bjt` devices and
-  their `AE`; the MIM capacitor and its `C`; and the full Metal1/Poly2/
+  their `AE` (16 under the **pinned** deck the committed evidence was
+  produced with — 8 real emitters plus 8 base-tie-ring artefacts; the current
+  deck recognises 8, see the deck-pin finding under "Findings and
+  escalations"); the MIM capacitor and its `C`; and the full Metal1/Poly2/
   Contact connectivity joining them — i.e. the drawn topology of the
   amplifier, the core mirror/cascode, the PNP array, the resistor strip, the
   trim ladder with its drawn metal strap option, and the start-up kick path.
@@ -286,15 +291,37 @@ Manual. **Corrected claim (was stale, gf180-bandgap#82):** since
 covers width/spacing/enclosure rules across `Poly2` (30/0), `Comp` (22/0),
 `Contact` (33/0), `Metal1` (34/0), `Metal2` (36/0), `Metal3` (42/0), `Metal5`
 (81/0) and the `MetalTop` thickness variant (`metaltop.width.1`/
-`metaltop.space.1`), plus `Nwell` (21/0) space/enclosure-of-`Comp` rules, one
+`metaltop.space.1` — carried by the deck, but *skipped* on this layout, see
+below), plus `Nwell` (21/0) space/enclosure-of-`Comp` rules, one
 BJT marker-layer separation rule, and a MiM-capacitor pair
 (`mim.space.1`/`mim.enclosing.fusetop.1`, both scoped to `Metal4` (46/0) as
 the bottom plate and `FuseTop` (75/0) as the top plate). There is no
 dedicated `Metal4` width/space rule (`Metal4` only appears inside those MiM
 rules), no HV/5V-variant rules, and no tap-specific rule beyond the `Nwell`
-pair above. Only the **via** layers (`Via1`..`Via4`, 35/0/38/0/40/0/41/0) are
-wholly rule-free. A `clean` DRC verdict from it is therefore a real but
-partial check — the drawn implant geometry in this layout is unchecked.
+pair above.
+
+**What this run actually checked**, straight out of the committed report
+(`20260802-210735-392b549.drc.json`, `coverage.*`) rather than from memory:
+
+- `coverage.layers_checked` — `21/0, 22/0, 30/0, 33/0, 34/0, 36/0, 42/0,
+  46/0, 75/0, 81/0, 127/5`. So above Metal1, `Metal2`/`Metal3`/`Metal4`/
+  `FuseTop`/`Metal5` all carry rules and are checked.
+- `coverage.rules_skipped` — `metaltop.width.1` and `metaltop.space.1`. The
+  deck *carries* the `MetalTop` pair, but this layout draws nothing on 53/0,
+  so neither rule ran here: deck contents and this-run coverage are not the
+  same thing.
+- `coverage.layers_in_stream_without_rules` — **twelve** drawn layers have no
+  rule at all: `31/0` (`Pplus`), `32/0` (`Nplus`), `34/10` (the `Metal1`
+  label layer), `35/0`/`38/0`/`40/0`/`41/0` (`Via1`..`Via4`), `49/0` (`SAB`),
+  `62/0` (`RESISTOR_MK`), `110/5` (`RES_MK`), `117/5` (`CAP_MK`) and `117/10`
+  (`MIM_MK`). Only four of the twelve are vias; the drawn **implant** and
+  **device-recognition marker** geometry is entirely unchecked — including
+  `CAP_MK`/`MIM_MK`, the very markers whose clipping is what lets the `fb`
+  top-plate tab exist (see "Findings and escalations").
+
+So the accurate scoped statement is: *above* Metal1 the only rule-free layers
+are the four vias, but taken over the whole stream twelve layers are rule-free.
+A `clean` DRC verdict from this deck is therefore a real but partial check.
 See "Friction filed".
 
 **A `clean` verdict is not the same as every under-enclosure being flagged.**
@@ -318,12 +345,32 @@ clobbering the last one.
 
 `layout/lvs/bandgap_top.ref.spice` is the one generated file that *is*
 overwritten — `run_lvs.py` regenerates it before every run precisely so a
-stale or hand-edited reference can never quietly pass.
+stale or hand-edited reference can never quietly pass. (That guard covers
+*hand-editing*; it does not catch a reference whose generator has itself gone
+stale against a newer extraction deck — which is the state described in the
+deck-pin finding under "Findings and escalations".)
+
+**The determinism contract covers the GDS, not the extracted netlist.**
+`generate.py`'s output is a pure function of the geometry (`git diff` stays
+empty across re-runs). `klt extract`'s is not, at least not observably: two
+runs on byte-identical GDS, the same deck content hash and the same KLayout
+0.30.10 produced `.extracted.spice` files differing on exactly one line — the
+MiM cap's two terminals written in opposite order (`C$98 \$16 \$17 …` vs.
+`C$98 \$17 \$16 …`), with the `6.91488e-12` value bit-identical. That is
+recorded here as an **observation, not a tested claim**: it was seen once,
+across the two committed records `20260802-202601-302dc67` and
+`20260802-210739-392b549`, and has not been deliberately reproduced, so
+attributing it to nondeterministic net numbering inside the extractor is a
+hypothesis. Reproducing it (and, if it holds, filing it upstream as a generic
+tool gap per CLAUDE.md's friction protocol) is folded into
+[#84](https://github.com/2AMLogic/gf180-bandgap/issues/84). Until then, do not
+treat a byte-level diff of two `.extracted.spice` records as a
+geometry-changed signal on its own.
 
 ## Findings and escalations
 
 CLAUDE.md forbids silently absorbing a gap between the drawn layout and the
-schematic. Five were found while drawing and maintaining this block; all
+schematic. Seven were found while drawing and maintaining this block; all
 are reported, not patched around:
 
 - **RESOLVED — schematic `nf=1` on 15 devices the layout must finger** —
@@ -429,6 +476,39 @@ are reported, not patched around:
   (plate nets joined to the connectivity stack) makes it possible to draw
   the DRM-legal contact without `klt extract` reading it as a `vdd`/`fb`
   short, at which point the `fb` half of #77 can be re-drawn for real.
+- **The committed DRC/LVS evidence was produced against a *pinned* deck, and
+  the LVS reference netlist is stale against the current one** —
+  [#84](https://github.com/2AMLogic/gf180-bandgap/issues/84). The evidence
+  records added by [#82](https://github.com/2AMLogic/gf180-bandgap/issues/82)
+  (`20260802-210735-392b549.drc.json`, `20260802-210739-392b549.lvs.json`)
+  were deliberately generated with `gf180mcu.py` at content hash
+  `sha256:dcd6c84a4e9f541f47907dbc493d00758b0eeb89f2dc54d9a9d3662587acb4d8`
+  (klayout-tools commit `3af4716`) — **one deck revision behind HEAD** — so
+  that a documentation-only change could be shown to move nothing. Using the
+  baseline deck for that controlled comparison is legitimate and the deck hash
+  is recorded in every report, but the pin is *not* neutral: the very next
+  deck commit (`be4b4f82`) is
+  [klayout-tools#304](https://github.com/2AMLogic/klayout-tools/issues/304),
+  which **resolves this repo's own friction filing** klayout-tools#302 by
+  excluding `Nplus` from the bipolar emitter region, dropping the n+
+  base-tie-ring artefact device. Consequences, stated plainly:
+  - Under the current deck this layout extracts **8** `bjt` (one per drawn
+    PNP unit), not the 16 the pinned run recorded — the artefact half is
+    gone. This is derivable from the deck source and from the reference's own
+    `2 per drawn PNP unit` accounting; it has **not** been re-run in this
+    repo yet, which is exactly what #84 is for.
+  - `layout/lvs/bandgap_top.ref.spice` still emits two `Q` cards per drawn
+    PNP (`AE=3.744e-11` base-tie ring + `AE=2.5e-11` real emitter) because
+    `make_reference.py`'s step 8 was written to mirror the artefact. It is
+    therefore **stale**, and LVS will **not** match under the current deck
+    until it is regenerated.
+  - So the recorded `match` at 164/164 devices is an artefact-inflated
+    extraction compared against a reference built to accommodate that
+    artefact. It is a true statement about the pinned deck and a misleading
+    one about today's tool; regenerating the reference against the post-#304
+    deck is tracked as
+    [#84](https://github.com/2AMLogic/gf180-bandgap/issues/84) and is
+    outstanding.
 
 ## Friction filed (klayout-tools tracker)
 
@@ -456,11 +536,17 @@ specifics) on the public
   high-rho recogniser deliberately omits.
 - **A bipolar recogniser that keys off a bare diffusion layer cannot tell a
   base-contact ring from the emitter it surrounds** — a curated deck that
-  models no implant layers recognises *two* bipolars per drawn vertical-PNP
-  unit cell (the real one, plus one whose "emitter" is the base ring), so a
-  correct layout has to be compared against a reference carrying the
-  artefact device:
-  [`#302`](https://github.com/2AMLogic/klayout-tools/issues/302).
+  models no implant layers recognised *two* bipolars per drawn vertical-PNP
+  unit cell (the real one, plus one whose "emitter" is the base ring):
+  [`#302`](https://github.com/2AMLogic/klayout-tools/issues/302) — **resolved
+  upstream** on 2026-08-02 by
+  [`#304`](https://github.com/2AMLogic/klayout-tools/issues/304) (deck commit
+  `be4b4f82`), which excludes `Nplus` from the emitter region so the n+ tie
+  ring is dropped. **This repo has not taken it up yet**: `make_reference.py`
+  still emits the artefact card, so `layout/lvs/bandgap_top.ref.spice` is
+  stale against the current deck and the committed LVS evidence was produced
+  against the pre-#304 deck on purpose — see the deck-pin finding above and
+  [#84](https://github.com/2AMLogic/gf180-bandgap/issues/84).
 - **gf180mcu extraction deck declares one metal level and no vias** — forces
   single-metal routing on any block that wants to LVS, at a real area cost:
   [`#220`](https://github.com/2AMLogic/klayout-tools/issues/220).

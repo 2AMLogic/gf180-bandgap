@@ -196,12 +196,42 @@ invisible to `klt extract` for the reason above, so a parasitic-extraction
 consumer working from this netlist directly still needs to be told the
 compensation cap is present but disconnected — a stability/phase-margin
 re-run against a netlist with no compensation cap in the loop is not
-representative. **Not the same gap as the `fb` plate's own contact
-geometry**: the `fb` up-hop contact as drawn is not DRM-legal
-([gf180-bandgap#82](https://github.com/2AMLogic/gf180-bandgap/issues/82),
-see `layout/README.md` § "Findings and escalations") — a separate,
-manufacturability finding from the connectivity-modelling gap this
-paragraph describes.
+representative.
+
+**Not the same gap as the `fb` plate's own contact geometry.** The
+connectivity-modelling gap above is a tool limitation; the `fb` up-hop
+contact is a *manufacturability* finding
+([gf180-bandgap#82](https://github.com/2AMLogic/gf180-bandgap/issues/82)),
+and it is worth stating here in full rather than by cross-reference, because
+a consumer of this netlist is exactly who would otherwise assume the drawn
+cap is shippable:
+
+- The FuseTop routing tab that carries `fb` off the top plate extends 0.8 µm
+  past the `Metal4` bottom plate's edge with **zero** bottom-plate overlap
+  there, against `MIMTM.3`'s 0.6 µm minimum bottom-plate overlap of the top
+  plate (transcribed in the deck as `mim.enclosing.fusetop.1`, and honoured
+  by `MIM_PLATE_INSET` on the other three edges of the same box).
+- The `Via4` that hops up onto that tab has **zero** `Metal4` overlap,
+  against `MIMTM.2`'s 0.4 µm minimum bottom-plate overlap of `Via4`.
+  `MIMTM.2` is not transcribed into the deck at all, so that half has no rule
+  to be checked by.
+- **The block as drawn is therefore not manufacturable at that contact.** It
+  is not a "standard MiM-cap top-plate routing technique"; it is a workaround
+  for `klt extract`'s dielectric-blind connectivity graph, which would read
+  the DRM-legal contact (a `Via4` landing inside the bottom-plate footprint)
+  as a `vdd`/`fb` short.
+- **`klt drc`'s `clean` verdict on this geometry is a false negative, not a
+  passing check.** `mim.enclosing.fusetop.1` maps onto KLayout's
+  `Region.enclosing_check`, which reports nothing when a shape lies *entirely*
+  outside the enclosing layer — filed upstream as
+  [klayout-tools#318](https://github.com/2AMLogic/klayout-tools/issues/318).
+
+Revisit once
+[klayout-tools#314](https://github.com/2AMLogic/klayout-tools/issues/314)
+(plate nets joined to the connectivity stack) makes the DRM-legal contact
+drawable without the extractor reading it as a short. Full geometry trace:
+`generate._mim_cap`'s docstring and `layout/README.md` § "Findings and
+escalations".
 
 ## RESOLVED (#78): `startup.RPU` now extracts as a real `ppolyf_u_1k` device
 
@@ -340,9 +370,21 @@ design specifics):
   (see "RESOLVED (#78)" above).
 - **A bipolar recogniser keyed on a bare diffusion layer counts a
   base-contact ring as a second emitter** — a curated deck that models no
-  implant layers cannot tell the base-contact ring of a standard vertical
+  implant layers could not tell the base-contact ring of a standard vertical
   bipolar unit cell apart from the emitter it surrounds, so every drawn unit
-  extracts as two devices of the bipolar class sharing one base net. Filed
+  extracted as two devices of the bipolar class sharing one base net. Filed
   as [`klayout-tools#302`](https://github.com/2AMLogic/klayout-tools/issues/302)
-  (found while closing #75; the reference netlist has to model the artefact
-  device for LVS to match).
+  (found while closing #75) — **resolved upstream** 2026-08-02 by
+  [`klayout-tools#304`](https://github.com/2AMLogic/klayout-tools/issues/304),
+  which excludes the n+ implant layer from the emitter region so the tie ring
+  is dropped and each drawn unit extracts as one device.
+  **This repo has not taken it up yet.** `make_reference.py`'s step 8 still
+  emits two `bjt` cards per drawn PNP unit specifically to mirror the
+  now-fixed artefact, so `layout/lvs/bandgap_top.ref.spice` is **stale**
+  against the current deck: it asserts 16 `bjt` where the current deck
+  extracts 8, and LVS will not match until it is regenerated. The committed
+  LVS evidence was produced against the pre-#304 deck (`gf180mcu.py` content
+  hash `sha256:dcd6c84a…`) on purpose, so that a documentation-only change
+  could be shown to move nothing — see `layout/README.md` § "Findings and
+  escalations". Regeneration is tracked as
+  [gf180-bandgap#84](https://github.com/2AMLogic/gf180-bandgap/issues/84).

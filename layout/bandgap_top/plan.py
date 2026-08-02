@@ -426,6 +426,14 @@ def pnp_base_ring_area_nm2(item: PnpItem) -> int:
     the deck, not of this layout; it is modelled here so the reference
     matches what the tool actually produces, and filed generically upstream
     (see ``layout/README.md`` § "Friction filed").
+
+    **Stale as of klayout-tools#304** (2026-08-02), which resolved that
+    filing by excluding ``Nplus`` from the emitter region: the current deck
+    extracts one ``bjt`` per drawn unit, so this area no longer describes a
+    device the reference should carry. Retiring it (and the second ``bjt``
+    card in ``make_reference.py``'s step 8) is tracked as gf180-bandgap#84.
+    This function is unused by the drawn geometry — it feeds the LVS
+    reference only, so nothing on the layout side changes when it goes.
     """
     emitter = int(item.emitter_um * 1000)
     outer = emitter + 2 * (PNP_GAP + PNP_RING)
