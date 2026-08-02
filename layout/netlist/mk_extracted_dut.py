@@ -286,14 +286,24 @@ def _fmt(value: float) -> str:
     return f"{value:.6g}"
 
 
-def emit(extract: dict, lvs: dict | None) -> tuple[list[str], Aliaser, dict[str, str]]:
+def emit(
+    extract: dict, lvs: dict | None, flat: bool = False
+) -> tuple[list[str], Aliaser, dict[str, str]]:
     names = net_name_map(extract, lvs)
     aliaser = build_back_annotations(extract, names)
 
     def net(raw: str) -> str:
         return names[aliaser(raw)]
 
-    lines: list[str] = [".subckt bandgap_top vdd vss vref", ""]
+    lines: list[str] = (
+        [
+            "* FLAT form: cards at deck level, no `.subckt bandgap_top` wrapper --",
+            "* for a bench that flattens its DUT instead of instantiating it.",
+            "",
+        ]
+        if flat
+        else [".subckt bandgap_top vdd vss vref", ""]
+    )
     counts: dict[str, int] = {}
 
     for dev in sorted(extract["devices"], key=lambda d: (d["class"], d["name"])):
@@ -344,7 +354,8 @@ def emit(extract: dict, lvs: dict | None) -> tuple[list[str], Aliaser, dict[str,
             f"{_fmt(entry['capacitance_ff'] * 1e-15)}"
         )
 
-    lines += ["", ".ends bandgap_top"]
+    if not flat:
+        lines += ["", ".ends bandgap_top"]
     return lines, aliaser, counts
 
 
@@ -370,6 +381,13 @@ def main() -> int:
     parser.add_argument("--lvs", type=Path, help="<rid>.lvs.json, for net naming (T1)")
     parser.add_argument("-o", "--output", type=Path, required=True)
     parser.add_argument(
+        "--flat",
+        action="store_true",
+        help="emit the cards at deck level with no `.subckt bandgap_top` wrapper, "
+        "for a bench that flattens its DUT instead of instantiating it (this "
+        "repo: sim/mc-untrimmed, whose `.ic` seeds name top-level nodes)",
+    )
+    parser.add_argument(
         "--check",
         action="store_true",
         help="do not write; fail if the committed output has drifted",
@@ -385,7 +403,7 @@ def main() -> int:
     extract["_ae_cache"] = parse_ae(spice)
     lvs = json.loads(args.lvs.read_text()) if args.lvs else None
 
-    lines, aliaser, counts = emit(extract, lvs)
+    lines, aliaser, counts = emit(extract, lvs, flat=args.flat)
 
     header = [
         "* Post-layout EXTRACTED DUT netlist -- GENERATED, do not edit by hand.",
@@ -404,6 +422,7 @@ def main() -> int:
         "* regenerate     : python3 layout/netlist/mk_extracted_dut.py"
         f" --extract {args.extract.relative_to(REPO_ROOT)}"
         f" --lvs {args.lvs.relative_to(REPO_ROOT) if args.lvs else 'NONE'}"
+        f"{' --flat' if args.flat else ''}"
         f" -o {args.output.relative_to(REPO_ROOT)}",
         "*",
         "* Provenance class is derived from the path by sim/dut: a netlist under",
