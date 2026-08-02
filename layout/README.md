@@ -36,6 +36,10 @@ layout/
     run_lvs.py         klt extract + klt lvs -> committed report
     bandgap_top.ref.spice  generated reference netlist (do not hand-edit)
     reports/bandgap_top/   <record-id>.{extract.json,extracted.spice,lvs.json,lvs.txt,lvs-request.json}
+  netlist/
+    run_extract.py     reproducible klt extract --parasitics invocation (#17) -> committed report
+    README.md           post-layout parasitic-extraction findings and current blocker (#73)
+    reports/bandgap_top/   <record-id>.{extract.json,extracted.spice}
 ```
 
 ## Install `klt`
