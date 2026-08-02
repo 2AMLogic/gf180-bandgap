@@ -10,7 +10,7 @@
 * drawn trim code : 32
 * MOS devices     : 34 nfet + 47 pfet (14 of them edge dummies)
 * resistors       : 65 ppolyf_u + 1 ppolyf_u_1k
-* bipolars        : 16 bjt (2 per drawn PNP unit -- see the docstring's step 8)
+* bipolars        : 8 bjt (1 per drawn PNP unit -- see the docstring's step 8)
 * capacitors      : 1 cap_mim_2f0_m4m5_noshield
 
 .SUBCKT bandgap_top vdd vss vref vsubs nwl
@@ -96,22 +96,14 @@ Mstartup_MKCASC_0 casc startup_det vss vsubs nfet L=2U W=2U
 Mstartup_MKFB_0 fb startup_det vss vsubs nfet L=2U W=2U
 Mstartup_MSENSE_0 startup_det ibias vss vsubs nfet L=2U W=10U
 Mstartup_MSENSE_1 startup_det ibias vss vsubs nfet L=2U W=10U
-Qcore_Q1_b vsubs nw_core_Q1 vss bjt AE=3.744000e-11
-Qcore_Q1_e vsubs nw_core_Q1 sns1 bjt AE=2.500000e-11
-Qcore_Q2_0_b vsubs nw_core_Q2_0 vss bjt AE=3.744000e-11
-Qcore_Q2_0_e vsubs nw_core_Q2_0 core_e2 bjt AE=2.500000e-11
-Qcore_Q2_1_b vsubs nw_core_Q2_1 vss bjt AE=3.744000e-11
-Qcore_Q2_1_e vsubs nw_core_Q2_1 core_e2 bjt AE=2.500000e-11
-Qcore_Q2_2_b vsubs nw_core_Q2_2 vss bjt AE=3.744000e-11
-Qcore_Q2_2_e vsubs nw_core_Q2_2 core_e2 bjt AE=2.500000e-11
-Qcore_Q2_3_b vsubs nw_core_Q2_3 vss bjt AE=3.744000e-11
-Qcore_Q2_3_e vsubs nw_core_Q2_3 core_e2 bjt AE=2.500000e-11
-Qcore_Q3_b vsubs nw_core_Q3 vss bjt AE=3.744000e-11
-Qcore_Q3_e vsubs nw_core_Q3 core_e3 bjt AE=2.500000e-11
-Qdum_pnp_l_b vsubs nw_dum_pnp_l vss bjt AE=3.744000e-11
-Qdum_pnp_l_e vsubs nw_dum_pnp_l vss bjt AE=2.500000e-11
-Qdum_pnp_r_b vsubs nw_dum_pnp_r vss bjt AE=3.744000e-11
-Qdum_pnp_r_e vsubs nw_dum_pnp_r vss bjt AE=2.500000e-11
+Qcore_Q1 vsubs nw_core_Q1 sns1 bjt AE=2.500000e-11
+Qcore_Q2_0 vsubs nw_core_Q2_0 core_e2 bjt AE=2.500000e-11
+Qcore_Q2_1 vsubs nw_core_Q2_1 core_e2 bjt AE=2.500000e-11
+Qcore_Q2_2 vsubs nw_core_Q2_2 core_e2 bjt AE=2.500000e-11
+Qcore_Q2_3 vsubs nw_core_Q2_3 core_e2 bjt AE=2.500000e-11
+Qcore_Q3 vsubs nw_core_Q3 core_e3 bjt AE=2.500000e-11
+Qdum_pnp_l vsubs nw_dum_pnp_l vss bjt AE=2.500000e-11
+Qdum_pnp_r vsubs nw_dum_pnp_r vss bjt AE=2.500000e-11
 Rcore_R1 core_e3 core_tn0 vsubs 71239.000000 ppolyf_u
 Rcore_R2 core_e2 sns2 vsubs 5379.500000 ppolyf_u
 Rcore_trim_RU0 core_tn0 core_tn0 vsubs 485.100000 ppolyf_u

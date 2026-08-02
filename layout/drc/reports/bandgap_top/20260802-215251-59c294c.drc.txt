@@ -1,0 +1,11 @@
+file: layout/bandgap_top/bandgap_top.gds
+deck: gf180mcu
+dbu_um: 0.001
+status: violations
+violations: 1
+unchecked layers in stream: 12
+
+rule_counts:
+  mim.enclosing.fusetop.1: 1
+
+mim.enclosing.fusetop.1  bandgap_top  Metal4  (76900,170305)-(77700,171005)  minimum MiM bottom plate (metal4) overlap of top plate (fusetop)
