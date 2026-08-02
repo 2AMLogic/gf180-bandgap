@@ -196,7 +196,12 @@ invisible to `klt extract` for the reason above, so a parasitic-extraction
 consumer working from this netlist directly still needs to be told the
 compensation cap is present but disconnected — a stability/phase-margin
 re-run against a netlist with no compensation cap in the loop is not
-representative.
+representative. **Not the same gap as the `fb` plate's own contact
+geometry**: the `fb` up-hop contact as drawn is not DRM-legal
+([gf180-bandgap#82](https://github.com/2AMLogic/gf180-bandgap/issues/82),
+see `layout/README.md` § "Findings and escalations") — a separate,
+manufacturability finding from the connectivity-modelling gap this
+paragraph describes.
 
 ## RESOLVED (#78): `startup.RPU` now extracts as a real `ppolyf_u_1k` device
 

@@ -59,12 +59,18 @@ The realised overhead multiplier is **2.42×**, comfortably better than the
 19,994 µm² of body area, even a 2.42× multiplier lands at 96.7 % of the
 ceiling.
 
-Where the overhead goes: `klt`'s gf180mcu decks — both the DRC deck and the
-extraction deck — model exactly **one** metal level (`Metal1`, 34/0), with no
-`Metal2`..`Metal5` and no vias. A block routed on layers the extraction deck
-cannot see extracts as disconnected nets and cannot LVS, so this layout is
-routed entirely on Metal1 with Poly2 as the crossunder layer (see
-`generate.py`'s "Routing style" note). That costs area two ways:
+Where the overhead goes: `klt`'s gf180mcu **extraction** deck used to model
+exactly **one** metal level (`Metal1`, 34/0), with no `Metal2`..`Metal5` and
+no vias. A block routed on layers the extraction deck could not see would
+extract as disconnected nets and could not LVS, so this layout is routed
+entirely on Metal1 with Poly2 as the crossunder layer (see `generate.py`'s
+"Routing style" note). (The extraction deck has since gained the full
+Metal1–Metal5/via stack, klayout-tools#220, and the separate **DRC** deck was
+never Metal1-only in the first place — see `layout/README.md` § "The
+gf180mcu DRC deck: coverage"; this layout's single-metal routing predates
+both facts and has not been revisited for the block as a whole, per that
+same section — the one exception is the compensation MIM cap's own via
+stack, which does not move this area finding.) That costs area two ways:
 
 1. a 25-track Poly2 corridor down the left edge of the block — 16.0 µm of
    width consumed before any device is placed;
