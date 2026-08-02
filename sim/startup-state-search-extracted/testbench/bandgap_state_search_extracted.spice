@@ -1,0 +1,54 @@
+* bandgap-startup adversarial degenerate-state search, POST-LAYOUT form
+* (issues #11/#17).
+*
+* Same experiment as sim/startup-state-search/ -- vdd held DC at vdd_val
+* from t=0 (supply already valid, not ramping), the loop seeded via .ic
+* exactly at the DEGENERATE near-zero-current operating point, the startup
+* circuit enabled, and a `uic` transient that skips the DC operating-point
+* solve entirely (see that bench's header for why a plain .op solve is not
+* reliable evidence about this state) -- but written against sim/dut's
+* swappable-DUT convention instead of carrying its own embedded copy of
+* the circuit, so it can be run against the parasitic-extracted netlist.
+*
+* This is #17's post-extraction re-check of the degenerate zero-current
+* startup state: layout parasitics can shift the startup branch's trip
+* point even where the schematic-level design was robust, so the
+* schematic-level "not a trap" result does not carry forward by itself.
+*
+* Node names. The seeds below are the same physical nodes
+* sim/startup-state-search/ seeds, spelled the way they appear in an
+* extracted netlist: `klt extract` flattens the block, so the schematic's
+* `xx1.casc` / `xx2.tail` / `xx1.d1` / `xx1.e2` are top-of-subcircuit nodes
+* named after the schematic net `klt lvs` paired each with. Concretely:
+*
+*     schematic (sim/startup-state-search/)   extracted (here)
+*     v(xtop.xx1.casc)                        v(xtop.casc)
+*     v(xtop.xx2.tail)                        v(xtop.amp_tail)
+*     v(xtop.xx1.d1) .. d4                    v(xtop.core_d1) .. core_d4
+*     v(xtop.xx1.e2), v(xtop.xx1.e3)          v(xtop.core_e2), v(xtop.core_e3)
+*     v(xtop.fb/sns1/sns2/ibias), v(vref)     unchanged
+*
+* Because those names only exist on an extracted netlist, this bench is
+* meaningful only against one; the schematic-level claim stays with
+* sim/startup-state-search/.
+*
+* The .ic values are literal (3.63 V, the maximum PVT supply) rather than
+* {vdd_val}-substituted, for exactly the reason given in
+* sim/startup-state-search/'s own header: ngspice's .ic parser does not
+* evaluate {} parameter expressions, and a fixed, corner-independent,
+* deliberately-higher-than-any-actual-corner value is if anything a more
+* adversarial seed than matching each corner's own vdd_val.
+*
+* The startup branch's own residual supply current is not measured here
+* (sim/startup-state-search/'s iq_startup_branch_final_ua): isolating it
+* needs a series ammeter inside a bandgap_startup subcircuit instance, and
+* an extracted netlist is flat -- see sim/startup-extracted/'s header for
+* the full note. The recovery gate this bench turns on is
+* iq_total_final_ua, which needs no hierarchy.
+
+vsup vdd 0 dc {vdd_val}
+Xtop vdd 0 vref bandgap_top
+
+.ic v(xtop.fb)=3.63 v(xtop.sns1)=0 v(xtop.sns2)=0 v(vref)=0 v(xtop.ibias)=0
++ v(xtop.casc)=3.63 v(xtop.amp_tail)=0 v(xtop.core_d1)=3.63 v(xtop.core_d2)=3.63
++ v(xtop.core_d3)=3.63 v(xtop.core_d4)=3.63 v(xtop.core_e2)=0 v(xtop.core_e3)=0

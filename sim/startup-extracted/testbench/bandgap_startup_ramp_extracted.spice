@@ -1,0 +1,53 @@
+* bandgap-startup supply-ramp testbench, POST-LAYOUT form (issues #11/#17).
+*
+* Same experiment as sim/startup/ -- a supply ramp from 0 V into a cold
+* block, measuring the time from vdd reaching 90 % of its final value to
+* v(vref) settling permanently inside +/-1 % of its own final value -- but
+* written against sim/dut's *swappable-DUT* convention instead of carrying
+* its own embedded copy of the circuit.
+*
+* Why a separate slug rather than `run_corners.py startup --dut ...`:
+* sim/startup/testbench/bandgap_startup_ramp.spice embeds its own copy of
+* bandgap_top/bandgap_core/bandgap_amp/bandgap_startup and declares no
+* "dut" key, because it inserts a zero-volt ammeter (Vsu_sense) *between*
+* the shared vdd rail and bandgap_startup's own vdd pin -- instrumentation
+* that only exists if the startup branch is a separate subcircuit
+* instance. Passing --dut to that bench does not swap the circuit; it
+* .include's a second, conflicting definition of `bandgap_top` ahead of
+* the bench's own, and the run dies on the now-dangling
+* `v.xtop.vsu_sense#branch` probe. A post-layout extracted netlist has no
+* such hierarchy to tap: `klt extract` flattens the block, so
+* bandgap_startup's four devices sit at the same level as everything else
+* and no series ammeter can be inserted without editing the extracted
+* netlist -- which would stop it being the extracted netlist.
+*
+* What this bench therefore measures, and does not:
+*
+* - startup_time_s, vref_final_v, iq_total_final_ua, det_final_v, t0_s,
+*   t_settle_s -- all identical in definition to sim/startup/'s, so the
+*   two records are directly comparable line for line.
+* - iq_startup_branch_final_ua -- NOT measured here. The startup branch's
+*   own residual supply current cannot be isolated on a flat netlist. The
+*   disengagement evidence this bench does carry is `det_final_v`: the
+*   detect node sitting well below nfet_03v3's Vth means MKFB/MKCASC are
+*   firmly off, i.e. the branch has disengaged, which is the behavioural
+*   half of DR-0001's requirement. The current half stays with the
+*   schematic-level record.
+*
+* The DUT is whatever `tb.json`'s "dut" key (or --dut) names; the record's
+* Netlist provenance field says which. The probed internal node
+* `xtop.startup_det` is the same physical node sim/startup/ reaches at
+* `xtop.xx3.det` -- the extracted netlist is flat, so the schematic's
+* `xx3.det` appears at the top of the `bandgap_top` subcircuit under the
+* name `klt lvs` paired it with. A schematic-side DUT
+* (sim/dut/bandgap_top.spice) does NOT expose that node under that name,
+* so this bench is meaningful only against an extracted netlist; the
+* schematic-level claim stays with sim/startup/.
+*
+* Supply drive: a single PWL ramp from 0 V to vdd_val over {tramp}
+* seconds, then held -- byte-identical in intent to sim/startup/'s, with
+* the same "no .ic / .nodeset, the transient's own t=0 operating point is
+* the real power-up condition" reasoning.
+
+vsup vdd 0 pwl(0 0 {tramp} {vdd_val} 10 {vdd_val})
+Xtop vdd 0 vref bandgap_top
