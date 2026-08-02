@@ -263,14 +263,18 @@ def draw_res(b: Builder, item: ResItem, x0: int, y0: int) -> list[Terminal]:
     # recogniser is `pplus.and(poly2).and(sab).and(res_mk)`, so all three
     # markers need to cover the resistor body for `klt extract` to see it
     # as a device rather than plain interconnect (#73). A high-sheet-rho
-    # (`ppolyf_u_1k`) body is *not* marked RES_MK: when this was drawn the
-    # deck had no device entry for that flavour (klayout-tools#299), and
-    # RES_MK's 350 ohm/sq would have been silently wrong for it, so
-    # `Resistor` (62/0) is drawn instead -- one of `ResistorDevice.excludes`
-    # for the base flavour -- keeping it a short rather than a wrong value.
-    # klayout-tools#299 is now resolved and the deck has a `ppolyf_u_1k`
-    # entry (SAB + Resistor + RES_MK); taking it up here is gf180-bandgap#78.
-    body_layers = (L_PPLUS, L_SAB) if item.high_rho else (L_PPLUS, L_RES_MK, L_SAB)
+    # (`ppolyf_u_1k`) body used to omit RES_MK: when this was originally
+    # drawn the deck had no device entry for that flavour
+    # (klayout-tools#299), and RES_MK's 350 ohm/sq would have been silently
+    # wrong for it, so `Resistor` (62/0) alone was drawn instead -- one of
+    # `ResistorDevice.excludes` for the base flavour -- keeping it a short
+    # rather than a wrong value. klayout-tools#299 is now resolved: the deck
+    # carries a `ppolyf_u_1k` entry recognised by SAB + Resistor + RES_MK
+    # (deliberately *not* Pplus), so both flavours now draw RES_MK; the
+    # high-rho body also keeps its Resistor (62/0) marker (drawn below),
+    # while the base flavour keeps Pplus -- that's the only remaining
+    # difference between the two recognisers (gf180-bandgap#78).
+    body_layers = (L_SAB, L_RES_MK) if item.high_rho else (L_PPLUS, L_RES_MK, L_SAB)
     for layer in body_layers:
         b.box(
             layer,

@@ -4,10 +4,11 @@
 ``klt lvs`` compares a layout-extracted netlist against a reference netlist.
 The reference cannot be ``design/netlist/bandgap_top.spice`` verbatim, because
 the extracted side is what ``klt``'s gf180mcu extraction deck can *see*: MOS
-(``nfet``/``pfet``), base-flavour poly resistors (``ppolyf_u``), vertical
-bipolars (``bjt``) and the MIM capacitor (``cap_mim_2f0_m4m5_noshield``), each
-decomposed exactly the way the layout draws it and parameterised off the drawn
-marker geometry rather than the schematic's own device parameters.
+(``nfet``/``pfet``), poly resistors (``ppolyf_u`` and the high-sheet-rho
+``ppolyf_u_1k``), vertical bipolars (``bjt``) and the MIM capacitor
+(``cap_mim_2f0_m4m5_noshield``), each decomposed exactly the way the layout
+draws it and parameterised off the drawn marker geometry rather than the
+schematic's own device parameters.
 
 So this script mechanically derives the reference from the committed
 schematic netlist plus :mod:`plan` (the same module ``generate.py`` draws
@@ -30,11 +31,13 @@ editing, no per-device fudging:
    of the 63 trim-ladder unit segments — with ``R`` predicted from the
    *recognised marker area* (``plan.res_body_area_nm2`` /
    ``plan.trim_unit_area_nm2``), which is what the extractor measures.
-6. **Collapse ``startup.RPU`` to a short.** Its schematic model is
-   ``ppolyf_u_1k``; the deck models only the base flavour, so ``generate.py``
-   deliberately marks that body ``Resistor`` (62/0) — an *exclude* for the
-   base recogniser — and it extracts as plain poly. Both sides therefore see
-   a short (klayout-tools#299).
+6. **Emit one ``ppolyf_u_1k`` card for ``startup.RPU``.** Its schematic model
+   is ``ppolyf_u_1k`` (high sheet rho); ``generate.py`` marks that body
+   ``RES_MK``/``SAB``/``Resistor`` (62/0) — deliberately *not* ``Pplus`` — to
+   match the deck's ``ppolyf_u_1k`` recogniser (klayout-tools#299, resolved;
+   taken up here as gf180-bandgap#78), so ``R`` is predicted the same way as
+   step 5 but at the deck's 1000 Ω/□ (``plan.PPOLYF_U_1K_SHEET_RHO``) instead
+   of the base flavour's 350 Ω/□.
 7. **Resolve the ideal ``RS0..RS5`` trim straps** at the trim code the layout
    draws its metal strap option for (``plan.DRAWN_TRIM_CODE``). The drawn
    Metal1 straps are derived from these same expressions
@@ -94,6 +97,7 @@ TOP = "bandgap_top"
 #: Device-class names the deck emits, mirrored here so the reference's own
 #: SPICE model tokens create identically-named device classes.
 RES_CLASS = "ppolyf_u"
+RES_1K_CLASS = "ppolyf_u_1k"
 BJT_CLASS = "bjt"
 CAP_CLASS = "cap_mim_2f0_m4m5_noshield"
 
@@ -107,15 +111,20 @@ def device_name(key: str) -> str:
     return key.replace(".", "_").replace("#", "_")
 
 
-def _res_ohms(area_nm2: int, width_nm: int) -> float:
+def _res_ohms(
+    area_nm2: int, width_nm: int, sheet_rho: float = plan_mod.PPOLYF_U_SHEET_RHO
+) -> float:
     """``sheet_rho * A / W**2`` — KLayout's own resistor value, in ohms.
 
     ``DeviceExtractorResistor`` recovers ``(L, W)`` from the recognised
     region's area and perimeter and reports ``R = sheet_rho * L / W``; for
     every body this layout draws the recovered ``W`` is the drawn body width,
-    so ``L = A / W`` and the value reduces to this expression.
+    so ``L = A / W`` and the value reduces to this expression. ``sheet_rho``
+    defaults to the base ``ppolyf_u`` flavour; pass
+    ``plan_mod.PPOLYF_U_1K_SHEET_RHO`` for a high-rho (``ResItem.high_rho``)
+    body.
     """
-    return plan_mod.PPOLYF_U_SHEET_RHO * area_nm2 / (width_nm * width_nm)
+    return sheet_rho * area_nm2 / (width_nm * width_nm)
 
 
 def build_reference(trim_code: int) -> tuple[str, dict]:
@@ -131,7 +140,7 @@ def build_reference(trim_code: int) -> tuple[str, dict]:
         "pfet": 0,
         "dummy": 0,
         RES_CLASS: 0,
-        "res_shorted": 0,
+        RES_1K_CLASS: 0,
         BJT_CLASS: 0,
         CAP_CLASS: 0,
     }
@@ -159,19 +168,25 @@ def build_reference(trim_code: int) -> tuple[str, dict]:
                     counts["dummy"] += 1
 
             elif isinstance(item, plan_mod.ResItem):
-                if item.high_rho:
-                    # Step 6: unmarked for the deck's only wired flavour, so
-                    # it is a short on the extracted side too. `reduce_nets`
-                    # has already merged its two nets.
-                    counts["res_shorted"] += 1
-                    continue
+                # Step 6: a high-rho body is marked RES_MK/SAB/Resistor
+                # (deliberately not Pplus) to match the deck's ppolyf_u_1k
+                # recogniser at 1000 Ω/□; the base flavour matches the
+                # ppolyf_u recogniser at 350 Ω/□.
+                res_class = RES_1K_CLASS if item.high_rho else RES_CLASS
+                sheet_rho = (
+                    plan_mod.PPOLYF_U_1K_SHEET_RHO
+                    if item.high_rho
+                    else plan_mod.PPOLYF_U_SHEET_RHO
+                )
                 n1, n2 = (net_of(net) for net in item.nets)
                 use(n1, n2, SUBSTRATE_NET)
-                ohms = _res_ohms(plan_mod.res_body_area_nm2(item), item.width_nm)
-                lines.append(
-                    f"R{name} {n1} {n2} {SUBSTRATE_NET} {ohms:.6f} {RES_CLASS}"
+                ohms = _res_ohms(
+                    plan_mod.res_body_area_nm2(item), item.width_nm, sheet_rho
                 )
-                counts[RES_CLASS] += 1
+                lines.append(
+                    f"R{name} {n1} {n2} {SUBSTRATE_NET} {ohms:.6f} {res_class}"
+                )
+                counts[res_class] += 1
 
             elif isinstance(item, plan_mod.TrimLadderItem):
                 units = [flat.get(path) for path in item.devices]
@@ -240,8 +255,8 @@ def build_reference(trim_code: int) -> tuple[str, dict]:
         f"* drawn trim code : {trim_code}",
         f"* MOS devices     : {counts['nfet']} nfet + {counts['pfet']} pfet "
         f"({counts['dummy']} of them edge dummies)",
-        f"* resistors       : {counts[RES_CLASS]} {RES_CLASS} "
-        f"({counts['res_shorted']} high-sheet-rho body collapsed to a short)",
+        f"* resistors       : {counts[RES_CLASS]} {RES_CLASS} + "
+        f"{counts[RES_1K_CLASS]} {RES_1K_CLASS}",
         f"* bipolars        : {counts[BJT_CLASS]} {BJT_CLASS} "
         "(2 per drawn PNP unit -- see the docstring's step 8)",
         f"* capacitors      : {counts[CAP_CLASS]} {CAP_CLASS}",

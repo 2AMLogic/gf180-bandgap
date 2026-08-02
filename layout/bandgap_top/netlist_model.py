@@ -49,19 +49,18 @@ BJT_MODELS = {"pnp_05p00x05p00", "pnp_10p00x10p00"}
 CAP_MODELS_PREFIX = "cap_mim_"
 
 #: Resistor models this layout draws recognition markers for, i.e. the ones
-#: ``klt extract`` returns as real devices. Only the base ``ppolyf_u``
-#: flavour: ``generate.py``'s ``draw_res``/``draw_trim`` mark a base-flavour
-#: body with ``RES_MK``/``Pplus``/``SAB`` (the deck's ``ppolyf_u``
-#: recogniser), and deliberately mark a high-sheet-rho ``ppolyf_u_1k`` body
-#: with ``Resistor`` (62/0) and **no** ``RES_MK`` — so it is claimed by
-#: neither recogniser and stays ordinary poly interconnect rather than being
-#: read at the base flavour's 350 Ω/□ (see ``plan.ResItem.high_rho``). That
-#: was forced when the deck had no high-sheet-rho entry at all
-#: (klayout-tools#299, since resolved upstream); taking up the deck's new
-#: ``ppolyf_u_1k`` entry is tracked as gf180-bandgap#78. A model *not* in
-#: this set collapses to a short in :func:`reduce_nets`, matching the
-#: extracted side.
-EXTRACTED_RES_MODELS = {"ppolyf_u"}
+#: ``klt extract`` returns as real devices. Both flavours: ``generate.py``'s
+#: ``draw_res``/``draw_trim`` mark a base-flavour body with
+#: ``RES_MK``/``Pplus``/``SAB`` (the deck's ``ppolyf_u`` recogniser), and
+#: mark a high-sheet-rho ``ppolyf_u_1k`` body (``plan.ResItem.high_rho``)
+#: with ``RES_MK``/``SAB``/``Resistor`` (62/0) — deliberately *not* Pplus,
+#: matching the deck's ``ppolyf_u_1k`` recogniser at 1000 Ω/□. Until
+#: klayout-tools#299 was resolved upstream the deck had no high-sheet-rho
+#: entry at all, so the high-rho body was left unmarked with RES_MK and
+#: stayed ordinary poly interconnect; taking up the deck's new
+#: ``ppolyf_u_1k`` entry was gf180-bandgap#78. A model *not* in this set
+#: collapses to a short in :func:`reduce_nets`, matching the extracted side.
+EXTRACTED_RES_MODELS = {"ppolyf_u", "ppolyf_u_1k"}
 
 #: Readable, stable path prefixes for the three top-level subcircuit
 #: instances (``Xx1``/``Xx2``/``Xx3``), derived from the subcircuit name so a
