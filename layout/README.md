@@ -7,11 +7,11 @@ LVS flows that verify it.
 
 `layout/bandgap_top/` is a real, drawn physical layout of the whole block
 (`bandgap_core` + `bandgap_amp` + `bandgap_startup` + trim ladder), generated
-from the committed schematic netlist, **DRC-clean** against the `gf180mcu`
-deck and **LVS-matching** against a mechanically-derived reference netlist
-(see "What the LVS verdict does and does not cover" below — it is a
-MOS-device-and-connectivity LVS, not a full-device LVS, for tool reasons that
-are filed upstream).
+from the committed schematic netlist and **DRC-clean** against the `gf180mcu`
+deck. It is currently **not** LVS-matching against its mechanically-derived
+reference netlist — see "What the LVS verdict does and does not cover" below
+and [#75](https://github.com/2AMLogic/gf180-bandgap/issues/75), which tracks
+bringing that reference up to date with what `klt extract` now recognises.
 
 ```
 layout/
@@ -38,7 +38,8 @@ layout/
     reports/bandgap_top/   <record-id>.{extract.json,extracted.spice,lvs.json,lvs.txt,lvs-request.json}
   netlist/
     run_extract.py     reproducible klt extract --parasitics invocation (#17) -> committed report
-    README.md           post-layout parasitic-extraction findings and current blocker (#73)
+    README.md           post-layout parasitic-extraction findings; resistor/MiM-cap
+                         recognition resolved by #73, LVS reference staleness tracked as #75
     reports/bandgap_top/   <record-id>.{extract.json,extracted.spice}
 ```
 
@@ -81,14 +82,28 @@ python3 layout/lvs/run_lvs.py layout/bandgap_top/bandgap_top.gds
 uv run --with klayout python3 layout/bandgap_top/area_report.py
 ```
 
-Expected results (all four verifications, as committed):
+Expected results (as committed):
 
 | Step | Result |
 |---|---|
 | `matching_report.py` | all tier-1/2/3 checks pass, exit 0 |
 | `run_drc.py` | `status: clean`, `violation_count: 0` |
-| `run_lvs.py` | `lvs status: match`, 81/81 devices, 23/23 nets |
+| `run_lvs.py` | **`lvs status: mismatch`** — see "What the LVS verdict does and does not cover" below; tracked as [#75](https://github.com/2AMLogic/gf180-bandgap/issues/75) |
 | `area_report.py` | 48,339.11 µm² vs. 50,000 µm² target — PASS, 3.3 % headroom |
+
+`run_lvs.py`'s `match` verdict (81/81 devices, 23/23 nets) held through #62–#72,
+but stopped once `klt`'s gf180mcu deck gained bipolar (klayout-tools#223) and
+MiM-capacitor (klayout-tools#225) device recognition upstream — recognition
+`layout/lvs/make_reference.py`'s MOS-only reference derivation doesn't model.
+[#73](https://github.com/2AMLogic/gf180-bandgap/issues/73) additionally drew
+this layout's own resistor-recognition marker geometry (closing a *different*,
+`layout/netlist/`-scoped gap — see that directory's README), which makes the
+same reference-staleness gap larger (65 more recognised devices) but did not
+create it: the `bjt`/MiM-cap portion of the mismatch reproduces against `main`
+before #73's changes. See `layout/netlist/README.md`'s "Still blocking"
+section and [#75](https://github.com/2AMLogic/gf180-bandgap/issues/75), which
+tracks updating `make_reference.py` to model all three newly-recognised
+classes.
 
 ## How the layout is built
 
@@ -159,32 +174,50 @@ quantified in [`bandgap_top/AREA.md`](bandgap_top/AREA.md). Filed upstream:
 
 ## What the LVS verdict does and does not cover
 
-`klt`'s gf180mcu extraction deck recognises exactly two device classes —
-`nfet` and `pfet` (from `Comp`/`Poly2`/`Nwell`) — and treats `Poly2` as a
-plain conductor. It has no resistor, bipolar or MIM-capacitor extractor, and
-no Metal2..Metal5 connectivity.
-
-So the reference netlist cannot be `design/netlist/bandgap_top.spice`
-verbatim. `layout/lvs/make_reference.py` derives it mechanically, applying
-exactly the transformations the deck's own capabilities imply (its docstring
-lists all seven): poly resistors collapse to shorts, `pnp_*` and `cap_mim_*`
+**Historical note (superseded — kept for context, see below):**
+`klt`'s gf180mcu extraction deck originally recognised exactly two device
+classes — `nfet` and `pfet` (from `Comp`/`Poly2`/`Nwell`) — and treated
+`Poly2` as a plain conductor, with no resistor, bipolar or MIM-capacitor
+extractor. `layout/lvs/make_reference.py` derives its reference netlist
+mechanically from that premise (its docstring lists the seven
+transformations: poly resistors collapse to shorts, `pnp_*` and `cap_mim_*`
 drop out, the ideal `RS0..RS5` trim straps resolve at the drawn trim code,
 each MOS expands to its drawn finger count, the layout's edge dummies are
-added, and body terminals re-target to the nets the deck actually produces.
+added, and body terminals re-target to the nets the deck actually produces).
+That gap was filed upstream as
+[`klayout-tools#219`](https://github.com/2AMLogic/klayout-tools/issues/219)
+(now **closed**) and closed via klayout-tools#222 (resistor)/#223
+(bipolar)/#225 (MiM capacitor).
 
-**Every one of those is a tool-capability consequence, not a design
-simplification** — the layout still draws all of the dropped devices. But the
-consequence for the verdict is real and worth stating plainly:
+**Current state.** The deck itself now recognises all three classes.
+[#73](https://github.com/2AMLogic/gf180-bandgap/issues/73) additionally drew
+this layout's own missing resistor/MiM-cap recognition marker geometry
+(`RES_MK`/`SAB`/`CAP_MK` — see `layout/netlist/README.md`), so `klt extract`
+against this GDS now recognises 65 `ppolyf_u` resistors and 1 MiM capacitor,
+in addition to the 16 `bjt` devices it already recognised. **What has *not*
+caught up is `make_reference.py` itself** — it still emits a MOS-only
+reference (the seven transformations above), so `run_lvs.py`'s comparison
+against the now-fuller extracted netlist reports `mismatch`, not because
+either side is wrong but because they now model genuinely different device
+sets. Tracked as
+[#75](https://github.com/2AMLogic/gf180-bandgap/issues/75).
+
+Until #75 lands:
 
 - **Covered**: every MOS device (81 of them, including the 14 edge dummies),
   their W/L, and the full Metal1/Poly2/Contact connectivity between them —
   i.e. the drawn topology of the amplifier, the core mirror/cascode, the
-  start-up kick path and every net that joins them.
-- **Not covered**: the drawn `ppolyf_u` resistors (`R1`, `R2`, `startup.RPU`
-  and all 63 trim units), the six PNP unit devices, and the compensation MIM
-  capacitor. A resistor drawn at the wrong length, or a PNP with its emitter
-  and base swapped, would still pass. Filed upstream:
-  [`klayout-tools#219`](https://github.com/2AMLogic/klayout-tools/issues/219).
+  start-up kick path and every net that joins them. (`klt lvs`'s own device
+  match count still confirms this half cleanly: 81/81 devices matched even
+  in a `mismatch`-status run, since the mismatch is *additional* recognised
+  devices/nets the reference lacks, not a discrepancy in the MOS ones.)
+- **Not (yet) compared**: the drawn `ppolyf_u` resistors (`R1`, `R2`, and all
+  63 trim units — `startup.RPU` stays a short on both sides even after #75,
+  see `layout/netlist/README.md`), the six PNP unit devices, and the
+  compensation MIM capacitor — all now *extracted* correctly, but not yet
+  *modelled in the reference* to compare against. A resistor drawn at the
+  wrong length, or a PNP with its emitter and base swapped, would still not
+  be caught by `run_lvs.py` today.
 
 **Limitation carried from klayout-tools:** DRC is whole-layout, flattened per
 top cell — there is no `--top <cell>` filter to scope a check to one cell

@@ -82,6 +82,10 @@ L_METAL1_LBL = (34, 10)
 L_METAL4 = (46, 0)
 L_FUSETOP = (75, 0)
 L_METAL5 = (81, 0)
+L_SAB = (49, 0)
+L_RESISTOR_MK = (62, 0)
+L_RES_MK = (110, 5)
+L_CAP_MK = (117, 5)
 L_MIM_MK = (117, 10)
 L_DRC_BJT = (127, 5)
 
@@ -97,6 +101,10 @@ LAYER_NAMES = {
     L_METAL4: "Metal4",
     L_FUSETOP: "FuseTop",
     L_METAL5: "Metal5",
+    L_SAB: "SAB",
+    L_RESISTOR_MK: "Resistor",
+    L_RES_MK: "RES_MK",
+    L_CAP_MK: "CAP_MK",
     L_MIM_MK: "MIM_L_MK",
     L_DRC_BJT: "DRC_BJT",
 }
@@ -125,6 +133,9 @@ SPINE_W = 400
 SPINE_PITCH = 640  # 400 wide + 240 space; poly2.space.1 min 240
 FIELD_GAP = 900  # corridor -> device field
 IMPLANT_ENC = 200  # Pplus/Nplus overlap of COMP
+RES_PAD = 440  # ppolyf_u free-end contact pad height, > IMPLANT_ENC so the
+# pad stays outside the RES_MK/Pplus/SAB marker box (CT + 2*ENC_CT room for
+# the pad's own contact enclosure; see draw_res, #73)
 NWELL_ENC = 600  # Nwell overlap of PMOS COMP, nwell.enclosing.comp.1 min 120
 NWELL_CLEAR = 2000  # Nwell edge -> unrelated COMP
 POLY_SP = 300  # poly2.space.1 min 240
@@ -237,13 +248,32 @@ def draw_res(b: Builder, item: ResItem, x0: int, y0: int) -> list[Terminal]:
             b.box(L_POLY2, lx, y0, rx, y0 + item.width_nm)
 
     # A ppolyf_u body is p+ implanted, unsalicided poly (no COMP under it).
-    b.box(
-        L_PPLUS,
-        x0 - IMPLANT_ENC,
-        y0 - IMPLANT_ENC,
-        x0 + (n - 1) * pitch + item.width_nm + IMPLANT_ENC,
-        y0 + leg + IMPLANT_ENC,
-    )
+    # RES_MK + SAB mark the same footprint as Pplus: the deck's ppolyf_u
+    # recogniser is `pplus.and(poly2).and(sab).and(res_mk)`, so all three
+    # markers need to cover the resistor body for `klt extract` to see it
+    # as a device rather than plain interconnect (#73). A high-sheet-rho
+    # (`ppolyf_u_1k`) body is *not* marked RES_MK: the deck has no device
+    # entry for that flavour (klayout-tools#299), and RES_MK's 350 ohm/sq
+    # would be silently wrong for it, so `Resistor` (62/0) is drawn instead
+    # -- one of `ResistorDevice.excludes` for the base flavour -- keeping it
+    # a short (today's behaviour) rather than a wrong value.
+    body_layers = (L_PPLUS, L_SAB) if item.high_rho else (L_PPLUS, L_RES_MK, L_SAB)
+    for layer in body_layers:
+        b.box(
+            layer,
+            x0 - IMPLANT_ENC,
+            y0 - IMPLANT_ENC,
+            x0 + (n - 1) * pitch + item.width_nm + IMPLANT_ENC,
+            y0 + leg + IMPLANT_ENC,
+        )
+    if item.high_rho:
+        b.box(
+            L_RESISTOR_MK,
+            x0 - IMPLANT_ENC,
+            y0 - IMPLANT_ENC,
+            x0 + (n - 1) * pitch + item.width_nm + IMPLANT_ENC,
+            y0 + leg + IMPLANT_ENC,
+        )
 
     # Free ends: leg 0's is at the bottom; leg n-1's is at the top for odd n,
     # at the bottom for even n (links alternate top/bottom).
@@ -251,7 +281,24 @@ def draw_res(b: Builder, item: ResItem, x0: int, y0: int) -> list[Terminal]:
     terminals: list[Terminal] = []
     for (index, side), net in zip(free_ends, item.nets):
         cx = x0 + index * pitch + item.width_nm // 2
-        cy = y0 + ENC_CT + CT // 2 if side == "bottom" else y0 + leg - ENC_CT - CT // 2
+        # A dedicated, unmarked poly pad just past the resistor's true free
+        # edge -- outside the RES_MK/Pplus/SAB box above (RES_PAD > the
+        # marker's IMPLANT_ENC overhang), so it stays part of the
+        # recognised body's "C" (terminal) region and directly abuts the
+        # marked body. KLayout's DeviceExtractorResistor requires the
+        # terminal region to touch the body at each of the resistor's two
+        # ends; a contact landing *inside* the marked body -- as this used
+        # to do, bridged out to the row rail only via Metal1 -- does not
+        # satisfy that (logged as "Expected two polygons on contacts
+        # interacting with one resistor shape (found 0)"), so the leg's own
+        # body/head must be genuinely two-piece poly, not one uniformly
+        # marked run (#73).
+        if side == "bottom":
+            pad_y0, pad_y1 = y0 - RES_PAD, y0
+        else:
+            pad_y0, pad_y1 = y0 + leg, y0 + leg + RES_PAD
+        b.box(L_POLY2, cx - item.width_nm // 2, pad_y0, cx + item.width_nm // 2, pad_y1)
+        cy = (pad_y0 + pad_y1) // 2
         b.contact(cx, cy)
         b.box(L_METAL1, cx - BAR_W // 2, cy - CT // 2 - 80, cx + BAR_W // 2, y0 + leg + BAR_TOP)
         b.contact(cx, y0 + leg + STUB_CT + CT // 2)
@@ -294,7 +341,19 @@ def draw_trim(b: Builder, item: TrimLadderItem, x0: int, y0: int) -> list[Termin
     def draw_unit(ux: int, uy: int) -> tuple[int, int]:
         """Draw one unit segment; return its two pad-contact x positions."""
         b.box(L_POLY2, ux, uy, ux + unit_x, uy + uw)
+        # Pplus/SAB mark the unit's full footprint (matching the original
+        # Pplus box), but RES_MK is pulled in to the unit_length_nm centre,
+        # excluding the TRIM_PAD contact-pad zone at each end. The deck's
+        # ppolyf_u body is `poly2 & res_mk & pplus & sab`, so RES_MK alone
+        # sets the recognised extent (Pplus/SAB being wider doesn't widen
+        # it); keeping RES_MK narrower than the TRIM_PAD pads leaves each
+        # pad's own poly as unmarked "terminal" region directly abutting
+        # the recognised body -- required by KLayout's DeviceExtractorResistor,
+        # which needs the terminal region to touch the body at each end, not
+        # just land inside it under a contact (#73).
         b.box(L_PPLUS, ux - IMPLANT_ENC, uy - IMPLANT_ENC, ux + unit_x + IMPLANT_ENC, uy + uw + IMPLANT_ENC)
+        b.box(L_SAB, ux - IMPLANT_ENC, uy - IMPLANT_ENC, ux + unit_x + IMPLANT_ENC, uy + uw + IMPLANT_ENC)
+        b.box(L_RES_MK, ux + TRIM_PAD, uy - IMPLANT_ENC, ux + unit_x - TRIM_PAD, uy + uw + IMPLANT_ENC)
         left_cx = ux + TRIM_PAD // 2
         right_cx = ux + unit_x - TRIM_PAD // 2
         for cx in (left_cx, right_cx):
@@ -628,7 +687,11 @@ def _mim_cap(b: Builder, cap: MimCapItem, x0: int, y0: int) -> None:
     b.box(L_METAL4, x0, y0, x0 + w, y0 + h)
     b.box(L_FUSETOP, x0 + 600, y0 + 600, x0 + w - 600, y0 + h - 600)
     b.box(L_METAL5, x0 + 900, y0 + 900, x0 + w - 900, y0 + h - 900)
+    # The deck's MiM recogniser requires both CAP_MK and MIM_L_MK on the top
+    # plate (`top_plate_requires`); draw CAP_MK over the same footprint as
+    # the existing MIM_L_MK box (#73).
     b.box(L_MIM_MK, x0 - 400, y0 - 400, x0 + w + 400, y0 + h + 400)
+    b.box(L_CAP_MK, x0 - 400, y0 - 400, x0 + w + 400, y0 + h + 400)
 
 
 def save_options() -> kdb.SaveLayoutOptions:
