@@ -1,0 +1,129 @@
+* Frozen netlist snapshot for record 20260802-042922-5066d85
+* source     : sim/startup-disabled-control/testbench/bandgap_startup_disabled.spice
+* sha256     : 98618a797bca14d9e3f0bb101f90aae929dac91801d19e21ae0529deb1a53665
+* This is a verbatim copy taken at record time. Do not edit.
+* bandgap-startup DISABLED control testbench (issue #11).
+*
+* CORE RESIZED IN #61 -- RECORDS TAKEN BEFORE AND AFTER ARE NOT COMPARABLE.
+* The bandgap_core copy embedded below carries #61's R1/R2 co-scaling: both
+* the PTAT resistor R2 and the output-branch summing resistor R1 (here in
+* its pre-trim lumped form, electrically R1 + 32 trim units at the default
+* code) are scaled by k = 2, halving the design current I = dVBE/R2 while
+* holding I*R1 and the R1/R2 ratio fixed. See design/bandgap_core.sch's
+* header and design/bandgap_error_budget.md Sec 5 for the derivation.
+*
+* AMP SIZING (comparability note, #10 integration): the bandgap_amp subckt
+* below carries the FINAL, offset-budgeted sizing from issue #10
+* (design/bandgap_error_budget.md) -- input pair M1/M2 W=100u nf=2 / L=4u,
+* mirror load M3/M4 W=40u / L=4u -- and is byte-for-byte the
+* design/netlist/bandgap_top.spice expansion of the current
+* design/bandgap_amp.sch. The first records minted from this testbench
+* (2026-08-01, record-ids ending -fbfa3f1) predate #10 and used #8's
+* provisional 10u/4u amp; #10 landed after those records were minted, so
+* per issue #11's own ordering note they are SUPERSEDED rather than
+* amended -- see this experiment's records/ for the superseding record and
+* its Supersedes: field. Records taken before and after this change are
+* NOT directly comparable: the resize raises the input pair's gm ~3x and
+* the amp's own node capacitance ~4-10x, which moves the servo loop's
+* settling dynamics and therefore the measured startup time.
+*
+* Netlist FRAGMENT for sim/harness (sim/README.md format). Same
+* bandgap_core / bandgap_amp as sim/startup/, seeded at the identical
+* degenerate .ic as sim/startup-state-search/ (fb/casc/d1..d4 pinned to
+* 3.63 V, everything else 0), vdd held DC at vdd_val, uic transient -- but
+* WITHOUT bandgap_startup instantiated at all (no Xx3, no kick, no sense
+* branch). This is the "(c) control run with the startup circuit disabled"
+* leg of issue #11's required multi-pronged no-other-stable-state evidence
+* (Implementation guidance): it exists to answer two questions design/
+* bandgap_operating_point.md section 4.2 leaves open --
+*
+*   1. Is the degenerate (near-zero-current) state actually PHYSICAL, or
+*      just a convenient numerical seed? If the block sits here for the
+*      whole run with no drift toward the intended operating point, the
+*      state is real, not a solver artifact.
+*   2. Does silicon leakage alone self-start the loop at some corners
+*      without any startup circuit? The Implementation guidance flags that
+*      ff/125C leakage can mask the degenerate state -- a "pass" there
+*      proves little either way, so this is run across the full PVT matrix
+*      specifically to see where (if anywhere) that happens, rather than
+*      assuming it only at the coldest/slowest corner.
+*
+* Contrast this record's per-corner result against sim/startup/'s (same
+* seed corner, startup circuit present) to see the kick actually doing the
+* work, not corner leakage.
+
+.subckt bandgap_top vdd vss vref
+
+Xx1 vdd sns1 sns2 vss fb vref ibias casc bandgap_core
+Xx2 sns2 sns1 vss fb vdd ibias bandgap_amp
+.ends
+.subckt bandgap_core vdd sns1 sns2 vss fb vref ibias casc
+
+XM1 d1 fb vdd vdd pfet_03v3 L=6u W=60u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC1 sns1 casc d1 vdd pfet_03v3 L=6u W=60u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XQ1 vss vss sns1 pnp_05p00x05p00 m=1
+XM2 d2 fb vdd vdd pfet_03v3 L=6u W=60u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC2 sns2 casc d2 vdd pfet_03v3 L=6u W=60u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XR2 e2 sns2 vss ppolyf_u r_width=2u r_length=36.341871u m=1
+XQ2 vss vss e2 pnp_10p00x10p00 m=1
+XM3 d3 fb vdd vdd pfet_03v3 L=6u W=60u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC3 vref casc d3 vdd pfet_03v3 L=6u W=60u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XR1 e3 vref vss ppolyf_u r_width=2u r_length=560.341647u m=1
+XQ3 vss vss e3 pnp_05p00x05p00 m=1
+XM4 d4 fb vdd vdd pfet_03v3 L=6u W=7.5u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC4 ibias casc d4 vdd pfet_03v3 L=6u W=7.5u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XM5 ibias ibias vss vss nfet_03v3 L=2u W=2.5u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMCB casc casc vdd vdd pfet_03v3 L=12u W=4u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMNB casc ibias vss vss nfet_03v3 L=2u W=5u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+.ends
+.subckt bandgap_amp in_p in_n vss out vdd tail_bias
+
+
+XM3 a3 nd1 vdd vdd pfet_03v3 L=16u W=20u nf=2 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XM4 a4 nd1 vdd vdd pfet_03v3 L=16u W=20u nf=2 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC3 nd1 pbias a3 vdd pfet_03v3 L=16u W=40u nf=2 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC4 out pbias a4 vdd pfet_03v3 L=16u W=40u nf=2 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC1 nd1 ncasc n1 vss nfet_03v3 L=16u W=20u nf=2 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC2 out ncasc n2 vss nfet_03v3 L=16u W=20u nf=2 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XM1 n1 in_p tail vss nfet_03v3 L=4u W=200u nf=8 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XM2 n2 in_n tail vss nfet_03v3 L=4u W=200u nf=8 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XM5 tail tail_bias vss vss nfet_03v3 L=4u W=10u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMBN2 pbias tail_bias vss vss nfet_03v3 L=16u W=2u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMBP1 pbias pbias vdd vdd pfet_03v3 L=50u W=1u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMB1 ncasc pbias vdd vdd pfet_03v3 L=50u W=5u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMBD1 ncasc ncasc nb1 vss nfet_03v3 L=4u W=1u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMBD2 nb1 nb1 vss vss nfet_03v3 L=4u W=1u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XCC vdd out cap_mim_2f0_m4m5_noshield c_width=60u c_length=60u m=1
+.ends
+
+vsup vdd 0 dc {vdd_val}
+Xtop vdd 0 vref bandgap_top
+
+.ic v(xtop.fb)=3.63 v(xtop.sns1)=0 v(xtop.sns2)=0 v(vref)=0 v(xtop.ibias)=0
++ v(xtop.xx1.casc)=3.63 v(xtop.xx2.tail)=0 v(xtop.xx1.d1)=3.63 v(xtop.xx1.d2)=3.63
++ v(xtop.xx1.d3)=3.63 v(xtop.xx1.d4)=3.63 v(xtop.xx1.e2)=0 v(xtop.xx1.e3)=0
