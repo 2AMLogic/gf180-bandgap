@@ -53,8 +53,9 @@ editing, no per-device fudging:
    registers a recognised cap's plates as their own connectivity nodes that
    are *never* joined to the metal stack (``decks.CapacitorDevice``, "Known
    limitation"), so the cap's terminals cannot reach ``vdd``/``fb`` on the
-   extracted side no matter how the layout routes them — and this layout does
-   not route them at all (see ``layout/README.md``).
+   extracted side no matter how the layout routes them — and since #77 the
+   layout *does* route them, with a real via stack (``generate._mim_cap``);
+   see ``layout/README.md``.
 
 Every one of those steps is a **tool-capability or drawn-decomposition
 consequence**, not a design simplification. What the resulting verdict does

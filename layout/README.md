@@ -170,19 +170,26 @@ cannot both have it, and the `Q1`/`Q2` `dVBE` error reaches `vref` with
 `klt`'s gf180mcu **DRC** deck models exactly **one** metal level (`Metal1`,
 34/0) — there is no `Metal2`..`Metal5` in it, so anything drawn above Metal1
 is unchecked. (The **extraction** deck has since gained the full
-Metal1–Metal5 stack with vias, klayout-tools#220; this layout has not been
-re-routed to use it, and doing so would move geometry the DRC deck still
-cannot check.) A block routed on layers the extraction deck cannot see
-extracts as a pile of disconnected nets, so this layout is routed
-entirely on `Metal1` plus `Poly2`, using poly as the crossunder layer:
-per-net vertical Poly2 spines in a corridor down the left edge, one
-horizontal Metal1 rail per net per row, and short Poly2 stubs from each device
-terminal up to its rail.
+Metal1–Metal5 stack with vias, klayout-tools#220.) A block routed on layers
+the extraction deck cannot see extracts as a pile of disconnected nets, so
+this layout is routed entirely on `Metal1` plus `Poly2`, using poly as the
+crossunder layer: per-net vertical Poly2 spines in a corridor down the left
+edge, one horizontal Metal1 rail per net per row, and short Poly2 stubs from
+each device terminal up to its rail.
 
 That is a correct single-metal discipline, but it is not how this block would
 be routed with a real multi-metal stack, and it costs significant area —
 quantified in [`bandgap_top/AREA.md`](bandgap_top/AREA.md). Filed upstream:
 [`klayout-tools#220`](https://github.com/2AMLogic/klayout-tools/issues/220).
+
+**One exception**: the compensation MIM capacitor's `Metal4`/`FuseTop` plates
+are wired down to the Metal1 `vdd`/`fb` rails through a real `Via1`..`Via4`
+stack ([#77](https://github.com/2AMLogic/gf180-bandgap/issues/77)) — this
+layout's only use of `Metal2`..`Metal5`. See `generate._mim_cap`'s own
+docstring for why that via stack has to be shaped the way it is (a routing
+tab off the top plate, kept invisible to the device-recognition markers, and
+a standalone landing pad for the bottom-hop, both there to avoid a via
+touching both plates' Metal4/Metal-graph presence at once).
 
 ## What the LVS verdict does and does not cover
 
@@ -229,10 +236,13 @@ none is a design simplification, and nothing in the reference is hand-written.
     the metal stack (`decks.CapacitorDevice`, "Known limitation"), so the
     cap's terminals are two floating nets on the extracted side no matter
     how the layout routes them. The *device* (correct value, correct plate
-    geometry) is compared; its connection to `vdd`/`amp.fb` is not — and
-    this layout does not draw that connection either (the cap is stacked
-    over the device field with no via stack down to Metal1), which is
-    tracked separately.
+    geometry) is compared; its connection to `vdd`/`fb` is not. Since #77
+    the layout **does** draw that connection — a real `Via1`..`Via4` stack
+    ties the Metal4 bottom plate to the `vdd` rail and the FuseTop top plate
+    to the `fb` rail (see `generate._mim_cap`) — but the tool still cannot
+    confirm it either way, so a wiring mistake here would pass both `klt
+    drc` (Metal1-only) and `klt lvs` (blind to plate connectivity) silently;
+    it was checked by inspection at review time instead.
   - **Resistor and bipolar *values* versus the schematic.** The comparison
     is layout-vs-layout-prediction for these: the reference predicts the
     `R`/`AE` the extractor will measure off the drawn marker geometry
@@ -332,17 +342,25 @@ are reported, not patched around:
   now derives the drawn straps from the schematic's own `RS*` expressions
   at the drawn code, so `generate.py` draws one strap per closed bit and the
   reference does not have to be told about a layout shortcut.
-- **The compensation MIM capacitor is drawn but not wired** —
+- **RESOLVED — the compensation MIM capacitor was drawn but not wired** —
   [#77](https://github.com/2AMLogic/gf180-bandgap/issues/77). `_mim_cap`
-  stacks `amp.CC` over the device field on Metal4/FuseTop/Metal5 with no via
-  stack down to the Metal1 routing, on the (then-true) premise that those
-  layers were invisible to both `klt` decks. The extraction deck now reads
-  the full Metal1–Metal5 stack, and the cap extracts as a real device with
-  two floating plates instead of a cap between `vdd` and `amp.fb`. `klt
-  extract` could not confirm the connection even if it were drawn (see
-  "What the LVS verdict does and does not cover"), so the reference models
-  the plates as floating and the missing routing is tracked separately
-  rather than hidden.
+  used to stack `amp.CC` over the device field on Metal4/FuseTop/Metal5 with
+  no via stack down to the Metal1 routing, on the (then-true) premise that
+  those layers were invisible to both `klt` decks. Once the extraction deck
+  gained the full Metal1–Metal5 stack (klayout-tools#220) and this layout's
+  own `CAP_MK` marker (#73) made `klt extract` recognise the cap as a real
+  device, that premise no longer held — the cap extracted as a device with
+  two floating plates instead of a cap physically between `vdd` and `fb`.
+  #77 wired both plates for real: a `Via1`..`Via4` stack ties the Metal4
+  bottom plate to the `vdd` rail and, via a routing tab off the FuseTop top
+  plate (kept outside the `CAP_MK`/`MIM_L_MK` recognition markers so the
+  extracted capacitance is unaffected) and a standalone landing pad for the
+  down-hop, the top plate to the `fb` rail — both piggy-backing on the
+  already-drawn rails in the `AMPPCASC` row the cap's footprint stacks over.
+  `klt extract` still cannot confirm either connection (see "What the LVS
+  verdict does and does not cover"), so the reference correctly keeps
+  modelling the plates as floating; the routing itself was checked by
+  inspection, not by `klt drc`/`klt lvs` passing.
 
 ## Friction filed (klayout-tools tracker)
 
