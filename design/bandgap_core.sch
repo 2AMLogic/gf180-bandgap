@@ -125,18 +125,28 @@ v {xschem version=3.4.7 file_version=1.2
 *
 * What this preserves, by construction:
 *   - I*R1 (the PTAT term of vref) and R1/R2 (the first-order TC balance);
-*   - every mismatch coefficient in design/bandgap_error_budget.md Sec 2.6a,
-*     all of which are ratios of same-type devices;
+*   - the resistor- and PNP-derived mismatch coefficients in
+*     design/bandgap_error_budget.md Sec 2.5/2.6, which are ratios or
+*     ln-of-area-ratio quantities with no current dependence (measured:
+*     resistor-mismatch line IMPROVED, 3.20/4.17/5.59 -> 2.27/2.95/3.95 mV,
+*     3 sigma, Pelgrom law at the doubled R). The MOS mismatch coefficients
+*     of Sec 2.6a are NOT current-invariant (gm/Id effect) and rose
+*     slightly (13.64/13.64/13.90 -> 14.92/14.96/15.19 mV); net mm_all
+*     3 sigma 14.89/15.12/15.82 -> 16.22/16.36/16.81 mV, still passing the
+*     24.0 mV target with 30-32% margin -- see Sec 5a;
 *   - the trim step in volts, I*R_unit, hence the ratified trim range and
-*     resolution (sim/trim-coverage/).
+*     resolution (sim/trim-coverage/ confirms: span/lsb unchanged within
+*     simulation noise).
 * What it moves:
 *   - I -> I/2 (~10.1 uA -> ~5.05 uA at tt/27 C), and with it the whole
 *     block's quiescent current: 65.47 -> 34.01 uA at the binding
 *     ff/125 C/3.63 V corner, i.e. 32% margin against the ratified < 50 uA;
 *   - vref by the -VT*ln(k) = -17.9 mV of VEB(Q3) -- TOWARD 1.200 V, and it
-*     makes VEB's CTAT slope slightly steeper, which reduces the block's
-*     residual PTAT drift (TC improves; neither row is closed by this
-*     issue's scope -- see design/bandgap_error_budget.md Sec 5).
+*     makes VEB's CTAT slope slightly steeper, which measurably reduces the
+*     block's residual PTAT drift: sim/output-voltage-tc/'s tc_ppm envelope
+*     improves 86.32-137.75 -> 36.37-90.50 ppm/C (still fails the ratified
+*     <=50 ppm/C row, as it did before this issue -- not closed by this
+*     issue's scope -- see design/bandgap_error_budget.md Sec 5/5a).
 * The design current leaves the exactly-10 uA point the VEB/dVBE/CTAT-slope
 * citations in design/bandgap_operating_point.md Sec 2 were taken at; ~5 uA
 * is still well inside the 0.07 nA..28 uA usable emitter window
