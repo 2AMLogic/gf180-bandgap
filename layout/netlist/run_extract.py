@@ -26,16 +26,24 @@ Usage (from the repo root)::
     python3 layout/netlist/run_extract.py layout/bandgap_top/bandgap_top.gds --pdk gf180mcuD
 
 **Read ``layout/netlist/README.md`` before treating this netlist as
-simulation-ready.** As of this script's introduction (#17), the resistor
-and MIM-capacitor device classes klayout-tools' gf180mcu deck can now
-recognise (klayout-tools #222/#225) do **not** fire on this repo's drawn
-``bandgap_top`` layout -- every discrete ``ppolyf_u`` resistor (``R1``,
-``R2``, all 63 trim-ladder segments) and the compensation MIM capacitor
-collapse to plain interconnect (an unintended short / an absent device) in
-the netlist this script writes, because ``layout/bandgap_top/generate.py``
-does not yet draw the marker layers (``RES_MK``/``SAB``/``CAP_MK``) the
-deck's recognisers require. See the README for the full finding and the
-tracking issue.
+simulation-ready.** What this script writes is a *topology* netlist: device
+cards carry the extraction deck's class tokens rather than callable gf180mcu
+subcircuits, and three whole classes of terminal (MOS well/substrate bodies,
+bipolar bases, the MiM top plate) sit on layers the deck's connectivity stack
+does not model, so they come out floating. ``mk_extracted_dut.py`` is what
+turns this report into the ``sim/dut``-ready netlist, and its generated
+header is the authoritative list of every transform and back-annotation
+applied on the way -- see the README's "extraction report to simulatable
+DUT" section.
+
+(Historical note, kept because the reports under ``reports/`` predating
+``741c4ae`` were taken under it: when this script was introduced, the
+resistor and MIM-capacitor recognisers klayout-tools #222/#225 had shipped
+did **not** fire on this layout -- every discrete ``ppolyf_u`` and the
+compensation cap collapsed to plain interconnect, because
+``layout/bandgap_top/generate.py`` drew none of the ``RES_MK``/``SAB``/
+``CAP_MK`` marker layers the recognisers require. gf180-bandgap#73 drew
+them; all three device classes have extracted as real devices since.)
 """
 
 from __future__ import annotations

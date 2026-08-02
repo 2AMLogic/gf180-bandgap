@@ -1,18 +1,94 @@
 # layout/netlist — post-layout parasitic extraction (#17)
 
 `run_extract.py` produces a parasitic-extracted SPICE netlist of
-`bandgap_top` via `klt extract --parasitics`, for #17's "post-layout
-extracted re-run of the full verification suite". This directory holds the
-extraction tooling and its append-only reports; it does **not** hold a
-`sim/dut`-ready netlist yet — see "Still blocking" below for why.
+`bandgap_top` via `klt extract --parasitics`, and `mk_extracted_dut.py` turns
+that report into the `sim/dut`-ready netlist #17's post-layout suite re-run
+takes as `--dut`. This directory holds that tooling and its append-only
+reports.
 
 ```
 layout/netlist/
-  README.md         this file
-  run_extract.py    reproducible klt extract --parasitics invocation -> committed report
+  README.md                       this file
+  run_extract.py                  reproducible klt extract --parasitics invocation -> committed report
+  mk_extracted_dut.py             extraction report -> simulatable .subckt bandgap_top (see below)
+  verify_mim_routing.py           proves both MiM plates are physically wired to vdd/fb
+  bandgap_top_extracted.spice     GENERATED sim/dut-ready DUT (subckt form)
+  bandgap_top_extracted_flat.spice  GENERATED, same cards with no subckt wrapper (sim/mc-untrimmed)
   reports/
-    bandgap_top/    <record-id>.{extract.json,extracted.spice}
+    bandgap_top/                  <record-id>.{extract.json,extracted.spice}
 ```
+
+Current state, against `origin/main`'s `bandgap_top.gds` and the current
+klayout-tools deck:
+
+```
+extracted devices: 156 {'bjt': 8, 'cap_mim_2f0_m4m5_noshield': 1,
+                        'nfet': 34, 'pfet': 47, 'ppolyf_u': 65,
+                        'ppolyf_u_1k': 1}
+net_count        : 93
+lvs status       : match   (156/156 devices, 93/93 nets)
+drc status       : 1 violation -- mim.enclosing.fusetop.1, the MiM top-plate
+                   routing tab (gf180-bandgap#82); see layout/README.md
+parasitics       : 82 R / 82 C, 207.9 kohm and 2466.8 fF total
+```
+
+## `mk_extracted_dut.py` — extraction report to simulatable DUT
+
+`klt extract`'s own SPICE output is a *topology* netlist, not a simulatable
+deck. `mk_extracted_dut.py` converts it, and the conversion is deliberately
+auditable rather than convenient: every transform is a numbered entry
+(`T1`…`T9`) echoed into the generated file's header, and every net-level
+back-annotation (`BA1`…`BA4`) is **asserted against the extracted structure
+before it is applied**, so a back-annotation whose precondition has gone away
+is a hard error rather than a silent no-op. Read that header before treating
+any number taken against this netlist as post-layout evidence — it is the
+complete list of every place the simulated netlist departs from what the
+extractor literally measured.
+
+The four back-annotations, and why each exists:
+
+| | Terminal | Asserted to | Why the deck cannot resolve it |
+|---|---|---|---|
+| BA1 | deck-synthesised `vsubs` | `vss` | gf180mcu draws no distinct p-substrate tap layer, so the deck synthesises a substrate net (`klt lvs` reports this itself as `device.body_unverified`). The drawn guard ring is a Pplus/COMP ring on the `vss` rail. |
+| BA2 | all 47 PMOS bodies | `vdd` | no well-tap layer in the deck, so every PMOS body lands on one anonymous well net reaching nothing. |
+| BA3 | 8 PNP base nets | `vss` | a recognised bipolar's base region is Nwell, not a connectivity metal — the same gap `klayout-tools#314` closed for capacitor plates, still open for `BipolarDevice` (documented upstream as `klayout-tools#336`). The layout draws an Nplus base-tie ring on `vss` around every unit. |
+| BA4 | MiM cap top plate | `fb` | the drawn `Via4` lands on a `FuseTop` routing tab held outside `CAP_MK`, so the deck does not see the contact. Unlike BA1–BA3 this half is a **layout** workaround, not a tool gap — see `verify_mim_routing.py` below and gf180-bandgap#82. |
+
+Everything else — device existence, class, connectivity, drawn resistor
+`L`/`W`, drawn plate area, drawn finger and PNP-unit counts, and the per-net
+RC parasitics — is measured, not asserted.
+
+`--flat` emits the same cards with no `.subckt bandgap_top` wrapper, for
+`sim/mc-untrimmed`, whose deck includes its DUT at top level and whose `.ic`
+seeds name top-level nodes.
+
+## `verify_mim_routing.py` — the one connection no tool can check
+
+`klt extract`/`klt lvs` cannot confirm that the compensation cap's top plate
+reaches `fb`, so #17's Test Plan requires verifying it by layer inspection
+instead. Two independent checks, both of which must pass:
+
+```bash
+uv run --with klayout python3 layout/netlist/verify_mim_routing.py
+```
+
+- **A (geometry)** merges the `FuseTop` shapes and asserts that the recognised
+  plate (`FuseTop & CAP_MK & MIM_L_MK`) and the `Via4` that carries `fb` off it
+  sit inside **one** polygon — i.e. the single link no tool models is real
+  metal. Current result: plate 3457.4 µm², carrier polygon 3458.4 µm², one
+  polygon.
+- **B (everything downstream, by the tool)** re-extracts a scratch copy of the
+  GDS whose `CAP_MK`/`MIM_L_MK` are widened to cover the tab, so
+  klayout-tools#314's plate-to-metal join applies, and runs `klt lvs` against
+  the committed reference with the cap's top-plate terminal rewritten to `fb`.
+  Current result: `status: match`, 156/156 devices, 92/92 nets — the drawn
+  tab → Via4 → Metal5 → Via4 → Metal4 pad → Via3 → Metal3 → Via2 → Metal2 →
+  Via1 → Metal1 chain does reach the `fb` rail.
+
+The committed layout keeps the narrow `CAP_MK` (and so the isolated top plate)
+because widening it would change the recognised plate area, i.e. the
+capacitance the extracted netlist reports. Neither check modifies
+`bandgap_top.gds`.
 
 ## Install / version used
 
@@ -46,6 +122,40 @@ should reinstall from a fresh `klayout-tools` checkout (`uv tool install
 --force git+https://github.com/2AMLogic/klayout-tools`) rather than trust a
 cached `klt` install's `--version` string, which does not change between
 releases of this pre-1.0 tool.
+
+**#17's own run** (the suite re-run, delta summary and records) was taken at
+klayout-tools commit `e6e46e8` (2026-08-02, upstream `main` at the time),
+which is what `uv tool install --force git+…` resolves to. `--version` is
+still `0.1.0`; the commit is recorded because the string is not. How to check
+what is actually installed, rather than trusting the string:
+
+```bash
+python3 -c "import json,pathlib,sysconfig; \
+  print(json.loads(pathlib.Path(\
+    '$HOME/.local/share/uv/tools/klayout-tools/lib/python3.14/site-packages/'\
+    'klayout_tools-0.1.0.dist-info/direct_url.json').read_text())['vcs_info']['commit_id'])"
+```
+
+Every `klt` report this repo commits also carries the deck's own content hash
+in its `provenance.deck.content_hash` field, which is the more robust check:
+two reports with the same deck hash were produced by the same extraction rules
+regardless of what `--version` said. #17's reports carry
+`sha256:be1a89e0f899a68c60baeeedffe1b4d76b965bd763e1b16beed1c85937872b1d`.
+
+Two deck-behaviour changes landed upstream between the last `origin/main`
+report set and this one, and both are visible in the numbers:
+
+- **`klayout-tools#314`** joins a recognised capacitor plate to the ordinary
+  metal stack. The MiM cap's bottom plate now extracts on the real `vdd` net
+  instead of a floating node of its own, which took `net_count` from 94 to 93
+  and required `layout/lvs/make_reference.py`'s step 9 to model that terminal
+  as `vdd` (done in #17; without it `klt lvs` reports `mismatch`, 155/156
+  devices, 91/94 nets).
+- **`klayout-tools#318`** fixed `enclosing_check` silently passing when the
+  enclosed shape lies *entirely* outside the enclosing layer. `klt drc` now
+  reports the MiM top-plate tab's `mim.enclosing.fusetop.1` violation
+  (gf180-bandgap#82) that every earlier `clean` verdict on this same GDS was a
+  false negative on. The drawn geometry has not changed since PR #81.
 
 ## Reproducing
 
@@ -197,6 +307,19 @@ consumer working from this netlist directly still needs to be told the
 compensation cap is present but disconnected — a stability/phase-margin
 re-run against a netlist with no compensation cap in the loop is not
 representative.
+
+> **Half of that is now stale (2026-08-02, #17).**
+> [`klayout-tools#314`](https://github.com/2AMLogic/klayout-tools/issues/314)
+> joined a recognised plate to the ordinary metal stack, and it works for the
+> **bottom** plate: its drawn Via3 lands inside the `Metal4` plate box, so
+> that terminal extracts on the real `vdd` net (which is why `net_count` is
+> now 93, not 94, and why `make_reference.py` step 9 models it as `vdd`). The
+> **top** plate is still isolated, for a layout reason rather than a tool one
+> — its Via4 lands on the `FuseTop` routing tab held outside `CAP_MK`, as the
+> next section describes. `mk_extracted_dut.py`'s BA4 back-annotates it to
+> `fb`, and `verify_mim_routing.py` proves that annotation is the drawn
+> circuit rather than an assumption; the compensation cap **is** in the loop
+> in every #17 record.
 
 **Not the same gap as the `fb` plate's own contact geometry.** The
 connectivity-modelling gap above is a tool limitation; the `fb` up-hop
@@ -350,6 +473,23 @@ Worth recording now so a future increment does not re-discover them:
   `sim/dut/README.md`'s three-pin (`vdd`, `vss`, `vref`) convention — a
   `sim/dut`-ready wrapper will need to tie `vsubs` to `vss` (or expose it)
   before this netlist can be handed to `sim/run_corners.py --dut`.
+  **Handled**: `mk_extracted_dut.py`'s T9 emits the three-pin form and BA1
+  aliases `vsubs` to `vss`.
+- **The extracted parasitic `R` is a shunt element, so it affects nothing.**
+  `--parasitics` emits, per net, `R <net> <net>__par` in series with
+  `C <net>__par <substrate>`. The capacitance loads the net correctly (its
+  isolating pole sits above 100 MHz for every net here), but the resistance's
+  only other terminal is that capacitor's plate: it carries no DC current and
+  sits between no driver and any receiver. IR drop on the supply/ground/bias
+  distribution and series resistance in a matched path — the two mechanisms a
+  precision-analog post-layout re-run is usually reached for — are therefore
+  structurally absent from this netlist, not merely approximated. There is
+  also no net-to-net coupling capacitance. Filed generically upstream as
+  [`klayout-tools#338`](https://github.com/2AMLogic/klayout-tools/issues/338).
+  Practical consequence for #17's records: every DC-domain result
+  (`vref`, `tc_ppm`, `linereg`, `iq`) is a **device-geometry** delta against
+  the schematic, not a parasitic-resistance one; the extracted capacitance is
+  what moves the AC-domain results.
 
 ## Friction filed (klayout-tools tracker)
 
@@ -385,3 +525,20 @@ design specifics):
   (post-#304) deck (`gf180mcu.py` content hash `sha256:90a7f0ef…`) — 8 `bjt`,
   156/156 devices, `status: match` — see `layout/README.md` § "Findings and
   escalations".
+- **First-order lumped-RC parasitics put the whole net resistance in series
+  with the net's own ground capacitance** — so the extracted R sits between no
+  driver and any receiver, carries no DC current, and cannot represent IR drop
+  or series resistance in a matched path; net-to-net coupling capacitance is
+  not extracted either. Filed as
+  [`klayout-tools#338`](https://github.com/2AMLogic/klayout-tools/issues/338)
+  (found by #17). Open.
+- **A PDK model binding that covers MOS only** — `--pdk` rebinds recognised
+  MOS devices to the PDK's own device subcircuits (which is what makes an
+  extracted MOS meaningful), but a recognised resistor, bipolar or capacitor
+  still emits a bare primitive card carrying the deck's class token, so it is
+  not callable and loses the PDK model's temperature/voltage coefficients,
+  edge-bias corrections and per-instance mismatch hooks. Every consuming block
+  repository has to write the same geometry-to-model rebinding layer by hand
+  (here: `mk_extracted_dut.py`'s T3–T7). Filed as
+  [`klayout-tools#339`](https://github.com/2AMLogic/klayout-tools/issues/339)
+  (found by #17). Open.
