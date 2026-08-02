@@ -20,11 +20,10 @@ Routing style, and why it looks like this
 ``klt``'s gf180mcu **DRC** deck models exactly **one** metal level
 (``Metal1``, 34/0) — there is no ``Metal2``..``Metal5`` in it, so anything
 drawn above Metal1 is unchecked. (The **extraction** deck has since gained
-the full Metal1–Metal5 stack with vias, klayout-tools#220; this block has
-not been re-routed onto it.) A block routed on layers the extraction deck
-cannot see would extract as a pile of disconnected nets, so this layout
-is routed entirely on ``Metal1`` plus ``Poly2``, using poly as the
-crossunder layer:
+the full Metal1–Metal5 stack with vias, klayout-tools#220.) A block routed
+on layers the extraction deck cannot see would extract as a pile of
+disconnected nets, so this layout is routed entirely on ``Metal1`` plus
+``Poly2``, using poly as the crossunder layer:
 
 * **Corridor spines** — one vertical ``Poly2`` spine per net, in a dedicated
   comp-free corridor down the left edge of the block.
@@ -40,6 +39,12 @@ block would be routed with a real multi-metal stack, and it costs
 significant area (see ``layout/bandgap_top/AREA.md``). The tool gap is filed
 generically against klayout-tools; see ``layout/README.md`` § "Friction
 filed".
+
+**One exception**: the compensation MIM capacitor's ``Metal4``/``FuseTop``
+plates (drawn by ``_mim_cap``) are wired down to the Metal1 ``vdd``/``fb``
+rails above through a real ``Via1``..``Via4`` stack (#77) — this block's only
+use of ``Metal2``..``Metal5``. See ``_mim_cap``'s own docstring for why that
+via stack has to be shaped the way it is.
 
 Matching plan, device folding and the netlist reduction the extraction deck
 implies all live in the two modules this one builds on:
@@ -103,7 +108,13 @@ L_NPLUS = (32, 0)
 L_CONTACT = (33, 0)
 L_METAL1 = (34, 0)
 L_METAL1_LBL = (34, 10)
+L_VIA1 = (35, 0)
+L_METAL2 = (36, 0)
+L_VIA2 = (38, 0)
+L_METAL3 = (42, 0)
+L_VIA3 = (40, 0)
 L_METAL4 = (46, 0)
+L_VIA4 = (41, 0)
 L_FUSETOP = (75, 0)
 L_METAL5 = (81, 0)
 L_SAB = (49, 0)
@@ -122,7 +133,13 @@ LAYER_NAMES = {
     L_CONTACT: "Contact",
     L_METAL1: "Metal1",
     L_METAL1_LBL: "Metal1_Label",
+    L_VIA1: "Via1",
+    L_METAL2: "Metal2",
+    L_VIA2: "Via2",
+    L_METAL3: "Metal3",
+    L_VIA3: "Via3",
     L_METAL4: "Metal4",
+    L_VIA4: "Via4",
     L_FUSETOP: "FuseTop",
     L_METAL5: "Metal5",
     L_SAB: "SAB",
@@ -162,6 +179,23 @@ NWELL_ENC = 600  # Nwell overlap of PMOS COMP, nwell.enclosing.comp.1 min 120
 NWELL_CLEAR = 2000  # Nwell edge -> unrelated COMP
 GUARD_W = 1600  # guard-ring COMP width
 GUARD_CLEAR = 1600  # block content -> guard ring inner edge
+
+# --------------------------------------------------------------------------- #
+# Compensation-cap via stack (#77). This is the layout's only user of
+# Metal2-Metal5/Via1-Via4 -- everywhere else routes on Metal1/Poly2 (see the
+# module docstring's "Routing style"). Sizes mirror CT/ENC_CT's proportions
+# (a square via with a symmetric metal enclosure); the gf180mcu **DRC** deck
+# does not model these layers at all (see layout/README.md), so there is no
+# deck minimum to cite -- these are just conservative, self-consistent
+# choices for a first, one-off use of the stack.
+# --------------------------------------------------------------------------- #
+VIA_W = 240  # via1..via4 width, matches CT's width
+VIA_ENC = 100  # metal enclosure of a via, matches ENC_CT
+VIA_PAD = VIA_W + 2 * VIA_ENC  # 440 nm square landing pad
+FB_M5_WIRE_W = 700  # fb top-plate route: Metal5 wire width (>> VIA_W, margin)
+FB_TAB_H = 700  # top-plate routing tab height
+FB_TAB_OVERHANG = 800  # how far the tab extends past the bottom plate's edge
+FB_DOWNHOP_CLEAR = 3000  # fb down-hop x, clear of the tab and the bottom plate
 
 
 @dataclass
@@ -578,12 +612,18 @@ def build() -> tuple[Builder, dict]:
         order = sorted(by_net, key=lambda n: (max(t.stub_x for t in by_net[n]), n))
 
         track0 = y + row_h + HEAD
+        # Per-net rail geometry (height + horizontal extent), kept alongside
+        # `nets`/`right` below so a later step (the compensation-cap via
+        # stack, #77) can land vias directly on an *already-drawn* rail
+        # instead of re-deriving its position from scratch.
+        rail_geo: dict[str, tuple[int, int, int]] = {}
         for track, net in enumerate(order):
             ty = track0 + track * TRACK_PITCH
             sx = spine_x[net]
             right = max(t.stub_x for t in by_net[net])
             b.box(L_METAL1, sx - BAR_W // 2, ty - BAR_W // 2, right + BAR_W // 2, ty + BAR_W // 2)
             b.contact(sx, ty)
+            rail_geo[net] = (ty, sx, right)
             for terminal in by_net[net]:
                 b.box(
                     L_POLY2,
@@ -604,6 +644,7 @@ def build() -> tuple[Builder, dict]:
                 "right": row_right,
                 "nets": order,
                 "placements": placements,
+                "rail_geo": rail_geo,
             }
         )
         y = top + ROW_GAP
@@ -652,11 +693,26 @@ def build() -> tuple[Builder, dict]:
     b.box(L_METAL1, spine_x["vss"] - BAR_W // 2, gy0, spine_x["vss"] + BAR_W // 2, block_top)
 
     # Compensation MIM capacitor, stacked over the device field (Metal4 /
-    # FuseTop / Metal5 -- layers outside both klt decks; see plan.MimCapItem).
+    # FuseTop / Metal5). `klt extract`'s gf180mcu deck now recognises this
+    # stack (klayout-tools#220/#225, #73's CAP_MK marker), so both plates are
+    # wired for real (#77) -- see `_mim_cap` and plan.MimCapItem.
     cap = plan_mod.mim_cap(flat)
+    assert cap.nets == ("vdd", "fb"), (
+        f"{cap.key}: expected (bottom=vdd, top=fb), got {cap.nets} -- "
+        "_mim_cap's via stack targets those two nets specifically"
+    )
     cap_x = field_x0
     cap_y = next(g for g in row_geometry if g["row"].name == "AMPPAIR")["y0"]
-    _mim_cap(b, cap, cap_x, cap_y)
+    # AMPPCASC is the row the cap's footprint stacks over that also happens
+    # to carry both `vdd` and `fb` rails (the amp PMOS cascode pair's body
+    # tie and gate net, respectively) -- see the module docstring's "Routing
+    # style" and `_mim_cap`'s own docstring for why piggy-backing on an
+    # already-drawn rail, rather than drawing a fresh one, is what the via
+    # stack does.
+    via_row = next(g for g in row_geometry if g["row"].name == "AMPPCASC")
+    vdd_ty, vdd_sx, vdd_right = via_row["rail_geo"]["vdd"]
+    fb_ty, fb_sx, fb_right = via_row["rail_geo"]["fb"]
+    _mim_cap(b, cap, cap_x, cap_y, vdd_ty, (vdd_sx, vdd_right), fb_ty, (fb_sx, fb_right))
 
     stats = {
         "flat": flat,
@@ -694,17 +750,170 @@ def _guard_ring(b: Builder, x0: int, y0: int, x1: int, y1: int) -> None:
                 yy += CT_PITCH
 
 
-def _mim_cap(b: Builder, cap: MimCapItem, x0: int, y0: int) -> None:
+def _via_pad(b: Builder, metal_layer: tuple[int, int], via_layer: tuple[int, int], cx: int, cy: int) -> None:
+    """One via-stack step: a ``VIA_PAD``-square landing pad on ``metal_layer``
+    with a centred ``VIA_W``-square via on ``via_layer`` immediately beneath
+    it (``via_layer`` is the stack level connecting the metal *below*
+    ``metal_layer`` up to it -- e.g. ``metal_layer=L_METAL2,
+    via_layer=L_VIA1`` draws a Metal2 pad sitting on a Via1 that reaches down
+    to whatever Metal1 is already there)."""
+    b.box(metal_layer, cx - VIA_PAD // 2, cy - VIA_PAD // 2, cx + VIA_PAD // 2, cy + VIA_PAD // 2)
+    b.box(via_layer, cx - VIA_W // 2, cy - VIA_W // 2, cx + VIA_W // 2, cy + VIA_W // 2)
+
+
+def _mim_cap(
+    b: Builder,
+    cap: MimCapItem,
+    x0: int,
+    y0: int,
+    vdd_ty: int,
+    vdd_span: tuple[int, int],
+    fb_ty: int,
+    fb_span: tuple[int, int],
+) -> None:
+    """Draw the compensation MIM cap, plates wired for real (#77).
+
+    ``vdd_ty``/``fb_ty`` are the heights of the already-drawn ``vdd``/``fb``
+    Metal1 rails in the row the cap stacks over (``AMPPCASC`` -- see
+    ``build()``); ``vdd_span``/``fb_span`` are those rails' ``(left, right)``
+    horizontal extents, used only to assert the chosen via x lands on drawn
+    rail rather than past its end.
+
+    Two different via-stack shapes, because the two plates sit on different
+    layers relative to the deck's ``metals``/``vias`` connectivity stack
+    (Metal1..Metal5, Via1..Via4 -- see ``klayout_tools.decks.gf180mcu``), and
+    both have to leave the recognised bottom/top plate geometry -- so the
+    device's extracted ``C`` -- *exactly* as before, since `klt lvs` (see
+    below) still checks it against the reference with no real tolerance:
+
+    * **Bottom plate (``vdd``, Metal4)** is *itself* one of the stack's
+      metals, so the via stack just climbs Metal1 -> Via1 -> Metal2 -> Via2
+      -> Metal3 -> Via3 straight into the already-drawn bottom-plate
+      polygon -- no separate landing pad needed, and no change to that
+      polygon's shape. The landing x is inside the bottom plate's own
+      ``MIM_PLATE_INSET`` margin (the ring between the Metal4 box's edge and
+      the smaller FuseTop box inset within it), clear of the top plate.
+
+    * **Top plate (``fb``, FuseTop)** is *not* one of the stack's metals at
+      all -- the deck has no via type that connects it to anything, and the
+      bottom plate's Metal4 box already covers the *entire* footprint the
+      top plate could contact from directly above (real MiM stack-ups always
+      draw the bottom plate at least as large as the top plate), so any via
+      landing inside that footprint reads, to `klt extract`'s ordinary
+      connectivity graph, as touching Metal4 too -- physically shorting
+      ``vdd``/``fb`` through the via (both for real, and in the tool's own
+      Metal1-Metal5 graph, which has no notion of the MIM dielectric that
+      would keep such a via from ever reaching Metal4 in real silicon). So
+      the top plate is drawn with a small routing **tab**, extending past
+      the bottom plate's own right edge where there is no Metal4 at all --
+      the standard MiM-cap top-plate routing technique, not a workaround
+      specific to this tool -- and the contact via (Via4 -> Metal5) lands on
+      that tab, clear of the bottom plate.
+
+      The tab is *not* covered by ``CAP_MK``/``MIM_L_MK`` (this function
+      pulls the markers' own right edge in to match the plate's, rather than
+      the ``+400`` margin the other three edges keep), so `klt extract`'s
+      ``top_region = FuseTop & CAP_MK & MIM_L_MK`` clips the tab away and
+      the recognised top plate is pixel-identical to before -- the tab is
+      real copper (a real electrical extension of the same plate) that the
+      *device recognition* deliberately does not see, exactly mirroring how
+      the bottom plate's own via stack lands on real, but device-recognition
+      -invisible, bottom-plate copper (see ``layout/lvs/make_reference.py``'s
+      "Known limitation" -- neither plate's routing is visible to `klt lvs`
+      either way, tab or no tab).
+
+      From the tab the via climbs to Metal5 (``FB_M5_WIRE_W`` wire), which
+      carries the signal sideways to a *second*, ordinary Via4 landing on a
+      small, wholly disjoint Metal4 pad placed ``FB_DOWNHOP_CLEAR`` past the
+      bottom plate's own right edge -- far enough past the tab's own end,
+      too, that neither Metal4 shape can ever touch or merge with the tab or
+      the bottom plate -- and from there down through Via3/Via2/Via1 into
+      the already-drawn ``fb`` rail, same as the bottom plate's stack.
+
+    Neither via stack is visible to `klt lvs`'s own device-recognition graph
+    either way: ``CapacitorDevice`` registers both plates as connectivity
+    nodes of their own, joined to nothing (see plan.MimCapItem, and
+    ``layout/lvs/make_reference.py``'s "Known limitation") -- so the routing
+    itself is drawn correct by inspection, not by any tool's say-so. It was
+    checked by hand at review time (#77): each contact point's ``(x, y)``
+    traced back to the specific net it targets, and both plates' via chains
+    confirmed disjoint from each other and from every other row's own
+    rails.
+    """
     w, h = cap.width_nm, cap.height_nm
-    b.box(L_METAL4, x0, y0, x0 + w, y0 + h)
     inset = MIM_PLATE_INSET
+
+    # -- vdd (bottom plate) contact point: inside the Metal4 box's own
+    # MIM_PLATE_INSET margin band, clear of the FuseTop top plate on top of
+    # it.
+    vdd_x = x0 + inset // 2
+    assert x0 <= vdd_x - VIA_PAD // 2 and vdd_x + VIA_PAD // 2 <= x0 + inset, (
+        f"{cap.key}: vdd via pad does not fit inside the bottom plate's "
+        "MIM_PLATE_INSET margin"
+    )
+    assert vdd_span[0] <= vdd_x <= vdd_span[1], f"{cap.key}: vdd contact x falls outside the drawn vdd rail"
+    assert y0 <= vdd_ty <= y0 + h, f"{cap.key}: vdd rail height falls outside the cap's own footprint"
+
+    # -- fb (top plate) contact points: the up-hop lands on the routing tab,
+    # entirely past the bottom plate's own right edge; the down-hop is
+    # clear of the tab as well (see docstring).
+    fb_tab_end = x0 + w + FB_TAB_OVERHANG
+    fb_up_x = x0 + w + FB_TAB_OVERHANG // 2
+    assert x0 + w <= fb_up_x - VIA_PAD // 2, f"{cap.key}: fb up-hop via overlaps the bottom plate"
+    assert fb_up_x + VIA_PAD // 2 <= fb_tab_end, f"{cap.key}: fb up-hop via overlaps the tab's own end"
+    assert y0 + inset <= fb_ty <= y0 + h - inset, f"{cap.key}: fb rail height falls outside the top plate"
+    fb_down_x = x0 + w + FB_DOWNHOP_CLEAR
+    assert fb_tab_end + VIA_PAD // 2 <= fb_down_x - VIA_PAD // 2, (
+        f"{cap.key}: fb down-hop pad overlaps the routing tab"
+    )
+    assert fb_span[0] <= fb_down_x <= fb_span[1], f"{cap.key}: fb down-hop x falls outside the drawn fb rail"
+
+    # Bottom plate (Metal4) -- unchanged, solid box; the top-plate contact
+    # routes *around* it (via the tab below), not through it, so its shape
+    # (and so `klt extract`'s recognised bottom-plate area) never changes.
+    b.box(L_METAL4, x0, y0, x0 + w, y0 + h)
+
+    # Top plate (FuseTop): the recognised box, plus the routing tab.
     b.box(L_FUSETOP, x0 + inset, y0 + inset, x0 + w - inset, y0 + h - inset)
+    b.box(L_FUSETOP, x0 + w - inset, fb_ty - FB_TAB_H // 2, fb_tab_end, fb_ty + FB_TAB_H // 2)
+
     b.box(L_METAL5, x0 + 900, y0 + 900, x0 + w - 900, y0 + h - 900)
     # The deck's MiM recogniser requires both CAP_MK and MIM_L_MK on the top
     # plate (`top_plate_requires`); draw CAP_MK over the same footprint as
-    # the existing MIM_L_MK box (#73).
-    b.box(L_MIM_MK, x0 - 400, y0 - 400, x0 + w + 400, y0 + h + 400)
-    b.box(L_CAP_MK, x0 - 400, y0 - 400, x0 + w + 400, y0 + h + 400)
+    # the existing MIM_L_MK box (#73), except pull the right edge in to the
+    # plate's own edge (no +400 overhang there) so it does not also cover
+    # the routing tab -- see docstring.
+    b.box(L_MIM_MK, x0 - 400, y0 - 400, x0 + w - inset, y0 + h + 400)
+    b.box(L_CAP_MK, x0 - 400, y0 - 400, x0 + w - inset, y0 + h + 400)
+
+    # vdd: Metal1 (existing AMPPCASC rail) -> Via1 -> Metal2 -> Via2 ->
+    # Metal3 -> Via3 -> straight into the bottom plate drawn above.
+    _via_pad(b, L_METAL2, L_VIA1, vdd_x, vdd_ty)
+    _via_pad(b, L_METAL3, L_VIA2, vdd_x, vdd_ty)
+    b.box(L_VIA3, vdd_x - VIA_W // 2, vdd_ty - VIA_W // 2, vdd_x + VIA_W // 2, vdd_ty + VIA_W // 2)
+
+    # fb up-hop: Via4 on the routing tab (FuseTop only there -- the bottom
+    # plate's Metal4 box ends at x0 + w, well clear) -> Metal5.
+    b.box(L_VIA4, fb_up_x - VIA_W // 2, fb_ty - VIA_W // 2, fb_up_x + VIA_W // 2, fb_ty + VIA_W // 2)
+
+    # fb Metal5 wire: up-hop (over the tab) to down-hop (clear of the tab
+    # and the bottom plate), both at the same rail height so this is one
+    # straight run.
+    b.box(
+        L_METAL5,
+        min(fb_up_x, fb_down_x) - FB_M5_WIRE_W // 2,
+        fb_ty - FB_M5_WIRE_W // 2,
+        max(fb_up_x, fb_down_x) + FB_M5_WIRE_W // 2,
+        fb_ty + FB_M5_WIRE_W // 2,
+    )
+
+    # fb down-hop: Metal5 -> Via4 -> Metal4 (a standalone pad, spaced clear
+    # of the tab and the bottom plate) -> Via3 -> Metal3 -> Via2 -> Metal2
+    # -> Via1 -> Metal1 (the existing AMPPCASC fb rail).
+    b.box(L_VIA4, fb_down_x - VIA_W // 2, fb_ty - VIA_W // 2, fb_down_x + VIA_W // 2, fb_ty + VIA_W // 2)
+    _via_pad(b, L_METAL4, L_VIA3, fb_down_x, fb_ty)
+    _via_pad(b, L_METAL3, L_VIA2, fb_down_x, fb_ty)
+    _via_pad(b, L_METAL2, L_VIA1, fb_down_x, fb_ty)
 
 
 def save_options() -> kdb.SaveLayoutOptions:

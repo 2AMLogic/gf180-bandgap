@@ -184,12 +184,19 @@ Two things worth carrying forward from that work:
 
 **#17's remaining scope is therefore no longer blocked on `layout/lvs`.**
 One thing to settle before running #12/#13 against the extracted netlist:
-the compensation MIM capacitor extracts with two *floating* plates, because
-this layout draws no via stack from it down to the Metal1 routing (and the
-deck could not confirm that connection even if it did — see
-`layout/README.md`). A stability/phase-margin re-run against a netlist with
-no compensation cap is not representative; tracked as
-[gf180-bandgap#77](https://github.com/2AMLogic/gf180-bandgap/issues/77).
+the compensation MIM capacitor still extracts with two *floating* plates,
+because `klt extract`'s recognised cap plates are their own connectivity
+nodes, never joined to the ordinary metal stack, regardless of how the
+layout routes them (`decks.CapacitorDevice`'s "Known limitation" — see
+`layout/README.md`). Since
+[gf180-bandgap#77](https://github.com/2AMLogic/gf180-bandgap/issues/77) the
+layout *does* draw a real via stack from both plates down to the Metal1
+`vdd`/`fb` routing (`generate._mim_cap`), but that connection is still
+invisible to `klt extract` for the reason above, so a parasitic-extraction
+consumer working from this netlist directly still needs to be told the
+compensation cap is present but disconnected — a stability/phase-margin
+re-run against a netlist with no compensation cap in the loop is not
+representative.
 
 ## RESOLVED (#78): `startup.RPU` now extracts as a real `ppolyf_u_1k` device
 

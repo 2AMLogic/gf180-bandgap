@@ -254,9 +254,27 @@ class MimCapItem:
     rather than consuming its own floor area (standard practice for an M4/M5
     MIM). The ``klt`` gf180mcu **DRC** deck still reads none of those layers,
     but the **extraction** deck now recognises the cap itself
-    (klayout-tools#225, plus the ``CAP_MK`` marker #73 drew) — see
-    ``layout/lvs/make_reference.py`` for why its two plates are nonetheless
-    still *floating* nets in the extracted netlist.
+    (klayout-tools#225, plus the ``CAP_MK`` marker #73 drew), and both plates
+    are wired for real to the block's ``vdd``/``fb`` routing via a genuine
+    ``Via1``..``Via4`` stack (``generate._mim_cap``, #77) — this layout's
+    only use of ``Metal2``..``Metal5``. That via stack is not something
+    ``make_reference.py`` has to know about: `klt extract`'s recognised cap
+    plates are their own connectivity nodes, never joined to the ordinary
+    metal stack (``decks.CapacitorDevice``'s "Known limitation"), so the
+    reference correctly keeps modelling both terminals as floating nets
+    regardless of how -- or whether -- the layout routes them. ``nets`` is
+    ``(bottom, top)`` = ``(device.nets["p"], device.nets["n"])`` per
+    ``TERMINALS["cap"]`` in :mod:`netlist_model`, which for ``amp.CC``
+    resolves to ``("vdd", "fb")`` — bottom plate = Metal4 = ``vdd``, top
+    plate = FuseTop = ``fb``.
+
+    No geometry fields live here: the via stack's placement (which row's
+    already-drawn rails to piggy-back on, the routing tab that keeps the
+    top-plate contact off the bottom plate, the standalone landing pad that
+    keeps the two plates' vias from merging) is a pure `generate.py` drawing
+    decision with no bearing on the device parameters `make_reference.py`
+    predicts, so — unlike ``MIM_PLATE_INSET`` et al. below, which both
+    readers need — it stays local to ``generate._mim_cap``.
     """
 
     key: str
@@ -796,6 +814,10 @@ def mim_cap(flat: FlatNetlist) -> MimCapItem:
         key="amp.CC",
         width_nm=nm(device.params["c_width"]),
         height_nm=nm(device.params["c_length"]),
+        # (bottom, top) = (p, n) -- resolves to ("vdd", "fb") for `amp.CC`;
+        # see MimCapItem's docstring for why the via stack `generate.py`
+        # draws for these two nets targets Metal4 (bottom/vdd) and FuseTop
+        # (top/fb) specifically.
         nets=(device.nets["p"], device.nets["n"]),
         device="amp.CC",
     )
