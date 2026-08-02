@@ -9,10 +9,10 @@ LVS flows that verify it.
 (`bandgap_core` + `bandgap_amp` + `bandgap_startup` + trim ladder), generated
 from the committed schematic netlist, **DRC-clean** against the `gf180mcu`
 deck and **LVS-matching** against its mechanically-derived reference netlist
-across all four device classes `klt extract` recognises — 81 MOS, 65
-`ppolyf_u` resistors, 16 `bjt` and 1 MIM capacitor. What that verdict does
-and does not prove is spelled out in "What the LVS verdict does and does not
-cover" below.
+across all device classes `klt extract` recognises — 81 MOS, 65 `ppolyf_u` +
+1 `ppolyf_u_1k` resistors, 16 `bjt` and 1 MIM capacitor. What that verdict
+does and does not prove is spelled out in "What the LVS verdict does and does
+not cover" below.
 
 ```
 layout/
@@ -89,19 +89,22 @@ Expected results (as committed):
 |---|---|
 | `matching_report.py` | all tier-1/2/3 checks pass, exit 0 |
 | `run_drc.py` | `status: clean`, `violation_count: 0` |
-| `run_lvs.py` | `lvs status: match` — 163/163 devices, 93/93 nets, 16 `warning`-severity entries (2 `device.body_unverified`, 14 `topology` ambiguous-pairing), 0 errors |
+| `run_lvs.py` | `lvs status: match` — 164/164 devices, 94/94 nets, 16 `warning`-severity entries (2 `device.body_unverified`, 14 `topology` ambiguous-pairing), 0 errors |
 | `area_report.py` | 48,339.11 µm² vs. 50,000 µm² target — PASS, 3.3 % headroom |
 
-`run_lvs.py`'s 163 compared devices are 34 `nfet` + 47 `pfet` (81 MOS,
-including the 14 edge dummies), 65 `ppolyf_u` resistors, 16 `bjt` and 1
-`cap_mim_2f0_m4m5_noshield`. That is up from the 81 MOS-only devices #62–#72
-compared: the deck gained bipolar (klayout-tools#223), MiM-capacitor
-(klayout-tools#225) and resistor (klayout-tools#222) recognition upstream,
-[#73](https://github.com/2AMLogic/gf180-bandgap/issues/73) drew this layout's
-own `RES_MK`/`SAB`/`CAP_MK` marker geometry so the last two fire against it,
-and [#75](https://github.com/2AMLogic/gf180-bandgap/issues/75) taught
-`make_reference.py` to model all three classes (it briefly reported
-`mismatch` in between, purely from the reference being MOS-only).
+`run_lvs.py`'s 164 compared devices are 34 `nfet` + 47 `pfet` (81 MOS,
+including the 14 edge dummies), 65 `ppolyf_u` + 1 `ppolyf_u_1k` resistors, 16
+`bjt` and 1 `cap_mim_2f0_m4m5_noshield`. That is up from the 81 MOS-only
+devices #62–#72 compared: the deck gained bipolar (klayout-tools#223),
+MiM-capacitor (klayout-tools#225) and resistor (klayout-tools#222)
+recognition upstream, [#73](https://github.com/2AMLogic/gf180-bandgap/issues/73)
+drew this layout's own `RES_MK`/`SAB`/`CAP_MK` marker geometry so the last
+two fire against it, [#75](https://github.com/2AMLogic/gf180-bandgap/issues/75)
+taught `make_reference.py` to model all three classes (it briefly reported
+`mismatch` in between, purely from the reference being MOS-only), and
+[#78](https://github.com/2AMLogic/gf180-bandgap/issues/78) took up the deck's
+new `ppolyf_u_1k` entry so `startup.RPU` extracts as a real resistor instead
+of a short.
 
 The 16 `warning` entries are not defects: the two `device.body_unverified`
 ones are the deck's standing "no substrate/well tap layer" caveat (see
@@ -194,19 +197,21 @@ extractor. That gap was filed upstream as
 its reference from that MOS-only premise; #73 (marker geometry) and #75
 (reference) between them retired it.
 
-**Current state.** All four recognised device classes are compared.
-`make_reference.py`'s docstring lists the nine mechanical transformations it
-applies to get from `design/netlist/bandgap_top.spice` to the reference — MOS
-finger expansion, the layout's edge dummies, body-terminal re-targeting, one
-resistor card per drawn body, the `startup.RPU` short, trim-strap resolution
-at the drawn code, two bipolar cards per drawn PNP unit, and the MIM cap's
-floating plates. Every one of them is a consequence of the extraction deck's
-own capabilities or of how this layout draws the device; none is a design
-simplification, and nothing in the reference is hand-written.
+**Current state.** All recognised device classes are compared, including
+both poly-resistor sheet-rho flavours. `make_reference.py`'s docstring lists
+the nine mechanical transformations it applies to get from
+`design/netlist/bandgap_top.spice` to the reference — MOS finger expansion,
+the layout's edge dummies, body-terminal re-targeting, one resistor card per
+drawn `ppolyf_u` body, one `ppolyf_u_1k` card for `startup.RPU`, trim-strap
+resolution at the drawn code, two bipolar cards per drawn PNP unit, and the
+MIM cap's floating plates. Every one of them is a consequence of the
+extraction deck's own capabilities or of how this layout draws the device;
+none is a design simplification, and nothing in the reference is hand-written.
 
 - **Covered**: every MOS device (81, including the 14 edge dummies) and its
   W/L; every drawn `ppolyf_u` resistor body (`core.R1`, `core.R2` and all 63
-  trim units) and its extracted `R`; all 16 recognised `bjt` devices and
+  trim units) and its extracted `R`; the drawn `ppolyf_u_1k` body
+  (`startup.RPU`) and its extracted `R`; all 16 recognised `bjt` devices and
   their `AE`; the MIM capacitor and its `C`; and the full Metal1/Poly2/
   Contact connectivity joining them — i.e. the drawn topology of the
   amplifier, the core mirror/cascode, the PNP array, the resistor strip, the
@@ -219,14 +224,6 @@ simplification, and nothing in the reference is hand-written.
     well-tap layer, so every NMOS body compares against the synthesised
     `vsubs` global and every PMOS body against one anonymous well net —
     `klt lvs`'s own two `device.body_unverified` warnings.
-  - **`startup.RPU`.** Its schematic model is `ppolyf_u_1k`; the deck wires
-    only the base `ppolyf_u` flavour, so `generate.py` deliberately marks
-    that body `Resistor` (62/0) — an *exclude* — and it stays a short on
-    **both** sides rather than being recognised at a silently-wrong
-    350 Ω/□. Filed as
-    [`klayout-tools#299`](https://github.com/2AMLogic/klayout-tools/issues/299),
-    which has since been **resolved upstream** — see "Friction filed" below
-    for why this block has not yet taken up the new `ppolyf_u_1k` entry.
   - **The MIM capacitor's plate nets.** `klt extract` registers a recognised
     cap's plates as their own connectivity nodes that are never joined to
     the metal stack (`decks.CapacitorDevice`, "Known limitation"), so the
@@ -363,14 +360,14 @@ specifics) on the public
   PDK's poly-resistor family** — any drawn instance of another flavour
   collapses to a short:
   [`#299`](https://github.com/2AMLogic/klayout-tools/issues/299) — **resolved
-  upstream** on 2026-08-02, after this layout's `startup.RPU` handling was
-  drawn. The deck now carries a `ppolyf_u_1k` entry (`SAB` + `Resistor` +
-  `RES_MK`), so `RPU` *could* be marked for real recognition at 1000 Ω/□
-  instead of staying a short. This block deliberately has not been changed
-  to do that yet — `generate.py` still omits `RES_MK` on a `high_rho` body,
-  so `RPU` is a short on both sides of the comparison — because picking up
-  the new flavour changes a drawn, DRC- and LVS-verified device and belongs
-  in its own increment.
+  upstream** on 2026-08-02. The deck now carries a `ppolyf_u_1k` entry
+  (`SAB` + `Resistor` + `RES_MK`), and
+  [#78](https://github.com/2AMLogic/gf180-bandgap/issues/78) took it up:
+  `generate.py` now draws `RES_MK` on `startup.RPU`'s `high_rho` body too, so
+  it extracts as a real `ppolyf_u_1k` device at 1000 Ω/□ instead of a short
+  on either side of the comparison. The last remaining marker difference
+  between the two flavours' bodies is the base flavour's `Pplus`, which the
+  high-rho recogniser deliberately omits.
 - **A bipolar recogniser that keys off a bare diffusion layer cannot tell a
   base-contact ring from the emitter it surrounds** — a curated deck that
   models no implant layers recognises *two* bipolars per drawn vertical-PNP

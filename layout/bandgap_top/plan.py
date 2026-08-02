@@ -311,6 +311,13 @@ MIM_PLATE_INSET = 600  # FuseTop top-plate inset inside the Metal4 bottom plate
 #: file. Used only to predict the extracted ``R`` value in the LVS reference.
 PPOLYF_U_SHEET_RHO = 350.0
 
+#: Sheet resistance ``klt``'s gf180mcu extraction deck models the high-rho
+#: ``ppolyf_u_1k`` flavour at (same ``resistors`` tuple as
+#: ``PPOLYF_U_SHEET_RHO``, but the ``ppolyf_u_1k`` entry). Used only to
+#: predict the extracted ``R`` value in the LVS reference for high-rho
+#: bodies (``ResItem.high_rho``, e.g. ``startup.RPU``).
+PPOLYF_U_1K_SHEET_RHO = 1000.0
+
 #: Area capacitance ``klt``'s gf180mcu extraction deck models the MIM
 #: capacitor at, in farads per square micrometre (the PDK's default 2.0
 #: fF/um^2 density option; see that deck's ``CapacitorDevice`` entry).
@@ -328,11 +335,13 @@ def res_geometry(item: ResItem) -> tuple[int, int, int]:
 
 
 def res_body_area_nm2(item: ResItem) -> int:
-    """Area of the *recognised* ``ppolyf_u`` body of a drawn serpentine.
+    """Area of the *recognised* resistor body of a drawn serpentine.
 
     ``klt extract`` reports a resistor's ``R`` as ``sheet_rho * A / W**2``,
-    with ``A`` the area of ``Poly2 & RES_MK & Pplus & SAB`` and ``W`` the
-    smaller root of ``x**2 - (P/2)x + A`` (KLayout's own
+    with ``A`` the area of ``Poly2 & RES_MK & SAB`` (plus ``Pplus`` for the
+    base ``ppolyf_u`` flavour, or ``Resistor`` (62/0) instead for the
+    high-rho ``ppolyf_u_1k`` flavour — see ``generate.draw_res``) and ``W``
+    the smaller root of ``x**2 - (P/2)x + A`` (KLayout's own
     ``DeviceExtractorResistor``). For every resistor this layout draws that
     root is the drawn body width, so ``A`` is all the reference needs.
 
