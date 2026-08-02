@@ -48,6 +48,21 @@ RES_MODELS = {"ppolyf_u", "ppolyf_u_1k"}
 BJT_MODELS = {"pnp_05p00x05p00", "pnp_10p00x10p00"}
 CAP_MODELS_PREFIX = "cap_mim_"
 
+#: Resistor models this layout draws recognition markers for, i.e. the ones
+#: ``klt extract`` returns as real devices. Only the base ``ppolyf_u``
+#: flavour: ``generate.py``'s ``draw_res``/``draw_trim`` mark a base-flavour
+#: body with ``RES_MK``/``Pplus``/``SAB`` (the deck's ``ppolyf_u``
+#: recogniser), and deliberately mark a high-sheet-rho ``ppolyf_u_1k`` body
+#: with ``Resistor`` (62/0) and **no** ``RES_MK`` — so it is claimed by
+#: neither recogniser and stays ordinary poly interconnect rather than being
+#: read at the base flavour's 350 Ω/□ (see ``plan.ResItem.high_rho``). That
+#: was forced when the deck had no high-sheet-rho entry at all
+#: (klayout-tools#299, since resolved upstream); taking up the deck's new
+#: ``ppolyf_u_1k`` entry is tracked as gf180-bandgap#78. A model *not* in
+#: this set collapses to a short in :func:`reduce_nets`, matching the
+#: extracted side.
+EXTRACTED_RES_MODELS = {"ppolyf_u"}
+
 #: Readable, stable path prefixes for the three top-level subcircuit
 #: instances (``Xx1``/``Xx2``/``Xx3``), derived from the subcircuit name so a
 #: rename in the schematic surfaces here rather than being silently absorbed.
@@ -447,28 +462,29 @@ def trim_strap_shorted(expression: str, trim_code: int) -> bool:
 def reduce_nets(flat: FlatNetlist, trim_code: int) -> dict[str, str]:
     """Return ``{schematic net name: layout-visible net name}``.
 
-    **Why a reduction is needed.** ``klt``'s gf180mcu extraction deck
-    (``klayout_tools/decks/gf180mcu.py``) recognises exactly two device
-    classes — ``nfet`` and ``pfet``, from ``Comp``/``Poly2``/``Nwell`` — and
-    treats ``Poly2`` as a plain conductor. It has no resistor, bipolar or
-    MIM-capacitor extractor. So the netlist a correctly-drawn layout extracts
-    to is not the schematic netlist; it is the schematic netlist with:
+    **Why a reduction is needed.** The netlist a correctly-drawn layout
+    extracts to under ``klt``'s gf180mcu extraction deck
+    (``klayout_tools/decks/gf180mcu.py``) is not quite the schematic netlist.
+    Two classes of schematic construct have no extracted counterpart, so the
+    nets they join have to be merged before the two sides can be compared:
 
-    * every ``ppolyf_u``/``ppolyf_u_1k`` **poly resistor collapsed to a short**
-      (its drawn body is poly, and poly is a conductor to the deck),
-    * every ``pnp_*`` **dropped** (its emitter/base/collector diffusions still
-      exist as geometry and still tie into their nets, but no device is
-      recognised),
-    * every ``cap_mim_*`` **dropped** (drawn on Metal4/FuseTop/Metal5, layers
-      the deck does not read at all),
-    * every ideal ``RS*`` trim strap resolved to a short or an open at the
-      drawn trim code (it is a metal option, not a device).
+    * every resistor whose model is **not** in :data:`EXTRACTED_RES_MODELS`
+      is **collapsed to a short**. Today that is exactly ``startup.RPU``
+      (``ppolyf_u_1k``), whose body ``generate.py`` deliberately draws without
+      the ``RES_MK`` marker so no recogniser claims it — see that constant.
+    * every ideal ``RS*`` trim strap is resolved to a short or an open at the
+      drawn trim code (it is a metal option, not a device — the layout draws
+      it as Metal1, and :func:`plan.trim_strap_spans` derives the drawn strap
+      geometry from these same expressions).
 
-    That is a **tool-capability limitation, not a layout simplification** — the
-    layout still draws all of those devices; the extractor simply cannot see
-    them. It is recorded as friction against klayout-tools and restated in
-    ``layout/README.md`` so no reader mistakes the resulting LVS verdict for a
-    full-device LVS.
+    Everything else the schematic draws is now a real extracted device and is
+    modelled one-for-one in ``layout/lvs/make_reference.py``: base-flavour
+    ``ppolyf_u`` resistors (``RES_MK``/``Pplus``/``SAB``-marked), ``pnp_*``
+    bipolars (``DRC_BJT``-marked) and the ``cap_mim_*`` compensation capacitor
+    (``CAP_MK``/``MIM_L_MK``-marked). That was not true when this function was
+    written — the deck then recognised only ``nfet``/``pfet`` — and the
+    remaining ``ppolyf_u_1k`` gap is a tool-capability limitation, not a
+    layout simplification: the layout still draws the device.
     """
     union = UnionFind()
     for device in flat.devices:
@@ -477,7 +493,8 @@ def reduce_nets(flat: FlatNetlist, trim_code: int) -> dict[str, str]:
 
     for device in flat.devices:
         if device.family == "res":
-            union.union(device.nets["n1"], device.nets["n2"])
+            if device.model not in EXTRACTED_RES_MODELS:
+                union.union(device.nets["n1"], device.nets["n2"])
         elif device.family == "ideal_res":
             if trim_strap_shorted(device.model, trim_code):
                 union.union(device.nets["n1"], device.nets["n2"])

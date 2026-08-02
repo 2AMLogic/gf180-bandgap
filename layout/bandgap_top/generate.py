@@ -17,10 +17,12 @@ re-running leaves ``git diff`` empty — the same reproducibility contract
 Routing style, and why it looks like this
 -----------------------------------------
 
-``klt``'s gf180mcu decks model exactly **one** metal level (``Metal1``,
-34/0) — there is no ``Metal2``..``Metal5`` in either the DRC deck or the
-extraction deck's connectivity graph. A block routed on layers the extraction
-deck cannot see would extract as a pile of disconnected nets, so this layout
+``klt``'s gf180mcu **DRC** deck models exactly **one** metal level
+(``Metal1``, 34/0) — there is no ``Metal2``..``Metal5`` in it, so anything
+drawn above Metal1 is unchecked. (The **extraction** deck has since gained
+the full Metal1–Metal5 stack with vias, klayout-tools#220; this block has
+not been re-routed onto it.) A block routed on layers the extraction deck
+cannot see would extract as a pile of disconnected nets, so this layout
 is routed entirely on ``Metal1`` plus ``Poly2``, using poly as the
 crossunder layer:
 
@@ -63,6 +65,28 @@ from plan import (  # noqa: E402
     Row,
     TapItem,
     TrimLadderItem,
+    pnp_size,
+    res_geometry,
+    trim_geometry,
+)
+
+# Geometry shared with layout/lvs/make_reference.py, which has to predict the
+# drawn resistor/bipolar/MIM-cap geometry to emit matching reference device
+# parameters -- so it lives in plan.py (the module both readers share) and is
+# re-exported here. Each value's deck-minimum justification stays in the
+# constants table below.
+from plan import (  # noqa: E402
+    CT,
+    ENC_CT,
+    IMPLANT_ENC,
+    MIM_PLATE_INSET,
+    PNP_COL_GAP,
+    PNP_GAP,
+    PNP_NW_ENC,
+    PNP_RING,
+    POLY_SP,
+    RES_PAD,
+    TRIM_PAD,
 )
 
 TOP_CELL = "bandgap_top"
@@ -114,10 +138,12 @@ LAYER_NAMES = {
 #
 # Every value is at or above the gf180mcu deck minimum it serves; the deck
 # minimum is quoted alongside so the margin is auditable.
+#
+# The ones the LVS reference writer also needs (CT, ENC_CT, IMPLANT_ENC,
+# POLY_SP, RES_PAD, TRIM_PAD, PNP_*, MIM_PLATE_INSET) are defined in plan.py
+# and imported above; their justifications are quoted there.
 # --------------------------------------------------------------------------- #
-CT = 240  # contact.width.1 min 220
 CT_PITCH = 500  # contact.space.1 min 250 -> 260 space here
-ENC_CT = 100  # comp/poly2 enclosing contact, min 70
 SD_COL = 900  # source/drain column width
 POLY_EXT = 400  # gate poly2 extension past COMP
 STUB_W = 380  # poly2 stub width (>= CT + 2*70)
@@ -132,13 +158,8 @@ ROW_GAP = 1100
 SPINE_W = 400
 SPINE_PITCH = 640  # 400 wide + 240 space; poly2.space.1 min 240
 FIELD_GAP = 900  # corridor -> device field
-IMPLANT_ENC = 200  # Pplus/Nplus overlap of COMP
-RES_PAD = 440  # ppolyf_u free-end contact pad height, > IMPLANT_ENC so the
-# pad stays outside the RES_MK/Pplus/SAB marker box (CT + 2*ENC_CT room for
-# the pad's own contact enclosure; see draw_res, #73)
 NWELL_ENC = 600  # Nwell overlap of PMOS COMP, nwell.enclosing.comp.1 min 120
 NWELL_CLEAR = 2000  # Nwell edge -> unrelated COMP
-POLY_SP = 300  # poly2.space.1 min 240
 GUARD_W = 1600  # guard-ring COMP width
 GUARD_CLEAR = 1600  # block content -> guard ring inner edge
 
@@ -221,16 +242,6 @@ def draw_mos(b: Builder, item: MosItem, x0: int, y0: int) -> list[Terminal]:
     return terminals
 
 
-def res_geometry(item: ResItem) -> tuple[int, int, int]:
-    """``(width, height, leg_length)`` of a folded ``ppolyf_u`` serpentine."""
-    pitch = item.width_nm + POLY_SP
-    n = item.segments
-    leg = (item.length_nm - (n - 1) * pitch) // n
-    if leg <= item.width_nm + 2 * (ENC_CT + CT):
-        raise ValueError(f"{item.key}: {n} segments is too many for L={item.length_nm}")
-    return (n - 1) * pitch + item.width_nm, leg, leg
-
-
 def draw_res(b: Builder, item: ResItem, x0: int, y0: int) -> list[Terminal]:
     pitch = item.width_nm + POLY_SP
     n = item.segments
@@ -252,11 +263,13 @@ def draw_res(b: Builder, item: ResItem, x0: int, y0: int) -> list[Terminal]:
     # recogniser is `pplus.and(poly2).and(sab).and(res_mk)`, so all three
     # markers need to cover the resistor body for `klt extract` to see it
     # as a device rather than plain interconnect (#73). A high-sheet-rho
-    # (`ppolyf_u_1k`) body is *not* marked RES_MK: the deck has no device
-    # entry for that flavour (klayout-tools#299), and RES_MK's 350 ohm/sq
-    # would be silently wrong for it, so `Resistor` (62/0) is drawn instead
-    # -- one of `ResistorDevice.excludes` for the base flavour -- keeping it
-    # a short (today's behaviour) rather than a wrong value.
+    # (`ppolyf_u_1k`) body is *not* marked RES_MK: when this was drawn the
+    # deck had no device entry for that flavour (klayout-tools#299), and
+    # RES_MK's 350 ohm/sq would have been silently wrong for it, so
+    # `Resistor` (62/0) is drawn instead -- one of `ResistorDevice.excludes`
+    # for the base flavour -- keeping it a short rather than a wrong value.
+    # klayout-tools#299 is now resolved and the deck has a `ppolyf_u_1k`
+    # entry (SAB + Resistor + RES_MK); taking it up here is gf180-bandgap#78.
     body_layers = (L_PPLUS, L_SAB) if item.high_rho else (L_PPLUS, L_RES_MK, L_SAB)
     for layer in body_layers:
         b.box(
@@ -313,25 +326,11 @@ def draw_res(b: Builder, item: ResItem, x0: int, y0: int) -> list[Terminal]:
     return terminals
 
 
-TRIM_PAD = 440
-
-
-def trim_geometry(item: TrimLadderItem) -> tuple[int, int, int, int]:
-    """``(width, height, unit_pitch, sub_row_counts)`` for the trim ladder."""
-    unit_x = item.unit_length_nm + 2 * TRIM_PAD
-    pitch = unit_x + POLY_SP
-    lower = item.strap_after_unit  # units 1..31 in the strapped group
-    upper = item.units - lower
-    width = max(lower, upper) * pitch + 2000
-    height = 2 * item.unit_width_nm + 3600
-    return width, height, pitch, lower
-
-
 def draw_trim(b: Builder, item: TrimLadderItem, x0: int, y0: int) -> list[Terminal]:
     unit_x = item.unit_length_nm + 2 * TRIM_PAD
     pitch = unit_x + POLY_SP
     uw = item.unit_width_nm
-    lower_n = item.strap_after_unit
+    lower_n = item.split_after_unit
     upper_n = item.units - lower_n
 
     row0_y = y0
@@ -382,12 +381,35 @@ def draw_trim(b: Builder, item: TrimLadderItem, x0: int, y0: int) -> list[Termin
     bridge(lower_pads[-1][1], link_x, row0_y + uw // 2)
     bridge(upper_pads[0][1], link_x, row1_y + uw // 2)
 
-    # Metal-option trim strap for DRAWN_TRIM_CODE: shorts units 1..lower_n.
+    # Metal-option trim straps for DRAWN_TRIM_CODE. `item.strap_spans` is
+    # derived in plan.py from the schematic's own ideal RS* strap expressions
+    # (`plan.trim_strap_spans`), so the drawn Metal1 shorts exactly the chain
+    # nodes the schematic shorts -- one strap per *closed code bit*, not one
+    # span across the whole strapped group. The single-span form this used to
+    # draw is electrically identical but a different network (see
+    # `trim_strap_spans`' docstring), which `layout/lvs` compares (#75).
     strap_y = y0 + uw + 1800
     tn0_x = lower_pads[0][0]
-    b.box(L_METAL1, tn0_x - BAR_W // 2, row0_y + uw // 2, tn0_x + BAR_W // 2, strap_y + BAR_W // 2)
-    b.box(L_METAL1, tn0_x - BAR_W // 2, strap_y - BAR_W // 2, link_x + BAR_W // 2, strap_y + BAR_W // 2)
-    b.box(L_METAL1, link_x - BAR_W // 2, strap_y - BAR_W // 2, link_x + BAR_W // 2, row1_y + uw // 2)
+
+    def node_x(index: int) -> int:
+        """Metal1 x position of trim-chain node ``index`` in the lower sub-row."""
+        if index == 0:
+            return tn0_x
+        if index < lower_n:
+            return lower_pads[index - 1][1]
+        if index == lower_n:
+            return link_x
+        raise ValueError(
+            f"{item.key}: strap node {index} sits in the upper sub-row; only "
+            f"nodes 0..{lower_n} have a drawn strap track"
+        )
+
+    for index in sorted({n for span in item.strap_spans for n in span}):
+        cx = node_x(index)
+        b.box(L_METAL1, cx - BAR_W // 2, row0_y + uw // 2, cx + BAR_W // 2, strap_y + BAR_W // 2)
+    for lo_node, hi_node in item.strap_spans:
+        xs = sorted((node_x(lo_node), node_x(hi_node)))
+        b.box(L_METAL1, xs[0] - BAR_W // 2, strap_y - BAR_W // 2, xs[1] + BAR_W // 2, strap_y + BAR_W // 2)
 
     top = row1_y + uw
     terminals: list[Terminal] = []
@@ -397,20 +419,6 @@ def draw_trim(b: Builder, item: TrimLadderItem, x0: int, y0: int) -> list[Termin
         b.box(L_POLY2, cx - STUB_W // 2, top + STUB_BOT, cx + STUB_W // 2, top + STUB_CT + CT + ENC_CT)
         terminals.append(Terminal(net, cx, top + STUB_BOT))
     return terminals
-
-
-PNP_GAP = 800
-PNP_RING = 1200
-PNP_NW_ENC = 700
-PNP_COL_GAP = 900
-
-
-def pnp_size(item: PnpItem) -> tuple[int, int]:
-    emitter = int(item.emitter_um * 1000)
-    base_outer = emitter + 2 * (PNP_GAP + PNP_RING)
-    nwell = base_outer + 2 * PNP_NW_ENC
-    coll_outer = nwell + 2 * (PNP_COL_GAP + PNP_RING)
-    return coll_outer, coll_outer
 
 
 def draw_pnp(b: Builder, item: PnpItem, x0: int, y0: int) -> list[Terminal]:
@@ -685,7 +693,8 @@ def _guard_ring(b: Builder, x0: int, y0: int, x1: int, y1: int) -> None:
 def _mim_cap(b: Builder, cap: MimCapItem, x0: int, y0: int) -> None:
     w, h = cap.width_nm, cap.height_nm
     b.box(L_METAL4, x0, y0, x0 + w, y0 + h)
-    b.box(L_FUSETOP, x0 + 600, y0 + 600, x0 + w - 600, y0 + h - 600)
+    inset = MIM_PLATE_INSET
+    b.box(L_FUSETOP, x0 + inset, y0 + inset, x0 + w - inset, y0 + h - inset)
     b.box(L_METAL5, x0 + 900, y0 + 900, x0 + w - 900, y0 + h - 900)
     # The deck's MiM recogniser requires both CAP_MK and MIM_L_MK on the top
     # plate (`top_plate_requires`); draw CAP_MK over the same footprint as
