@@ -42,25 +42,20 @@ editing, no per-device fudging:
    draws its metal strap option for (``plan.DRAWN_TRIM_CODE``). The drawn
    Metal1 straps are derived from these same expressions
    (``plan.trim_strap_spans``), so the two sides short the same chain nodes.
-8. **Emit two ``bjt`` cards per drawn PNP unit.** The deck recognised an
-   emitter as ``Comp & Nwell & DRC_BJT`` and modelled no implant layers, so it
-   could not tell the n+ **base-contact ring** apart from the p+ emitter it
-   surrounds: every unit extracted as two bipolars sharing one base (Nwell)
-   net. See ``plan.pnp_base_ring_area_nm2``. Each unit's Nwell is its own
-   island, so each unit's base is its own net — the deck never connects Nwell
-   to Contact.
+8. **Emit one ``bjt`` card per drawn PNP unit** (the real p+ emitter,
+   ``AE = 2.5e-11``). Each unit's Nwell is its own island, so each unit's
+   base is its own (unnamed) net — the deck never connects Nwell to Contact.
 
-   **STALE — this step is a workaround for an artefact that no longer
-   exists.** The gap was this repo's own friction filing klayout-tools#302,
-   and klayout-tools#304 (deck commit ``be4b4f82``) resolved it upstream on
-   2026-08-02 by excluding ``Nplus`` from the emitter region. Under the
-   current deck each drawn unit extracts as **one** ``bjt``, so this step's
-   second card makes the reference assert 16 where the extractor now reports
-   8, and ``klt lvs`` will not match until this step emits one card per unit.
-   The committed LVS evidence was deliberately produced against the pre-#304
-   deck (``gf180mcu.py`` content hash ``sha256:dcd6c84a…``); regenerating this
-   reference against the current deck is tracked as gf180-bandgap#84. See
-   ``layout/README.md`` § "Findings and escalations".
+   **Historical note.** Before klayout-tools#304, the deck recognised a
+   bipolar emitter as ``Comp & Nwell & DRC_BJT`` and modelled no implant
+   layers, so it could not tell the n+ **base-contact ring** apart from the
+   p+ emitter it surrounds: every unit extracted as two bipolars sharing one
+   base (Nwell) net. This repo filed that generically upstream as
+   klayout-tools#302; klayout-tools#304 (deck commit ``be4b4f82``) resolved
+   it on 2026-08-02 by excluding ``Nplus`` from the emitter region, so the
+   n+ tie ring no longer extracts as a device. Under the current deck each
+   drawn unit extracts as exactly one ``bjt``, which is what this step now
+   emits — see gf180-bandgap#84 and ``layout/README.md`` § "Friction filed".
 9. **Emit one MIM-capacitor card with two floating plate nets.** The deck
    registers a recognised cap's plates as their own connectivity nodes that
    are *never* joined to the metal stack (``decks.CapacitorDevice``, "Known
@@ -218,21 +213,18 @@ def build_reference(trim_code: int) -> tuple[str, dict]:
                     counts[RES_CLASS] += 1
 
             elif isinstance(item, plan_mod.PnpItem):
-                # Each unit's own Nwell island is its own (unnamed) extracted
-                # net: the deck connects Nwell to nothing.
+                # Step 8: each unit's own Nwell island is its own (unnamed)
+                # extracted net -- the deck connects Nwell to nothing. One
+                # real p+ emitter extracts per unit (klayout-tools#304).
                 base = f"nw_{name}"
                 emitter = net_of(item.emitter_net)
-                ring = net_of(item.base_net)
-                use(base, emitter, ring, SUBSTRATE_NET)
-                for suffix, terminal, area_nm2 in (
-                    ("e", emitter, plan_mod.pnp_emitter_area_nm2(item)),
-                    ("b", ring, plan_mod.pnp_base_ring_area_nm2(item)),
-                ):
-                    lines.append(
-                        f"Q{name}_{suffix} {SUBSTRATE_NET} {base} {terminal} "
-                        f"{BJT_CLASS} AE={area_nm2 * 1e-18:.6e}"
-                    )
-                    counts[BJT_CLASS] += 1
+                use(base, emitter, SUBSTRATE_NET)
+                area_nm2 = plan_mod.pnp_emitter_area_nm2(item)
+                lines.append(
+                    f"Q{name} {SUBSTRATE_NET} {base} {emitter} "
+                    f"{BJT_CLASS} AE={area_nm2 * 1e-18:.6e}"
+                )
+                counts[BJT_CLASS] += 1
 
             # TapItem draws no device (pure body/guard contact).
 
@@ -271,7 +263,7 @@ def build_reference(trim_code: int) -> tuple[str, dict]:
         f"* resistors       : {counts[RES_CLASS]} {RES_CLASS} + "
         f"{counts[RES_1K_CLASS]} {RES_1K_CLASS}",
         f"* bipolars        : {counts[BJT_CLASS]} {BJT_CLASS} "
-        "(2 per drawn PNP unit -- see the docstring's step 8)",
+        "(1 per drawn PNP unit -- see the docstring's step 8)",
         f"* capacitors      : {counts[CAP_CLASS]} {CAP_CLASS}",
         "",
         f".SUBCKT {TOP} " + " ".join(pins),

@@ -414,33 +414,6 @@ def pnp_emitter_area_nm2(item: PnpItem) -> int:
     return emitter * emitter
 
 
-def pnp_base_ring_area_nm2(item: PnpItem) -> int:
-    """Area of the drawn base-contact ring inside the Nwell.
-
-    The curated gf180mcu extraction deck recognises a bipolar emitter as
-    ``Comp & Nwell & DRC_BJT`` and models no ``Nplus``/``Pplus`` implant, so
-    it cannot tell the **n+ base-contact ring** apart from the p+ emitter it
-    surrounds: every drawn PNP unit therefore extracts as *two* ``bjt``
-    devices sharing one base (Nwell) net — the real one, and a second one
-    whose "emitter" is the base ring. That second device is an artefact of
-    the deck, not of this layout; it is modelled here so the reference
-    matches what the tool actually produces, and filed generically upstream
-    (see ``layout/README.md`` § "Friction filed").
-
-    **Stale as of klayout-tools#304** (2026-08-02), which resolved that
-    filing by excluding ``Nplus`` from the emitter region: the current deck
-    extracts one ``bjt`` per drawn unit, so this area no longer describes a
-    device the reference should carry. Retiring it (and the second ``bjt``
-    card in ``make_reference.py``'s step 8) is tracked as gf180-bandgap#84.
-    This function is unused by the drawn geometry — it feeds the LVS
-    reference only, so nothing on the layout side changes when it goes.
-    """
-    emitter = int(item.emitter_um * 1000)
-    outer = emitter + 2 * (PNP_GAP + PNP_RING)
-    inner = outer - 2 * PNP_RING
-    return outer * outer - inner * inner
-
-
 def mim_plate_area_nm2(cap: MimCapItem) -> int:
     """Area of the recognised ``FuseTop`` top plate of the MIM capacitor."""
     return (cap.width_nm - 2 * MIM_PLATE_INSET) * (cap.height_nm - 2 * MIM_PLATE_INSET)

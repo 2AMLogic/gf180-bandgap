@@ -378,13 +378,10 @@ design specifics):
   [`klayout-tools#304`](https://github.com/2AMLogic/klayout-tools/issues/304),
   which excludes the n+ implant layer from the emitter region so the tie ring
   is dropped and each drawn unit extracts as one device.
-  **This repo has not taken it up yet.** `make_reference.py`'s step 8 still
-  emits two `bjt` cards per drawn PNP unit specifically to mirror the
-  now-fixed artefact, so `layout/lvs/bandgap_top.ref.spice` is **stale**
-  against the current deck: it asserts 16 `bjt` where the current deck
-  extracts 8, and LVS will not match until it is regenerated. The committed
-  LVS evidence was produced against the pre-#304 deck (`gf180mcu.py` content
-  hash `sha256:dcd6c84a…`) on purpose, so that a documentation-only change
-  could be shown to move nothing — see `layout/README.md` § "Findings and
-  escalations". Regeneration is tracked as
-  [gf180-bandgap#84](https://github.com/2AMLogic/gf180-bandgap/issues/84).
+  **This repo has taken it up**
+  ([gf180-bandgap#84](https://github.com/2AMLogic/gf180-bandgap/issues/84)):
+  `make_reference.py`'s step 8 now emits one `bjt` card per drawn PNP unit,
+  and the committed LVS evidence was regenerated against the current
+  (post-#304) deck (`gf180mcu.py` content hash `sha256:90a7f0ef…`) — 8 `bjt`,
+  156/156 devices, `status: match` — see `layout/README.md` § "Findings and
+  escalations".
