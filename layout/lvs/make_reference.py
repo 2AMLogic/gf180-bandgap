@@ -42,13 +42,25 @@ editing, no per-device fudging:
    draws its metal strap option for (``plan.DRAWN_TRIM_CODE``). The drawn
    Metal1 straps are derived from these same expressions
    (``plan.trim_strap_spans``), so the two sides short the same chain nodes.
-8. **Emit two ``bjt`` cards per drawn PNP unit.** The deck recognises an
-   emitter as ``Comp & Nwell & DRC_BJT`` and models no implant layers, so it
-   cannot tell the n+ **base-contact ring** apart from the p+ emitter it
-   surrounds: every unit extracts as two bipolars sharing one base (Nwell)
+8. **Emit two ``bjt`` cards per drawn PNP unit.** The deck recognised an
+   emitter as ``Comp & Nwell & DRC_BJT`` and modelled no implant layers, so it
+   could not tell the n+ **base-contact ring** apart from the p+ emitter it
+   surrounds: every unit extracted as two bipolars sharing one base (Nwell)
    net. See ``plan.pnp_base_ring_area_nm2``. Each unit's Nwell is its own
    island, so each unit's base is its own net — the deck never connects Nwell
    to Contact.
+
+   **STALE — this step is a workaround for an artefact that no longer
+   exists.** The gap was this repo's own friction filing klayout-tools#302,
+   and klayout-tools#304 (deck commit ``be4b4f82``) resolved it upstream on
+   2026-08-02 by excluding ``Nplus`` from the emitter region. Under the
+   current deck each drawn unit extracts as **one** ``bjt``, so this step's
+   second card makes the reference assert 16 where the extractor now reports
+   8, and ``klt lvs`` will not match until this step emits one card per unit.
+   The committed LVS evidence was deliberately produced against the pre-#304
+   deck (``gf180mcu.py`` content hash ``sha256:dcd6c84a…``); regenerating this
+   reference against the current deck is tracked as gf180-bandgap#84. See
+   ``layout/README.md`` § "Findings and escalations".
 9. **Emit one MIM-capacitor card with two floating plate nets.** The deck
    registers a recognised cap's plates as their own connectivity nodes that
    are *never* joined to the metal stack (``decks.CapacitorDevice``, "Known

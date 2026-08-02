@@ -17,13 +17,22 @@ re-running leaves ``git diff`` empty — the same reproducibility contract
 Routing style, and why it looks like this
 -----------------------------------------
 
-``klt``'s gf180mcu **DRC** deck models exactly **one** metal level
-(``Metal1``, 34/0) — there is no ``Metal2``..``Metal5`` in it, so anything
-drawn above Metal1 is unchecked. (The **extraction** deck has since gained
-the full Metal1–Metal5 stack with vias, klayout-tools#220.) A block routed
-on layers the extraction deck cannot see would extract as a pile of
-disconnected nets, so this layout is routed entirely on ``Metal1`` plus
-``Poly2``, using poly as the crossunder layer:
+``klt``'s gf180mcu **extraction** deck used to model exactly **one** metal
+level (``Metal1``, 34/0) — no ``Metal2``..``Metal5``, so a block routed
+above Metal1 would have extracted as a pile of disconnected nets. That
+constraint is why this layout is routed entirely on ``Metal1`` plus
+``Poly2``, using poly as the crossunder layer, everywhere except the
+compensation cap's via stack (below). The extraction deck has since gained
+the full Metal1–Metal5 stack with vias (klayout-tools#220), which is what
+lets that one exception exist at all.
+
+The separate **DRC** deck was never Metal1-only, and is even less so today:
+since klayout-tools#188 it also carries ``metal2``/``metal3``/``metal5``
+width|space, ``metaltop``.* and ``mim.space.1``/``mim.enclosing.fusetop.1``
+rules (see ``layout/README.md`` § "The gf180mcu DRC deck: coverage" for the
+full, current list). Only the **via** layers (``Via1``..``Via4``,
+35/0/38/0/40/0/41/0) are genuinely rule-free there — everything else drawn
+above Metal1, including ``Metal4``/``FuseTop``, is checked.
 
 * **Corridor spines** — one vertical ``Poly2`` spine per net, in a dedicated
   comp-free corridor down the left edge of the block.
@@ -184,9 +193,13 @@ GUARD_CLEAR = 1600  # block content -> guard ring inner edge
 # Compensation-cap via stack (#77). This is the layout's only user of
 # Metal2-Metal5/Via1-Via4 -- everywhere else routes on Metal1/Poly2 (see the
 # module docstring's "Routing style"). Sizes mirror CT/ENC_CT's proportions
-# (a square via with a symmetric metal enclosure); the gf180mcu **DRC** deck
-# does not model these layers at all (see layout/README.md), so there is no
-# deck minimum to cite -- these are just conservative, self-consistent
+# (a square via with a symmetric metal enclosure). The gf180mcu **DRC** deck
+# does carry metal2/metal3/metal5.width|space and mim.space.1/
+# mim.enclosing.fusetop.1 rules (klayout-tools#188; see layout/README.md),
+# but no rule for a metal layer's enclosure of a via -- the via layers
+# themselves (35/0, 38/0, 40/0, 41/0) are rule-free -- so there is no deck
+# minimum to cite for *these* via sizes specifically; these are just
+# conservative, self-consistent
 # choices for a first, one-off use of the stack.
 # --------------------------------------------------------------------------- #
 VIA_W = 240  # via1..via4 width, matches CT's width
@@ -805,10 +818,37 @@ def _mim_cap(
       Metal1-Metal5 graph, which has no notion of the MIM dielectric that
       would keep such a via from ever reaching Metal4 in real silicon). So
       the top plate is drawn with a small routing **tab**, extending past
-      the bottom plate's own right edge where there is no Metal4 at all --
-      the standard MiM-cap top-plate routing technique, not a workaround
-      specific to this tool -- and the contact via (Via4 -> Metal5) lands on
-      that tab, clear of the bottom plate.
+      the bottom plate's own right edge where there is no Metal4 at all,
+      and the contact via (Via4 -> Metal5) lands on that tab, clear of the
+      bottom plate.
+
+      **This is not DRM-legal, and it is not "the standard MiM-cap
+      top-plate routing technique"** -- an earlier version of this
+      docstring claimed exactly that; it was wrong (gf180-bandgap#82).
+      ``MIMTM.2``'s own existence (min. MiM bottom-plate overlap of Via4,
+      0.4um) says the *opposite*: a real top-plate contact is a Via4
+      landing *inside* the bottom-plate footprint, relying on the MIM
+      dielectric -- which klt's connectivity graph does not model -- to
+      keep it from shorting to Metal4. Drawn here, the tab gives the
+      FuseTop-vs-Metal4 overlap at that corner as exactly zero, versus the
+      0.6um ``MIMTM.3`` minimum this same function's bottom-plate margin
+      (``MIM_PLATE_INSET``) honours on the other three edges, and the Via4
+      landing on it has zero Metal4 overlap versus ``MIMTM.2``'s 0.4um
+      minimum. **Neither violation is caught: DRC still reports
+      ``status: clean``.** klt's ``enclosing`` check maps onto KLayout's
+      ``Region.enclosing_check``, which reports nothing when a shape lies
+      entirely outside the enclosing layer rather than flagging the
+      under-enclosure -- a false negative on this exact geometry, filed
+      upstream as
+      `klayout-tools#318 <https://github.com/2AMLogic/klayout-tools/issues/318>`_.
+      ``MIMTM.2`` itself is not transcribed into the deck at all (see the
+      deck's own module docstring), so the Via4/Metal4 violation has no
+      rule to even false-negative on. As drawn, this contact is not
+      manufacturable; revisit once
+      `klayout-tools#314 <https://github.com/2AMLogic/klayout-tools/issues/314>`_
+      (plate nets joined to the connectivity stack) makes it possible to
+      draw the DRM-legal contact without `klt extract` reading it as a
+      ``vdd``/``fb`` short.
 
       The tab is *not* covered by ``CAP_MK``/``MIM_L_MK`` (this function
       pulls the markers' own right edge in to match the plate's, rather than
