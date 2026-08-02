@@ -84,7 +84,7 @@ Expected results (all four verifications, as committed):
 | `matching_report.py` | all tier-1/2/3 checks pass, exit 0 |
 | `run_drc.py` | `status: clean`, `violation_count: 0` |
 | `run_lvs.py` | `lvs status: match`, 81/81 devices, 23/23 nets |
-| `area_report.py` | 48,349.94 µm² vs. 50,000 µm² target — PASS, 3.3 % headroom |
+| `area_report.py` | 48,339.11 µm² vs. 50,000 µm² target — PASS, 3.3 % headroom |
 
 ## How the layout is built
 
@@ -214,8 +214,8 @@ stale or hand-edited reference can never quietly pass.
 ## Findings and escalations
 
 CLAUDE.md forbids silently absorbing a gap between the drawn layout and the
-schematic. Two were found while drawing this block; both are reported, not
-patched around:
+schematic. Three were found while drawing and maintaining this block; all
+are reported, not patched around:
 
 - **Schematic `nf=1` on 15 devices the layout must finger** —
   [#65](https://github.com/2AMLogic/gf180-bandgap/issues/65). Total `W` and
@@ -227,12 +227,27 @@ patched around:
   cannot be drawn (drain area and perimeter both roughly halve when the
   device is fingered). The fix belongs in the schematic plus a re-run of the
   affected `sim/` suites, not in the layout.
-- **`floorplan.md` §8's area estimate is 1.85× stale, and the drawn block
+- **`floorplan.md` §8's area estimate is 1.92× stale, and the drawn block
   lands at 96.7 % of the ratified 0.05 mm² target** — see
   [`bandgap_top/AREA.md`](bandgap_top/AREA.md). The budget *passes*, with
-  1,650 µm² (3.3 %) of headroom, and is reported as-is rather than adjusted.
-  §8's tally predates #56 (telescopic-cascode amp) and #60 (core
-  mirror/cascode resizing).
+  1,660.89 µm² (3.3 %) of headroom, and is reported as-is rather than
+  adjusted. §8's tally predates #56 (telescopic-cascode amp), #60 (core
+  mirror/cascode resizing) and #69 (`core.R1`/`R2`/trim `k=2` co-scale).
+- **#69's `R1`/`R2` length doubling briefly regressed the drawn area over
+  budget; fixed by co-scaling the resistor fold count, not the resistor
+  value** — [#70](https://github.com/2AMLogic/gf180-bandgap/issues/70).
+  #69 doubled `core.R1`/`R2`'s drawn length to close the `Iq < 50 uA` spec
+  row but never regenerated this layout; doing so surfaced a real
+  50,897.23 µm² (1.8 % over budget) drawn area, because folding a longer
+  resistor into the same fixed leg count inflates leg *height*, and every
+  row's height multiplies against the block's full width. The fix
+  co-scales `core.R1`'s fold count 14 → 28 and `core.R2`'s 2 → 4 (in step
+  with #69's `k=2`), restoring each resistor's leg height to
+  approximately its pre-#69 value while spending the extra length on
+  width the `RSTRIP` row had to spare. No resistor value changed, so no
+  spec row was touched and no PVT re-verification was needed. See
+  [`bandgap_top/AREA.md`](bandgap_top/AREA.md) Finding 3 for the full
+  numbers.
 
 ## Friction filed (klayout-tools tracker)
 

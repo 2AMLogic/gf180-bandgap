@@ -491,6 +491,14 @@ def build_rows(flat: FlatNetlist) -> list[Row]:
 
     r1 = flat.get("core.R1")
     r2 = flat.get("core.R2")
+    # `segments` co-scales with #69's `k=2` R1/R2 length rescale (14 -> 28,
+    # 2 -> 4): folding into twice as many, half-as-long legs keeps each
+    # resistor's drawn *leg height* near its pre-#69 value and spends the
+    # extra length on width instead, which this row has to spare (RSTRIP is
+    # never the block's width-limiting row -- see AREA.md Finding 3 / #70).
+    # A row's height multiplies against the full block width, so leaving
+    # `segments` fixed while length doubles blows the area budget; scaling
+    # `segments` with length does not.
     rows.append(
         Row(
             "RSTRIP",
@@ -499,7 +507,7 @@ def build_rows(flat: FlatNetlist) -> list[Row]:
                     key="core.R2",
                     width_nm=nm(r2.params["r_width"]),
                     length_nm=nm(r2.params["r_length"]),
-                    segments=2,
+                    segments=4,
                     nets=("core.e2", "sns2"),
                     devices=("core.R2",),
                 ),
@@ -507,7 +515,7 @@ def build_rows(flat: FlatNetlist) -> list[Row]:
                     key="core.R1",
                     width_nm=nm(r1.params["r_width"]),
                     length_nm=nm(r1.params["r_length"]),
-                    segments=14,
+                    segments=28,
                     nets=("core.e3", "core.tn0"),
                     devices=("core.R1",),
                 ),
