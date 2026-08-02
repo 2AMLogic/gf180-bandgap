@@ -3,37 +3,59 @@
 
 ``klt lvs`` compares a layout-extracted netlist against a reference netlist.
 The reference cannot be ``design/netlist/bandgap_top.spice`` verbatim, because
-the extracted side is not a full-device netlist: ``klt``'s gf180mcu extraction
-deck recognises **only** ``nfet``/``pfet`` (from ``COMP``/``Poly2``/``Nwell``)
-and treats ``Poly2`` as a plain conductor. It has no resistor, bipolar or
-MIM-capacitor device extractor, and no Metal2..Metal5 connectivity.
+the extracted side is what ``klt``'s gf180mcu extraction deck can *see*: MOS
+(``nfet``/``pfet``), base-flavour poly resistors (``ppolyf_u``), vertical
+bipolars (``bjt``) and the MIM capacitor (``cap_mim_2f0_m4m5_noshield``), each
+decomposed exactly the way the layout draws it and parameterised off the drawn
+marker geometry rather than the schematic's own device parameters.
 
 So this script mechanically derives the reference from the committed
-schematic netlist, applying exactly the transformations the extraction deck's
-own capabilities imply — no hand editing, no per-device fudging:
+schematic netlist plus :mod:`plan` (the same module ``generate.py`` draws
+from), applying exactly the transformations the extraction deck's own
+capabilities and this layout's own drawn decomposition imply — no hand
+editing, no per-device fudging:
 
 1. **Flatten** ``design/netlist/bandgap_top.spice``
    (:mod:`layout.bandgap_top.netlist_model`).
-2. **Collapse every ``ppolyf_u``/``ppolyf_u_1k`` resistor to a short** — its
-   drawn body is ``Poly2``, which the deck connects as a conductor.
-3. **Resolve the ideal ``RS0..RS5`` trim straps** at the trim code the layout
-   draws its metal strap option for (``plan.DRAWN_TRIM_CODE``).
-4. **Drop every ``pnp_*`` and ``cap_mim_*``** — drawn in the layout, but
-   outside the deck's device set.
-5. **Expand each MOS to its drawn finger count** (``plan.fingers``): *n*
+2. **Expand each MOS to its drawn finger count** (``plan.fingers``): *n*
    parallel unit devices of ``W/n``, matching the *n* separate gate islands
    the layout draws. Total ``W`` and ``L`` are preserved.
-6. **Add the layout's edge dummy devices** (``plan.build_rows``), which are
+3. **Add the layout's edge dummy devices** (``plan.build_rows``), which are
    real transistors in the layout and so must be real transistors here.
-7. **Re-target the body terminals** to the nets the deck actually produces:
-   NMOS bodies to the deck's ``vsubs`` global, PMOS bodies to the single
-   Nwell net of the contiguous PMOS band.
+4. **Re-target the MOS body terminals** to the nets the deck actually
+   produces: NMOS bodies to the deck's ``vsubs`` global, PMOS bodies to the
+   single Nwell net of the contiguous PMOS band.
+5. **Emit one ``ppolyf_u`` card per drawn resistor body** — ``core.R1`` and
+   ``core.R2`` (each one folded serpentine = one recognised device) and each
+   of the 63 trim-ladder unit segments — with ``R`` predicted from the
+   *recognised marker area* (``plan.res_body_area_nm2`` /
+   ``plan.trim_unit_area_nm2``), which is what the extractor measures.
+6. **Collapse ``startup.RPU`` to a short.** Its schematic model is
+   ``ppolyf_u_1k``; the deck models only the base flavour, so ``generate.py``
+   deliberately marks that body ``Resistor`` (62/0) — an *exclude* for the
+   base recogniser — and it extracts as plain poly. Both sides therefore see
+   a short (klayout-tools#299).
+7. **Resolve the ideal ``RS0..RS5`` trim straps** at the trim code the layout
+   draws its metal strap option for (``plan.DRAWN_TRIM_CODE``). The drawn
+   Metal1 straps are derived from these same expressions
+   (``plan.trim_strap_spans``), so the two sides short the same chain nodes.
+8. **Emit two ``bjt`` cards per drawn PNP unit.** The deck recognises an
+   emitter as ``Comp & Nwell & DRC_BJT`` and models no implant layers, so it
+   cannot tell the n+ **base-contact ring** apart from the p+ emitter it
+   surrounds: every unit extracts as two bipolars sharing one base (Nwell)
+   net. See ``plan.pnp_base_ring_area_nm2``. Each unit's Nwell is its own
+   island, so each unit's base is its own net — the deck never connects Nwell
+   to Contact.
+9. **Emit one MIM-capacitor card with two floating plate nets.** The deck
+   registers a recognised cap's plates as their own connectivity nodes that
+   are *never* joined to the metal stack (``decks.CapacitorDevice``, "Known
+   limitation"), so the cap's terminals cannot reach ``vdd``/``fb`` on the
+   extracted side no matter how the layout routes them — and this layout does
+   not route them at all (see ``layout/README.md``).
 
-Every one of those seven steps is a **tool-capability consequence**, not a
-design simplification — the layout still draws all of the dropped devices.
-The resulting LVS verdict is therefore a *MOS-device-and-connectivity* LVS,
-not a full-device LVS; ``layout/README.md`` says so explicitly and the gap is
-filed generically against klayout-tools.
+Every one of those steps is a **tool-capability or drawn-decomposition
+consequence**, not a design simplification. What the resulting verdict does
+and does not prove is stated in ``layout/README.md``.
 
 Usage::
 
@@ -55,7 +77,10 @@ import plan as plan_mod  # noqa: E402
 
 #: Net the ``klt`` gf180mcu extraction deck ties every NMOS body to
 #: (``decks.ExtractionDeck.substrate_net``); the deck draws no substrate-tap
-#: layer, so it cannot derive a real body net.
+#: layer, so it cannot derive a real body net. It is also the bulk terminal
+#: of every extracted ``ppolyf_u`` (``ResistorDevice.bulk_to_substrate``) and
+#: the collector of every extracted ``bjt`` (the deck models no drawn
+#: collector layer -- a vertical bipolar's collector *is* the substrate).
 SUBSTRATE_NET = "vsubs"
 
 #: Name used for the PMOS band's single Nwell net. The extraction deck never
@@ -66,10 +91,31 @@ NWELL_NET = "nwl"
 
 TOP = "bandgap_top"
 
+#: Device-class names the deck emits, mirrored here so the reference's own
+#: SPICE model tokens create identically-named device classes.
+RES_CLASS = "ppolyf_u"
+BJT_CLASS = "bjt"
+CAP_CLASS = "cap_mim_2f0_m4m5_noshield"
+
 
 def sanitise(net: str) -> str:
     """Hierarchy-safe net name for SPICE (``amp.n1`` -> ``amp_n1``)."""
     return net.replace(".", "_")
+
+
+def device_name(key: str) -> str:
+    return key.replace(".", "_").replace("#", "_")
+
+
+def _res_ohms(area_nm2: int, width_nm: int) -> float:
+    """``sheet_rho * A / W**2`` — KLayout's own resistor value, in ohms.
+
+    ``DeviceExtractorResistor`` recovers ``(L, W)`` from the recognised
+    region's area and perimeter and reports ``R = sheet_rho * L / W``; for
+    every body this layout draws the recovered ``W`` is the drawn body width,
+    so ``L = A / W`` and the value reduces to this expression.
+    """
+    return plan_mod.PPOLYF_U_SHEET_RHO * area_nm2 / (width_nm * width_nm)
 
 
 def build_reference(trim_code: int) -> tuple[str, dict]:
@@ -80,26 +126,98 @@ def build_reference(trim_code: int) -> tuple[str, dict]:
         return sanitise(reduction.get(name, name))
 
     lines: list[str] = []
-    counts = {"nfet": 0, "pfet": 0, "dummy": 0}
+    counts = {
+        "nfet": 0,
+        "pfet": 0,
+        "dummy": 0,
+        RES_CLASS: 0,
+        "res_shorted": 0,
+        BJT_CLASS: 0,
+        CAP_CLASS: 0,
+    }
     used_nets: set[str] = set()
+
+    def use(*nets: str) -> None:
+        used_nets.update(nets)
 
     for row in rows:
         for item in row.items:
-            if not isinstance(item, plan_mod.MosItem):
-                continue
-            drain = net_of(item.nets["d"])
-            gate = net_of(item.nets["g"])
-            source = net_of(item.nets["s"])
-            body = SUBSTRATE_NET if item.kind == "nfet" else NWELL_NET
-            used_nets.update((drain, gate, source, body))
-            name = item.key.replace(".", "_").replace("#", "_")
-            lines.append(
-                f"M{name} {drain} {gate} {source} {body} {item.kind} "
-                f"L={item.l_nm / 1000.0:g}U W={item.w_nm / 1000.0:g}U"
-            )
-            counts[item.kind] += 1
-            if item.dummy:
-                counts["dummy"] += 1
+            name = device_name(getattr(item, "key", ""))
+
+            if isinstance(item, plan_mod.MosItem):
+                drain = net_of(item.nets["d"])
+                gate = net_of(item.nets["g"])
+                source = net_of(item.nets["s"])
+                body = SUBSTRATE_NET if item.kind == "nfet" else NWELL_NET
+                use(drain, gate, source, body)
+                lines.append(
+                    f"M{name} {drain} {gate} {source} {body} {item.kind} "
+                    f"L={item.l_nm / 1000.0:g}U W={item.w_nm / 1000.0:g}U"
+                )
+                counts[item.kind] += 1
+                if item.dummy:
+                    counts["dummy"] += 1
+
+            elif isinstance(item, plan_mod.ResItem):
+                if item.high_rho:
+                    # Step 6: unmarked for the deck's only wired flavour, so
+                    # it is a short on the extracted side too. `reduce_nets`
+                    # has already merged its two nets.
+                    counts["res_shorted"] += 1
+                    continue
+                n1, n2 = (net_of(net) for net in item.nets)
+                use(n1, n2, SUBSTRATE_NET)
+                ohms = _res_ohms(plan_mod.res_body_area_nm2(item), item.width_nm)
+                lines.append(
+                    f"R{name} {n1} {n2} {SUBSTRATE_NET} {ohms:.6f} {RES_CLASS}"
+                )
+                counts[RES_CLASS] += 1
+
+            elif isinstance(item, plan_mod.TrimLadderItem):
+                units = [flat.get(path) for path in item.devices]
+                nodes = plan_mod.trim_chain_nodes(units)
+                ohms = _res_ohms(
+                    plan_mod.trim_unit_area_nm2(item), item.unit_width_nm
+                )
+                for index, unit in enumerate(units):
+                    n1 = net_of(nodes[index])
+                    n2 = net_of(nodes[index + 1])
+                    use(n1, n2, SUBSTRATE_NET)
+                    lines.append(
+                        f"R{device_name(unit.path)} {n1} {n2} {SUBSTRATE_NET} "
+                        f"{ohms:.6f} {RES_CLASS}"
+                    )
+                    counts[RES_CLASS] += 1
+
+            elif isinstance(item, plan_mod.PnpItem):
+                # Each unit's own Nwell island is its own (unnamed) extracted
+                # net: the deck connects Nwell to nothing.
+                base = f"nw_{name}"
+                emitter = net_of(item.emitter_net)
+                ring = net_of(item.base_net)
+                use(base, emitter, ring, SUBSTRATE_NET)
+                for suffix, terminal, area_nm2 in (
+                    ("e", emitter, plan_mod.pnp_emitter_area_nm2(item)),
+                    ("b", ring, plan_mod.pnp_base_ring_area_nm2(item)),
+                ):
+                    lines.append(
+                        f"Q{name}_{suffix} {SUBSTRATE_NET} {base} {terminal} "
+                        f"{BJT_CLASS} AE={area_nm2 * 1e-18:.6e}"
+                    )
+                    counts[BJT_CLASS] += 1
+
+            # TapItem draws no device (pure body/guard contact).
+
+    cap = plan_mod.mim_cap(flat)
+    cap_name = device_name(cap.key)
+    # Step 9: the plates are their own connectivity nodes on the extracted
+    # side, joined to nothing else, so they are their own nets here too.
+    plate_top = f"{cap_name}_top"
+    plate_bot = f"{cap_name}_bot"
+    use(plate_top, plate_bot)
+    farads = plan_mod.mim_plate_area_nm2(cap) / 1e6 * plan_mod.MIM_CAP_F_PER_UM2
+    lines.append(f"C{cap_name} {plate_bot} {plate_top} {farads:.6e} {CAP_CLASS}")
+    counts[CAP_CLASS] += 1
 
     # Pins: the block's three real ports plus the two body nets the deck
     # synthesises. `Netlist.make_top_level_pins()` promotes every *named*
@@ -113,14 +231,20 @@ def build_reference(trim_code: int) -> tuple[str, dict]:
         "* LVS reference netlist for bandgap_top -- GENERATED, do not edit.",
         "*",
         "* Produced by layout/lvs/make_reference.py from",
-        "* design/netlist/bandgap_top.spice. See that script's docstring for the",
-        "* seven mechanical transformations applied and why each one is a",
-        "* klt-extraction-deck capability consequence rather than a design",
+        "* design/netlist/bandgap_top.spice + layout/bandgap_top/plan.py. See",
+        "* that script's docstring for the nine mechanical transformations",
+        "* applied and why each one is a klt-extraction-deck capability (or a",
+        "* drawn-decomposition) consequence rather than a design",
         "* simplification.",
         "*",
         f"* drawn trim code : {trim_code}",
         f"* MOS devices     : {counts['nfet']} nfet + {counts['pfet']} pfet "
         f"({counts['dummy']} of them edge dummies)",
+        f"* resistors       : {counts[RES_CLASS]} {RES_CLASS} "
+        f"({counts['res_shorted']} high-sheet-rho body collapsed to a short)",
+        f"* bipolars        : {counts[BJT_CLASS]} {BJT_CLASS} "
+        "(2 per drawn PNP unit -- see the docstring's step 8)",
+        f"* capacitors      : {counts[CAP_CLASS]} {CAP_CLASS}",
         "",
         f".SUBCKT {TOP} " + " ".join(pins),
     ]

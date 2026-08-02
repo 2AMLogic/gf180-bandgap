@@ -1,15 +1,20 @@
 * LVS reference netlist for bandgap_top -- GENERATED, do not edit.
 *
 * Produced by layout/lvs/make_reference.py from
-* design/netlist/bandgap_top.spice. See that script's docstring for the
-* seven mechanical transformations applied and why each one is a
-* klt-extraction-deck capability consequence rather than a design
+* design/netlist/bandgap_top.spice + layout/bandgap_top/plan.py. See
+* that script's docstring for the nine mechanical transformations
+* applied and why each one is a klt-extraction-deck capability (or a
+* drawn-decomposition) consequence rather than a design
 * simplification.
 *
 * drawn trim code : 32
 * MOS devices     : 34 nfet + 47 pfet (14 of them edge dummies)
+* resistors       : 65 ppolyf_u (1 high-sheet-rho body collapsed to a short)
+* bipolars        : 16 bjt (2 per drawn PNP unit -- see the docstring's step 8)
+* capacitors      : 1 cap_mim_2f0_m4m5_noshield
 
 .SUBCKT bandgap_top vdd vss vref vsubs nwl
+Camp_CC amp_CC_bot amp_CC_top 6.914880e-12 cap_mim_2f0_m4m5_noshield
 Mamp_M1_0 amp_n1 sns2 amp_tail vsubs nfet L=4U W=25U
 Mamp_M1_1 amp_n1 sns2 amp_tail vsubs nfet L=4U W=25U
 Mamp_M1_2 amp_n1 sns2 amp_tail vsubs nfet L=4U W=25U
@@ -91,4 +96,85 @@ Mstartup_MKCASC_0 casc vdd vss vsubs nfet L=2U W=2U
 Mstartup_MKFB_0 fb vdd vss vsubs nfet L=2U W=2U
 Mstartup_MSENSE_0 vdd ibias vss vsubs nfet L=2U W=10U
 Mstartup_MSENSE_1 vdd ibias vss vsubs nfet L=2U W=10U
+Qcore_Q1_b vsubs nw_core_Q1 vss bjt AE=3.744000e-11
+Qcore_Q1_e vsubs nw_core_Q1 sns1 bjt AE=2.500000e-11
+Qcore_Q2_0_b vsubs nw_core_Q2_0 vss bjt AE=3.744000e-11
+Qcore_Q2_0_e vsubs nw_core_Q2_0 core_e2 bjt AE=2.500000e-11
+Qcore_Q2_1_b vsubs nw_core_Q2_1 vss bjt AE=3.744000e-11
+Qcore_Q2_1_e vsubs nw_core_Q2_1 core_e2 bjt AE=2.500000e-11
+Qcore_Q2_2_b vsubs nw_core_Q2_2 vss bjt AE=3.744000e-11
+Qcore_Q2_2_e vsubs nw_core_Q2_2 core_e2 bjt AE=2.500000e-11
+Qcore_Q2_3_b vsubs nw_core_Q2_3 vss bjt AE=3.744000e-11
+Qcore_Q2_3_e vsubs nw_core_Q2_3 core_e2 bjt AE=2.500000e-11
+Qcore_Q3_b vsubs nw_core_Q3 vss bjt AE=3.744000e-11
+Qcore_Q3_e vsubs nw_core_Q3 core_e3 bjt AE=2.500000e-11
+Qdum_pnp_l_b vsubs nw_dum_pnp_l vss bjt AE=3.744000e-11
+Qdum_pnp_l_e vsubs nw_dum_pnp_l vss bjt AE=2.500000e-11
+Qdum_pnp_r_b vsubs nw_dum_pnp_r vss bjt AE=3.744000e-11
+Qdum_pnp_r_e vsubs nw_dum_pnp_r vss bjt AE=2.500000e-11
+Rcore_R1 core_e3 core_tn0 vsubs 71239.000000 ppolyf_u
+Rcore_R2 core_e2 sns2 vsubs 5379.500000 ppolyf_u
+Rcore_trim_RU0 core_tn0 core_tn0 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU1 core_tn0 core_trim_u1_0 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU10 core_trim_u3_2 core_trim_u3_3 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU11 core_trim_u3_3 core_trim_u3_4 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU12 core_trim_u3_4 core_trim_u3_5 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU13 core_trim_u3_5 core_trim_u3_6 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU14 core_trim_u3_6 core_tn0 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU15 core_tn0 core_trim_u4_0 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU16 core_trim_u4_0 core_trim_u4_1 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU17 core_trim_u4_1 core_trim_u4_2 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU18 core_trim_u4_2 core_trim_u4_3 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU19 core_trim_u4_3 core_trim_u4_4 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU2 core_trim_u1_0 core_tn0 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU20 core_trim_u4_4 core_trim_u4_5 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU21 core_trim_u4_5 core_trim_u4_6 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU22 core_trim_u4_6 core_trim_u4_7 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU23 core_trim_u4_7 core_trim_u4_8 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU24 core_trim_u4_8 core_trim_u4_9 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU25 core_trim_u4_9 core_trim_u4_10 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU26 core_trim_u4_10 core_trim_u4_11 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU27 core_trim_u4_11 core_trim_u4_12 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU28 core_trim_u4_12 core_trim_u4_13 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU29 core_trim_u4_13 core_trim_u4_14 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU3 core_tn0 core_trim_u2_0 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU30 core_trim_u4_14 core_tn0 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU31 core_tn0 core_trim_u5_0 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU32 core_trim_u5_0 core_trim_u5_1 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU33 core_trim_u5_1 core_trim_u5_2 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU34 core_trim_u5_2 core_trim_u5_3 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU35 core_trim_u5_3 core_trim_u5_4 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU36 core_trim_u5_4 core_trim_u5_5 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU37 core_trim_u5_5 core_trim_u5_6 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU38 core_trim_u5_6 core_trim_u5_7 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU39 core_trim_u5_7 core_trim_u5_8 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU4 core_trim_u2_0 core_trim_u2_1 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU40 core_trim_u5_8 core_trim_u5_9 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU41 core_trim_u5_9 core_trim_u5_10 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU42 core_trim_u5_10 core_trim_u5_11 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU43 core_trim_u5_11 core_trim_u5_12 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU44 core_trim_u5_12 core_trim_u5_13 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU45 core_trim_u5_13 core_trim_u5_14 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU46 core_trim_u5_14 core_trim_u5_15 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU47 core_trim_u5_15 core_trim_u5_16 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU48 core_trim_u5_16 core_trim_u5_17 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU49 core_trim_u5_17 core_trim_u5_18 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU5 core_trim_u2_1 core_trim_u2_2 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU50 core_trim_u5_18 core_trim_u5_19 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU51 core_trim_u5_19 core_trim_u5_20 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU52 core_trim_u5_20 core_trim_u5_21 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU53 core_trim_u5_21 core_trim_u5_22 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU54 core_trim_u5_22 core_trim_u5_23 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU55 core_trim_u5_23 core_trim_u5_24 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU56 core_trim_u5_24 core_trim_u5_25 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU57 core_trim_u5_25 core_trim_u5_26 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU58 core_trim_u5_26 core_trim_u5_27 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU59 core_trim_u5_27 core_trim_u5_28 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU6 core_trim_u2_2 core_tn0 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU60 core_trim_u5_28 core_trim_u5_29 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU61 core_trim_u5_29 core_trim_u5_30 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU62 core_trim_u5_30 vref vsubs 485.100000 ppolyf_u
+Rcore_trim_RU7 core_tn0 core_trim_u3_0 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU8 core_trim_u3_0 core_trim_u3_1 vsubs 485.100000 ppolyf_u
+Rcore_trim_RU9 core_trim_u3_1 core_trim_u3_2 vsubs 485.100000 ppolyf_u
 .ENDS bandgap_top

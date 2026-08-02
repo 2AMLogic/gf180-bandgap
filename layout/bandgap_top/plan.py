@@ -6,7 +6,11 @@ This module turns the flattened schematic netlist
 **rows** of **items** — the placement plan the GDS generator draws and the LVS
 reference-netlist writer mirrors. Both read this one module, so the drawn
 geometry and the LVS reference can never disagree about how many fingers a
-device was split into or which dummy devices exist.
+device was split into, which dummy devices exist, which trim-ladder nodes the
+metal strap option shorts, or (since #75) what area of recognition-marker
+geometry each resistor / bipolar / MIM-cap body ends up with — the last of
+which is what sets the device parameters ``klt lvs`` compares. See
+"Drawn-device geometry, shared with the LVS reference writer" below.
 
 Row order (bottom to top) follows ``layout/floorplan.md``:
 
@@ -100,7 +104,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from netlist_model import Device, FlatNetlist, load, nm
+from netlist_model import (
+    Device,
+    FlatNetlist,
+    NetlistError,
+    load,
+    nm,
+    trim_strap_shorted,
+)
 
 #: Trim code the layout's metal strap option is drawn for. 32 is the
 #: mid-scale code ``design/bandgap_trim.sch`` defaults to (``.param
@@ -176,7 +187,15 @@ class ResItem:
 
 @dataclass
 class TrimLadderItem:
-    """The 63-segment trim ladder, drawn as unit segments in ``rows`` sub-rows."""
+    """The 63-segment trim ladder, drawn as unit segments in ``rows`` sub-rows.
+
+    The ladder is one series chain of ``units`` identical segments. Chain
+    **node index** *k* is the node between drawn unit *k-1* and unit *k*, so
+    node 0 is ``nets[0]`` (``core.tn0``), node ``units`` is ``nets[1]``
+    (``vref``), and node *k* is schematic net ``devices[k].nets["n1"]``.
+    :attr:`strap_spans` and :attr:`split_after_unit` are both stated in those
+    indices.
+    """
 
     key: str
     unit_width_nm: int
@@ -184,7 +203,18 @@ class TrimLadderItem:
     units: int
     sub_rows: int
     nets: tuple[str, str]  # (bottom = tn0, top = vref)
-    strap_after_unit: int  # metal option strap spans units 1..N (trim code)
+    #: Node-index pairs the drawn Metal1 trim option shorts, derived from the
+    #: schematic's own ideal ``RS*`` strap expressions at
+    #: :data:`DRAWN_TRIM_CODE` (:func:`trim_strap_spans`) — **not** from a
+    #: hand-picked span. Drawing one strap per closed schematic bit, rather
+    #: than a single span across the whole strapped group, is what makes the
+    #: drawn ladder the *same network* as the schematic's (and not merely an
+    #: electrically equivalent one) for LVS — see :func:`trim_strap_spans`.
+    strap_spans: tuple[tuple[int, int], ...]
+    #: Chain node the ladder wraps onto its second sub-row at — a pure
+    #: placement choice (it splits the row into two roughly equal halves),
+    #: with no electrical meaning.
+    split_after_unit: int
     devices: tuple[str, ...] = ()
 
     is_mos = False
@@ -220,10 +250,13 @@ class TapItem:
 class MimCapItem:
     """The amplifier's compensation MIM capacitor.
 
-    Drawn on Metal4 / FuseTop / Metal5 — layers the ``klt`` gf180mcu DRC and
-    extraction decks do not read at all — so it is invisible to both checks
-    and is stacked **over** the device field rather than consuming its own
-    floor area (standard practice for an M4/M5 MIM).
+    Drawn on Metal4 / FuseTop / Metal5, stacked **over** the device field
+    rather than consuming its own floor area (standard practice for an M4/M5
+    MIM). The ``klt`` gf180mcu **DRC** deck still reads none of those layers,
+    but the **extraction** deck now recognises the cap itself
+    (klayout-tools#225, plus the ``CAP_MK`` marker #73 drew) — see
+    ``layout/lvs/make_reference.py`` for why its two plates are nonetheless
+    still *floating* nets in the extracted netlist.
     """
 
     key: str
@@ -239,6 +272,143 @@ class Row:
     items: list[object] = field(default_factory=list)
     nwell: bool = False  # row sits inside the PMOS band's Nwell
     note: str = ""
+
+
+# --------------------------------------------------------------------------- #
+# Drawn-device geometry, shared with the LVS reference writer
+#
+# These constants and the functions below used to live in ``generate.py``.
+# They moved here because ``layout/lvs/make_reference.py`` has to *predict*
+# the drawn geometry as well: ``klt lvs`` compares device parameters, and the
+# parameter ``klt extract`` reports for a resistor / bipolar / MIM capacitor
+# is measured off the recognised marker geometry, not read from the
+# schematic. Keeping the geometry in the one module both ``generate.py`` and
+# ``make_reference.py`` already read is the same single-source-of-truth rule
+# this module's header states for finger counts and dummies (#75).
+#
+# ``generate.py`` re-exports every name below, so its own drawing code (and
+# its geometry-constant table, which still carries each value's deck-minimum
+# justification) is unchanged.
+# --------------------------------------------------------------------------- #
+
+CT = 240  # contact.width.1 min 220
+ENC_CT = 100  # comp/poly2 enclosing contact, min 70
+POLY_SP = 300  # poly2.space.1 min 240
+IMPLANT_ENC = 200  # Pplus/Nplus overlap of COMP
+RES_PAD = 440  # ppolyf_u free-end contact pad height, > IMPLANT_ENC so the
+# pad stays outside the RES_MK/Pplus/SAB marker box (CT + 2*ENC_CT room for
+# the pad's own contact enclosure; see generate.draw_res, #73)
+TRIM_PAD = 440  # trim-unit end pad, kept outside that unit's RES_MK box
+PNP_GAP = 800  # emitter -> base ring
+PNP_RING = 1200  # base/collector ring width
+PNP_NW_ENC = 700  # Nwell overlap of the base ring
+PNP_COL_GAP = 900  # Nwell -> collector ring
+MIM_PLATE_INSET = 600  # FuseTop top-plate inset inside the Metal4 bottom plate
+
+#: Sheet resistance ``klt``'s gf180mcu extraction deck models the base
+#: ``ppolyf_u`` flavour at (``decks.gf180mcu.EXTRACTION_DECK.resistors``),
+#: transcribed there from the PDK's own ``res_extraction.lvs``/magic tech
+#: file. Used only to predict the extracted ``R`` value in the LVS reference.
+PPOLYF_U_SHEET_RHO = 350.0
+
+#: Area capacitance ``klt``'s gf180mcu extraction deck models the MIM
+#: capacitor at, in farads per square micrometre (the PDK's default 2.0
+#: fF/um^2 density option; see that deck's ``CapacitorDevice`` entry).
+MIM_CAP_F_PER_UM2 = 2.0e-15
+
+
+def res_geometry(item: ResItem) -> tuple[int, int, int]:
+    """``(width, height, leg_length)`` of a folded ``ppolyf_u`` serpentine."""
+    pitch = item.width_nm + POLY_SP
+    n = item.segments
+    leg = (item.length_nm - (n - 1) * pitch) // n
+    if leg <= item.width_nm + 2 * (ENC_CT + CT):
+        raise ValueError(f"{item.key}: {n} segments is too many for L={item.length_nm}")
+    return (n - 1) * pitch + item.width_nm, leg, leg
+
+
+def res_body_area_nm2(item: ResItem) -> int:
+    """Area of the *recognised* ``ppolyf_u`` body of a drawn serpentine.
+
+    ``klt extract`` reports a resistor's ``R`` as ``sheet_rho * A / W**2``,
+    with ``A`` the area of ``Poly2 & RES_MK & Pplus & SAB`` and ``W`` the
+    smaller root of ``x**2 - (P/2)x + A`` (KLayout's own
+    ``DeviceExtractorResistor``). For every resistor this layout draws that
+    root is the drawn body width, so ``A`` is all the reference needs.
+
+    ``A`` is *not* ``r_length * r_width``: a serpentine's ``n-1`` corner
+    squares are shared between the legs they join, and the marker box's
+    ``IMPLANT_ENC`` overhang clips a slice of each free-end contact pad into
+    the body. Both terms are accounted for here — which is exactly what makes
+    the comparison meaningful: a body drawn at the wrong length, width or
+    fold count changes ``A`` and mismatches.
+    """
+    _, leg, _ = res_geometry(item)
+    n = item.segments
+    legs = n * item.width_nm * leg
+    corners = (n - 1) * POLY_SP * item.width_nm
+    pad_slivers = 2 * item.width_nm * IMPLANT_ENC
+    return legs + corners + pad_slivers
+
+
+def trim_unit_area_nm2(item: TrimLadderItem) -> int:
+    """Area of one trim unit's recognised ``ppolyf_u`` body.
+
+    A plain rectangle: ``draw_trim`` pulls ``RES_MK`` in to the unit's
+    ``unit_length_nm`` centre (leaving the ``TRIM_PAD`` end pads unmarked, so
+    they can act as the extractor's terminal regions) and ``Poly2`` sets the
+    height.
+    """
+    return item.unit_length_nm * item.unit_width_nm
+
+
+def trim_geometry(item: TrimLadderItem) -> tuple[int, int, int, int]:
+    """``(width, height, unit_pitch, lower_sub_row_units)`` for the ladder."""
+    unit_x = item.unit_length_nm + 2 * TRIM_PAD
+    pitch = unit_x + POLY_SP
+    lower = item.split_after_unit
+    upper = item.units - lower
+    width = max(lower, upper) * pitch + 2000
+    height = 2 * item.unit_width_nm + 3600
+    return width, height, pitch, lower
+
+
+def pnp_size(item: PnpItem) -> tuple[int, int]:
+    emitter = int(item.emitter_um * 1000)
+    base_outer = emitter + 2 * (PNP_GAP + PNP_RING)
+    nwell = base_outer + 2 * PNP_NW_ENC
+    coll_outer = nwell + 2 * (PNP_COL_GAP + PNP_RING)
+    return coll_outer, coll_outer
+
+
+def pnp_emitter_area_nm2(item: PnpItem) -> int:
+    """Area of the drawn p+ emitter square (the deck's ``AE`` for the unit)."""
+    emitter = int(item.emitter_um * 1000)
+    return emitter * emitter
+
+
+def pnp_base_ring_area_nm2(item: PnpItem) -> int:
+    """Area of the drawn base-contact ring inside the Nwell.
+
+    The curated gf180mcu extraction deck recognises a bipolar emitter as
+    ``Comp & Nwell & DRC_BJT`` and models no ``Nplus``/``Pplus`` implant, so
+    it cannot tell the **n+ base-contact ring** apart from the p+ emitter it
+    surrounds: every drawn PNP unit therefore extracts as *two* ``bjt``
+    devices sharing one base (Nwell) net — the real one, and a second one
+    whose "emitter" is the base ring. That second device is an artefact of
+    the deck, not of this layout; it is modelled here so the reference
+    matches what the tool actually produces, and filed generically upstream
+    (see ``layout/README.md`` § "Friction filed").
+    """
+    emitter = int(item.emitter_um * 1000)
+    outer = emitter + 2 * (PNP_GAP + PNP_RING)
+    inner = outer - 2 * PNP_RING
+    return outer * outer - inner * inner
+
+
+def mim_plate_area_nm2(cap: MimCapItem) -> int:
+    """Area of the recognised ``FuseTop`` top plate of the MIM capacitor."""
+    return (cap.width_nm - 2 * MIM_PLATE_INSET) * (cap.height_nm - 2 * MIM_PLATE_INSET)
 
 
 # --------------------------------------------------------------------------- #
@@ -308,6 +478,67 @@ def _centroid_triple(
     for i in range(0, len(a), 2):
         out.extend([a[i], b[i], c[i], c[i + 1], b[i + 1], a[i + 1]])
     return out
+
+
+def trim_chain_nodes(units: list[Device]) -> list[str]:
+    """Schematic net at each chain node of the trim ladder, node 0 first.
+
+    Validates that ``units`` really is one series chain (``RU_i.n2`` is
+    ``RU_{i+1}.n1``) rather than assuming it, so a schematic edit that
+    re-topologises the ladder surfaces here instead of being silently
+    absorbed into a wrong strap derivation.
+    """
+    nodes = [units[0].nets["n1"]]
+    for device in units:
+        if device.nets["n1"] != nodes[-1]:
+            raise NetlistError(
+                f"trim ladder is not a series chain at {device.path}: "
+                f"n1={device.nets['n1']!r}, expected {nodes[-1]!r}"
+            )
+        nodes.append(device.nets["n2"])
+    return nodes
+
+
+def trim_strap_spans(
+    flat: FlatNetlist, units: list[Device], trim_code: int
+) -> tuple[tuple[int, int], ...]:
+    """Chain-node spans the drawn Metal1 trim option shorts at ``trim_code``.
+
+    ``design/bandgap_trim.sch`` implements the trim as six ideal ``RS*``
+    straps, one per code bit, each shorting one binary-weighted group of unit
+    segments (bit 0 -> 1 unit, bit 1 -> 2 units, ... bit 5 -> 32 units). This
+    reads those straps back out of the flattened netlist, keeps the ones that
+    are *closed* at ``trim_code`` (:func:`netlist_model.trim_strap_shorted`),
+    and translates each one's two nets into chain-node indices.
+
+    **Why one strap per closed bit, not one span across the whole group.**
+    At ``trim_code`` 32 the closed straps are ``S0..S4``, which short chain
+    nodes ``0-1``, ``1-3``, ``3-7``, ``7-15`` and ``15-31``. A single
+    ``0-31`` span is *electrically* identical (both leave 32 units in series
+    between the strapped node and ``vref``) but is a **different network**:
+    it leaves nodes 1/3/7/15 as distinct nodes of one 31-unit loop, where the
+    schematic has a self-loop plus 2-, 4-, 8- and 16-unit loops all hanging
+    off one node. ``layout/lvs`` compares topology, so the layout has to draw
+    the straps the schematic actually specifies — this is the mechanical
+    derivation that makes that so.
+    """
+    node_index = {net: i for i, net in enumerate(trim_chain_nodes(units))}
+    spans: list[tuple[int, int]] = []
+    for device in flat.devices:
+        if device.family != "ideal_res":
+            continue
+        if not trim_strap_shorted(device.model, trim_code):
+            continue
+        try:
+            a = node_index[device.nets["n1"]]
+            b = node_index[device.nets["n2"]]
+        except KeyError as exc:  # pragma: no cover - schematic-shape guard
+            raise NetlistError(
+                f"{device.path}: trim strap touches net {exc.args[0]!r}, "
+                "which is not a node of the trim ladder chain"
+            ) from exc
+        spans.append((min(a, b), max(a, b)))
+    return tuple(sorted(spans))
 
 
 def build_rows(flat: FlatNetlist) -> list[Row]:
@@ -538,7 +769,8 @@ def build_rows(flat: FlatNetlist) -> list[Row]:
                     units=len(trim_units),
                     sub_rows=2,
                     nets=("core.tn0", "vref"),
-                    strap_after_unit=31,
+                    strap_spans=trim_strap_spans(flat, trim_units, DRAWN_TRIM_CODE),
+                    split_after_unit=31,
                     devices=tuple(d.path for d in trim_units),
                 )
             ],

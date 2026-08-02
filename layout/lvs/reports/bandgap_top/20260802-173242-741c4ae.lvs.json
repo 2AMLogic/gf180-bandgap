@@ -1,0 +1,249 @@
+{
+  "schema_version": 1,
+  "engine": "klayout",
+  "layout": "../../../bandgap_top/bandgap_top.gds",
+  "reference": "../../bandgap_top.ref.spice",
+  "top": "bandgap_top",
+  "status": "match",
+  "mismatch_count": 16,
+  "category_counts": {
+    "device.body_unverified": 2,
+    "topology": 14
+  },
+  "counts": {
+    "nets": {
+      "layout": 93,
+      "reference": 93,
+      "matched": 93
+    },
+    "devices": {
+      "layout": 163,
+      "reference": 163,
+      "matched": 163
+    },
+    "pins": {
+      "layout": 4,
+      "reference": 5,
+      "matched": 5
+    }
+  },
+  "device_classes": [
+    "nfet",
+    "pfet",
+    "bjt",
+    "cap_mim_2f0_m4m5_noshield",
+    "resistor"
+  ],
+  "environment": {
+    "engine": "klayout",
+    "engine_version": "0.30.10",
+    "layout_sha256": "33e94b05a0e4a385cfc7c536fe8a52327136912b9ed1d13130b96d391d5a0ac4",
+    "reference_sha256": "45a15fa8dbaf42f4342e2866d8228f2b1283a3430672253a8142502ece231b49",
+    "extracted_netlist": null
+  },
+  "provenance": {
+    "klt_version": "0.1.0",
+    "klayout_version": "0.30.10",
+    "pdk": null,
+    "deck": {
+      "name": "gf180mcu",
+      "content_hash": "sha256:dcd6c84a4e9f541f47907dbc493d00758b0eeb89f2dc54d9a9d3662587acb4d8"
+    }
+  },
+  "mismatches": [
+    {
+      "category": "device.body_unverified",
+      "severity": "warning",
+      "description": "34 NMOS device body terminal(s) were compared against the 'vsubs' deck-synthesized substrate net, not a real schematic net -- this deck draws no distinct NMOS substrate/tap layer (see docs/cli/extract.md, \"Coverage\")",
+      "side": "layout",
+      "net": null,
+      "device": {
+        "layout": null,
+        "reference": null,
+        "class": "nfet"
+      },
+      "property": null
+    },
+    {
+      "category": "device.body_unverified",
+      "severity": "warning",
+      "description": "47 PMOS device body terminal(s) were compared against an anonymous, deck-synthesized well net, not a real schematic net -- this deck has no distinct well-tap layer (see docs/cli/extract.md, \"Coverage\")",
+      "side": "layout",
+      "net": null,
+      "device": {
+        "layout": null,
+        "reference": null,
+        "class": "pfet"
+      },
+      "property": null
+    },
+    {
+      "category": "topology",
+      "severity": "warning",
+      "description": "nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)",
+      "side": "both",
+      "net": {
+        "layout": "$16",
+        "reference": "AMP_CC_BOT"
+      },
+      "device": null,
+      "property": null
+    },
+    {
+      "category": "topology",
+      "severity": "warning",
+      "description": "nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)",
+      "side": "both",
+      "net": {
+        "layout": "$17",
+        "reference": "AMP_CC_TOP"
+      },
+      "device": null,
+      "property": null
+    },
+    {
+      "category": "topology",
+      "severity": "warning",
+      "description": "nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)",
+      "side": "both",
+      "net": {
+        "layout": "$26",
+        "reference": "NW_DUM_PNP_L"
+      },
+      "device": null,
+      "property": null
+    },
+    {
+      "category": "topology",
+      "severity": "warning",
+      "description": "nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)",
+      "side": "both",
+      "net": {
+        "layout": "$28",
+        "reference": "NW_CORE_Q2_0"
+      },
+      "device": null,
+      "property": null
+    },
+    {
+      "category": "topology",
+      "severity": "warning",
+      "description": "nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)",
+      "side": "both",
+      "net": {
+        "layout": "$29",
+        "reference": "NW_CORE_Q2_1"
+      },
+      "device": null,
+      "property": null
+    },
+    {
+      "category": "topology",
+      "severity": "warning",
+      "description": "nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)",
+      "side": "both",
+      "net": {
+        "layout": "$31",
+        "reference": "NW_CORE_Q2_2"
+      },
+      "device": null,
+      "property": null
+    },
+    {
+      "category": "topology",
+      "severity": "warning",
+      "description": "nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)",
+      "side": "both",
+      "net": {
+        "layout": "$32",
+        "reference": "NW_CORE_Q2_3"
+      },
+      "device": null,
+      "property": null
+    },
+    {
+      "category": "topology",
+      "severity": "warning",
+      "description": "nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)",
+      "side": "both",
+      "net": {
+        "layout": "$33",
+        "reference": "NW_DUM_PNP_R"
+      },
+      "device": null,
+      "property": null
+    },
+    {
+      "category": "topology",
+      "severity": "warning",
+      "description": "nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)",
+      "side": "both",
+      "net": {
+        "layout": "$38",
+        "reference": "CORE_TRIM_U2_0"
+      },
+      "device": null,
+      "property": null
+    },
+    {
+      "category": "topology",
+      "severity": "warning",
+      "description": "nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)",
+      "side": "both",
+      "net": {
+        "layout": "$40",
+        "reference": "CORE_TRIM_U2_2"
+      },
+      "device": null,
+      "property": null
+    },
+    {
+      "category": "topology",
+      "severity": "warning",
+      "description": "nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)",
+      "side": "both",
+      "net": {
+        "layout": "$41",
+        "reference": "CORE_TRIM_U3_0"
+      },
+      "device": null,
+      "property": null
+    },
+    {
+      "category": "topology",
+      "severity": "warning",
+      "description": "nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)",
+      "side": "both",
+      "net": {
+        "layout": "$47",
+        "reference": "CORE_TRIM_U3_6"
+      },
+      "device": null,
+      "property": null
+    },
+    {
+      "category": "topology",
+      "severity": "warning",
+      "description": "nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)",
+      "side": "both",
+      "net": {
+        "layout": "$48",
+        "reference": "CORE_TRIM_U4_0"
+      },
+      "device": null,
+      "property": null
+    },
+    {
+      "category": "topology",
+      "severity": "warning",
+      "description": "nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)",
+      "side": "both",
+      "net": {
+        "layout": "$62",
+        "reference": "CORE_TRIM_U4_14"
+      },
+      "device": null,
+      "property": null
+    }
+  ]
+}
