@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "file": "layout/bandgap_top/bandgap_top.gds",
+  "deck": "gf180mcu",
+  "dbu_um": 0.001,
+  "status": "violations",
+  "violation_count": 1,
+  "rule_counts": {
+    "mim.enclosing.fusetop.1": 1
+  },
+  "violations": [
+    {
+      "rule": "mim.enclosing.fusetop.1",
+      "description": "minimum MiM bottom plate (metal4) overlap of top plate (fusetop)",
+      "check": "enclosing",
+      "layer": "Metal4",
+      "cell": "bandgap_top",
+      "bbox": {
+        "left": 76900,
+        "bottom": 170305,
+        "right": 77700,
+        "top": 171005
+      },
+      "polygon": [
+        [
+          76900,
+          170305
+        ],
+        [
+          76900,
+          171005
+        ],
+        [
+          77700,
+          171005
+        ],
+        [
+          77700,
+          170305
+        ]
+      ]
+    }
+  ],
+  "coverage": {
+    "deck_layers": [
+      "21/0",
+      "22/0",
+      "30/0",
+      "33/0",
+      "34/0",
+      "36/0",
+      "42/0",
+      "46/0",
+      "53/0",
+      "75/0",
+      "81/0",
+      "127/5"
+    ],
+    "layers_checked": [
+      "21/0",
+      "22/0",
+      "30/0",
+      "33/0",
+      "34/0",
+      "36/0",
+      "42/0",
+      "46/0",
+      "75/0",
+      "81/0",
+      "127/5"
+    ],
+    "layers_in_stream_without_rules": [
+      "31/0",
+      "32/0",
+      "34/10",
+      "35/0",
+      "38/0",
+      "40/0",
+      "41/0",
+      "49/0",
+      "62/0",
+      "110/5",
+      "117/5",
+      "117/10"
+    ],
+    "rules_skipped": [
+      "metaltop.space.1",
+      "metaltop.width.1"
+    ]
+  },
+  "provenance": {
+    "klt_version": "0.1.0",
+    "klayout_version": "0.30.10",
+    "pdk": null,
+    "deck": {
+      "name": "gf180mcu",
+      "content_hash": "sha256:be1a89e0f899a68c60baeeedffe1b4d76b965bd763e1b16beed1c85937872b1d"
+    }
+  }
+}
