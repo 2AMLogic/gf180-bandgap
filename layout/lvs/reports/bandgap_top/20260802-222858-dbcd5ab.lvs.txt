@@ -1,0 +1,35 @@
+layout: ../../../bandgap_top/bandgap_top.gds
+reference: ../../bandgap_top.ref.spice
+top: bandgap_top
+engine: klayout
+status: mismatch
+mismatches: 18
+  nets: layout=93  reference=94  matched=91
+  devices: layout=156  reference=156  matched=155
+  pins: layout=4  reference=5  matched=5
+
+category_counts:
+  device.body_unverified: 2
+  device.unmatched: 1
+  net.merged: 2
+  net.split: 1
+  topology: 12
+
+[warning] device.body_unverified  (layout)  34 NMOS device body terminal(s) were compared against the 'vsubs' deck-synthesized substrate net, not a real schematic net -- this deck draws no distinct NMOS substrate/tap layer (see docs/cli/extract.md, "Coverage")
+[warning] device.body_unverified  (layout)  47 PMOS device body terminal(s) were compared against an anonymous, deck-synthesized well net, not a real schematic net -- this deck has no distinct well-tap layer (see docs/cli/extract.md, "Coverage")
+[error] device.unmatched  (reference)  device has no counterpart on the other side
+[error] net.merged  (reference)  multiple reference nets were collapsed into one layout net
+[error] net.merged  (reference)  multiple reference nets were collapsed into one layout net
+[error] net.split  (layout)  a reference net's role is divided across multiple layout nets
+[warning] topology  (both)  nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)
+[warning] topology  (both)  nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)
+[warning] topology  (both)  nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)
+[warning] topology  (both)  nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)
+[warning] topology  (both)  nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)
+[warning] topology  (both)  nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)
+[warning] topology  (both)  nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)
+[warning] topology  (both)  nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)
+[warning] topology  (both)  nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)
+[warning] topology  (both)  nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)
+[warning] topology  (both)  nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)
+[warning] topology  (both)  nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)

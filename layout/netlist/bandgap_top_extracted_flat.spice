@@ -1,0 +1,416 @@
+* Post-layout EXTRACTED DUT netlist -- GENERATED, do not edit by hand.
+*
+* extract report : layout/netlist/reports/bandgap_top/20260803-010547-9e558e6.extract.json
+* extracted spice: layout/netlist/reports/bandgap_top/20260803-010547-9e558e6.extracted.spice
+* lvs report     : layout/lvs/reports/bandgap_top/20260803-010523-9e558e6.lvs.json
+* layout gds     : layout/bandgap_top/bandgap_top.gds
+* extraction deck: gf180mcu  (klt extract --parasitics)
+* pdk            : gf180mcuD open_pdks c6d73a35f524070e85faff4a6a9eef49553ebc2b
+* devices        : 156 {'bjt': 8, 'cap_mim_2f0_m4m5_noshield': 1, 'nfet': 34, 'pfet': 47, 'ppolyf_u': 65, 'ppolyf_u_1k': 1}
+*   parasitics    : 82 R / 82 C, 209646.2 ohm and 2483.0 fF total
+* regenerate     : python3 layout/netlist/mk_extracted_dut.py --extract layout/netlist/reports/bandgap_top/20260803-010547-9e558e6.extract.json --lvs layout/lvs/reports/bandgap_top/20260803-010523-9e558e6.lvs.json --flat -o layout/netlist/bandgap_top_extracted_flat.spice
+*
+* sha256 (this file, sans this line): ee1a1434dd2694db1ced0a6131c3775a
+* Provenance class is derived from the path by sim/dut: a netlist under
+* layout/ reports itself as `Netlist provenance: extracted`.
+*
+* ------------------------------------------------------------------
+* Mechanical transforms applied to the extractor's own output
+* ------------------------------------------------------------------
+* T1. Net names: the extractor's anonymous `$<n>` labels are replaced by
+*     the schematic-side names `klt lvs` paired them with (its
+*     `net_correspondence` table), lowercased. Nets with no pairing keep a
+*     mechanical `x<n>` name. This is a rename only -- no net is merged or
+*     split by it.
+* T2. Escaping: ngspice treats a space-delimited `$` as an end-of-line
+*     comment, so KLayout's `\$<n>` node spelling would truncate device
+*     cards. T1's rename removes every `$` from the deck.
+* T3. MOS cards: `X<n> d g s b nfet|pfet L=..U W=..U` is rebound to the
+*     gf180mcu `nfet_03v3`/`pfet_03v3` subcircuit with `nf=1 m=1` -- each
+*     extracted device is one drawn finger, so the schematic's `nf`
+*     multiplier is already spent as real, separately-extracted geometry.
+* T4. Resistor cards: `R<n> a b w <ohms> ppolyf_u[_1k]` -- a bare, linear,
+*     value-only card the extraction engine writes -- is rebound to the
+*     gf180mcu `ppolyf_u`/`ppolyf_u_1k` subcircuit with the *drawn*
+*     `r_length`/`r_width` the extractor measured off the marker geometry.
+*     This restores the PDK model's own temperature coefficient and
+*     mismatch statistics, which a bare ohms value has none of.
+* T5. Bipolar cards: `Q<n> c b e bjt AE=..` is rebound to the gf180mcu
+*     `pnp_<WxL>` subcircuit selected by the extractor's own measured `AE`
+*     (25 um^2 -> pnp_05p00x05p00). Each drawn unit stays a separate
+*     device; the schematic's 10x10 PNP is four parallel drawn 5x5 units.
+* T6. MOS junction geometry: the extractor emits no `AS/AD/PS/PD` (a
+*     stated scope limit of its PDK-model binding), which would leave
+*     every source/drain junction capacitance at zero. They are recomputed
+*     from *drawn* geometry: `generate.draw_mos` gives each finger its own
+*     COMP island with two unshared 0.9 um source/drain columns, so
+*     AS=AD=W*0.9u and PS=PD=2*(W+0.9u) exactly. `NRS/NRD` are left at the
+*     PDK default (0): the drawn contact columns fill the whole diffusion
+*     width, so sheet-resistance-to-contact is negligible.
+* T7. MiM cap card: `C<n> a b <farads> cap_mim_...` is rebound to the
+*     gf180mcu `cap_mim_2f0_m4m5_noshield` subcircuit with the drawn plate
+*     dimensions (from the extractor's measured plate area), restoring the
+*     PDK model's voltage/temperature coefficients and leakage.
+* T8. Parasitics: `klt extract --parasitics`'s per-net first-order lumped
+*     RC (net -> R -> internal node -> C -> substrate) is carried through
+*     verbatim, with T1's names applied.
+* T9. Pin list: the extracted top cell's `vdd vref vss vsubs` is emitted
+*     as `bandgap_top vdd vss vref` to match `sim/dut/README.md`'s
+*     three-pin convention, with `vsubs` aliased per BA1 below.
+*
+* ------------------------------------------------------------------
+* Back-annotated nets: terminals the extraction deck cannot resolve
+* ------------------------------------------------------------------
+* BA1  substrate `vsubs` -> `vss`      (deck has no p-substrate tap layer)
+* BA2  PMOS well net    -> `vdd`      (deck has no well-tap layer)
+* BA3  8 PNP base nets  -> `vss`      (Nwell is not a connectivity metal;
+*      the capacitor-plate gap klayout-tools#314 fixed, still open for
+*      BipolarDevice -- filed upstream, see layout/netlist/README.md)
+* BA4  MiM cap top plate -> `fb`      (the drawn Via4 lands on a routing
+*      tab outside CAP_MK, so the deck does not see the contact; that tab
+*      is also non-manufacturable per gf180-bandgap#82. The BOTTOM plate
+*      extracts on the real `vdd` net with no help, so #314's join does
+*      work here -- this half is a layout defect, not a tool gap.)
+*
+* Applied merges (source -> target, in extractor net names):
+*   BA1: vsubs -> vss
+*   BA2: $35 -> vdd
+*   BA3: $25 -> vss
+*   BA3: $26 -> vss
+*   BA3: $28 -> vss
+*   BA3: $30 -> vss
+*   BA3: $31 -> vss
+*   BA3: $32 -> vss
+*   BA3: $33 -> vss
+*   BA3: $34 -> vss
+*   BA4: $16 -> $12
+*
+* Everything else -- device existence, class, connectivity, drawn
+* resistor L/W, drawn plate area, drawn finger and PNP-unit counts, and
+* the per-net RC parasitics -- is measured, not asserted.
+
+* FLAT form: cards at deck level, no `.subckt bandgap_top` wrapper --
+* for a bench that flattens its DUT instead of instantiating it.
+
+XQ82 vss vss vss pnp_05p00x05p00 m=1
+XQ83 vss vss core_e3 pnp_05p00x05p00 m=1
+XQ84 vss vss core_e2 pnp_05p00x05p00 m=1
+XQ85 vss vss core_e2 pnp_05p00x05p00 m=1
+XQ86 vss vss sns1 pnp_05p00x05p00 m=1
+XQ87 vss vss core_e2 pnp_05p00x05p00 m=1
+XQ88 vss vss core_e2 pnp_05p00x05p00 m=1
+XQ89 vss vss vss pnp_05p00x05p00 m=1
+XC90 vdd fb cap_mim_2f0_m4m5_noshield c_width=58.8u c_length=58.8u m=1
+XM1 ibias ibias vss vss nfet_03v3 L=2u W=2.5u nf=1 ad=2.25p as=2.25p pd=6.8u ps=6.8u m=1
+XM10 amp_nd1 amp_ncasc amp_n1 vss nfet_03v3 L=16u W=10u nf=1 ad=9p as=9p pd=21.8u ps=21.8u m=1
+XM11 amp_ncasc amp_ncasc amp_nb1 vss nfet_03v3 L=4u W=1u nf=1 ad=0.9p as=0.9p pd=3.8u ps=3.8u m=1
+XM12 amp_nb1 amp_nb1 vss vss nfet_03v3 L=4u W=1u nf=1 ad=0.9p as=0.9p pd=3.8u ps=3.8u m=1
+XM13 fb amp_ncasc amp_n2 vss nfet_03v3 L=16u W=10u nf=1 ad=9p as=9p pd=21.8u ps=21.8u m=1
+XM14 fb amp_ncasc amp_n2 vss nfet_03v3 L=16u W=10u nf=1 ad=9p as=9p pd=21.8u ps=21.8u m=1
+XM15 amp_nd1 amp_ncasc amp_n1 vss nfet_03v3 L=16u W=10u nf=1 ad=9p as=9p pd=21.8u ps=21.8u m=1
+XM16 vss vss vss vss nfet_03v3 L=16u W=2u nf=1 ad=1.8p as=1.8p pd=5.8u ps=5.8u m=1
+XM17 vss vss vss vss nfet_03v3 L=4u W=2u nf=1 ad=1.8p as=1.8p pd=5.8u ps=5.8u m=1
+XM18 amp_n1 sns2 amp_tail vss nfet_03v3 L=4u W=25u nf=1 ad=22.5p as=22.5p pd=51.8u ps=51.8u m=1
+XM19 amp_n2 sns1 amp_tail vss nfet_03v3 L=4u W=25u nf=1 ad=22.5p as=22.5p pd=51.8u ps=51.8u m=1
+XM2 casc ibias vss vss nfet_03v3 L=2u W=5u nf=1 ad=4.5p as=4.5p pd=11.8u ps=11.8u m=1
+XM20 amp_n2 sns1 amp_tail vss nfet_03v3 L=4u W=25u nf=1 ad=22.5p as=22.5p pd=51.8u ps=51.8u m=1
+XM21 amp_n1 sns2 amp_tail vss nfet_03v3 L=4u W=25u nf=1 ad=22.5p as=22.5p pd=51.8u ps=51.8u m=1
+XM22 amp_n1 sns2 amp_tail vss nfet_03v3 L=4u W=25u nf=1 ad=22.5p as=22.5p pd=51.8u ps=51.8u m=1
+XM23 amp_n2 sns1 amp_tail vss nfet_03v3 L=4u W=25u nf=1 ad=22.5p as=22.5p pd=51.8u ps=51.8u m=1
+XM24 amp_n2 sns1 amp_tail vss nfet_03v3 L=4u W=25u nf=1 ad=22.5p as=22.5p pd=51.8u ps=51.8u m=1
+XM25 amp_n1 sns2 amp_tail vss nfet_03v3 L=4u W=25u nf=1 ad=22.5p as=22.5p pd=51.8u ps=51.8u m=1
+XM26 amp_n1 sns2 amp_tail vss nfet_03v3 L=4u W=25u nf=1 ad=22.5p as=22.5p pd=51.8u ps=51.8u m=1
+XM27 amp_n2 sns1 amp_tail vss nfet_03v3 L=4u W=25u nf=1 ad=22.5p as=22.5p pd=51.8u ps=51.8u m=1
+XM28 amp_n2 sns1 amp_tail vss nfet_03v3 L=4u W=25u nf=1 ad=22.5p as=22.5p pd=51.8u ps=51.8u m=1
+XM29 amp_n1 sns2 amp_tail vss nfet_03v3 L=4u W=25u nf=1 ad=22.5p as=22.5p pd=51.8u ps=51.8u m=1
+XM3 startup_det ibias vss vss nfet_03v3 L=2u W=10u nf=1 ad=9p as=9p pd=21.8u ps=21.8u m=1
+XM30 amp_n1 sns2 amp_tail vss nfet_03v3 L=4u W=25u nf=1 ad=22.5p as=22.5p pd=51.8u ps=51.8u m=1
+XM31 amp_n2 sns1 amp_tail vss nfet_03v3 L=4u W=25u nf=1 ad=22.5p as=22.5p pd=51.8u ps=51.8u m=1
+XM32 amp_n2 sns1 amp_tail vss nfet_03v3 L=4u W=25u nf=1 ad=22.5p as=22.5p pd=51.8u ps=51.8u m=1
+XM33 amp_n1 sns2 amp_tail vss nfet_03v3 L=4u W=25u nf=1 ad=22.5p as=22.5p pd=51.8u ps=51.8u m=1
+XM34 vss vss vss vss nfet_03v3 L=4u W=2u nf=1 ad=1.8p as=1.8p pd=5.8u ps=5.8u m=1
+XM4 startup_det ibias vss vss nfet_03v3 L=2u W=10u nf=1 ad=9p as=9p pd=21.8u ps=21.8u m=1
+XM5 fb startup_det vss vss nfet_03v3 L=2u W=2u nf=1 ad=1.8p as=1.8p pd=5.8u ps=5.8u m=1
+XM6 casc startup_det vss vss nfet_03v3 L=2u W=2u nf=1 ad=1.8p as=1.8p pd=5.8u ps=5.8u m=1
+XM7 vss vss vss vss nfet_03v3 L=16u W=2u nf=1 ad=1.8p as=1.8p pd=5.8u ps=5.8u m=1
+XM8 amp_tail ibias vss vss nfet_03v3 L=4u W=10u nf=1 ad=9p as=9p pd=21.8u ps=21.8u m=1
+XM9 amp_pbias ibias vss vss nfet_03v3 L=16u W=2u nf=1 ad=1.8p as=1.8p pd=5.8u ps=5.8u m=1
+XM35 vdd vdd vdd vdd pfet_03v3 L=16u W=2u nf=1 ad=1.8p as=1.8p pd=5.8u ps=5.8u m=1
+XM36 amp_nd1 amp_pbias amp_a3 vdd pfet_03v3 L=16u W=20u nf=1 ad=18p as=18p pd=41.8u ps=41.8u m=1
+XM37 fb amp_pbias amp_a4 vdd pfet_03v3 L=16u W=20u nf=1 ad=18p as=18p pd=41.8u ps=41.8u m=1
+XM38 fb amp_pbias amp_a4 vdd pfet_03v3 L=16u W=20u nf=1 ad=18p as=18p pd=41.8u ps=41.8u m=1
+XM39 amp_nd1 amp_pbias amp_a3 vdd pfet_03v3 L=16u W=20u nf=1 ad=18p as=18p pd=41.8u ps=41.8u m=1
+XM40 vdd vdd vdd vdd pfet_03v3 L=16u W=2u nf=1 ad=1.8p as=1.8p pd=5.8u ps=5.8u m=1
+XM41 vdd vdd vdd vdd pfet_03v3 L=16u W=2u nf=1 ad=1.8p as=1.8p pd=5.8u ps=5.8u m=1
+XM42 amp_a3 amp_nd1 vdd vdd pfet_03v3 L=16u W=10u nf=1 ad=9p as=9p pd=21.8u ps=21.8u m=1
+XM43 amp_a4 amp_nd1 vdd vdd pfet_03v3 L=16u W=10u nf=1 ad=9p as=9p pd=21.8u ps=21.8u m=1
+XM44 amp_a4 amp_nd1 vdd vdd pfet_03v3 L=16u W=10u nf=1 ad=9p as=9p pd=21.8u ps=21.8u m=1
+XM45 amp_a3 amp_nd1 vdd vdd pfet_03v3 L=16u W=10u nf=1 ad=9p as=9p pd=21.8u ps=21.8u m=1
+XM46 vdd vdd vdd vdd pfet_03v3 L=16u W=2u nf=1 ad=1.8p as=1.8p pd=5.8u ps=5.8u m=1
+XM47 vdd vdd vdd vdd pfet_03v3 L=6u W=2u nf=1 ad=1.8p as=1.8p pd=5.8u ps=5.8u m=1
+XM48 casc casc vdd vdd pfet_03v3 L=12u W=4u nf=1 ad=3.6p as=3.6p pd=9.8u ps=9.8u m=1
+XM49 core_d4 fb vdd vdd pfet_03v3 L=6u W=7.5u nf=1 ad=6.75p as=6.75p pd=16.8u ps=16.8u m=1
+XM50 amp_pbias amp_pbias vdd vdd pfet_03v3 L=50u W=1u nf=1 ad=0.9p as=0.9p pd=3.8u ps=3.8u m=1
+XM51 ibias casc core_d4 vdd pfet_03v3 L=6u W=7.5u nf=1 ad=6.75p as=6.75p pd=16.8u ps=16.8u m=1
+XM52 vdd vdd vdd vdd pfet_03v3 L=6u W=2u nf=1 ad=1.8p as=1.8p pd=5.8u ps=5.8u m=1
+XM53 amp_ncasc amp_pbias vdd vdd pfet_03v3 L=50u W=5u nf=1 ad=4.5p as=4.5p pd=11.8u ps=11.8u m=1
+XM54 vdd vdd vdd vdd pfet_03v3 L=6u W=2u nf=1 ad=1.8p as=1.8p pd=5.8u ps=5.8u m=1
+XM55 sns1 casc core_d1 vdd pfet_03v3 L=6u W=15u nf=1 ad=13.5p as=13.5p pd=31.8u ps=31.8u m=1
+XM56 sns2 casc core_d2 vdd pfet_03v3 L=6u W=15u nf=1 ad=13.5p as=13.5p pd=31.8u ps=31.8u m=1
+XM57 vref casc core_d3 vdd pfet_03v3 L=6u W=15u nf=1 ad=13.5p as=13.5p pd=31.8u ps=31.8u m=1
+XM58 vref casc core_d3 vdd pfet_03v3 L=6u W=15u nf=1 ad=13.5p as=13.5p pd=31.8u ps=31.8u m=1
+XM59 sns2 casc core_d2 vdd pfet_03v3 L=6u W=15u nf=1 ad=13.5p as=13.5p pd=31.8u ps=31.8u m=1
+XM60 sns1 casc core_d1 vdd pfet_03v3 L=6u W=15u nf=1 ad=13.5p as=13.5p pd=31.8u ps=31.8u m=1
+XM61 sns1 casc core_d1 vdd pfet_03v3 L=6u W=15u nf=1 ad=13.5p as=13.5p pd=31.8u ps=31.8u m=1
+XM62 sns2 casc core_d2 vdd pfet_03v3 L=6u W=15u nf=1 ad=13.5p as=13.5p pd=31.8u ps=31.8u m=1
+XM63 vref casc core_d3 vdd pfet_03v3 L=6u W=15u nf=1 ad=13.5p as=13.5p pd=31.8u ps=31.8u m=1
+XM64 vref casc core_d3 vdd pfet_03v3 L=6u W=15u nf=1 ad=13.5p as=13.5p pd=31.8u ps=31.8u m=1
+XM65 sns2 casc core_d2 vdd pfet_03v3 L=6u W=15u nf=1 ad=13.5p as=13.5p pd=31.8u ps=31.8u m=1
+XM66 sns1 casc core_d1 vdd pfet_03v3 L=6u W=15u nf=1 ad=13.5p as=13.5p pd=31.8u ps=31.8u m=1
+XM67 vdd vdd vdd vdd pfet_03v3 L=6u W=2u nf=1 ad=1.8p as=1.8p pd=5.8u ps=5.8u m=1
+XM68 vdd vdd vdd vdd pfet_03v3 L=6u W=2u nf=1 ad=1.8p as=1.8p pd=5.8u ps=5.8u m=1
+XM69 core_d1 fb vdd vdd pfet_03v3 L=6u W=15u nf=1 ad=13.5p as=13.5p pd=31.8u ps=31.8u m=1
+XM70 core_d2 fb vdd vdd pfet_03v3 L=6u W=15u nf=1 ad=13.5p as=13.5p pd=31.8u ps=31.8u m=1
+XM71 core_d3 fb vdd vdd pfet_03v3 L=6u W=15u nf=1 ad=13.5p as=13.5p pd=31.8u ps=31.8u m=1
+XM72 core_d3 fb vdd vdd pfet_03v3 L=6u W=15u nf=1 ad=13.5p as=13.5p pd=31.8u ps=31.8u m=1
+XM73 core_d2 fb vdd vdd pfet_03v3 L=6u W=15u nf=1 ad=13.5p as=13.5p pd=31.8u ps=31.8u m=1
+XM74 core_d1 fb vdd vdd pfet_03v3 L=6u W=15u nf=1 ad=13.5p as=13.5p pd=31.8u ps=31.8u m=1
+XM75 core_d1 fb vdd vdd pfet_03v3 L=6u W=15u nf=1 ad=13.5p as=13.5p pd=31.8u ps=31.8u m=1
+XM76 core_d2 fb vdd vdd pfet_03v3 L=6u W=15u nf=1 ad=13.5p as=13.5p pd=31.8u ps=31.8u m=1
+XM77 core_d3 fb vdd vdd pfet_03v3 L=6u W=15u nf=1 ad=13.5p as=13.5p pd=31.8u ps=31.8u m=1
+XM78 core_d3 fb vdd vdd pfet_03v3 L=6u W=15u nf=1 ad=13.5p as=13.5p pd=31.8u ps=31.8u m=1
+XM79 core_d2 fb vdd vdd pfet_03v3 L=6u W=15u nf=1 ad=13.5p as=13.5p pd=31.8u ps=31.8u m=1
+XM80 core_d1 fb vdd vdd pfet_03v3 L=6u W=15u nf=1 ad=13.5p as=13.5p pd=31.8u ps=31.8u m=1
+XM81 vdd vdd vdd vdd pfet_03v3 L=6u W=2u nf=1 ad=1.8p as=1.8p pd=5.8u ps=5.8u m=1
+XR100 core_tn0 core_trim_u3_0 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR101 core_trim_u3_0 core_trim_u3_1 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR102 core_trim_u3_1 core_trim_u3_2 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR103 core_trim_u3_2 core_trim_u3_3 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR104 core_trim_u3_3 core_trim_u3_4 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR105 core_trim_u3_4 core_trim_u3_5 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR106 core_trim_u3_5 core_trim_u3_6 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR107 core_trim_u3_6 core_tn0 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR108 core_tn0 core_trim_u4_0 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR109 core_trim_u4_0 core_trim_u4_1 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR110 core_trim_u4_1 core_trim_u4_2 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR111 core_trim_u4_2 core_trim_u4_3 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR112 core_trim_u4_3 core_trim_u4_4 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR113 core_trim_u4_4 core_trim_u4_5 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR114 core_trim_u4_5 core_trim_u4_6 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR115 core_trim_u4_6 core_trim_u4_7 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR116 core_trim_u4_7 core_trim_u4_8 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR117 core_trim_u4_8 core_trim_u4_9 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR118 core_trim_u4_9 core_trim_u4_10 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR119 core_trim_u4_10 core_trim_u4_11 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR120 core_trim_u4_11 core_trim_u4_12 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR121 core_trim_u4_12 core_trim_u4_13 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR122 core_trim_u4_13 core_trim_u4_14 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR123 core_trim_u4_14 core_tn0 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR124 vref core_trim_u5_30 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR125 core_trim_u5_30 core_trim_u5_29 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR126 core_trim_u5_29 core_trim_u5_28 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR127 core_trim_u5_28 core_trim_u5_27 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR128 core_trim_u5_27 core_trim_u5_26 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR129 core_trim_u5_26 core_trim_u5_25 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR130 core_trim_u5_25 core_trim_u5_24 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR131 core_trim_u5_24 core_trim_u5_23 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR132 core_trim_u5_23 core_trim_u5_22 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR133 core_trim_u5_22 core_trim_u5_21 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR134 core_trim_u5_21 core_trim_u5_20 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR135 core_trim_u5_20 core_trim_u5_19 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR136 core_trim_u5_19 core_trim_u5_18 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR137 core_trim_u5_18 core_trim_u5_17 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR138 core_trim_u5_17 core_trim_u5_16 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR139 core_trim_u5_16 core_trim_u5_15 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR140 core_trim_u5_15 core_trim_u5_14 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR141 core_trim_u5_14 core_trim_u5_13 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR142 core_trim_u5_13 core_trim_u5_12 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR143 core_trim_u5_12 core_trim_u5_11 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR144 core_trim_u5_11 core_trim_u5_10 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR145 core_trim_u5_10 core_trim_u5_9 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR146 core_trim_u5_9 core_trim_u5_8 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR147 core_trim_u5_8 core_trim_u5_7 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR148 core_trim_u5_7 core_trim_u5_6 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR149 core_trim_u5_6 core_trim_u5_5 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR150 core_trim_u5_5 core_trim_u5_4 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR151 core_trim_u5_4 core_trim_u5_3 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR152 core_trim_u5_3 core_trim_u5_2 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR153 core_trim_u5_2 core_trim_u5_1 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR154 core_trim_u5_1 core_trim_u5_0 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR155 core_trim_u5_0 core_tn0 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR91 core_e2 sns2 vss ppolyf_u r_width=2u r_length=36.34u m=1
+XR92 core_tn0 core_tn0 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR93 core_tn0 core_trim_u1_0 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR94 core_trim_u1_0 core_tn0 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR95 core_e3 core_tn0 vss ppolyf_u r_width=2u r_length=460.7u m=1
+XR96 core_tn0 core_trim_u2_0 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR97 core_trim_u2_0 core_trim_u2_1 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR98 core_trim_u2_1 core_trim_u2_2 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR99 core_trim_u2_2 core_tn0 vss ppolyf_u r_width=2u r_length=2.772u m=1
+XR156 startup_det vdd vss ppolyf_u_1k r_width=2u r_length=3999.96u m=1
+
+* T8: per-net first-order lumped RC parasitics (klt extract --parasitics)
+R10_par amp_nd1 amp_nd1__par 8683.05
+C10_par amp_nd1__par vss 9.94204e-14
+R11_par amp_n2 amp_n2__par 6237.58
+C11_par amp_n2__par vss 8.45345e-14
+R12_par fb fb__par 9972.22
+C12_par fb__par vss 1.13219e-13
+R13_par amp_tail amp_tail__par 6838.14
+C13_par amp_tail__par vss 1.02508e-13
+R14_par amp_a3 amp_a3__par 5970.25
+C14_par amp_a3__par vss 6.85405e-14
+R15_par amp_a4 amp_a4__par 5863.56
+C15_par amp_a4__par vss 6.43713e-14
+R18_par core_d4 core_d4__par 5774.03
+C18_par core_d4__par vss 4.91049e-14
+R19_par core_d1 core_d1__par 6392.99
+C19_par core_d1__par vss 8.06338e-14
+R20_par sns1 sns1__par 7823.68
+C20_par sns1__par vss 9.3083e-14
+R21_par core_d2 core_d2__par 6192.52
+C21_par core_d2__par vss 7.75546e-14
+R22_par sns2 sns2__par 8160.27
+C22_par sns2__par vss 9.00037e-14
+R23_par core_d3 core_d3__par 6041.17
+C23_par core_d3__par vss 7.4839e-14
+R27_par core_e3 core_e3__par 5840.51
+C27_par core_e3__par vss 5.19232e-14
+R29_par core_e2 core_e2__par 6191.56
+C29_par core_e2__par vss 6.23487e-14
+R3_par ibias ibias__par 7692.3
+C3_par ibias__par vss 6.93231e-14
+R36_par core_trim_u1_0 core_trim_u1_0__par 83.7942
+C36_par core_trim_u1_0__par vss 8.17907e-16
+R37_par core_trim_u2_0 core_trim_u2_0__par 83.7942
+C37_par core_trim_u2_0__par vss 8.17907e-16
+R38_par core_trim_u2_1 core_trim_u2_1__par 83.7942
+C38_par core_trim_u2_1__par vss 8.17907e-16
+R39_par core_trim_u2_2 core_trim_u2_2__par 83.7942
+C39_par core_trim_u2_2__par vss 8.17907e-16
+R4_par casc casc__par 10956.3
+C4_par casc__par vss 1.04392e-13
+R40_par core_trim_u3_0 core_trim_u3_0__par 83.7942
+C40_par core_trim_u3_0__par vss 8.17907e-16
+R41_par core_trim_u3_1 core_trim_u3_1__par 83.7942
+C41_par core_trim_u3_1__par vss 8.17907e-16
+R42_par core_trim_u3_2 core_trim_u3_2__par 83.7942
+C42_par core_trim_u3_2__par vss 8.17907e-16
+R43_par core_trim_u3_3 core_trim_u3_3__par 83.7942
+C43_par core_trim_u3_3__par vss 8.17907e-16
+R44_par core_trim_u3_4 core_trim_u3_4__par 83.7942
+C44_par core_trim_u3_4__par vss 8.17907e-16
+R45_par core_trim_u3_5 core_trim_u3_5__par 83.7942
+C45_par core_trim_u3_5__par vss 8.17907e-16
+R46_par core_trim_u3_6 core_trim_u3_6__par 83.7942
+C46_par core_trim_u3_6__par vss 8.17907e-16
+R47_par core_trim_u4_0 core_trim_u4_0__par 83.7942
+C47_par core_trim_u4_0__par vss 8.17907e-16
+R48_par core_trim_u4_1 core_trim_u4_1__par 83.7942
+C48_par core_trim_u4_1__par vss 8.17907e-16
+R49_par core_trim_u4_2 core_trim_u4_2__par 83.7942
+C49_par core_trim_u4_2__par vss 8.17907e-16
+R5_par startup_det startup_det__par 6525.85
+C5_par startup_det__par vss 6.39567e-14
+R50_par core_trim_u4_3 core_trim_u4_3__par 83.7942
+C50_par core_trim_u4_3__par vss 8.17907e-16
+R51_par core_trim_u4_4 core_trim_u4_4__par 83.7942
+C51_par core_trim_u4_4__par vss 8.17907e-16
+R52_par core_trim_u4_5 core_trim_u4_5__par 83.7942
+C52_par core_trim_u4_5__par vss 8.17907e-16
+R53_par core_trim_u4_6 core_trim_u4_6__par 83.7942
+C53_par core_trim_u4_6__par vss 8.17907e-16
+R54_par core_trim_u4_7 core_trim_u4_7__par 83.7942
+C54_par core_trim_u4_7__par vss 8.17907e-16
+R55_par core_trim_u4_8 core_trim_u4_8__par 83.7942
+C55_par core_trim_u4_8__par vss 8.17907e-16
+R56_par core_trim_u4_9 core_trim_u4_9__par 83.7942
+C56_par core_trim_u4_9__par vss 8.17907e-16
+R57_par core_trim_u4_10 core_trim_u4_10__par 83.7942
+C57_par core_trim_u4_10__par vss 8.17907e-16
+R58_par core_trim_u4_11 core_trim_u4_11__par 83.7942
+C58_par core_trim_u4_11__par vss 8.17907e-16
+R59_par core_trim_u4_12 core_trim_u4_12__par 83.7942
+C59_par core_trim_u4_12__par vss 8.17907e-16
+R6_par amp_pbias amp_pbias__par 12601.4
+C6_par amp_pbias__par vss 1.19728e-13
+R60_par core_trim_u4_13 core_trim_u4_13__par 83.7942
+C60_par core_trim_u4_13__par vss 8.17907e-16
+R61_par core_trim_u4_14 core_trim_u4_14__par 83.7942
+C61_par core_trim_u4_14__par vss 8.17907e-16
+R62_par core_tn0 core_tn0__par 6434.03
+C62_par core_tn0__par vss 7.28147e-14
+R63_par core_trim_u5_30 core_trim_u5_30__par 83.7942
+C63_par core_trim_u5_30__par vss 8.17907e-16
+R64_par core_trim_u5_29 core_trim_u5_29__par 83.7942
+C64_par core_trim_u5_29__par vss 8.17907e-16
+R65_par core_trim_u5_28 core_trim_u5_28__par 83.7942
+C65_par core_trim_u5_28__par vss 8.17907e-16
+R66_par core_trim_u5_27 core_trim_u5_27__par 83.7942
+C66_par core_trim_u5_27__par vss 8.17907e-16
+R67_par core_trim_u5_26 core_trim_u5_26__par 83.7942
+C67_par core_trim_u5_26__par vss 8.17907e-16
+R68_par core_trim_u5_25 core_trim_u5_25__par 83.7942
+C68_par core_trim_u5_25__par vss 8.17907e-16
+R69_par core_trim_u5_24 core_trim_u5_24__par 83.7942
+C69_par core_trim_u5_24__par vss 8.17907e-16
+R7_par amp_nb1 amp_nb1__par 6614.07
+C7_par amp_nb1__par vss 5.63295e-14
+R70_par core_trim_u5_23 core_trim_u5_23__par 83.7942
+C70_par core_trim_u5_23__par vss 8.17907e-16
+R71_par core_trim_u5_22 core_trim_u5_22__par 83.7942
+C71_par core_trim_u5_22__par vss 8.17907e-16
+R72_par core_trim_u5_21 core_trim_u5_21__par 83.7942
+C72_par core_trim_u5_21__par vss 8.17907e-16
+R73_par core_trim_u5_20 core_trim_u5_20__par 83.7942
+C73_par core_trim_u5_20__par vss 8.17907e-16
+R74_par core_trim_u5_19 core_trim_u5_19__par 83.7942
+C74_par core_trim_u5_19__par vss 8.17907e-16
+R75_par core_trim_u5_18 core_trim_u5_18__par 83.7942
+C75_par core_trim_u5_18__par vss 8.17907e-16
+R76_par core_trim_u5_17 core_trim_u5_17__par 83.7942
+C76_par core_trim_u5_17__par vss 8.17907e-16
+R77_par core_trim_u5_16 core_trim_u5_16__par 83.7942
+C77_par core_trim_u5_16__par vss 8.17907e-16
+R78_par core_trim_u5_15 core_trim_u5_15__par 83.7942
+C78_par core_trim_u5_15__par vss 8.17907e-16
+R79_par core_trim_u5_14 core_trim_u5_14__par 83.7942
+C79_par core_trim_u5_14__par vss 8.17907e-16
+R8_par amp_ncasc amp_ncasc__par 9129.12
+C8_par amp_ncasc__par vss 9.51547e-14
+R80_par core_trim_u5_13 core_trim_u5_13__par 83.7942
+C80_par core_trim_u5_13__par vss 8.17907e-16
+R81_par core_trim_u5_12 core_trim_u5_12__par 83.7942
+C81_par core_trim_u5_12__par vss 8.17907e-16
+R82_par core_trim_u5_11 core_trim_u5_11__par 83.7942
+C82_par core_trim_u5_11__par vss 8.17907e-16
+R83_par core_trim_u5_10 core_trim_u5_10__par 83.7942
+C83_par core_trim_u5_10__par vss 8.17907e-16
+R84_par core_trim_u5_9 core_trim_u5_9__par 83.7942
+C84_par core_trim_u5_9__par vss 8.17907e-16
+R85_par core_trim_u5_8 core_trim_u5_8__par 83.7942
+C85_par core_trim_u5_8__par vss 8.17907e-16
+R86_par core_trim_u5_7 core_trim_u5_7__par 83.7942
+C86_par core_trim_u5_7__par vss 8.17907e-16
+R87_par core_trim_u5_6 core_trim_u5_6__par 83.7942
+C87_par core_trim_u5_6__par vss 8.17907e-16
+R88_par core_trim_u5_5 core_trim_u5_5__par 83.7942
+C88_par core_trim_u5_5__par vss 8.17907e-16
+R89_par core_trim_u5_4 core_trim_u5_4__par 83.7942
+C89_par core_trim_u5_4__par vss 8.17907e-16
+R9_par amp_n1 amp_n1__par 6587.54
+C9_par amp_n1__par vss 8.9548e-14
+R90_par core_trim_u5_3 core_trim_u5_3__par 83.7942
+C90_par core_trim_u5_3__par vss 8.17907e-16
+R91_par core_trim_u5_2 core_trim_u5_2__par 83.7942
+C91_par core_trim_u5_2__par vss 8.17907e-16
+R92_par core_trim_u5_1 core_trim_u5_1__par 83.7942
+C92_par core_trim_u5_1__par vss 8.17907e-16
+R93_par core_trim_u5_0 core_trim_u5_0__par 83.7942
+C93_par core_trim_u5_0__par vss 8.17907e-16
+Rvdd_par vdd vdd__par 21247.9
+Cvdd_par vdd__par vss 2.6798e-13
+Rvref_par vref vref__par 6009.24
+Cvref_par vref__par vss 6.41334e-14
+Rvss_par vss vss__par 15090.6
+Cvss_par vss__par vss 3.20931e-13

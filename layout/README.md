@@ -145,6 +145,13 @@ nets and the symmetric interior nodes of the strapped-out trim loops. There
 are no `error`-severity mismatches. `status` is `NetlistComparer`'s own
 boolean verdict, which `klt lvs` never re-derives from the mismatch list.
 
+The MiM cap's **top** plate stays its own net for the layout reason #82
+tracks — its `Via4` lands on a `FuseTop` tab held outside `CAP_MK` — so no
+LVS verdict can show that the tab carries `fb`. That it does is proven
+separately, by layer inspection and a widened-marker re-extraction, in
+`layout/netlist/verify_mim_routing.py`
+([#17](https://github.com/2AMLogic/gf180-bandgap/issues/17)) — not assumed.
+
 ## How the layout is built
 
 Three modules, layered, with the committed schematic netlist as the single
