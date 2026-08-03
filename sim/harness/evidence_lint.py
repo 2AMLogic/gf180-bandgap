@@ -24,6 +24,17 @@ What is checked, per ``sim/<slug>/records/<record-id>.md``:
   corner-id grammar documented in ``sim/README.md`` (see ``parse_corner_id``);
 - a **Supersedes** value that is not a "(none)" form names a record that
   exists in the same experiment directory;
+- a record that is the *current head* of its supersession chain (nothing
+  else in the experiment names it in a **Supersedes** field) carries at
+  least as many ``corners/<record-id>/*.log`` files as the predecessor its
+  own **Supersedes** field names -- a head record with fewer raw logs than
+  the evidence it supersedes is not hand-checkable on its own terms, even
+  though the directory itself is non-empty. A record that has since been
+  superseded by a later head is not re-checked against this rule: once a
+  fresh head exists, that is where a reader is directed for current,
+  self-supporting evidence, and evidence is append-only (a defect in an
+  already-committed, already-superseded record is fixed by minting a new
+  head, not by editing the old one);
 - nothing under ``records/``, ``netlist-snapshots/`` or ``corners/`` has been
   modified or deleted relative to the merge base -- evidence is append-only.
 
@@ -301,7 +312,54 @@ def list_evidence_paths(root: Path) -> tuple[list, str]:
 # --- record checks ----------------------------------------------------------
 
 
-def check_record(root: Path, experiment: Experiment, record_id: str) -> list:
+def _resolve_supersedes_target(
+    value: str, record_id: str, experiment: Experiment
+) -> str | None:
+    """The one record-id ``value`` names within ``experiment``, if any.
+
+    ``None`` for a "(none)" form, prose with no record-id, a self-reference,
+    or a reference to a record outside this experiment -- all of those are
+    reported by ``_check_supersedes`` already; this helper only needs the
+    happy path a log-count comparison can act on.
+    """
+    if _NO_SUPERSESSION_RE.match(value):
+        return None
+    for other in RECORD_ID_IN_TEXT_RE.findall(value):
+        if other != record_id and other in experiment.records:
+            return other
+    return None
+
+
+def _superseded_record_ids(root: Path, experiment: Experiment) -> set[str]:
+    """Record ids named in some *other* record's **Supersedes** field.
+
+    A record in this set is no longer the head of its supersession chain --
+    a later record has already taken over as the current, citable evidence
+    for the claim, so the log-count-vs-predecessor check in ``check_record``
+    does not re-litigate it (see that check's docstring note on why).
+    """
+    superseded: set[str] = set()
+    for record_id, path in experiment.records.items():
+        try:
+            text = (root / path).read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+        fields, _ = parse_fields(text)
+        supersedes = fields.get("Supersedes")
+        if supersedes is None or not supersedes.value:
+            continue
+        target = _resolve_supersedes_target(supersedes.value, record_id, experiment)
+        if target:
+            superseded.add(target)
+    return superseded
+
+
+def check_record(
+    root: Path,
+    experiment: Experiment,
+    record_id: str,
+    superseded_ids: frozenset = frozenset(),
+) -> list:
     """Every problem with one ``records/<record-id>.md`` and its siblings."""
     path = experiment.records[record_id]
     problems: list = []
@@ -365,6 +423,29 @@ def check_record(root: Path, experiment: Experiment, record_id: str) -> list:
         if reason:
             problems.append(Problem(corner_dir + name, reason))
 
+    if record_id not in superseded_ids and supersedes is not None and supersedes.value:
+        predecessor = _resolve_supersedes_target(supersedes.value, record_id, experiment)
+        if predecessor is not None:
+            predecessor_logs = [
+                name
+                for name in experiment.corner_files.get(predecessor, [])
+                if name.endswith(LOG_SUFFIX)
+            ]
+            if len(logs) < len(predecessor_logs):
+                problems.append(
+                    Problem(
+                        path,
+                        f"{corner_dir} holds {len(logs)} log(s), fewer than its "
+                        f"Supersedes predecessor {predecessor} "
+                        f"({len(predecessor_logs)} log(s)) -- the current head "
+                        "of a supersession chain must carry at least as many "
+                        "raw per-corner logs as the record it supersedes, so it "
+                        "stays hand-checkable on its own (sim/README.md); mint "
+                        "a fresh record with the missing logs rather than "
+                        "editing this one (evidence is append-only)",
+                    )
+                )
+
     return problems
 
 
@@ -403,8 +484,9 @@ def check_experiments(root: Path, experiments: dict) -> list:
     for slug in sorted(experiments):
         experiment = experiments[slug]
         problems += experiment.strays
+        superseded_ids = _superseded_record_ids(root, experiment)
         for record_id in sorted(experiment.records):
-            problems += check_record(root, experiment, record_id)
+            problems += check_record(root, experiment, record_id, superseded_ids)
         # Orphans: evidence with no record is evidence nobody can cite.
         for record_id in sorted(experiment.snapshots):
             if record_id not in experiment.records:
