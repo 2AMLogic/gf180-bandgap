@@ -854,13 +854,16 @@ def _mim_cap(
       pulls the markers' own right edge in to match the plate's, rather than
       the ``+400`` margin the other three edges keep), so `klt extract`'s
       ``top_region = FuseTop & CAP_MK & MIM_L_MK`` clips the tab away and
-      the recognised top plate is pixel-identical to before -- the tab is
-      real copper (a real electrical extension of the same plate) that the
-      *device recognition* deliberately does not see, exactly mirroring how
-      the bottom plate's own via stack lands on real, but device-recognition
-      -invisible, bottom-plate copper (see ``layout/lvs/make_reference.py``'s
-      "Known limitation" -- neither plate's routing is visible to `klt lvs`
-      either way, tab or no tab).
+      the recognised top plate is pixel-identical to before -- the tab, and
+      the ``Via4`` landing on it, are real copper (a real electrical
+      extension of the same plate) that the *device recognition* deliberately
+      does not see, which is what keeps the top plate its own floating net on
+      the extracted side (see ``layout/lvs/make_reference.py``,
+      gf180-bandgap#89). The bottom plate's own via stack, by contrast, lands
+      on bottom-plate copper that *is* device-recognition-visible for
+      connectivity purposes since klayout-tools#329: ``Metal4`` is one of the
+      deck's tracked ``metals[]`` layers, so that terminal resolves to the
+      real ``vdd`` net rather than a floating one.
 
       From the tab the via climbs to Metal5 (``FB_M5_WIRE_W`` wire), which
       carries the signal sideways to a *second*, ordinary Via4 landing on a
@@ -870,15 +873,20 @@ def _mim_cap(
       the bottom plate -- and from there down through Via3/Via2/Via1 into
       the already-drawn ``fb`` rail, same as the bottom plate's stack.
 
-    Neither via stack is visible to `klt lvs`'s own device-recognition graph
-    either way: ``CapacitorDevice`` registers both plates as connectivity
-    nodes of their own, joined to nothing (see plan.MimCapItem, and
-    ``layout/lvs/make_reference.py``'s "Known limitation") -- so the routing
-    itself is drawn correct by inspection, not by any tool's say-so. It was
-    checked by hand at review time (#77): each contact point's ``(x, y)``
-    traced back to the specific net it targets, and both plates' via chains
-    confirmed disjoint from each other and from every other row's own
-    rails.
+    Since klayout-tools#329, the two via stacks are *not* equally invisible
+    to `klt lvs`'s device-recognition graph: the bottom-plate stack lands
+    inside the recognised Metal4 bottom plate, which the deck now ties into
+    its own ``metals[]`` connectivity node, so that terminal resolves to the
+    real ``vdd`` net (see plan.MimCapItem and
+    ``layout/lvs/make_reference.py``, gf180-bandgap#89). The top-plate
+    stack's up-hop via lands on the routing tab above, which is drawn
+    outside ``CAP_MK``/``MIM_L_MK`` and so outside the *recognised* top
+    plate -- the deck's equivalent top-plate connectivity wiring never sees
+    that via touch it, so the top plate stays its own floating net despite
+    being routed for real. Both via chains were checked by hand at review
+    time (#77): each contact point's ``(x, y)`` traced back to the specific
+    net it targets, and both plates' via chains confirmed disjoint from each
+    other and from every other row's own rails.
     """
     w, h = cap.width_nm, cap.height_nm
     inset = MIM_PLATE_INSET

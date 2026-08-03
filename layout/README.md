@@ -93,23 +93,35 @@ Expected results (as committed):
 |---|---|
 | `matching_report.py` | all tier-1/2/3 checks pass, exit 0 |
 | `run_drc.py` | `status: violations`, `violation_count: 1` (`mim.enclosing.fusetop.1` — the tracked `fb` top-plate tab finding, #82) |
-| `run_lvs.py` | **currently `status: mismatch`, unrelated to this layout — see below** |
+| `run_lvs.py` | `status: match`, 156/156 devices, 93/93 nets |
 | `area_report.py` | 48,938.26 µm² vs. 50,000 µm² target — PASS, 2.1 % headroom |
 
-**`run_lvs.py`'s `match` result went stale between commits, independent of
-any code change here (gf180-bandgap#89):** the installed `klt` picked up
+**RESOLVED — `run_lvs.py`'s `match` result went stale between commits,
+independent of any code change here** ([#89](https://github.com/2AMLogic/gf180-bandgap/issues/89)).
+The installed `klt` picked up
 [`klayout-tools#329`](https://github.com/2AMLogic/klayout-tools/pull/329)
-(merged 2026-08-02), which now wires the compensation MIM capacitor's plates
-into the deck's ordinary `metals[]` connectivity instead of leaving them as
-isolated nodes — `layout/lvs/make_reference.py` still models the pre-#329
-floating-plate assumption, so `AMP_CC`'s device/net comparison now mismatches
-(18 mismatches, all on `amp.CC`/`vdd`/`fb` and structurally-resolved
-`topology` warnings — 0 mismatches involving any resistor). Reproduced
-identically on a from-scratch checkout of bare `origin/main` with **no**
-code changes at all, at both the current tip and the commit the last
-committed "match" evidence cites, so this is a pre-existing, tool-version
-regression unrelated to any resistor-geometry change — tracked as #89, not
-fixed here to keep this layout's own re-verification pass in scope.
+(merged 2026-08-02), which ties a recognised MiM capacitor's plates into the
+deck's ordinary `metals[]` connectivity when their plate/via-landing layers
+are among the deck's tracked metals, instead of leaving them as isolated
+nodes. `layout/lvs/make_reference.py` still modelled both `amp.CC` plates as
+synthesized floating nets — the pre-#329 assumption — so the comparison
+mismatched (18 mismatches, all on `amp.CC`/`vdd`/`fb` and
+structurally-resolved `topology` warnings — 0 mismatches involving any
+resistor). Verified directly against the installed `klt` (deck content hash
+`sha256:be1a89e0…872b1d`) rather than assumed from the upstream PR
+description: a real `klt extract` of the committed GDS reports the bottom
+plate (`Metal4`) resolved onto the real `vdd` net (`C$90 vdd $16 …`), while
+the top plate (`FuseTop`) stays its own isolated net — its `Via4` up-hop
+lands on the `fb` routing tab drawn outside `CAP_MK`/`MIM_L_MK` (#82), which
+the deck's top-plate connectivity wiring never sees touch the recognised top
+plate. `make_reference.py` now models the bottom plate on the cap's real net
+(`vdd` here) and leaves the top plate as its own floating net, matching that
+verified behaviour — `status: match` again, 156/156 devices, 93/93 nets
+(`20260803-010614-44fde28.lvs.json`). The drawn GDS did not change
+(`sha256:736d4a63…ad5cdf0`, unchanged; `generate.py`/`plan.py`'s docstring
+updates carry no geometry) — only the reference-netlist derivation moved.
+`20260803-002521-dbcd5ab.lvs.json` remains committed as the "before" evidence
+of the regression this resolves.
 
 `run_lvs.py`'s 156 compared devices are 34 `nfet` + 47 `pfet` (81 MOS,
 including the 14 edge dummies), 65 `ppolyf_u` + 1 `ppolyf_u_1k` resistors, 8
@@ -125,20 +137,13 @@ taught `make_reference.py` to model all three classes (it briefly reported
 new `ppolyf_u_1k` entry so `startup.RPU` extracts as a real resistor instead
 of a short.
 
-Of the current 18 mismatches, 14 are `warning`-severity and not defects: two
+Of the current 14 mismatches, all are `warning`-severity and not defects: two
 `device.body_unverified` entries are the deck's standing "no substrate/well
 tap layer" caveat (see below), and 12 `topology` entries are ambiguous net
 pairings the comparer resolved structurally — the six per-unit PNP Nwell
-nets and the symmetric interior nodes of the strapped-out trim loops (the
-MIM cap's own topology-ambiguity entry dropped out of this list because
-klayout-tools#329 gave its bottom plate a real net instead of an
-interchangeable floating one — see #89, that net now has nowhere to match on
-the *reference* side, which is exactly the new `error`-severity mismatches
-below). The remaining 4 are `error`-severity and *are* the #89 regression
-described above (`device.unmatched` + 2×`net.merged` + `net.split`, all on
-`amp.CC`/`vdd`/`fb`) — until #89 lands, `status: match` does not hold.
-`status` is `NetlistComparer`'s own boolean verdict, which `klt lvs` never
-re-derives from the mismatch list.
+nets and the symmetric interior nodes of the strapped-out trim loops. There
+are no `error`-severity mismatches. `status` is `NetlistComparer`'s own
+boolean verdict, which `klt lvs` never re-derives from the mismatch list.
 
 ## How the layout is built
 
@@ -252,7 +257,8 @@ the nine mechanical transformations it applies to get from
 the layout's edge dummies, body-terminal re-targeting, one resistor card per
 drawn `ppolyf_u` body, one `ppolyf_u_1k` card for `startup.RPU`, trim-strap
 resolution at the drawn code, one bipolar card per drawn PNP unit, and the
-MIM cap's floating plates. Every one of them is a consequence of the
+MIM cap's bottom plate on its real net with the top plate left floating.
+Every one of them is a consequence of the
 extraction deck's own capabilities or of how this layout draws the device;
 none is a design simplification, and nothing in the reference is hand-written.
 
@@ -261,32 +267,37 @@ none is a design simplification, and nothing in the reference is hand-written.
   trim units) and its extracted `R`; the drawn `ppolyf_u_1k` body
   (`startup.RPU`) and its extracted `R`; all 8 recognised `bjt` devices (one
   per drawn PNP unit, klayout-tools#304) and their `AE`; the MIM capacitor and
-  its `C`; and the full Metal1/Poly2/Contact connectivity joining them — i.e.
-  the drawn topology of the amplifier, the core mirror/cascode, the PNP
-  array, the resistor strip, the trim ladder with its drawn metal strap
-  option, and the start-up kick path. A resistor drawn at the wrong length or
-  fold count, a PNP with its emitter and base swapped, or a trim strap
-  landing on the wrong ladder node all now fail this check.
+  its `C`; the MIM cap's bottom-plate connection to `vdd` (klayout-tools#329,
+  gf180-bandgap#89); and the full Metal1/Poly2/Contact connectivity joining
+  everything else — i.e. the drawn topology of the amplifier, the core
+  mirror/cascode, the PNP array, the resistor strip, the trim ladder with its
+  drawn metal strap option, and the start-up kick path. A resistor drawn at
+  the wrong length or fold count, a PNP with its emitter and base swapped, a
+  trim strap landing on the wrong ladder node, or the MIM cap's bottom plate
+  wired to the wrong rail all now fail this check.
 - **Not covered** (each a tool-capability limit, each stated at its source):
   - **Device body/well terminals.** The deck draws no substrate- or
     well-tap layer, so every NMOS body compares against the synthesised
     `vsubs` global and every PMOS body against one anonymous well net —
     `klt lvs`'s own two `device.body_unverified` warnings.
-  - **The MIM capacitor's plate nets.** `klt extract` registers a recognised
-    cap's plates as their own connectivity nodes that are never joined to
-    the metal stack (`decks.CapacitorDevice`, "Known limitation"), so the
-    cap's terminals are two floating nets on the extracted side no matter
-    how the layout routes them. The *device* (correct value, correct plate
-    geometry) is compared; its connection to `vdd`/`fb` is not. Since #77
-    the layout **does** draw that connection — a real `Via1`..`Via4` stack
-    ties the Metal4 bottom plate to the `vdd` rail and the FuseTop top plate
-    to the `fb` rail (see `generate._mim_cap`) — but the tool still cannot
-    confirm it either way, so a wiring mistake here would pass `klt lvs`
-    (blind to plate connectivity) silently. As gf180-bandgap#82 found for
-    this exact geometry, it also used to pass `klt drc`, not because DRC does
-    not check the layers involved (it does, see "The gf180mcu DRC deck:
-    coverage" below) but because of an `enclosing_check` false negative on a
-    shape drawn entirely outside the enclosing layer
+  - **The MIM capacitor's top-plate net.** klayout-tools#329 ties a
+    recognised cap's plates into the deck's ordinary `metals[]` connectivity
+    when their plate/via-landing layers are among the deck's tracked
+    metals — gf180mcu's bottom plate (`Metal4`) qualifies, so `klt extract`
+    now resolves it to the real `vdd` net (see "Covered" above,
+    gf180-bandgap#89). The top plate (`FuseTop`) does not qualify the same
+    way here: its `Via4` up-hop lands on the `fb` routing tab drawn outside
+    `CAP_MK`/`MIM_L_MK` (see below), so the deck's top-plate connectivity
+    wiring never sees that via touch the *recognised* top plate, and the top
+    plate stays its own floating net on the extracted side regardless of how
+    the layout routes it. The *device* (correct value, correct plate
+    geometry) is compared, and so is the bottom-plate connection; the
+    top-plate connection to `fb` is not — a wiring mistake there would pass
+    `klt lvs` (blind to top-plate connectivity) silently. As gf180-bandgap#82
+    found for this exact geometry, it also used to pass `klt drc`, not
+    because DRC does not check the layers involved (it does, see "The
+    gf180mcu DRC deck: coverage" below) but because of an `enclosing_check`
+    false negative on a shape drawn entirely outside the enclosing layer
     ([klayout-tools#318](https://github.com/2AMLogic/klayout-tools/issues/318),
     checked by inspection at review time instead). **klayout-tools#318 is
     now resolved upstream** (klayout-tools#327, 2026-08-02): the current deck
@@ -479,10 +490,16 @@ are reported, not patched around:
   extracted capacitance is unaffected) and a standalone landing pad for the
   down-hop, the top plate to the `fb` rail — both piggy-backing on the
   already-drawn rails in the `AMPPCASC` row the cap's footprint stacks over.
-  `klt extract` still cannot confirm either connection (see "What the LVS
-  verdict does and does not cover"), so the reference correctly keeps
-  modelling the plates as floating; the routing itself was checked by
-  inspection, not by `klt drc`/`klt lvs` passing.
+  At the time, `klt extract` could not confirm either connection (see "What
+  the LVS verdict does and does not cover"), so the reference modelled both
+  plates as floating; the routing itself was checked by inspection, not by
+  `klt drc`/`klt lvs` passing. **Update (gf180-bandgap#89):** klayout-tools#329
+  (merged 2026-08-02) taught the deck to confirm the bottom-plate connection
+  — the reference now models the bottom plate on its real net (`vdd`) and
+  verified that against a real `klt extract` run rather than assuming it.
+  The top-plate connection is still not confirmed, because its via lands on
+  the routing tab kept outside `CAP_MK`/`MIM_L_MK` (see the next bullet), so
+  the reference still models the top plate as floating.
 - **The `fb` top-plate routing tab #77 drew is not manufacturable, and
   `klt drc`'s `clean` verdict on it is a false negative** —
   [#82](https://github.com/2AMLogic/gf180-bandgap/issues/82), filed against
