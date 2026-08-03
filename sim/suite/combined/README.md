@@ -35,6 +35,7 @@ table, not by their filename.
 | `20260803-024856-b4a0e6a.md` | same legs as `…-40990fd` — supersedes it (corrected methodology text) | FAIL — 66/81 corners |
 | `20260803-024953-3e50aad.md` | same legs as `…-ae39de2` — supersedes it (corrected methodology text) | FAIL — 66/81 corners |
 | `20260803-033127-b71297b.md` | pinned pair, both schematic-provenance: corners `20260802-064729-75ca562`, MC `20260803-031207-294fb1d` (#98's re-run, all 12 logs) | FAIL — 66/81 corners |
+| `20260803-035859-d6dc60b.md` | **unpinned** — the provenance-paired default (#100) picks the same schematic pair as `…-b71297b`: corners `20260802-064729-75ca562`, MC `20260803-031207-294fb1d` | FAIL — 66/81 corners |
 
 The first two reports are superseded, not withdrawn: their **Methodology**
 section stated the graft offset as `mean(mm_all, T) − vref(mm_ctrl, T)`, which
