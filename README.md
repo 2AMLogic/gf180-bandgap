@@ -132,6 +132,14 @@ npm run lint        # same lint the CI lint job runs
 npm run check:ci    # lint + harness self-test (the whole PR gate, locally)
 ```
 
+## History
+
+This repository was developed privately from 2026-07-28 and opened to the
+public on 2026-07-31. The full history — including the early private-era
+commits — is preserved intact rather than rewritten: the evidence records
+under `sim/*/records/` cite commit SHAs as provenance, and rewriting history
+would break the chain that makes those results checkable.
+
 ## License
 
 Apache License 2.0 — see [`LICENSE`](LICENSE).
