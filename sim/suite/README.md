@@ -1,9 +1,10 @@
 # sim/suite — one testbench per spec line
 
 ```bash
-python3 sim/run_suite.py            # every bench, full PVT matrix, mints records
-python3 sim/run_suite.py --list     # the ratified-spec-row -> testbench index
-python3 sim/run_suite.py --smoke    # nominal-only debugging run, records nothing
+python3 sim/run_suite.py                  # every bench, full PVT matrix, mints records
+python3 sim/run_suite.py --list           # the ratified-spec-row -> testbench index
+python3 sim/run_suite.py --smoke          # nominal-only debugging run, records nothing
+python3 sim/run_combined_accuracy.py      # the two-legged accuracy verdict, from records
 ```
 
 `python3 sim/run_suite.py` is the single command that runs every spec-line
@@ -23,7 +24,8 @@ evidence*, never a substitute for it.
 
 | Ratified row | Bench | Gate |
 |---|---|---|
-| Output reference | `sim/output-voltage-tc/` | `vref` ∈ 1.176–1.224 V at every corner |
+| **Output reference (both legs)** | `sim/output-voltage-tc/` **+** `sim/mc-untrimmed/` | mean ± 3σ mismatch interval ⊆ 1.176–1.224 V at every corner |
+| Output reference (corner leg alone) | `sim/output-voltage-tc/` | `vref` ∈ 1.176–1.224 V at every corner |
 | Temp coefficient | `sim/output-voltage-tc/` | `tc_ppm` ≤ 50 ppm/°C (box method) |
 | PSRR | `sim/psrr-dc/` | `psrr_1hz_db` and `psrr_1khz_db` ≥ 60 dB |
 | Line regulation | `sim/line-regulation/` | `linereg_mv_per_v` ≤ 1 mV/V |
@@ -33,10 +35,52 @@ evidence*, never a substitute for it.
 
 `sim/suite/spec.py` is the authoritative copy of that table in code, with the
 measurement convention for each row. Rows the suite deliberately does *not*
-claim — the mismatch/3σ half of the accuracy row (#13), trim (#14), area
-(#15/#16), and the open items A6/A7 — are listed in every summary it prints,
-because "simulation-complete" is only an honest phrase if what is missing is
-stated in the same breath.
+claim — trim (#14), area (#15/#16), and the open items A6/A7 — are listed in
+every summary it prints, because "simulation-complete" is only an honest
+phrase if what is missing is stated in the same breath.
+
+### The accuracy row takes two benches, not one
+
+The ratified Output-reference row is written as "1.20 V ±2% untrimmed
+(3σ, mismatch MC N≥300 **+** process corners, −40…125 °C)" — a **two-legged**
+basis. Neither bench's own verdict is that row's verdict: `output-voltage-tc`
+has no device mismatch, and `mc-untrimmed` runs at `tt`/3.30 V only.
+`sim/suite/combined.py` states the combination rule and issues the joint
+verdict; `python3 sim/run_combined_accuracy.py` runs it standalone (no PDK,
+no ngspice — it reads both benches' committed records), and a full
+`run_suite.py` run prints the same verdict inline.
+
+- **Granularity: per corner, rolled up per temperature.** One pass/fail per
+  corner of the 81-point matrix, because the process corner is an enumerated
+  worst case rather than a distribution — a per-temperature-only verdict
+  would hide *which* corner binds. The per-temperature table is then the
+  worst-margin corner at each of −40/27/125 °C, the shape the MC record's own
+  window table uses.
+- **The rule.** `delta(T) = mean(mm_all,T) − vref_det(tt_<T>c_3.30v)`;
+  each corner's interval is `vref_det(c) + delta(T) ± 3σ(mm_all,T)`, and it
+  must fit inside 1.176–1.224 V. Anchoring `delta` on the one corner both
+  benches simulate means the combined interval at `tt`/3.30 V *is* the MC
+  record's own mean ± 3σ window — the combination adds corners to that
+  record's table, it never restates its numbers as something else.
+- **The approximation, and its guard.** The mismatch spread is measured at
+  `tt`/3.30 V and applied at every corner, i.e. local mismatch is treated as
+  separable from the global corner (first order: a slow corner shifts `gm/Id`
+  and therefore the mismatch gain a little). The guard is an **anchor
+  cross-check**: the MC bench's deterministic control group (`mm_ctrl`) and
+  the corner leg's `tt/3.30 V` point are the same operating point reached by
+  two independent code paths and must agree to 100 µV. If they disagree the
+  verdict reads `INVALID`, never PASS and never a FAIL blamed on the design.
+- **`par_r` sensitivity.** The mismatch leg's resistor sigma comes from a
+  coefficient that ships commented out in the PDK model, so every report
+  re-judges the matrix with that one contributor scaled ×0.5 and ×2 and says
+  whether any corner's verdict moves. The accepted risk is recorded in
+  [`spec/decision-records/0004-par-r-mismatch-coefficient-risk.md`](../../spec/decision-records/0004-par-r-mismatch-coefficient-risk.md).
+- **Re-running.** Both legs default to the **newest** record under their own
+  `records/` directory, so after either bench is re-run a bare
+  `python3 sim/run_combined_accuracy.py` re-judges against the new evidence
+  with no argument changes; `--mc-record` / `--corner-record` pin a specific
+  pair. Reports land in `sim/suite/combined/<record-id>.md` and are
+  append-only like everything else under `sim/`.
 
 ### Startup is wired in, not reimplemented
 

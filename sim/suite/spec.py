@@ -82,7 +82,11 @@ SUITE: tuple[SpecLine, ...] = (
         note=(
             "Corner portion of the row only: process x temperature x supply. "
             "The row's 3-sigma untrimmed *mismatch* portion (mismatch MC, "
-            "N>=300) is #13's `mc-untrimmed` bench and is NOT claimed here."
+            "N>=300) is #13's `mc-untrimmed` bench; the two legs are judged "
+            "together by the combined verdict below (`COMBINED_ACCURACY`, "
+            "`sim/suite/combined.py`), which is the row's ratified basis. This "
+            "line remains reported on its own so it stays visible which leg "
+            "binds."
         ),
     ),
     SpecLine(
@@ -180,6 +184,45 @@ SUITE: tuple[SpecLine, ...] = (
 
 
 @dataclass(frozen=True)
+class CombinedRow:
+    """A ratified row whose verdict needs two benches combined, not one.
+
+    The Output-reference row is ratified on a **two-legged** basis -- mismatch
+    MC *and* process corners -- so no single bench's own pass/fail is that
+    row's verdict. :mod:`sim.suite.combined` states the combination rule and
+    emits the joint verdict; this entry is the index of what it combines.
+    """
+
+    row: str
+    target: str
+    legs: tuple[tuple[str, str], ...]   # (slug, what that leg supplies)
+    note: str
+
+
+#: The one ratified row the suite claims by combining two benches.
+COMBINED_ACCURACY = CombinedRow(
+    row="Output reference (untrimmed accuracy, both legs)",
+    target="1.20 V +/-2% untrimmed (3 sigma, mismatch MC N>=300 + process corners)",
+    legs=(
+        ("output-voltage-tc", "deterministic Vref at each of 81 process x "
+                              "temperature x supply corners"),
+        ("mc-untrimmed", "the `mm_all` group's N>=300 local-mismatch "
+                         "distribution of Vref, per temperature"),
+    ),
+    note=(
+        "Per corner: the mismatch distribution measured at tt/3.30 V is "
+        "grafted onto every corner's own deterministic Vref and the full "
+        "3-sigma interval must fit inside 1.176-1.224 V. Rolled up per "
+        "temperature (worst-margin corner governs). The graft assumes local "
+        "mismatch is separable from the global corner and cross-checks that "
+        "assumption against the MC bench's own deterministic control group -- "
+        "see `sim/suite/combined.py` and "
+        "`python3 sim/run_combined_accuracy.py`."
+    ),
+)
+
+
+@dataclass(frozen=True)
 class UnclaimedRow:
     """A ratified table row this suite does not, and should not, claim."""
 
@@ -191,10 +234,6 @@ class UnclaimedRow:
 #: every summary: "simulation-complete" is only an honest phrase if what is
 #: *not* covered is stated in the same breath.
 NOT_CLAIMED_HERE: tuple[UnclaimedRow, ...] = (
-    UnclaimedRow(
-        "Output reference (3-sigma untrimmed mismatch portion)",
-        "mismatch Monte Carlo, N>=300 -- #13 (`mc-untrimmed`)",
-    ),
     UnclaimedRow("Trim", "no trim segments exist in the schematic yet -- #14"),
     UnclaimedRow("Output noise", "threshold is open item A6 (README.md); no bench yet"),
     UnclaimedRow("Load", "load condition is open item A7 (README.md); no bench yet"),

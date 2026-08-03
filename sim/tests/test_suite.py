@@ -290,6 +290,40 @@ class SummaryTests(unittest.TestCase):
         self.assertIn("mc-untrimmed", text)
         self.assertIn("Area", text)
 
+    def test_the_mismatch_leg_is_no_longer_listed_as_unclaimed(self):
+        """It is claimed now -- by the combined verdict, not by one bench."""
+        unclaimed = " ".join(row.row for row in spec.NOT_CLAIMED_HERE)
+        self.assertNotIn("mismatch", unclaimed.lower())
+        self.assertIn("mc-untrimmed", [slug for slug, _ in spec.COMBINED_ACCURACY.legs])
+        self.assertIn(
+            "output-voltage-tc", [slug for slug, _ in spec.COMBINED_ACCURACY.legs]
+        )
+
+    def test_a_failing_combined_row_is_reported_even_when_every_bench_passes(self):
+        """The accuracy row is ratified on two legs; one leg passing is not it."""
+        import datetime as dt
+
+        from suite import combined as combined_module
+
+        mc = {
+            ("mm_all", 27.0): combined_module.GroupStats(
+                "mm_all", 27.0, 300, 1.2140, 0.0050
+            )
+        }
+        verdict = combined_module.evaluate({"tt_27c_3.30v": {"vref": 1.2142}}, mc)
+        text = render_summary(
+            [self._bench("iq", {"tt_27c_3.30v": {"iq_ua": 44.0}})],
+            started=dt.datetime(2026, 8, 1, tzinfo=dt.timezone.utc),
+            git={"commit": "f" * 40, "short": "fffffff", "branch": "main", "dirty": False},
+            mode="full PVT",
+            wrote_evidence=True,
+            combined=verdict,
+        )
+        self.assertEqual(verdict.status, "FAIL")
+        self.assertIn("Output reference (untrimmed accuracy, both legs)", text)
+        self.assertIn("Combined verdict: FAIL", text)
+        self.assertNotIn("Simulation-complete**: all", text)
+
 
 if __name__ == "__main__":
     unittest.main()

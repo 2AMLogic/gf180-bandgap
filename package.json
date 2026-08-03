@@ -13,6 +13,7 @@
     "sim:smoke": "python3 sim/run_corners.py smoke-bias",
     "sim:suite": "python3 sim/run_suite.py",
     "sim:suite:list": "python3 sim/run_suite.py --list",
+    "sim:combined": "python3 sim/run_combined_accuracy.py",
     "lint": "bash .github/scripts/lint.sh"
   }
 }

@@ -845,9 +845,31 @@ centre — 1.207–1.219 V untrimmed against 1.200 V (was 1.222–1.244 V before
 first-pass hand sizing at the trim network's mid-code, which is what the
 1-point wafer-probe trim exists to remove — see
 `design/bandgap_trim_network.md`. The bench's own verdict folds centre and
-width together and therefore still reads FAIL. The process-corner leg is
-#12's, and combining the two legs into a single verdict is a follow-on step
-this document does not attempt.
+width together and therefore still reads FAIL.
+
+**The two legs are now judged together (#97).** The ratified basis is
+mismatch MC **+** process corners, so neither bench's own verdict is this
+row's verdict. `python3 sim/run_combined_accuracy.py`
+(`sim/suite/combined.py`) grafts the measured mismatch distribution onto
+every corner of `sim/output-voltage-tc/`'s 81-point matrix — one pass/fail
+per corner, rolled up per temperature — and the first combined report is
+[`sim/suite/combined/`](../sim/suite/combined/). Against the current records
+it reads **FAIL at all three temperatures: 66 of 81 corners** put part of
+the 3σ interval outside 1.176–1.224 V (12/27 at −40 °C, 27/27 at 27 °C and
+125 °C; worst margin −23.7 mV at `bjt_ss_125c_3.30v`). The attribution is
+the same un-recentred mean described above, not a spread problem: only
+**6** of those 81 corners fail on their deterministic value alone, every
+failing interval violates the *upper* window edge, and the mismatch
+half-width itself (16.2–16.8 mV) is comfortably inside the ±24 mV the window
+allows about a centred mean. So the combined verdict is expected to move
+substantially once the centre is re-centred and the TC/corner-sweep work
+(**#96**) lands — the report is re-run by the same bare command against
+whatever records are newest at that point, and mints a new report rather
+than editing this one. The methodology, its stated separability
+approximation, the bench-to-bench anchor cross-check that guards it, and the
+`par_r` sensitivity band (accepted as a documented risk in
+[`spec/decision-records/0004-par-r-mismatch-coefficient-risk.md`](../spec/decision-records/0004-par-r-mismatch-coefficient-risk.md))
+are described in `sim/suite/README.md`.
 
 Beyond those, a pass/fail claim against the remaining ratified rows (line
 regulation, output noise, area, load) is still premature: R1/R2 remain a
