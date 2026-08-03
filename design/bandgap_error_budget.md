@@ -1,4 +1,4 @@
-# Offset/mismatch budget: error amplifier and core mirror (issues #10, #42, #55, #61)
+# Offset/mismatch budget: error amplifier and core mirror (issues #10, #42, #55, #61, #96)
 
 This document allocates the ratified untrimmed output-accuracy target
 (`README.md` "Target specification": **1.20 V ±2 % untrimmed, 3σ, mismatch
@@ -967,6 +967,15 @@ close it instead, are load-bearing for the next issue that touches this
 circuit's current or resistor sizing. One out-of-scope item (the untrimmed
 mean) remains, stated so it is not mistaken for closed.
 
+**Update (#96).** The temperature-coefficient row and the corner leg of the
+output-reference row — both left open by #61 (Section 5a's closing note:
+"an unrelated, pre-existing miss that #61 measurably narrows rather than
+one it introduces or is responsible for closing") — are now also closed.
+Section 5b has the derivation and the measured result; the untrimmed
+mismatch-MC **mean** (as distinct from the corner leg) remains the one item
+still open, unchanged by #96 and out of its scope (Section 5b's own closing
+note).
+
 **Untrimmed accuracy: the mismatch *spread* closes; the untrimmed *mean*
 does not, and is not this document's.** Section 2.7's allocation now covers
 every device group in the block and closes at 17.19 mV against 24.0 mV, and
@@ -1147,6 +1156,124 @@ output-reference row) also improved: 1.20264–1.23105 V, against
 neither a claim this issue re-centres the untrimmed mean (see "Not in
 scope" in issue #61).
 
+### 5b. #96: re-nulling `R1` alone against a corner-swept TC objective closes it
+
+**Why this was still open after #61.** #55 and #61 both explicitly preserved
+the #8 first-pass `R1`/`R2` ratio (`15.28425`) rather than re-deriving it —
+#61's own closing note above calls the TC row's residual "an unrelated,
+pre-existing miss... that #61 measurably narrows rather than one it
+introduces or is responsible for closing." Neither issue's scope was TC; #55
+scoped mirror sizing, #61 scoped quiescent current.
+
+**Root cause, closed form.** Section 5 above establishes `I = ΔVBE/R2` —
+the design current has no `R1` dependence at all. `Vref(T) = VEB(Q3)(T) +
+I(T)·(R1 + R_trim)`, so for a fixed `R2` (and therefore a fixed `I(T)` at
+every temperature), `Vref(T)` is **exactly affine in `R1`** at every
+temperature: changing `R1` alone cannot move `I(T)` or `ΔVBE(T)` at all. This
+makes `R1` — and only `R1` — the correct, isolated lever for re-nulling TC
+without touching the #61-closed quiescent-current row (`R2`-set), the
+resistor/PNP mismatch *ratios* (Sections 2.5/2.6, which are `R1/R2`-ratio
+invariant only under a co-scale — this is a single-lever move, not one), or
+the trim step size (`R_unit`-set, unchanged).
+
+**Method: exploit the affine relationship instead of a per-`R1` corner
+re-sweep.** Two full `-40..125 °C` internal-sweep runs (the same fine
+sweep `sim/output-voltage-tc/` uses) at two different `R1` values, same
+`R2` and everything else, reconstruct `Vref(T)` for *any* `R1` at that
+corner by exact linear interpolation/extrapolation on the measured pair —
+not a curve fit, because the affine relationship above is a circuit fact.
+The method was checked against the existing FAIL record before being
+trusted for a search: reproduced its `tc_ppm` to 3+ significant figures at
+every one of the 9 process corners. Minimizing the worst-of-9-corners box
+`tc_ppm` over `R1` this way finds a single global minimum — `bjt_ff` and
+`bjt_ss` (the two corners bracketing the ratified row's binding case) cross
+at `R1 = 78470.5 Ω`, a Chebyshev-style optimum (both worst corners equal,
+confirmed by a wide re-scan `R1 = 20 k…150 k Ω` finding no other local
+minimum) — worst-case `tc_ppm ≈ 29.79 ppm/°C` there on the 9-corner/1-supply
+search subset, 40 % margin against the ratified 50 ppm/°C bound.
+
+**Sizing.**
+
+```
+R1 (fixed, e3->tn0)   L=460.701871u -> 436.705296u  (82779.0 -> 78470.5 ohm)
+R2, R_unit, trim ladder structure: UNCHANGED
+R1_total/R2 (default trim code 32): 15.28425 -> 14.63021
+```
+
+`R2` and the trim ladder are untouched — the affine argument above is
+exactly why they don't need to move. `R1_total/R2` is no longer a
+hand-picked ratio; it is what the corner-swept minimization landed on.
+
+**Result, measured — full 81-point PVT grid (not the 9-corner/1-supply
+search subset above), plus every bench the issue's test plan required as a
+regression check, all re-run against the resized DUT:**
+
+| Bench | Metric | Before #96 | **After #96** | Gate | Verdict |
+|---|---|---|---|---|---|
+| `sim/output-voltage-tc/` | `tc_ppm`, envelope over 81 corners | 36.37–90.50 ppm/°C, 63/81 FAIL (record [`20260802-064729-75ca562`](../sim/output-voltage-tc/records/20260802-064729-75ca562.md)) | **13.56–29.84 ppm/°C** | ≤ 50 ppm/°C | **PASS** 81/81 (record [`20260803-024632-294fb1d`](../sim/output-voltage-tc/records/20260803-024632-294fb1d.md)) |
+| `sim/output-voltage-tc/` | `vref` (accuracy-window corner leg) | 6/81 FAIL, all at 125 °C `res_ff`/`bjt_ss` (1.22874–1.23105 V), same record | **1.18142–1.20185 V** | 1.176–1.224 V | **PASS** 81/81, same new record |
+| `sim/iq/` | `iq_ua`, worst (`ff`/125 °C/3.63 V) | 34.0144 µA (record [`20260801-230754-960f726`](../sim/iq/records/20260801-230754-960f726.md), #61) | **34.0054 µA** | < 50 µA | **PASS** 81/81 (record [`20260803-031533-294fb1d`](../sim/iq/records/20260803-031533-294fb1d.md)), unchanged within noise — `R1` cannot move `I` (root cause above) |
+| `sim/psrr-dc/` | `psrr_1khz_db`, worst corner (`res_ss`/125 °C/3.63 V) | 73.8437 dB (record [`20260802-045149-cf2ab8d`](../sim/psrr-dc/records/20260802-045149-cf2ab8d.md), post-#61) | **74.215 dB** | > 60 dB DC–1 kHz | **PASS** 81/81 (record [`20260803-031631-294fb1d`](../sim/psrr-dc/records/20260803-031631-294fb1d.md)), unchanged within noise |
+| `sim/startup/` | `startup_time_s`, worst | 28.19 µs (record [`20260801-230933-960f726`](../sim/startup/records/20260801-230933-960f726.md), #61) | **43.97 µs** (`fs`/−40 °C/2.97 V) | < 1 ms | **PASS** 81/81 (record [`20260803-034153-294fb1d`](../sim/startup/records/20260803-034153-294fb1d.md)) — real increase, explained below, still 4.4 % of budget |
+| `sim/startup/` | `iq_total_final_ua`, worst | 34.4132 µA | **33.9447 µA** | (cross-check of `sim/iq/`) | **PASS**, unchanged within noise |
+| `sim/line-regulation/` | `linereg_mv_per_v`, worst (`res_ss`/125 °C/3.30 V) | not previously re-run against #61's resize | **0.0399 mV/V** | < 1 mV/V | **PASS** 27/27 (record [`20260803-031951-294fb1d`](../sim/line-regulation/records/20260803-031951-294fb1d.md)) |
+| `sim/line-regulation/` | `vref_min`/`vref_max` | — | **1.18142 / 1.20185 V** | 1.176–1.224 V | **PASS**, same record |
+
+**Why `sim/startup/`'s and `sim/startup-slow-ramp/`'s embedded testbenches
+needed their own fix first.** Unlike `sim/output-voltage-tc/`, `sim/iq/`,
+`sim/psrr-dc/` and `sim/line-regulation/` (which drive the swappable
+`sim/dut/bandgap_top.spice` per `sim/README.md`'s convention and therefore
+picked up `R1`'s new value automatically), `sim/startup/testbench/` and
+`sim/startup-slow-ramp/testbench/`'s `bandgap_startup_ramp.spice` embed
+their *own* copy of `bandgap_core`, with `R1` collapsed into a single lumped
+device together with the trim ladder's 32 default-code unit segments (a
+`sim/startup/`-specific optimization predating the swappable-DUT
+convention). A first `sim/startup/` run against the unmodified lumped value
+reproduced #61's own numbers exactly — proof the stale embedded value, not
+`R1`, was being measured. The lumped device was re-solved the same way
+#61's own value was: `R1_new`'s and `R_unit`'s resistances measured directly
+on this design's own ngspice model (two-terminal DC op-point check at
+50 mV bias, `tt`/27 °C — `design/bandgap_operating_point.md` §2's method),
+then a single device's length bisected to match `R1_new + 32·R_unit`
+exactly (`96360.76 Ω`, was `100669.29 Ω`) — not interpolated from the
+documented approximate fit coefficients, because a lumped device's `L` is
+not a simple sum of the real devices' lengths (Section 5a's `ppolyf_u`
+compound-device note: one device pays the fit's constant term once, not
+33 times). Both embedded testbench files (kept byte-identical by design,
+see their own header) were updated together and both `sim/startup/` and
+`sim/startup-slow-ramp/` were re-run.
+
+**Why `startup_time_s` genuinely increased (not a regression, not noise).**
+`sim/startup/`'s own measurement (`tb.json`) defines `startup_time` as the
+time from `vdd` crossing 90 % of its final value to the last time `vref`
+exits a **±1 % band around its own final value**. That tolerance band is
+1 % of `vref`'s new, `R1`-lowered final value — a narrower absolute-volt
+window for the same underlying current-settling transient (which Section 5
+established `R1` cannot move) to converge into. A tighter absolute window
+around an unchanged-shape settling waveform takes more time constants to
+enter, which is exactly what was measured: 28.19 µs → 43.97 µs, still
+4.4 % of the 1 ms budget. `iq_total_final_ua` (the actual current-settling
+quantity) stayed flat (34.41 → 33.94 µA), confirming the dynamics
+themselves did not change — only the derived time-domain threshold that
+`vref`'s new absolute level shifted.
+
+**Untrimmed mean, and the other embedded-schematic benches — out of
+scope, unchanged.** `sim/mc-untrimmed/` (the mismatch-MC leg of the
+output-reference row) was not re-run against `R1`'s new value — a
+documented follow-on, not required by this issue (see
+`design/bandgap_operating_point.md` §6). `sim/amp-loop-stability/`,
+`sim/amp-psrr/`, `sim/amp-offset-sensitivity/`, `sim/core-mirror-sensitivity/`,
+`sim/core-psrr-ideal-amp/`, `sim/bandgap-loop-smoke/`,
+`sim/startup-disabled-control/` and `sim/startup-state-search/` also embed
+their own copy of `bandgap_core` (same pattern as `sim/startup/`, predating
+the swappable-DUT convention) and were **not** updated or re-run here: none
+of them measure `Vref`'s absolute value or are gated by it (loop gain,
+PSRR ratio, offset sensitivity and settle-state proofs are all quantities
+Section 5's affine argument shows `R1` cannot move), and none is in this
+issue's required regression list. Their embedded `R1` remaining stale is a
+pre-existing gap in those testbenches' maintenance, not one this issue
+introduces or was scoped to close.
+
 ## 6. Summary of acceptance criteria
 
 ### 6.1 #42 (amplifier)
@@ -1187,3 +1314,15 @@ scope" in issue #61).
 | `sim/mc-untrimmed/` re-run; 3σ spread stays inside 24.0 mV | **PASS** at all three temperatures — 16.22/16.36/16.81 mV (was 14.89/15.12/15.82 mV; rose because the MOS/BJT `gm/Id` effect outweighs the resistor-line improvement, still 30–32 % margin) — record [`20260801-232002-960f726`](../sim/mc-untrimmed/records/20260801-232002-960f726.md), Section 5a |
 | `sim/amp-loop-stability/`, `sim/amp-psrr/`, `sim/startup/` re-run — pole locations move with branch currents | **PASS** all three, 81/81 each — PM worst 95.489° (≥45°), no Nyquist critical-axis crossing; `psrr_worst_db` 73.805 dB worst (>60 dB); startup 8.96–28.19 µs (≪1 ms) — records [`20260801-231150-960f726`](../sim/amp-loop-stability/records/20260801-231150-960f726.md), [`20260801-231234-960f726`](../sim/amp-psrr/records/20260801-231234-960f726.md), [`20260801-230933-960f726`](../sim/startup/records/20260801-230933-960f726.md) |
 | `design/bandgap_error_budget.md` Sec 5 and `design/bandgap_operating_point.md` §4.3 updated; no `spec/` changes | **Done** — this document (Sections 3, 5, 5a, 6.3) and `design/bandgap_operating_point.md` (header, §2, §4.3, §6); nothing under `spec/` touched, no `tb.json` threshold altered |
+
+### 6.4 #96 (re-null `R1` for temperature coefficient)
+
+| Criterion | Status |
+|---|---|
+| `R1`/`R2` (and/or the trim network) re-derived against an explicit TC target, not just the quiescent-current target #61 solved for | **Done** — `R1` alone re-derived against a corner-swept, Chebyshev-optimum TC objective (`R1 = 78470.5 Ω`, was `82779.0 Ω`); `R2` and the trim network deliberately untouched — Section 5b |
+| Fresh `sim/output-voltage-tc/` full-PVT (81-corner) run passes the ratified `≤ 50 ppm/°C` TC row at every corner, or the shortfall is re-scoped through a new decision record | **PASS** 81/81 — **13.56–29.84 ppm/°C** (record [`20260803-024632-294fb1d`](../sim/output-voltage-tc/records/20260803-024632-294fb1d.md)); no `spec/` decision record needed — Section 5b |
+| Same run's accuracy-window check (1.176–1.224 V) passes at every corner, or any residual failure is explicitly re-attributed | **PASS** 81/81 — **1.18142–1.20185 V**, same record; closes the 6 corner failures (125 °C `res_ff`/`bjt_ss`) this issue was filed against — Section 5b |
+| `design/bandgap_operating_point.md` and `design/bandgap_error_budget.md` updated to reflect the new sizing and the now-closed rows | **Done** — this document (Sections 5, 5b, 6.4) and `design/bandgap_operating_point.md` (header, §2 "Update (#96)", §6) |
+| Regression check against every other already-passing bench (`sim/iq/`, `sim/psrr-dc/`, `sim/startup/`, `sim/line-regulation/`), same discipline #61 followed | **PASS**, all four, 81/81 (27/27 for `sim/line-regulation/`) — Section 5b's table; `sim/startup/`'s embedded testbench needed its own lumped-resistor fix first (Section 5b) to be a valid check at all |
+| No `spec/` changes | **Done** — nothing under `spec/` touched, no `tb.json` threshold altered |
+| Untrimmed mismatch-MC mean (`sim/mc-untrimmed/`) explicitly out of scope | **Done** — Section 5b's closing note; tracked as a documented follow-on, same as #61 left it |

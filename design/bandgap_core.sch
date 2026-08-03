@@ -153,6 +153,61 @@ v {xschem version=3.4.7 file_version=1.2
 * design/device-characterization.md Sec 1 characterizes, and every affected
 * row is re-verified over the full PVT grid rather than extrapolated.
 *
+* R1 RE-NULLING (issue #96) -- #61's k=2 co-scale preserved R1/R2 = 15.28425
+* (the #8 first-pass hand ratio) and only IMPROVED the box-method tc_ppm as
+* a side effect of VEB(Q3)'s CTAT slope steepening slightly; it was never
+* itself corner-swept and re-nulled against a TC target, and the full
+* 81-point sim/output-voltage-tc/ grid showed the residual: 63/81 corners
+* failing the ratified <=50 ppm/C row, worst 90.4952 ppm/C at
+* bjt_ss_-40c_{2.97v,3.30v} (record 20260802-064729-75ca562), plus 6/81
+* accuracy-window (1.20 V +/-2%) failures at the 125 C points of the same
+* two worst-TC families (res_ff, bjt_ss).
+*
+* Root cause: vref = VEB(Q3) + I*(R1 + Rtrim), I = dVBE/R2 set ENTIRELY by
+* R2 (Sec above) -- so for fixed R2, vref(T) is exactly AFFINE in R1 at
+* every temperature (changing R1 alone cannot move I(T) or dVBE(T) at all).
+* This makes R1 -- and only R1 -- the correct, isolated lever for
+* re-nulling TC without touching the #61-closed Iq row (R2-set), the
+* resistor/PNP mismatch ratios (Sec 2.5/2.6, R1/R2-ratio invariant), or the
+* trim step size (I*R_unit, R2-set). Exploited directly: two full
+* 81-point-grid-equivalent runs of the SAME fine -40..125 C sweep this
+* bench uses, at the unchanged R1=460.701871u and at a deliberately
+* different R1=230.350936u (same R2, same everything else), reconstruct
+* vref(T) for ANY R1 by linear interpolation/extrapolation on the measured
+* pair -- exact, not approximate, because the affine relationship above is
+* a circuit fact, not a curve fit. (Reproduced the existing
+* 20260802-064729-75ca562 record's own tc_ppm to 3+ significant figures at
+* every one of the 9 process corners as a correctness check on the method
+* before using it.) Minimizing the worst-of-9-corners box tc_ppm over R1
+* this way finds a single global minimum -- bjt_ff and bjt_ss (the two
+* corners bracketing the ratified row's binding case) cross at
+* R1 = 78470.5 ohm, worst-case tc_ppm = 29.79 ppm/C there (bjt_ff and
+* bjt_ss both, by construction of the minimization) -- 40% margin against
+* the ratified 50 ppm/C bound, and every other one of the 9 corners comes
+* in lower still (13.56-24.44 ppm/C). This also happens to be a
+* Chebyshev-style (both-worst-corners-equal) optimum, not just "a" root:
+* moving R1 either direction from 78470.5 ohm makes one of {bjt_ff, bjt_ss}
+* worse, confirmed by a wide re-scan (R1 = 20 k..150 k ohm) finding no other
+* local minimum.
+*
+*   R1 (fixed, e3->tn0)   L=460.701871u -> 436.705296u  (82779.0 -> 78470.5 ohm)
+*
+* R2, R_unit and the trim ladder structure are UNCHANGED by this issue --
+* the affine argument above is exactly why they don't need to move. The
+* default trim code (32) is retained as the reference state; R1_total
+* (R1 + 32 unit segments) / R2 becomes 14.63021 (was 15.28425) -- this
+* ratio is no longer being hand-picked, it is what the corner-swept
+* minimization above landed on.
+*
+* Full PVT verification (all 81 points, not the 9-corner/1-supply subset
+* the search above used to keep iteration cost down): sim/output-voltage-tc/
+* re-run, design/bandgap_error_budget.md Sec 5b, design/bandgap_operating_point.md
+* Sec 6. Side effect: lowering R1 also lowers I*R1, which moves the
+* untrimmed vref mean DOWN (closer to, in most corners now slightly below,
+* the 1.200 V target) -- a welcome side effect on the accuracy-window
+* corner check, though NOT a claim about the mismatch-MC untrimmed *mean*
+* (sim/mc-untrimmed/, out of this issue's scope, same caveat #61 carried).
+*
 * MIRROR/CASCODE SIZING (issue #55) -- previously provisional (drawn
 * W=20u/L=2u, "identical to the amp's pre-#42 device, never budgeted",
 * design/bandgap_operating_point.md Sec 4.3). #42 closed the amplifier's own
@@ -288,7 +343,7 @@ N 620 270 620 250 {}
 C {lab_pin.sym} 620 250 0 0 {name=l20 lab=vdd}
 N 620 300 640 300 {}
 C {lab_pin.sym} 640 300 0 0 {name=l21 lab=vdd}
-C {symbols/ppolyf_u.sym} 600 90 0 0 {name=R1 model=ppolyf_u W=2u L=460.701871u m=1}
+C {symbols/ppolyf_u.sym} 600 90 0 0 {name=R1 model=ppolyf_u W=2u L=436.705296u m=1}
 N 600 60 600 40 {}
 C {lab_pin.sym} 600 40 0 0 {name=l22 lab=tn0}
 N 600 120 600 140 {}

@@ -1,12 +1,29 @@
 * bandgap-startup supply-ramp testbench (issue #11).
 *
-* CORE RESIZED IN #61 -- RECORDS TAKEN BEFORE AND AFTER ARE NOT COMPARABLE.
+* CORE RESIZED IN #61, R1 RE-NULLED IN #96 -- RECORDS TAKEN BEFORE AND AFTER
+* EITHER CHANGE ARE NOT COMPARABLE.
 * The bandgap_core copy embedded below carries #61's R1/R2 co-scaling: both
 * the PTAT resistor R2 and the output-branch summing resistor R1 (here in
 * its pre-trim lumped form, electrically R1 + 32 trim units at the default
 * code) are scaled by k = 2, halving the design current I = dVBE/R2 while
 * holding I*R1 and the R1/R2 ratio fixed. See design/bandgap_core.sch's
 * header and design/bandgap_error_budget.md Sec 5 for the derivation.
+*
+* UPDATE (#96): the lumped resistor's length below was re-solved after R1
+* alone (not R2, not the trim ladder) was re-nulled against a corner-swept
+* TC objective: R1 82779.0 -> 78470.5 ohm (design/bandgap_core.sch's own
+* header). Since this testbench collapses R1 + 32 trim-ladder unit segments
+* into ONE device rather than 33 separate ppolyf_u instances, the lumped
+* length is not a simple sum of the individual lengths (ppolyf_u is a
+* compound device, R = a*L + b, and a lumped device pays that overhead `b`
+* only once instead of 33 times) -- it was re-solved the same way #61's
+* value was: measuring each real device's resistance directly on this
+* design's own ngspice model (two-terminal DC op-point check at 50 mV bias,
+* tt/27 C) and bisecting a single device's length to match
+* R1_new + 32*R_unit (R_unit itself unchanged by #96) exactly, not
+* interpolated from the documented approximate fit coefficients. Target
+* 96360.76 ohm (was 100669.29 ohm); this file's R1/R2 ratio and the trim
+* ladder's own per-step resistance are otherwise identical to #61's.
 *
 * AMP SIZING (comparability note, #10 integration): the bandgap_amp subckt
 * below carries the FINAL, offset-budgeted sizing from issue #10
@@ -78,7 +95,7 @@ XM3 d3 fb vdd vdd pfet_03v3 L=6u W=60u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
 XMC3 vref casc d3 vdd pfet_03v3 L=6u W=60u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
-XR1 e3 vref vss ppolyf_u r_width=2u r_length=560.341647u m=1
+XR1 e3 vref vss ppolyf_u r_width=2u r_length=536.345033u m=1
 XQ3 vss vss e3 pnp_05p00x05p00 m=1
 XM4 d4 fb vdd vdd pfet_03v3 L=6u W=7.5u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
