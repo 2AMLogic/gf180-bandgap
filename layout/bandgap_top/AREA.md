@@ -11,12 +11,12 @@ uv run --with klayout python3 layout/bandgap_top/area_report.py
 
 | Quantity | Value |
 |---|---|
-| Drawn GDS bounding box (incl. guard ring) | **154.70 × 312.47 µm** |
-| Drawn GDS area | **48,339.11 µm² (0.04834 mm²)** |
+| Drawn GDS bounding box (incl. guard ring) | **154.70 × 316.34 µm** |
+| Drawn GDS area | **48,938.26 µm² (0.04894 mm²)** |
 | Ratified target (`README.md` "Target specification", issue #1/#35) | 50,000 µm² (0.05 mm²) |
-| Margin | **PASS — 1,660.89 µm² (3.3 %) of headroom** |
+| Margin | **PASS — 1,061.74 µm² (2.1 %) of headroom** |
 | Device body area, current netlist | 19,994.36 µm² |
-| Realised overhead multiplier | **2.42× body area** |
+| Realised overhead multiplier | **2.45× body area** |
 | `floorplan.md` §8 body-area estimate | 10,425.45 µm² |
 | Current netlist vs. that estimate | **1.92×** |
 
@@ -52,11 +52,11 @@ This is a **stale estimate, not an overrun**: the drawn area still fits.
 numbers, so it cannot go stale the same way again — §8's figure is carried
 only as a single named constant to compare against.
 
-## Finding 2 — 3.3 % headroom is thin, and single-metal routing is why
+## Finding 2 — headroom is thin, and single-metal routing is why
 
-The realised overhead multiplier is **2.42×**, comfortably better than the
+The realised overhead multiplier is **2.45×**, comfortably better than the
 4× §8 called "generous". The problem is the base it multiplies: at
-19,994 µm² of body area, even a 2.42× multiplier lands at 96.7 % of the
+19,994 µm² of body area, even a 2.45× multiplier lands at 97.9 % of the
 ceiling.
 
 Where the overhead goes: `klt`'s gf180mcu **extraction** deck used to model
@@ -82,9 +82,9 @@ With a real gf180mcu metal stack, most of that disappears — supplies and
 long haul nets go up to Metal2/Metal3 directly over the device field. The
 tool gap is filed generically against klayout-tools (see `layout/README.md`
 § "Friction filed"); the area consequence is recorded here so nobody reads
-2.42× as an intrinsic property of the block.
+2.45× as an intrinsic property of the block.
 
-**Two named risks to the 3.3 % margin:**
+**Two named risks to the margin:**
 
 - `startup.RPU`, the 2 MΩ start-up bleeder, is **8,000 µm² of body area —
   40 % of the block's entire device area and ~16 % of the ratified target on
@@ -92,7 +92,7 @@ tool gap is filed generically against klayout-tools (see `layout/README.md`
   still true and the drawn serpentine (57 legs) does nothing to shrink it.
   Any future reduction of the ceiling pressure should start here.
 - Any further device growth is now roughly 1:1 against the remaining
-  1,661 µm². A 2× on `core.R1` again (or an equivalent-sized new line item)
+  1,062 µm². A 2× on `core.R1` again (or an equivalent-sized new line item)
   would bust the budget unless it is co-folded the way Finding 3 describes.
 
 ## Finding 3 — #69's `R1`/`R2` length doubling regressed the budget; fixed here by co-scaling the fold count (#70)
@@ -130,6 +130,44 @@ check (single `ppolyf_u` unit width across `R1`/`R2`/the trim ladder) is
 insensitive to fold count and continues to pass; DRC and LVS were re-run
 against the regenerated GDS and are clean/matching (see `layout/README.md`
 "Expected results").
+
+## Finding 4 — #86's fold-link length fix grows `RSTRIP`'s row height ~13 %
+
+`res_geometry()`'s leg-length formula budgeted a whole fold *pitch*
+(`width_nm + POLY_SP`) of resistive length per serpentine link, but a link's
+box overlaps both legs it joins by a full leg width, so it only contributes
+`POLY_SP` of *new* drawn length. Every folded resistor was therefore drawn
+`(n - 1) * width_nm` (net of a small `IMPLANT_ENC` pad-sliver credit) short
+of its schematic `r_length` — see gf180-bandgap#86 for the full derivation
+and its "Measured effect" table. Fixing the formula makes each leg *longer*
+for the same schematic length (there is less length hidden in double-counted
+fold links to draw from), which grows every folded resistor's leg height:
+
+| Item | Leg height before (#86) | Leg height after | Growth |
+|---|---|---|---|
+| `core.R1` (n=28) | 14.235 µm | 16.150 µm | +13.5 % |
+| `core.R2` (n=4) | 7.360 µm | 8.760 µm | +19.0 % |
+| `startup.RPU` (n=57) | 67.915 µm | 69.873 µm | +2.9 % |
+
+`RSTRIP` (the row holding `R1`/`R2`) absorbs `R1`'s +13.5 % leg-height
+growth directly, since a row's height is its tallest item's; `startup.RPU`
+sits in its own row and absorbs its own, much smaller, growth. Net effect on
+the whole block: drawn GDS area grows from 48,339.11 µm² to
+**48,938.26 µm²** (+1.2 %), and headroom against the ratified 50,000 µm²
+target narrows from 3.3 % to **2.1 %** — still comfortably inside budget
+(see "Headline" above), but Finding 2's margin risk is now a little closer.
+
+No `design/netlist/*.spice` value changed here either — same as Finding 3,
+this is a pure re-fold that corrects a *drawing* bug, not a resistor value
+change. Unlike Finding 3, though, this one *does* change what `klt extract`
+reports for `R1`/`R2`/`RPU`'s resistance: the drawn body was previously
+short of the schematic's intent (a first-order error on the PTAT ratio
+`(R1 + trim)/R2` feeding `vref`, per #86), so the extracted `R` now matches
+the schematic-intended value far more closely than before — confirmed
+directly against `klt extract`'s per-device `R` (`core.R1`: 80,622.5 Ω vs.
+80,622.85 Ω intended; `core.R2`: 6,359.5 Ω vs. 6,359.85 Ω intended;
+`startup.RPU`: 1,999,980.5 Ω vs. 2,000,000 Ω intended — all within the
+formula's own one-dbu-per-fold rounding tolerance).
 
 ## Body area by group (current netlist)
 

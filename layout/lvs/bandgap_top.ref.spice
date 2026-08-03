@@ -104,8 +104,8 @@ Qcore_Q2_3 vsubs nw_core_Q2_3 core_e2 bjt AE=2.500000e-11
 Qcore_Q3 vsubs nw_core_Q3 core_e3 bjt AE=2.500000e-11
 Qdum_pnp_l vsubs nw_dum_pnp_l vss bjt AE=2.500000e-11
 Qdum_pnp_r vsubs nw_dum_pnp_r vss bjt AE=2.500000e-11
-Rcore_R1 core_e3 core_tn0 vsubs 71239.000000 ppolyf_u
-Rcore_R2 core_e2 sns2 vsubs 5379.500000 ppolyf_u
+Rcore_R1 core_e3 core_tn0 vsubs 80622.500000 ppolyf_u
+Rcore_R2 core_e2 sns2 vsubs 6359.500000 ppolyf_u
 Rcore_trim_RU0 core_tn0 core_tn0 vsubs 485.100000 ppolyf_u
 Rcore_trim_RU1 core_tn0 core_trim_u1_0 vsubs 485.100000 ppolyf_u
 Rcore_trim_RU10 core_trim_u3_2 core_trim_u3_3 vsubs 485.100000 ppolyf_u
@@ -169,5 +169,5 @@ Rcore_trim_RU62 core_trim_u5_30 vref vsubs 485.100000 ppolyf_u
 Rcore_trim_RU7 core_tn0 core_trim_u3_0 vsubs 485.100000 ppolyf_u
 Rcore_trim_RU8 core_trim_u3_0 core_trim_u3_1 vsubs 485.100000 ppolyf_u
 Rcore_trim_RU9 core_trim_u3_1 core_trim_u3_2 vsubs 485.100000 ppolyf_u
-Rstartup_RPU startup_det vdd vsubs 1944177.500000 ppolyf_u_1k
+Rstartup_RPU startup_det vdd vsubs 1999980.500000 ppolyf_u_1k
 .ENDS bandgap_top

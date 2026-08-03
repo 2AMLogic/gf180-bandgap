@@ -343,10 +343,26 @@ MIM_CAP_F_PER_UM2 = 2.0e-15
 
 
 def res_geometry(item: ResItem) -> tuple[int, int, int]:
-    """``(width, height, leg_length)`` of a folded ``ppolyf_u`` serpentine."""
+    """``(width, height, leg_length)`` of a folded ``ppolyf_u`` serpentine.
+
+    ``leg`` is sized so the *drawn* recognised body area, divided by the
+    drawn width (``res_body_area_nm2(item) / item.width_nm``), comes out to
+    ``item.length_nm`` — i.e. so `klt extract`'s reported ``l_um`` matches
+    the schematic's ``r_length`` (gf180-bandgap#86). That area is
+    ``n * leg + (n - 1) * POLY_SP + 2 * IMPLANT_ENC`` (see
+    ``res_body_area_nm2``'s docstring for the corner and pad-sliver terms),
+    *not* ``n * pitch`` (``pitch = width + POLY_SP``): each fold's link box
+    overlaps both legs it joins by a full leg width, so a link only
+    contributes ``POLY_SP`` of new resistive length, not a whole pitch.
+    Budgeting a full ``pitch`` per link (the pre-#86 formula) drew every
+    folded resistor's body ``(n - 1) * width_nm`` short of its schematic
+    length. ``pitch`` itself is still the correct *placement* stride between
+    legs (used below for the returned footprint width) — only the
+    length-budgeting per fold was wrong.
+    """
     pitch = item.width_nm + POLY_SP
     n = item.segments
-    leg = (item.length_nm - (n - 1) * pitch) // n
+    leg = (item.length_nm - (n - 1) * POLY_SP - 2 * IMPLANT_ENC) // n
     if leg <= item.width_nm + 2 * (ENC_CT + CT):
         raise ValueError(f"{item.key}: {n} segments is too many for L={item.length_nm}")
     return (n - 1) * pitch + item.width_nm, leg, leg
