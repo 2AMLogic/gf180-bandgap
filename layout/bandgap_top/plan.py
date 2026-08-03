@@ -257,16 +257,27 @@ class MimCapItem:
     (klayout-tools#225, plus the ``CAP_MK`` marker #73 drew), and both plates
     are wired for real to the block's ``vdd``/``fb`` routing via a genuine
     ``Via1``..``Via4`` stack (``generate._mim_cap``, #77) — this layout's
-    only use of ``Metal2``..``Metal5``. That via stack is not something
-    ``make_reference.py`` has to know about: `klt extract`'s recognised cap
-    plates are their own connectivity nodes, never joined to the ordinary
-    metal stack (``decks.CapacitorDevice``'s "Known limitation"), so the
-    reference correctly keeps modelling both terminals as floating nets
-    regardless of how -- or whether -- the layout routes them. ``nets`` is
-    ``(bottom, top)`` = ``(device.nets["p"], device.nets["n"])`` per
-    ``TERMINALS["cap"]`` in :mod:`netlist_model`, which for ``amp.CC``
-    resolves to ``("vdd", "fb")`` — bottom plate = Metal4 = ``vdd``, top
-    plate = FuseTop = ``fb``.
+    only use of ``Metal2``..``Metal5``. Since klayout-tools#329,
+    ``make_reference.py`` *does* have to know about part of that via stack:
+    the deck now ties a recognised cap's bottom plate into its own
+    ``metals[]`` connectivity node when the plate layer is one of the
+    deck's tracked metals (gf180mcu's bottom plate is ``Metal4``), so the
+    drawn ``Via1``..``Via3`` stack landing inside the bottom-plate box
+    resolves that terminal to the cap's real net (``vdd`` here) rather than
+    a synthesized one (``decks.CapacitorDevice``'s top/bottom-plate
+    connectivity fields; gf180-bandgap#89). The **top** plate is not
+    similarly resolved: the deck wires it the same way in principle
+    (``top_plate_via``/``top_plate_via_metal``), but only where a via
+    actually lands on the *recognised* top-plate region, and this layout's
+    ``fb`` up-hop via deliberately lands on a routing tab drawn outside the
+    ``CAP_MK``/``MIM_L_MK`` recognition markers (see
+    ``generate._mim_cap``'s docstring and #82 for why) — so the top plate
+    stays its own floating net in the reference regardless of how the
+    layout routes it. ``nets`` is ``(bottom, top)`` =
+    ``(device.nets["p"], device.nets["n"])`` per ``TERMINALS["cap"]`` in
+    :mod:`netlist_model`, which for ``amp.CC`` resolves to
+    ``("vdd", "fb")`` — bottom plate = Metal4 = ``vdd``, top plate =
+    FuseTop = ``fb``.
 
     No geometry fields live here: the via stack's placement (which row's
     already-drawn rails to piggy-back on, the routing tab that keeps the
