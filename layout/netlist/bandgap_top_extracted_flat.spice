@@ -1,16 +1,16 @@
 * Post-layout EXTRACTED DUT netlist -- GENERATED, do not edit by hand.
 *
-* extract report : layout/netlist/reports/bandgap_top/20260802-232303-1478626.extract.json
-* extracted spice: layout/netlist/reports/bandgap_top/20260802-232303-1478626.extracted.spice
-* lvs report     : layout/lvs/reports/bandgap_top/20260802-232235-1478626.lvs.json
+* extract report : layout/netlist/reports/bandgap_top/20260803-010547-9e558e6.extract.json
+* extracted spice: layout/netlist/reports/bandgap_top/20260803-010547-9e558e6.extracted.spice
+* lvs report     : layout/lvs/reports/bandgap_top/20260803-010523-9e558e6.lvs.json
 * layout gds     : layout/bandgap_top/bandgap_top.gds
 * extraction deck: gf180mcu  (klt extract --parasitics)
 * pdk            : gf180mcuD open_pdks c6d73a35f524070e85faff4a6a9eef49553ebc2b
 * devices        : 156 {'bjt': 8, 'cap_mim_2f0_m4m5_noshield': 1, 'nfet': 34, 'pfet': 47, 'ppolyf_u': 65, 'ppolyf_u_1k': 1}
-*   parasitics    : 82 R / 82 C, 207857.4 ohm and 2466.8 fF total
-* regenerate     : python3 layout/netlist/mk_extracted_dut.py --extract layout/netlist/reports/bandgap_top/20260802-232303-1478626.extract.json --lvs layout/lvs/reports/bandgap_top/20260802-232235-1478626.lvs.json --flat -o layout/netlist/bandgap_top_extracted_flat.spice
+*   parasitics    : 82 R / 82 C, 209646.2 ohm and 2483.0 fF total
+* regenerate     : python3 layout/netlist/mk_extracted_dut.py --extract layout/netlist/reports/bandgap_top/20260803-010547-9e558e6.extract.json --lvs layout/lvs/reports/bandgap_top/20260803-010523-9e558e6.lvs.json --flat -o layout/netlist/bandgap_top_extracted_flat.spice
 *
-* sha256 (this file, sans this line): 83f7456d32d14e43d178df7e25d3771c
+* sha256 (this file, sans this line): ee1a1434dd2694db1ced0a6131c3775a
 * Provenance class is derived from the path by sim/dut: a netlist under
 * layout/ reports itself as `Netlist provenance: extracted`.
 *
@@ -238,48 +238,48 @@ XR152 core_trim_u5_3 core_trim_u5_2 vss ppolyf_u r_width=2u r_length=2.772u m=1
 XR153 core_trim_u5_2 core_trim_u5_1 vss ppolyf_u r_width=2u r_length=2.772u m=1
 XR154 core_trim_u5_1 core_trim_u5_0 vss ppolyf_u r_width=2u r_length=2.772u m=1
 XR155 core_trim_u5_0 core_tn0 vss ppolyf_u r_width=2u r_length=2.772u m=1
-XR91 core_e2 sns2 vss ppolyf_u r_width=2u r_length=30.74u m=1
+XR91 core_e2 sns2 vss ppolyf_u r_width=2u r_length=36.34u m=1
 XR92 core_tn0 core_tn0 vss ppolyf_u r_width=2u r_length=2.772u m=1
 XR93 core_tn0 core_trim_u1_0 vss ppolyf_u r_width=2u r_length=2.772u m=1
 XR94 core_trim_u1_0 core_tn0 vss ppolyf_u r_width=2u r_length=2.772u m=1
-XR95 core_e3 core_tn0 vss ppolyf_u r_width=2u r_length=407.08u m=1
+XR95 core_e3 core_tn0 vss ppolyf_u r_width=2u r_length=460.7u m=1
 XR96 core_tn0 core_trim_u2_0 vss ppolyf_u r_width=2u r_length=2.772u m=1
 XR97 core_trim_u2_0 core_trim_u2_1 vss ppolyf_u r_width=2u r_length=2.772u m=1
 XR98 core_trim_u2_1 core_trim_u2_2 vss ppolyf_u r_width=2u r_length=2.772u m=1
 XR99 core_trim_u2_2 core_tn0 vss ppolyf_u r_width=2u r_length=2.772u m=1
-XR156 startup_det vdd vss ppolyf_u_1k r_width=2u r_length=3888.36u m=1
+XR156 startup_det vdd vss ppolyf_u_1k r_width=2u r_length=3999.96u m=1
 
 * T8: per-net first-order lumped RC parasitics (klt extract --parasitics)
-R10_par amp_nd1 amp_nd1__par 8612.38
-C10_par amp_nd1__par vss 9.88616e-14
-R11_par amp_n2 amp_n2__par 6166.92
-C11_par amp_n2__par vss 8.39758e-14
-R12_par fb fb__par 9901.6
-C12_par fb__par vss 1.12661e-13
-R13_par amp_tail amp_tail__par 6767.51
-C13_par amp_tail__par vss 1.01949e-13
-R14_par amp_a3 amp_a3__par 5899.58
-C14_par amp_a3__par vss 6.79818e-14
-R15_par amp_a4 amp_a4__par 5792.88
-C15_par amp_a4__par vss 6.38126e-14
-R18_par core_d4 core_d4__par 5703.35
-C18_par core_d4__par vss 4.85462e-14
-R19_par core_d1 core_d1__par 6322.32
-C19_par core_d1__par vss 8.00751e-14
-R20_par sns1 sns1__par 7753.04
-C20_par sns1__par vss 9.25242e-14
-R21_par core_d2 core_d2__par 6121.85
-C21_par core_d2__par vss 7.69958e-14
-R22_par sns2 sns2__par 8079.45
-C22_par sns2__par vss 8.92446e-14
-R23_par core_d3 core_d3__par 5970.5
-C23_par core_d3__par vss 7.42802e-14
-R27_par core_e3 core_e3__par 5769.4
-C27_par core_e3__par vss 5.11904e-14
-R29_par core_e2 core_e2__par 6110.69
-C29_par core_e2__par vss 6.15896e-14
-R3_par ibias ibias__par 7621.64
-C3_par ibias__par vss 6.87644e-14
+R10_par amp_nd1 amp_nd1__par 8683.05
+C10_par amp_nd1__par vss 9.94204e-14
+R11_par amp_n2 amp_n2__par 6237.58
+C11_par amp_n2__par vss 8.45345e-14
+R12_par fb fb__par 9972.22
+C12_par fb__par vss 1.13219e-13
+R13_par amp_tail amp_tail__par 6838.14
+C13_par amp_tail__par vss 1.02508e-13
+R14_par amp_a3 amp_a3__par 5970.25
+C14_par amp_a3__par vss 6.85405e-14
+R15_par amp_a4 amp_a4__par 5863.56
+C15_par amp_a4__par vss 6.43713e-14
+R18_par core_d4 core_d4__par 5774.03
+C18_par core_d4__par vss 4.91049e-14
+R19_par core_d1 core_d1__par 6392.99
+C19_par core_d1__par vss 8.06338e-14
+R20_par sns1 sns1__par 7823.68
+C20_par sns1__par vss 9.3083e-14
+R21_par core_d2 core_d2__par 6192.52
+C21_par core_d2__par vss 7.75546e-14
+R22_par sns2 sns2__par 8160.27
+C22_par sns2__par vss 9.00037e-14
+R23_par core_d3 core_d3__par 6041.17
+C23_par core_d3__par vss 7.4839e-14
+R27_par core_e3 core_e3__par 5840.51
+C27_par core_e3__par vss 5.19232e-14
+R29_par core_e2 core_e2__par 6191.56
+C29_par core_e2__par vss 6.23487e-14
+R3_par ibias ibias__par 7692.3
+C3_par ibias__par vss 6.93231e-14
 R36_par core_trim_u1_0 core_trim_u1_0__par 83.7942
 C36_par core_trim_u1_0__par vss 8.17907e-16
 R37_par core_trim_u2_0 core_trim_u2_0__par 83.7942
@@ -288,8 +288,8 @@ R38_par core_trim_u2_1 core_trim_u2_1__par 83.7942
 C38_par core_trim_u2_1__par vss 8.17907e-16
 R39_par core_trim_u2_2 core_trim_u2_2__par 83.7942
 C39_par core_trim_u2_2__par vss 8.17907e-16
-R4_par casc casc__par 10885.6
-C4_par casc__par vss 1.03833e-13
+R4_par casc casc__par 10956.3
+C4_par casc__par vss 1.04392e-13
 R40_par core_trim_u3_0 core_trim_u3_0__par 83.7942
 C40_par core_trim_u3_0__par vss 8.17907e-16
 R41_par core_trim_u3_1 core_trim_u3_1__par 83.7942
@@ -310,8 +310,8 @@ R48_par core_trim_u4_1 core_trim_u4_1__par 83.7942
 C48_par core_trim_u4_1__par vss 8.17907e-16
 R49_par core_trim_u4_2 core_trim_u4_2__par 83.7942
 C49_par core_trim_u4_2__par vss 8.17907e-16
-R5_par startup_det startup_det__par 6454.74
-C5_par startup_det__par vss 6.322e-14
+R5_par startup_det startup_det__par 6525.85
+C5_par startup_det__par vss 6.39567e-14
 R50_par core_trim_u4_3 core_trim_u4_3__par 83.7942
 C50_par core_trim_u4_3__par vss 8.17907e-16
 R51_par core_trim_u4_4 core_trim_u4_4__par 83.7942
@@ -332,14 +332,14 @@ R58_par core_trim_u4_11 core_trim_u4_11__par 83.7942
 C58_par core_trim_u4_11__par vss 8.17907e-16
 R59_par core_trim_u4_12 core_trim_u4_12__par 83.7942
 C59_par core_trim_u4_12__par vss 8.17907e-16
-R6_par amp_pbias amp_pbias__par 12530.8
-C6_par amp_pbias__par vss 1.19169e-13
+R6_par amp_pbias amp_pbias__par 12601.4
+C6_par amp_pbias__par vss 1.19728e-13
 R60_par core_trim_u4_13 core_trim_u4_13__par 83.7942
 C60_par core_trim_u4_13__par vss 8.17907e-16
 R61_par core_trim_u4_14 core_trim_u4_14__par 83.7942
 C61_par core_trim_u4_14__par vss 8.17907e-16
-R62_par core_tn0 core_tn0__par 6362.93
-C62_par core_tn0__par vss 7.2082e-14
+R62_par core_tn0 core_tn0__par 6434.03
+C62_par core_tn0__par vss 7.28147e-14
 R63_par core_trim_u5_30 core_trim_u5_30__par 83.7942
 C63_par core_trim_u5_30__par vss 8.17907e-16
 R64_par core_trim_u5_29 core_trim_u5_29__par 83.7942
@@ -354,8 +354,8 @@ R68_par core_trim_u5_25 core_trim_u5_25__par 83.7942
 C68_par core_trim_u5_25__par vss 8.17907e-16
 R69_par core_trim_u5_24 core_trim_u5_24__par 83.7942
 C69_par core_trim_u5_24__par vss 8.17907e-16
-R7_par amp_nb1 amp_nb1__par 6543.4
-C7_par amp_nb1__par vss 5.57707e-14
+R7_par amp_nb1 amp_nb1__par 6614.07
+C7_par amp_nb1__par vss 5.63295e-14
 R70_par core_trim_u5_23 core_trim_u5_23__par 83.7942
 C70_par core_trim_u5_23__par vss 8.17907e-16
 R71_par core_trim_u5_22 core_trim_u5_22__par 83.7942
@@ -376,8 +376,8 @@ R78_par core_trim_u5_15 core_trim_u5_15__par 83.7942
 C78_par core_trim_u5_15__par vss 8.17907e-16
 R79_par core_trim_u5_14 core_trim_u5_14__par 83.7942
 C79_par core_trim_u5_14__par vss 8.17907e-16
-R8_par amp_ncasc amp_ncasc__par 9058.45
-C8_par amp_ncasc__par vss 9.4596e-14
+R8_par amp_ncasc amp_ncasc__par 9129.12
+C8_par amp_ncasc__par vss 9.51547e-14
 R80_par core_trim_u5_13 core_trim_u5_13__par 83.7942
 C80_par core_trim_u5_13__par vss 8.17907e-16
 R81_par core_trim_u5_12 core_trim_u5_12__par 83.7942
@@ -398,8 +398,8 @@ R88_par core_trim_u5_5 core_trim_u5_5__par 83.7942
 C88_par core_trim_u5_5__par vss 8.17907e-16
 R89_par core_trim_u5_4 core_trim_u5_4__par 83.7942
 C89_par core_trim_u5_4__par vss 8.17907e-16
-R9_par amp_n1 amp_n1__par 6516.88
-C9_par amp_n1__par vss 8.89892e-14
+R9_par amp_n1 amp_n1__par 6587.54
+C9_par amp_n1__par vss 8.9548e-14
 R90_par core_trim_u5_3 core_trim_u5_3__par 83.7942
 C90_par core_trim_u5_3__par vss 8.17907e-16
 R91_par core_trim_u5_2 core_trim_u5_2__par 83.7942
@@ -408,9 +408,9 @@ R92_par core_trim_u5_1 core_trim_u5_1__par 83.7942
 C92_par core_trim_u5_1__par vss 8.17907e-16
 R93_par core_trim_u5_0 core_trim_u5_0__par 83.7942
 C93_par core_trim_u5_0__par vss 8.17907e-16
-Rvdd_par vdd vdd__par 21177.4
-Cvdd_par vdd__par vss 2.67421e-13
-Rvref_par vref vref__par 5938.56
-Cvref_par vref__par vss 6.35746e-14
-Rvss_par vss vss__par 15019.2
-Cvss_par vss__par vss 3.19038e-13
+Rvdd_par vdd vdd__par 21247.9
+Cvdd_par vdd__par vss 2.6798e-13
+Rvref_par vref vref__par 6009.24
+Cvref_par vref__par vss 6.41334e-14
+Rvss_par vss vss__par 15090.6
+Cvss_par vss__par vss 3.20931e-13
