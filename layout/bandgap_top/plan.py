@@ -259,33 +259,32 @@ class MimCapItem:
     ``Via1``..``Via4`` stack (``generate._mim_cap``, #77) — this layout's
     only use of ``Metal2``..``Metal5``. Since klayout-tools#329,
     ``make_reference.py`` *does* have to know about part of that via stack:
-    the deck now ties a recognised cap's bottom plate into its own
-    ``metals[]`` connectivity node when the plate layer is one of the
-    deck's tracked metals (gf180mcu's bottom plate is ``Metal4``), so the
-    drawn ``Via1``..``Via3`` stack landing inside the bottom-plate box
-    resolves that terminal to the cap's real net (``vdd`` here) rather than
-    a synthesized one (``decks.CapacitorDevice``'s top/bottom-plate
-    connectivity fields; gf180-bandgap#89). The **top** plate is not
-    similarly resolved: the deck wires it the same way in principle
-    (``top_plate_via``/``top_plate_via_metal``), but only where a via
-    actually lands on the *recognised* top-plate region, and this layout's
-    ``fb`` up-hop via deliberately lands on a routing tab drawn outside the
-    ``CAP_MK``/``MIM_L_MK`` recognition markers (see
-    ``generate._mim_cap``'s docstring and #82 for why) — so the top plate
-    stays its own floating net in the reference regardless of how the
-    layout routes it. ``nets`` is ``(bottom, top)`` =
-    ``(device.nets["p"], device.nets["n"])`` per ``TERMINALS["cap"]`` in
-    :mod:`netlist_model`, which for ``amp.CC`` resolves to
-    ``("vdd", "fb")`` — bottom plate = Metal4 = ``vdd``, top plate =
-    FuseTop = ``fb``.
+    the deck ties a recognised cap's bottom plate into its own ``metals[]``
+    connectivity node when the plate layer is one of the deck's tracked
+    metals (gf180mcu's bottom plate is ``Metal4``), so the drawn
+    ``Via1``..``Via3`` stack landing inside the bottom-plate box resolves
+    that terminal to the cap's real net (``vdd`` here) rather than a
+    synthesized one (``decks.CapacitorDevice``'s top/bottom-plate
+    connectivity fields; gf180-bandgap#89). **Since gf180-bandgap#88, the
+    top plate is resolved the same way**: the deck wires it through
+    ``top_plate_via``/``top_plate_via_metal`` wherever a via actually lands
+    on the *recognised* top-plate region without also shorting it to the
+    bottom plate (klayout-tools#364/PR #368), and this layout's ``fb``
+    up-hop via now lands directly inside that recognised region (see
+    ``generate._mim_cap``'s docstring) — so the top plate resolves to its
+    real net (``fb``) in the reference too, not a floating one. ``nets`` is
+    ``(bottom, top)`` = ``(device.nets["p"], device.nets["n"])`` per
+    ``TERMINALS["cap"]`` in :mod:`netlist_model`, which for ``amp.CC``
+    resolves to ``("vdd", "fb")`` — bottom plate = Metal4 = ``vdd``, top
+    plate = FuseTop = ``fb``.
 
     No geometry fields live here: the via stack's placement (which row's
-    already-drawn rails to piggy-back on, the routing tab that keeps the
-    top-plate contact off the bottom plate, the standalone landing pad that
-    keeps the two plates' vias from merging) is a pure `generate.py` drawing
-    decision with no bearing on the device parameters `make_reference.py`
-    predicts, so — unlike ``MIM_PLATE_INSET`` et al. below, which both
-    readers need — it stays local to ``generate._mim_cap``.
+    already-drawn rails to piggy-back on, and the standalone landing pad
+    that keeps the down-hop via clear of the bottom plate) is a pure
+    `generate.py` drawing decision with no bearing on the device parameters
+    `make_reference.py` predicts, so — unlike ``MIM_PLATE_INSET`` et al.
+    below, which both readers need — it stays local to
+    ``generate._mim_cap``.
     """
 
     key: str

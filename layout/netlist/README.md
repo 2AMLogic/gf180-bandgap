@@ -49,27 +49,57 @@ measure are not the ones this layout draws now:
 so the drawn PTAT ratio `(R1+trim)/R2` is 15.118 again, not the 16.128 the
 pre-fix reports measured.
 
+**A second, unrelated `core.R1` change lands in the same regeneration
+(#88).** [gf180-bandgap#96](https://github.com/2AMLogic/gf180-bandgap/issues/96)/PR#102
+re-nulled `core.R1`'s *schematic* value (`460.701871 µm` → `436.705296 µm`,
+78470.5 Ω → a lower value at the drawn `W`) to close the TC and
+accuracy-window rows, and merged to `main` immediately before #88's branch
+point — but nothing regenerated `bandgap_top.gds` between that merge and
+#88, so the committed layout still drew the pre-#96 `core.R1` length. #88's
+`_mim_cap` redraw requires running the same `generate.py` pipeline that
+draws every other row, and that pipeline always sizes `core.R1` from the
+*current* schematic `r_length` (`plan.res_geometry`, schematic-driven, no
+coupling to the MiM cap) — so regenerating for #88 necessarily also
+resyncs `core.R1` to #96's already-ratified value. This is not a #88 change
+in its own right, and #88's own diff touches nothing resistor-related; it is
+main's first layout regeneration since #96 merged, so this is the first
+point that staleness surfaces. `layout/lvs/bandgap_top.ref.spice`'s
+`Rcore_R1` value drops with it (predicted from the same schematic-driven
+formula), so LVS stays self-consistent throughout.
+
 ## `mk_extracted_dut.py` — extraction report to simulatable DUT
 
 `klt extract`'s own SPICE output is a *topology* netlist, not a simulatable
 deck. `mk_extracted_dut.py` converts it, and the conversion is deliberately
 auditable rather than convenient: every transform is a numbered entry
 (`T1`…`T9`) echoed into the generated file's header, and every net-level
-back-annotation (`BA1`…`BA4`) is **asserted against the extracted structure
+back-annotation (`BA1`…`BA3`) is **asserted against the extracted structure
 before it is applied**, so a back-annotation whose precondition has gone away
 is a hard error rather than a silent no-op. Read that header before treating
 any number taken against this netlist as post-layout evidence — it is the
 complete list of every place the simulated netlist departs from what the
 extractor literally measured.
 
-The four back-annotations, and why each exists:
+The three back-annotations, and why each exists (a fourth, BA4, existed
+until #88 — see the note below the table):
 
 | | Terminal | Asserted to | Why the deck cannot resolve it |
 |---|---|---|---|
 | BA1 | deck-synthesised `vsubs` | `vss` | gf180mcu draws no distinct p-substrate tap layer, so the deck synthesises a substrate net (`klt lvs` reports this itself as `device.body_unverified`). The drawn guard ring is a Pplus/COMP ring on the `vss` rail. |
 | BA2 | all 47 PMOS bodies | `vdd` | no well-tap layer in the deck, so every PMOS body lands on one anonymous well net reaching nothing. |
 | BA3 | 8 PNP base nets | `vss` | a recognised bipolar's base region is Nwell, not a connectivity metal — the same gap `klayout-tools#314` closed for capacitor plates, still open for `BipolarDevice` (documented upstream as `klayout-tools#336`). The layout draws an Nplus base-tie ring on `vss` around every unit. |
-| BA4 | MiM cap top plate | `fb` | the drawn `Via4` lands on a `FuseTop` routing tab held outside `CAP_MK`, so the deck does not see the contact. Unlike BA1–BA3 this half is a **layout** workaround, not a tool gap — see `verify_mim_routing.py` below and gf180-bandgap#82. |
+
+**BA4 is gone as of [gf180-bandgap#88](https://github.com/2AMLogic/gf180-bandgap/issues/88).**
+It used to back-annotate the MiM cap's top plate onto `fb`, because the drawn
+`Via4` landed on a `FuseTop` routing tab held outside `CAP_MK` — a **layout**
+defect (gf180-bandgap#82), not a tool gap, unlike BA1–BA3. #88 redrew that
+contact: the `Via4` now lands directly inside the recognised top plate, which
+`klayout-tools#364`/PR #368 made safe to extract without shorting the two
+plates together, so the top plate now extracts on the real `fb` net with no
+back-annotation. `mk_extracted_dut.py`'s `build_back_annotations()` asserts
+this directly — neither plate net is isolated, and the top plate pairs with
+schematic `fb` — so a regression back to the floating-top-plate state is a
+hard error, not a silent BA4 re-add.
 
 Everything else — device existence, class, connectivity, drawn resistor
 `L`/`W`, drawn plate area, drawn finger and PNP-unit counts, and the per-net
@@ -81,31 +111,35 @@ seeds name top-level nodes.
 
 ## `verify_mim_routing.py` — the one connection no tool can check
 
-`klt extract`/`klt lvs` cannot confirm that the compensation cap's top plate
-reaches `fb`, so #17's Test Plan requires verifying it by layer inspection
-instead. Two independent checks, both of which must pass:
+**Historical note, superseded by [gf180-bandgap#88](https://github.com/2AMLogic/gf180-bandgap/issues/88).**
+Before #88, `klt extract`/`klt lvs` could not confirm that the compensation
+cap's top plate reaches `fb`, because the `fb` up-hop `Via4` landed on a
+`FuseTop` routing tab held outside `CAP_MK`/`MIM_L_MK` (a workaround for
+`klayout-tools#364`, which read a DRM-legal on-plate via as a `vdd`/`fb`
+short) — so the deck's own connectivity graph never saw that via touch the
+*recognised* top plate. #17's Test Plan required verifying the connection by
+layer inspection instead, via two checks (Check A: merge the `FuseTop`
+shapes and assert the recognised plate and the tab the `Via4` landed on are
+one polygon; Check B: re-extract a scratch copy of the GDS with
+`CAP_MK`/`MIM_L_MK` widened to cover the tab, and confirm the resulting
+top-plate net matches `fb` via `klt lvs`).
+
+**Current state.** `klayout-tools#364`/PR #368 fixed the underlying tool
+limitation, and #88 redrew the contact: the `fb` up-hop `Via4` now lands
+directly inside the recognised top-plate region (see
+`layout/bandgap_top/generate.py`'s `_mim_cap` docstring), so `klt
+extract`/`klt lvs` confirm this connection themselves — no marker widening,
+no layer-inspection workaround. `layout/lvs/make_reference.py` step 9 models
+the top plate as `fb` directly, and the committed `klt lvs` report is
+`status: match`. `verify_mim_routing.py`'s Check A is kept as a cheap
+regression guard (it now takes its `NOTE A` "already on-plate" branch and
+passes trivially); Check B's widened-marker re-extraction is retired, since
+it no longer proves anything an ordinary `klt extract`/`klt lvs` run of the
+committed GDS does not already prove more directly.
 
 ```bash
 uv run --with klayout python3 layout/netlist/verify_mim_routing.py
 ```
-
-- **A (geometry)** merges the `FuseTop` shapes and asserts that the recognised
-  plate (`FuseTop & CAP_MK & MIM_L_MK`) and the `Via4` that carries `fb` off it
-  sit inside **one** polygon — i.e. the single link no tool models is real
-  metal. Current result: plate 3457.4 µm², carrier polygon 3458.4 µm², one
-  polygon.
-- **B (everything downstream, by the tool)** re-extracts a scratch copy of the
-  GDS whose `CAP_MK`/`MIM_L_MK` are widened to cover the tab, so
-  klayout-tools#314's plate-to-metal join applies, and runs `klt lvs` against
-  the committed reference with the cap's top-plate terminal rewritten to `fb`.
-  Current result: `status: match`, 156/156 devices, 92/92 nets — the drawn
-  tab → Via4 → Metal5 → Via4 → Metal4 pad → Via3 → Metal3 → Via2 → Metal2 →
-  Via1 → Metal1 chain does reach the `fb` rail.
-
-The committed layout keeps the narrow `CAP_MK` (and so the isolated top plate)
-because widening it would change the recognised plate area, i.e. the
-capacitance the extracted netlist reports. Neither check modifies
-`bandgap_top.gds`.
 
 ## Install / version used
 
@@ -329,53 +363,59 @@ compensation cap is present but disconnected — a stability/phase-margin
 re-run against a netlist with no compensation cap in the loop is not
 representative.
 
-> **Half of that is now stale (2026-08-02, #17).**
+> **Fully resolved (2026-08-03, #88).**
 > [`klayout-tools#314`](https://github.com/2AMLogic/klayout-tools/issues/314)
-> joined a recognised plate to the ordinary metal stack, and it works for the
-> **bottom** plate: its drawn Via3 lands inside the `Metal4` plate box, so
-> that terminal extracts on the real `vdd` net (which is why `net_count` is
-> now 93, not 94, and why `make_reference.py` step 9 models it as `vdd`). The
-> **top** plate is still isolated, for a layout reason rather than a tool one
-> — its Via4 lands on the `FuseTop` routing tab held outside `CAP_MK`, as the
-> next section describes. `mk_extracted_dut.py`'s BA4 back-annotates it to
-> `fb`, and `verify_mim_routing.py` proves that annotation is the drawn
-> circuit rather than an assumption; the compensation cap **is** in the loop
-> in every #17 record.
+> joined a recognised plate to the ordinary metal stack, and it worked for
+> the **bottom** plate first: its drawn Via3 lands inside the `Metal4` plate
+> box, so that terminal extracts on the real `vdd` net (which is why
+> `net_count` dropped from 94 to 93, and why `make_reference.py` step 9
+> models it as `vdd`). The **top** plate stayed isolated for a while
+> afterward, but for a layout reason rather than a tool one — its Via4
+> landed on a `FuseTop` routing tab held outside `CAP_MK`, a workaround for
+> `klayout-tools#364` (a DRM-legal on-plate via read as a `vdd`/`fb` short).
+> `mk_extracted_dut.py`'s BA4 used to back-annotate it to `fb`, and
+> `verify_mim_routing.py` proved that annotation was the drawn circuit
+> rather than an assumption. **klayout-tools#364/PR #368 fixed the
+> connectivity-graph gap, and
+> [gf180-bandgap#88](https://github.com/2AMLogic/gf180-bandgap/issues/88)
+> redrew the contact against it**: the `fb` up-hop `Via4` now lands directly
+> inside the recognised top plate, `net_count` dropped again (93 → 92), the
+> top plate extracts on the real `fb` net with no back-annotation, and BA4
+> is deleted. The compensation cap **is** in the loop in every #17 record,
+> now for real rather than via an asserted back-annotation.
 
-**Not the same gap as the `fb` plate's own contact geometry.** The
-connectivity-modelling gap above is a tool limitation; the `fb` up-hop
-contact is a *manufacturability* finding
-([gf180-bandgap#82](https://github.com/2AMLogic/gf180-bandgap/issues/82)),
-and it is worth stating here in full rather than by cross-reference, because
-a consumer of this netlist is exactly who would otherwise assume the drawn
-cap is shippable:
+**RESOLVED (#88): the `fb` plate's own contact geometry is now DRM-legal.**
+The paragraph below is kept verbatim as the append-only record of a real,
+already-shipped manufacturability finding — a consumer of an earlier
+extracted-netlist record built from a pre-#88 GDS should still read it as an
+accurate description of *that* record's geometry:
 
-- The FuseTop routing tab that carries `fb` off the top plate extends 0.8 µm
-  past the `Metal4` bottom plate's edge with **zero** bottom-plate overlap
-  there, against `MIMTM.3`'s 0.6 µm minimum bottom-plate overlap of the top
-  plate (transcribed in the deck as `mim.enclosing.fusetop.1`, and honoured
-  by `MIM_PLATE_INSET` on the other three edges of the same box).
-- The `Via4` that hops up onto that tab has **zero** `Metal4` overlap,
+- The FuseTop routing tab that used to carry `fb` off the top plate extended
+  0.8 µm past the `Metal4` bottom plate's edge with **zero** bottom-plate
+  overlap there, against `MIMTM.3`'s 0.6 µm minimum bottom-plate overlap of
+  the top plate (transcribed in the deck as `mim.enclosing.fusetop.1`, and
+  honoured by `MIM_PLATE_INSET` on the other three edges of the same box).
+- The `Via4` that hopped up onto that tab had **zero** `Metal4` overlap,
   against `MIMTM.2`'s 0.4 µm minimum bottom-plate overlap of `Via4`.
-  `MIMTM.2` is not transcribed into the deck at all, so that half has no rule
-  to be checked by.
-- **The block as drawn is therefore not manufacturable at that contact.** It
-  is not a "standard MiM-cap top-plate routing technique"; it is a workaround
-  for `klt extract`'s dielectric-blind connectivity graph, which would read
-  the DRM-legal contact (a `Via4` landing inside the bottom-plate footprint)
-  as a `vdd`/`fb` short.
-- **`klt drc`'s `clean` verdict on this geometry is a false negative, not a
+  `MIMTM.2` is not transcribed into the deck at all, so that half had no
+  rule to be checked by.
+- **The block as drawn was therefore not manufacturable at that contact.**
+  It was not a "standard MiM-cap top-plate routing technique"; it was a
+  workaround for `klt extract`'s dielectric-blind connectivity graph, which
+  read the DRM-legal contact (a `Via4` landing inside the bottom-plate
+  footprint) as a `vdd`/`fb` short.
+- **`klt drc`'s `clean` verdict on that geometry was a false negative, not a
   passing check.** `mim.enclosing.fusetop.1` maps onto KLayout's
   `Region.enclosing_check`, which reports nothing when a shape lies *entirely*
   outside the enclosing layer — filed upstream as
   [klayout-tools#318](https://github.com/2AMLogic/klayout-tools/issues/318).
 
-Revisit once
-[klayout-tools#314](https://github.com/2AMLogic/klayout-tools/issues/314)
-(plate nets joined to the connectivity stack) makes the DRM-legal contact
-drawable without the extractor reading it as a short. Full geometry trace:
-`generate._mim_cap`'s docstring and `layout/README.md` § "Findings and
-escalations".
+**Current geometry (#88).** The `fb` up-hop `Via4` now lands directly inside
+the recognised top plate, well inside the `Metal4` bottom-plate footprint —
+DRM-legal per `MIMTM.2` by a wide margin, not merely the 0.4 µm minimum (see
+the asserts in `generate._mim_cap`) — and `klt drc` reports `status: clean`,
+`violation_count: 0`. Full geometry trace: `generate._mim_cap`'s docstring
+and `layout/README.md` § "Findings and escalations".
 
 ## RESOLVED (#78): `startup.RPU` now extracts as a real `ppolyf_u_1k` device
 
