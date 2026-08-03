@@ -1,7 +1,7 @@
 # sim/suite/combined — the two-legged untrimmed-accuracy verdict
 
 ```bash
-python3 sim/run_combined_accuracy.py            # newest record of each leg
+python3 sim/run_combined_accuracy.py            # newest same-provenance pair
 python3 sim/run_combined_accuracy.py --no-write # print, write nothing
 python3 sim/run_combined_accuracy.py \
     --mc-record <id> --corner-record <id>       # pin a specific pair
@@ -35,6 +35,7 @@ table, not by their filename.
 | `20260803-024856-b4a0e6a.md` | same legs as `…-40990fd` — supersedes it (corrected methodology text) | FAIL — 66/81 corners |
 | `20260803-024953-3e50aad.md` | same legs as `…-ae39de2` — supersedes it (corrected methodology text) | FAIL — 66/81 corners |
 | `20260803-033127-b71297b.md` | pinned pair, both schematic-provenance: corners `20260802-064729-75ca562`, MC `20260803-031207-294fb1d` (#98's re-run, all 12 logs) | FAIL — 66/81 corners |
+| `20260803-035859-d6dc60b.md` | **unpinned** — the provenance-paired default (#100) picks the same schematic pair as `…-b71297b`: corners `20260802-064729-75ca562`, MC `20260803-031207-294fb1d` | FAIL — 66/81 corners |
 
 The first two reports are superseded, not withdrawn: their **Methodology**
 section stated the graft offset as `mean(mm_all, T) − vref(mm_ctrl, T)`, which
@@ -58,23 +59,46 @@ evidence behind
 schematic-provenance pair (#98 minted `20260803-031207-294fb1d` specifically
 to restore the mismatch leg's missing 8 of 12 raw logs, so both checks are
 evaluable again against current evidence rather than falling back to
-`960f726`). It is **not** the bare `python3 sim/run_combined_accuracy.py`
-default: `sim/output-voltage-tc/`'s newest record is now #92's
-extracted-netlist re-run, and `latest_record_id()` picks strictly the newest
-record per leg with no provenance awareness, so the unpinned default now
-pairs an extracted-netlist corner leg against this schematic-netlist mismatch
-leg — an apples-to-oranges comparison whose anchor cross-check fails by
-design (tens of mV, both legs read exactly the deterministic operating point
-correctly, they just no longer share a netlist). That mismatch is a
-pre-existing gap in `latest_record_id()`'s selection rule, out of #98's scope
-(reported separately); this report sidesteps it with `--corner-record` rather
-than let a misleading `INVALID` verdict stand as the current one.
+`960f726`). At the time it was written, `--corner-record` was also a
+*workaround*: record selection was provenance-blind, so the unpinned default
+paired `sim/output-voltage-tc/`'s newest record (#92's extracted-netlist
+re-run) against this schematic-netlist mismatch leg — an apples-to-oranges
+comparison whose anchor cross-check fails by construction, reported as a bare
+`INVALID` that reads like a bench disagreement. **#100 fixed that in the
+tool** (see the pairing rule below), so the same pin is no longer needed to
+reproduce that report's legs.
+
+## Which two records a bare re-run reads
+
+The two legs are paired on a shared **Netlist provenance** class
+(`sim/README.md`'s required record field), not chosen independently:
+
+- the newest record across *both* benches names the class, and each leg then
+  contributes its own newest record of that class — schematic with
+  schematic, extracted with extracted;
+- a class only one bench has is skipped, so a bench that has not been re-run
+  post-layout never drags the other leg's extracted record into the graft;
+- if no same-provenance pair exists at all, the report states the problem and
+  claims **no verdict** (`NO DATA`), naming both classes and telling the
+  reader to pin the legs explicitly — never a bare `INVALID` that reads as a
+  genuine bench disagreement;
+- every report names, under its **Legs combined** table, the class the two
+  legs were paired on, so the pairing is checkable without opening both
+  records.
+
+`--corner-record` / `--mc-record` remain an unconditional override. Pinning
+*one* leg makes the other leg default to its newest record of that leg's
+class (so `--corner-record <extracted-id>` alone selects the extracted
+mismatch record). Pinning *both* is honoured exactly as given, including a
+deliberate cross-provenance comparison, which the report labels
+`CROSS-PROVENANCE` and whose anchor failure it attributes to the pairing
+rather than to the design.
 
 ## Re-running after a design change
 
-Both legs default to the newest record under their own `records/` directory,
-so once either bench is re-run — after the centre re-centring / TC work, or
-against a post-layout extracted DUT — a bare
+Within that pairing rule, both legs default to the newest record under their
+own `records/` directory, so once either bench is re-run — after the centre
+re-centring / TC work, or against a post-layout extracted DUT — a bare
 `python3 sim/run_combined_accuracy.py` judges the new evidence with no
 argument changes. Nothing in this directory is edited to reflect the new
 result; the new report supersedes the old one by being newer, and the old one

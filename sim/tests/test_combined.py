@@ -33,24 +33,48 @@ def mc_log(values: list[float], supply_a: float = 2.0e-5) -> str:
     return "* header line = not a sample\n" + "\n".join(blocks) + "\n"
 
 
-def write_mc_record(root: Path, record_id: str, groups: dict[str, dict[float, list[float]]]):
+def record_body(provenance: str | None) -> str:
+    """A record stub, optionally carrying sim/README.md's provenance field."""
+    if provenance is None:
+        return "# stub\n"
+    return (
+        "# stub\n\n"
+        f"- **Netlist provenance**: {provenance} — DUT `sim/dut/bandgap_top.spice`\n"
+    )
+
+
+def write_mc_record(
+    root: Path,
+    record_id: str,
+    groups: dict[str, dict[float, list[float]]],
+    provenance: str | None = None,
+):
     """Materialise a mismatch record's raw logs under ``root``."""
     corners = root / combined.MC_SLUG / "corners" / record_id
     corners.mkdir(parents=True, exist_ok=True)
     (root / combined.MC_SLUG / "records").mkdir(parents=True, exist_ok=True)
-    (root / combined.MC_SLUG / "records" / f"{record_id}.md").write_text("# stub\n")
+    (root / combined.MC_SLUG / "records" / f"{record_id}.md").write_text(
+        record_body(provenance)
+    )
     for group, by_temp in groups.items():
         for temp, values in by_temp.items():
             (corners / f"{group}_{temp:g}c_3.30v.log").write_text(mc_log(values))
     return corners
 
 
-def write_corner_record(root: Path, record_id: str, samples: dict[str, float]):
+def write_corner_record(
+    root: Path,
+    record_id: str,
+    samples: dict[str, float],
+    provenance: str | None = None,
+):
     """Materialise a corner record's raw logs under ``root``."""
     corners = root / combined.CORNER_SLUG / "corners" / record_id
     corners.mkdir(parents=True, exist_ok=True)
     (root / combined.CORNER_SLUG / "records").mkdir(parents=True, exist_ok=True)
-    (root / combined.CORNER_SLUG / "records" / f"{record_id}.md").write_text("# stub\n")
+    (root / combined.CORNER_SLUG / "records" / f"{record_id}.md").write_text(
+        record_body(provenance)
+    )
     for corner_id, vref in samples.items():
         (corners / f"{corner_id}.log").write_text(f"m_vref = {vref:.10e}\n")
     return corners
@@ -289,6 +313,236 @@ class ReportTests(unittest.TestCase):
         self.assertIn("Granularity: per corner", text)
         self.assertIn("separable", text)
         self.assertIn("1.176", text)
+
+
+class ProvenancePairingTests(unittest.TestCase):
+    """Which two records get paired: the legs must describe the same circuit.
+
+    A schematic-netlist corner leg grafted with an extracted-netlist mismatch
+    leg is not a bench disagreement, it is a category error -- and it reaches
+    the reader as a bare ``INVALID`` anchor mismatch that reads as one. These
+    cover the pairing rule that prevents that, and the diagnostic that
+    replaces it when no same-provenance pair exists.
+    """
+
+    def test_the_provenance_field_is_read_off_the_record(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_corner_record(
+                root, "20260801-000000-aaaaaaa", {"tt_27c_3.30v": 1.2}, "schematic"
+            )
+            write_corner_record(
+                root, "20260802-000000-bbbbbbb", {"tt_27c_3.30v": 1.2}, "extracted"
+            )
+            write_corner_record(root, "20260803-000000-ccccccc", {"tt_27c_3.30v": 1.2})
+
+            def read(record_id: str) -> str:
+                return combined.record_provenance(combined.CORNER_SLUG, record_id, root)
+
+            self.assertEqual(read("20260801-000000-aaaaaaa"), "schematic")
+            self.assertEqual(read("20260802-000000-bbbbbbb"), "extracted")
+            self.assertEqual(read("20260803-000000-ccccccc"), combined.UNKNOWN_PROVENANCE)
+
+    def test_a_same_provenance_pair_beats_a_newer_cross_provenance_record(self):
+        """The defect this guards: newest-of-each silently cross-mixed the legs."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_corner_record(
+                root, "20260801-000000-aaaaaaa", {"tt_27c_3.30v": 1.2000}, "schematic"
+            )
+            write_corner_record(
+                root, "20260804-000000-ddddddd", {"tt_27c_3.30v": 1.1000}, "extracted"
+            )
+            write_mc_record(
+                root, "20260802-000000-bbbbbbb",
+                {"mm_all": {27.0: spread_about(1.2140, 0.0050)}}, "schematic",
+            )
+            verdict = combined.load(sim_dir=root)
+        self.assertEqual(verdict.corner_evidence.record_id, "20260801-000000-aaaaaaa")
+        self.assertEqual(verdict.mc_evidence.record_id, "20260802-000000-bbbbbbb")
+        self.assertEqual(verdict.matched_provenance, "schematic")
+        self.assertFalse(verdict.cross_provenance)
+        self.assertEqual(verdict.problems, [])
+
+    def test_the_newest_evidence_names_the_class_when_both_legs_have_both(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_corner_record(
+                root, "20260801-000000-aaaaaaa", {"tt_27c_3.30v": 1.2000}, "schematic"
+            )
+            write_corner_record(
+                root, "20260802-000000-bbbbbbb", {"tt_27c_3.30v": 1.2000}, "extracted"
+            )
+            write_mc_record(
+                root, "20260803-000000-ccccccc",
+                {"mm_all": {27.0: spread_about(1.2140, 0.0050)}}, "schematic",
+            )
+            write_mc_record(
+                root, "20260804-000000-ddddddd",
+                {"mm_all": {27.0: spread_about(1.2140, 0.0010)}}, "extracted",
+            )
+            verdict = combined.load(sim_dir=root)
+        self.assertEqual(verdict.matched_provenance, "extracted")
+        self.assertEqual(verdict.corner_evidence.record_id, "20260802-000000-bbbbbbb")
+        self.assertEqual(verdict.mc_evidence.record_id, "20260804-000000-ddddddd")
+
+    def test_no_same_provenance_pair_is_a_stated_problem_not_a_bare_invalid(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_corner_record(
+                root, "20260802-000000-bbbbbbb", {"tt_27c_3.30v": 1.2000}, "extracted"
+            )
+            write_mc_record(
+                root, "20260801-000000-aaaaaaa",
+                {"mm_all": {27.0: spread_about(1.2140, 0.0050)}}, "schematic",
+            )
+            verdict = combined.load(sim_dir=root)
+            text = combined.render(verdict)
+        self.assertEqual(verdict.status, "NO DATA")
+        self.assertNotEqual(verdict.status, "INVALID")
+        self.assertTrue(verdict.problems)
+        problem = verdict.problems[0]
+        for expected in ("schematic", "extracted", "--corner-record", "--mc-record"):
+            self.assertIn(expected, problem)
+        self.assertIn("CROSS-PROVENANCE", text)
+
+    def test_a_pinned_leg_makes_the_other_leg_match_its_provenance(self):
+        """Pinning the corner leg must not be paired with a newer, other-class MC."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_corner_record(
+                root, "20260801-000000-aaaaaaa", {"tt_27c_3.30v": 1.2000}, "schematic"
+            )
+            write_corner_record(
+                root, "20260802-000000-bbbbbbb", {"tt_27c_3.30v": 1.2000}, "extracted"
+            )
+            write_mc_record(
+                root, "20260803-000000-ccccccc",
+                {"mm_all": {27.0: spread_about(1.2140, 0.0050)}}, "schematic",
+            )
+            write_mc_record(
+                root, "20260804-000000-ddddddd",
+                {"mm_all": {27.0: spread_about(1.2140, 0.0010)}}, "extracted",
+            )
+            verdict = combined.load(
+                corner_record="20260801-000000-aaaaaaa", sim_dir=root
+            )
+        self.assertEqual(verdict.corner_evidence.record_id, "20260801-000000-aaaaaaa")
+        self.assertEqual(verdict.mc_evidence.record_id, "20260803-000000-ccccccc")
+        self.assertEqual(verdict.matched_provenance, "schematic")
+
+    def test_a_pinned_leg_whose_class_the_other_bench_lacks_is_reported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_corner_record(
+                root, "20260801-000000-aaaaaaa", {"tt_27c_3.30v": 1.2000}, "extracted"
+            )
+            write_mc_record(
+                root, "20260802-000000-bbbbbbb",
+                {"mm_all": {27.0: spread_about(1.2140, 0.0050)}}, "schematic",
+            )
+            verdict = combined.load(
+                corner_record="20260801-000000-aaaaaaa", sim_dir=root
+            )
+        self.assertEqual(verdict.status, "NO DATA")
+        self.assertIn("extracted", verdict.problems[0])
+        self.assertIn("--mc-record", verdict.problems[0])
+
+    def test_pinning_both_legs_is_never_overridden_even_across_classes(self):
+        """An explicit cross-provenance pair is allowed -- and labelled as one."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_corner_record(
+                root, "20260801-000000-aaaaaaa", {"tt_27c_3.30v": 1.2000}, "schematic"
+            )
+            write_corner_record(
+                root, "20260802-000000-bbbbbbb", {"tt_27c_3.30v": 1.2000}, "extracted"
+            )
+            write_mc_record(
+                root, "20260803-000000-ccccccc",
+                {"mm_all": {27.0: spread_about(1.2140, 0.0050)}}, "schematic",
+            )
+            write_mc_record(
+                root, "20260804-000000-ddddddd",
+                {"mm_all": {27.0: spread_about(1.2140, 0.0010)}}, "extracted",
+            )
+            verdict = combined.load(
+                corner_record="20260802-000000-bbbbbbb",
+                mc_record="20260803-000000-ccccccc",
+                sim_dir=root,
+            )
+            text = combined.render(verdict)
+        self.assertEqual(verdict.corner_evidence.record_id, "20260802-000000-bbbbbbb")
+        self.assertEqual(verdict.mc_evidence.record_id, "20260803-000000-ccccccc")
+        self.assertEqual(verdict.problems, [])  # deliberate: honoured, not refused
+        self.assertTrue(verdict.cross_provenance)
+        self.assertIsNone(verdict.matched_provenance)
+        self.assertIn("CROSS-PROVENANCE", text)
+
+    def test_the_report_states_which_class_the_legs_were_paired_on(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_corner_record(
+                root, "20260801-000000-aaaaaaa", {"tt_27c_3.30v": 1.2000}, "extracted"
+            )
+            write_mc_record(
+                root, "20260802-000000-bbbbbbb",
+                {"mm_all": {27.0: spread_about(1.2140, 0.0050)}}, "extracted",
+            )
+            text = combined.render(combined.load(sim_dir=root))
+        self.assertIn("Provenance pairing: extracted", text)
+        self.assertIn("| **extracted** |", text)
+
+    def test_records_without_the_field_still_pair_and_say_so(self):
+        """Back-compat: records predating the field are 'unknown', not 'different'."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_corner_record(root, "20260801-000000-aaaaaaa", {"tt_27c_3.30v": 1.2000})
+            write_mc_record(
+                root, "20260802-000000-bbbbbbb",
+                {"mm_all": {27.0: spread_about(1.2140, 0.0050)}},
+            )
+            verdict = combined.load(sim_dir=root)
+            text = combined.render(verdict)
+        self.assertEqual(verdict.problems, [])
+        self.assertFalse(verdict.cross_provenance)
+        self.assertEqual(verdict.matched_provenance, combined.UNKNOWN_PROVENANCE)
+        self.assertIn("Provenance pairing: not stated", text)
+
+    def test_a_live_corner_leg_pairs_the_mc_leg_on_its_own_provenance(self):
+        """The suite hands its own run over live -- it still constrains the pair."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_corner_record(
+                root, "20260801-000000-aaaaaaa", {"tt_27c_3.30v": 1.2000}, "schematic"
+            )
+            write_mc_record(
+                root, "20260802-000000-bbbbbbb",
+                {"mm_all": {27.0: spread_about(1.2140, 0.0050)}}, "schematic",
+            )
+            write_mc_record(
+                root, "20260803-000000-ccccccc",
+                {"mm_all": {27.0: spread_about(1.2140, 0.0010)}}, "extracted",
+            )
+            live = combined.EvidenceRef(
+                slug=combined.CORNER_SLUG,
+                record_id="20260801-000000-aaaaaaa",
+                record=str(
+                    root
+                    / combined.CORNER_SLUG
+                    / "records"
+                    / "20260801-000000-aaaaaaa.md"
+                ),
+                logs=str(root / combined.CORNER_SLUG / "corners" / "20260801-000000-aaaaaaa"),
+                live=True,
+            )
+            verdict = combined.load(
+                sim_dir=root,
+                corner_samples={"tt_27c_3.30v": {"vref": 1.2000}},
+                corner_evidence=live,
+            )
+        self.assertEqual(verdict.mc_evidence.record_id, "20260802-000000-bbbbbbb")
+        self.assertEqual(verdict.matched_provenance, "schematic")
 
 
 class CommittedEvidenceTests(unittest.TestCase):
