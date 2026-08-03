@@ -407,6 +407,39 @@ RUN_CONTEXT = {
 }
 
 
+def provenance_class(relative: Path) -> str:
+    """``schematic`` / ``extracted`` / ``frozen schematic``, read off the path.
+
+    `sim/README.md` requires every record to say whether it was taken against
+    the schematic netlist or a post-layout extracted one, and
+    `sim/dut/README.md` fixes the rule: the class follows the directory the
+    DUT lives in, so a post-layout re-run (#17) reports itself correctly with
+    no flag anyone can forget to pass. This bench predates `--dut` carrying an
+    extracted netlist and used to hard-code `schematic`, which would have made
+    an extracted-netlist MC record assert the wrong provenance -- the one
+    field that distinguishes the two record sets from each other.
+    """
+    text = str(relative)
+    if text.startswith("layout/"):
+        return "extracted"
+    if "/frozen/" in text:
+        return "frozen schematic"
+    return "schematic"
+
+
+def provenance_origin(relative: Path) -> str:
+    """The parenthetical that says where a DUT of this class came from."""
+    klass = provenance_class(relative)
+    if klass == "extracted":
+        return (
+            ", from `layout/bandgap_top/bandgap_top.gds` via "
+            "`klt extract --parasitics` and "
+            "`layout/netlist/mk_extracted_dut.py` -- read that file's own "
+            "header for the transforms and back-annotations applied, #17"
+        )
+    return ", from `design/bandgap_top.sch`, #8"
+
+
 def build_record(record, stamp, pdk, dut_path: Path, injected: list[dict], results: dict) -> str:
     lines: list[str] = []
     add = lines.append
@@ -433,10 +466,11 @@ def build_record(record, stamp, pdk, dut_path: Path, injected: list[dict], resul
         "(#14) and the layout matching plan (#16)."
     )
     add(f"  - {RUN_CONTEXT['netlist_caveat']}")
+    relative = dut_path.relative_to(dc.repo_root(HERE))
     add(
-        "- **Netlist provenance**: schematic "
-        f"(`{dut_path.relative_to(dc.repo_root(HERE))}`, from `design/bandgap_top.sch`, "
-        "#8), with the resistor-mismatch injection described below applied "
+        f"- **Netlist provenance**: {provenance_class(relative)} "
+        f"(`{relative}`{provenance_origin(relative)}), with the "
+        "resistor-mismatch injection described below applied "
         "to a copy for the `mm_res`/`mm_all` groups (see **Statistical "
         "convention**). The unmodified DUT (`mm_ctrl`/`mm_fetbjt` groups) is "
         "not separately snapshotted -- it is exactly the cited file with its "
