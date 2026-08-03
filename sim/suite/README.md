@@ -75,12 +75,24 @@ no ngspice — it reads both benches' committed records), and a full
   re-judges the matrix with that one contributor scaled ×0.5 and ×2 and says
   whether any corner's verdict moves. The accepted risk is recorded in
   [`spec/decision-records/0004-par-r-mismatch-coefficient-risk.md`](../../spec/decision-records/0004-par-r-mismatch-coefficient-risk.md).
-- **Re-running.** Both legs default to the **newest** record under their own
-  `records/` directory, so after either bench is re-run a bare
+- **Which two records get paired.** The legs are matched on a shared
+  **Netlist provenance** class (`sim/README.md`'s required record field):
+  the newest record across both benches names the class, and each leg then
+  contributes its own **newest** record of that class — schematic with
+  schematic, extracted with extracted. A bench that has not been re-run
+  post-layout therefore never drags the other leg's extracted record into
+  the graft. Where no same-provenance pair exists at all, the report says so
+  and claims no verdict, rather than reporting the (guaranteed) anchor
+  disagreement as if the two benches disagreed.
+- **Re-running.** Within that pairing rule both legs default to their newest
+  record, so after either bench is re-run a bare
   `python3 sim/run_combined_accuracy.py` re-judges against the new evidence
   with no argument changes; `--mc-record` / `--corner-record` pin a specific
-  pair. Reports land in `sim/suite/combined/<record-id>.md` and are
-  append-only like everything else under `sim/`.
+  pair and are never overridden (pinning one leg makes the other match its
+  provenance class; pinning both is honoured as given, including a
+  deliberate cross-provenance comparison, which the report labels as such).
+  Reports land in `sim/suite/combined/<record-id>.md` and are append-only
+  like everything else under `sim/`.
 
 ### Startup is wired in, not reimplemented
 

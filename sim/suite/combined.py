@@ -85,6 +85,21 @@ The report additionally rolls the per-corner verdicts up **per temperature**
 is measured per temperature and the MC record's own window table is written
 that way -- so the two documents can be read against each other line by line.
 
+## Which two records get paired
+
+Both legs default to their newest record, but *not* independently: a
+schematic-netlist corner leg grafted with an extracted-netlist mismatch leg is
+not two benches disagreeing, it is a category error, and the anchor
+cross-check above would report it ``INVALID`` as though the design were at
+fault. So :func:`select_records` pairs the legs on a shared **Netlist
+provenance** class (``sim/README.md``'s required record field): the newest
+record across both benches names the class, and each leg then contributes its
+own newest record of that class. When no same-provenance pair exists, the
+report states the problem and claims no verdict rather than reporting a
+misleading ``INVALID``. An explicit ``--corner-record``/``--mc-record`` pin is
+never overridden -- pinning a cross-provenance pair on purpose is allowed, and
+labelled as such in the report.
+
 ## Reading evidence, never writing it
 
 Like the rest of ``sim/suite``, this module reads the **raw logs** each run
@@ -103,7 +118,7 @@ import datetime as _dt
 import math
 import re
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 from .analysis import parse_corner_id, read_corner_logs
@@ -244,6 +259,15 @@ def read_mc_groups(corners_dir: Path) -> dict[tuple[str, float], GroupStats]:
 # --- evidence discovery -----------------------------------------------------
 
 
+#: ``sim/README.md``'s required **Netlist provenance** field, as
+#: ``sim/postlayout_delta.py`` reads it back off a record. Kept identical to
+#: that module's pattern on purpose: one convention, one way of reading it.
+PROVENANCE_FIELD = re.compile(r"^-\s+\*\*Netlist provenance\*\*:\s*(\S+)")
+
+#: What a record that does not state the field (or cannot be read) reports as.
+UNKNOWN_PROVENANCE = "unknown"
+
+
 @dataclass(frozen=True)
 class EvidenceRef:
     """Which record a leg's numbers came from, cited by path."""
@@ -253,6 +277,9 @@ class EvidenceRef:
     record: str          # repo-relative path of the .md record
     logs: str            # repo-relative path of the raw-log directory
     live: bool = False   # produced by this very run rather than read back
+    #: The record's own **Netlist provenance** class -- ``schematic``,
+    #: ``extracted`` or :data:`UNKNOWN_PROVENANCE`.
+    provenance: str = UNKNOWN_PROVENANCE
 
     @property
     def origin(self) -> str:
@@ -266,16 +293,72 @@ def _repo_relative(path: Path) -> str:
         return str(path)
 
 
-def latest_record_id(slug: str, sim_dir: Path = SIM_DIR) -> str | None:
-    """The newest ``<record-id>`` under ``sim/<slug>/records/``.
+def provenance_of_path(record: Path) -> str:
+    """The **Netlist provenance** class a record states, or ``unknown``."""
+    try:
+        text = record.read_text(errors="replace")
+    except OSError:
+        return UNKNOWN_PROVENANCE
+    for line in text.splitlines():
+        hit = PROVENANCE_FIELD.match(line)
+        if hit:
+            return hit.group(1).strip("`*.,;:").lower() or UNKNOWN_PROVENANCE
+    return UNKNOWN_PROVENANCE
+
+
+def record_provenance(slug: str, record_id: str, sim_dir: Path = SIM_DIR) -> str:
+    """The provenance class of ``sim/<slug>/records/<record-id>.md``."""
+    return provenance_of_path(sim_dir / slug / "records" / f"{record_id}.md")
+
+
+def _with_live_provenance(ref: EvidenceRef, sim_dir: Path = SIM_DIR) -> EvidenceRef:
+    """Read a live run's just-minted record for its provenance class.
+
+    The suite hands the corner leg over as ``live`` evidence (its own run,
+    not a record read back), citing the record it just wrote. That record
+    states the same **Netlist provenance** field as any other, so the live
+    leg can still constrain which mismatch record it may be paired with.
+    """
+    if not ref.record or ref.provenance != UNKNOWN_PROVENANCE:
+        return ref
+    candidate = Path(ref.record)
+    for base in (REPO_ROOT, sim_dir.parent):
+        if candidate.is_absolute():
+            break
+        if (base / ref.record).is_file():
+            candidate = base / ref.record
+            break
+    if not candidate.is_file():
+        return ref
+    return replace(ref, provenance=provenance_of_path(candidate))
+
+
+def record_ids(slug: str, sim_dir: Path = SIM_DIR) -> list[str]:
+    """Every ``<record-id>`` under ``sim/<slug>/records/``, oldest first.
 
     Record ids start with ``<YYYYmmdd>-<HHMMSS>``, so lexical order is
-    chronological order. Picking the newest automatically is what makes this
-    verdict re-runnable: when a re-centring fix mints new records for either
-    bench, a bare re-run reports against them with no argument changes.
+    chronological order.
     """
-    records = sorted((sim_dir / slug / "records").glob("*.md"))
-    return records[-1].stem if records else None
+    return [path.stem for path in sorted((sim_dir / slug / "records").glob("*.md"))]
+
+
+def latest_record_id(
+    slug: str,
+    sim_dir: Path = SIM_DIR,
+    provenance: str | None = None,
+) -> str | None:
+    """The newest ``<record-id>`` under ``sim/<slug>/records/``.
+
+    Picking the newest automatically is what makes this verdict re-runnable:
+    when a re-centring fix mints new records for either bench, a bare re-run
+    reports against them with no argument changes. Pass ``provenance`` to
+    restrict the search to one netlist-provenance class, which is how
+    :func:`select_records` keeps the two legs describing the same circuit.
+    """
+    ids = record_ids(slug, sim_dir)
+    if provenance is not None:
+        ids = [rid for rid in ids if record_provenance(slug, rid, sim_dir) == provenance]
+    return ids[-1] if ids else None
 
 
 def evidence_for(
@@ -283,7 +366,11 @@ def evidence_for(
     record_id: str | None = None,
     sim_dir: Path = SIM_DIR,
 ) -> EvidenceRef | None:
-    """Locate one bench's record + raw logs, defaulting to its newest record."""
+    """Locate one bench's record + raw logs, defaulting to its newest record.
+
+    Defaulting here is deliberately *per leg* and provenance-blind; pairing the
+    two legs is :func:`select_records`'s job, and :func:`load` goes through it.
+    """
     resolved = record_id or latest_record_id(slug, sim_dir)
     if resolved is None:
         return None
@@ -296,7 +383,200 @@ def evidence_for(
         record_id=resolved,
         record=_repo_relative(record),
         logs=_repo_relative(logs),
+        provenance=provenance_of_path(record),
     )
+
+
+# --- pairing the two legs by netlist provenance -----------------------------
+
+
+@dataclass(frozen=True)
+class RecordPair:
+    """Which record each leg contributes, and on what provenance class.
+
+    The two legs are only a verdict when they describe the *same circuit*: a
+    schematic-netlist corner leg grafted with an extracted-netlist mismatch
+    leg is not a bench disagreement, it is a category error, and the anchor
+    cross-check would report it as ``INVALID`` as if the design were at
+    fault. So record selection is pairing, not two independent "newest of
+    each" lookups.
+    """
+
+    corner_record: str | None
+    mc_record: str | None
+    corner_provenance: str | None
+    mc_provenance: str | None
+    #: The class both legs were matched on, or ``None`` when they were not.
+    matched: str | None = None
+    #: Fatal: no same-provenance pair could be formed without an explicit pin.
+    problems: list[str] = field(default_factory=list)
+
+    @property
+    def cross_provenance(self) -> bool:
+        """Do the two legs' records state *different* provenance classes?"""
+        return (
+            self.corner_provenance is not None
+            and self.mc_provenance is not None
+            and self.corner_provenance != self.mc_provenance
+        )
+
+
+def _pin_mismatch_problem(
+    pinned_slug: str, pinned_class: str, free_slug: str, free_class: str | None
+) -> str:
+    have = (
+        f"its newest record is **{free_class}**-provenance"
+        if free_class
+        else "it has no readable records"
+    )
+    return (
+        f"the pinned `sim/{pinned_slug}/` record is **{pinned_class}**-provenance "
+        f"but `sim/{free_slug}/` has no record of that class ({have}) -- the two "
+        "legs would not describe the same circuit, so pin the other leg "
+        "explicitly (`--corner-record`/`--mc-record`) to state which comparison "
+        "is intended, or re-run that bench against the same netlist"
+    )
+
+
+def select_records(
+    corner_record: str | None = None,
+    mc_record: str | None = None,
+    sim_dir: Path = SIM_DIR,
+    corner_provenance: str | None = None,
+    live_corner: bool = False,
+) -> RecordPair:
+    """Choose one record per leg, preferring a **same-provenance** pair.
+
+    The rules, in order:
+
+    1. An explicit ``--corner-record``/``--mc-record`` pin is never
+       overridden -- pinning stays an unconditional override.
+    2. When one leg is fixed (pinned, or supplied live by the running suite
+       via ``live_corner``/``corner_provenance``), the other leg defaults to
+       its newest record *of that same provenance class*.
+    3. When neither leg is fixed, the newest record across both legs names
+       the class -- the freshest evidence wins -- and each leg then
+       contributes its newest record of that class. Classes only one leg has
+       are skipped, so a bench that has not been re-run post-layout does not
+       drag the other leg's extracted record into a cross-provenance pair.
+    4. If no same-provenance pair exists at all, each leg falls back to its
+       own newest record (today's behaviour, so the report can still cite
+       what it found) **and a problem is reported** -- the caller gets a
+       clear "pin these explicitly" diagnostic rather than a bare ``INVALID``
+       that reads as a genuine bench disagreement.
+    """
+    corner_ids = record_ids(CORNER_SLUG, sim_dir)
+    mc_ids = record_ids(MC_SLUG, sim_dir)
+    live_corner = live_corner or corner_provenance is not None
+
+    corner_class: str | None = corner_provenance
+    if not live_corner and corner_record:
+        corner_class = record_provenance(CORNER_SLUG, corner_record, sim_dir)
+    mc_class: str | None = (
+        record_provenance(MC_SLUG, mc_record, sim_dir) if mc_record else None
+    )
+
+    def pair(
+        corner_id: str | None,
+        mc_id: str | None,
+        problems: list[str] | None = None,
+    ) -> RecordPair:
+        c_class = corner_class if live_corner or corner_id is None else record_provenance(
+            CORNER_SLUG, corner_id, sim_dir
+        )
+        m_class = mc_class if mc_id is None else record_provenance(MC_SLUG, mc_id, sim_dir)
+        matched = c_class if c_class is not None and c_class == m_class else None
+        return RecordPair(
+            corner_record=corner_id,
+            mc_record=mc_id,
+            corner_provenance=c_class,
+            mc_provenance=m_class,
+            matched=matched,
+            problems=problems or [],
+        )
+
+    # 1. both legs fixed -- honour the pins exactly, whatever they pair.
+    if (live_corner or corner_record) and mc_record:
+        return pair(None if live_corner else corner_record, mc_record)
+
+    # 2. one leg fixed -- the other matches its class when it can.
+    if live_corner or corner_record:
+        if corner_class is None:
+            # A live corner leg whose record does not state the field: there
+            # is no class to match on, so fall back to the newest MC record
+            # rather than invent a constraint.
+            return pair(None, mc_ids[-1] if mc_ids else None)
+        chosen = latest_record_id(MC_SLUG, sim_dir, provenance=corner_class)
+        if chosen is not None:
+            return pair(None if live_corner else corner_record, chosen)
+        fallback = mc_ids[-1] if mc_ids else None
+        problems = (
+            [
+                _pin_mismatch_problem(
+                    CORNER_SLUG,
+                    corner_class,
+                    MC_SLUG,
+                    record_provenance(MC_SLUG, fallback, sim_dir) if fallback else None,
+                )
+            ]
+            if fallback
+            else []  # a wholly missing leg is already reported by load()
+        )
+        return pair(None if live_corner else corner_record, fallback, problems)
+
+    if mc_record:
+        assert mc_class is not None
+        chosen = latest_record_id(CORNER_SLUG, sim_dir, provenance=mc_class)
+        if chosen is not None:
+            return pair(chosen, mc_record)
+        fallback = corner_ids[-1] if corner_ids else None
+        problems = (
+            [
+                _pin_mismatch_problem(
+                    MC_SLUG,
+                    mc_class,
+                    CORNER_SLUG,
+                    record_provenance(CORNER_SLUG, fallback, sim_dir)
+                    if fallback
+                    else None,
+                )
+            ]
+            if fallback
+            else []
+        )
+        return pair(fallback, mc_record, problems)
+
+    # 3. neither leg fixed -- the newest record across both legs names the
+    #    class, and both legs then contribute their newest record of it.
+    both: list[tuple[str, str, str]] = [  # (record-id, slug, class)
+        (rid, CORNER_SLUG, record_provenance(CORNER_SLUG, rid, sim_dir))
+        for rid in corner_ids
+    ] + [(rid, MC_SLUG, record_provenance(MC_SLUG, rid, sim_dir)) for rid in mc_ids]
+    for _, _, klass in sorted(both, key=lambda item: item[0], reverse=True):
+        corner_id = latest_record_id(CORNER_SLUG, sim_dir, provenance=klass)
+        mc_id = latest_record_id(MC_SLUG, sim_dir, provenance=klass)
+        if corner_id is not None and mc_id is not None:
+            return pair(corner_id, mc_id)
+
+    # 4. no same-provenance pair exists: cite the newest of each, and say so.
+    corner_id = corner_ids[-1] if corner_ids else None
+    mc_id = mc_ids[-1] if mc_ids else None
+    problems = []
+    if corner_id and mc_id:
+        problems.append(
+            "the two legs have no same-provenance pair of records: "
+            f"`sim/{CORNER_SLUG}/`'s newest is "
+            f"**{record_provenance(CORNER_SLUG, corner_id, sim_dir)}**-provenance "
+            f"(`{corner_id}`) and `sim/{MC_SLUG}/`'s newest is "
+            f"**{record_provenance(MC_SLUG, mc_id, sim_dir)}**-provenance "
+            f"(`{mc_id}`), and neither bench has a record of the other's class. "
+            "Combining them would graft a mismatch distribution measured on one "
+            "netlist onto corners measured on another, so no verdict is claimed "
+            "here -- pin `--corner-record`/`--mc-record` explicitly if a "
+            "cross-provenance comparison is what you intend, or re-run one bench "
+            "against the other's netlist"
+        )
+    return pair(corner_id, mc_id, problems)
 
 
 # --- the combination itself -------------------------------------------------
@@ -465,11 +745,30 @@ class CombinedVerdict:
     skipped: list[str] = field(default_factory=list)
     corner_evidence: EvidenceRef | None = None
     mc_evidence: EvidenceRef | None = None
+    #: The netlist-provenance class both legs were matched on, when they were
+    #: (``None`` when the two records state different classes).
+    matched_provenance: str | None = None
     #: Fatal: a leg could not be read at all, so there is no verdict to give.
     problems: list[str] = field(default_factory=list)
     #: Non-fatal: coverage the two legs do not share (e.g. a temperature one
     #: leg measured and the other did not). Reported, not silently dropped.
     notes: list[str] = field(default_factory=list)
+
+    @property
+    def cross_provenance(self) -> bool:
+        """Were the two legs read from records of *different* netlist provenance?
+
+        Only ever true when the caller pinned such a pair explicitly, or when
+        no same-provenance pair exists at all (in which case a problem is
+        reported too): the default selection refuses to form one silently
+        (see :func:`select_records`). A record that does not state the field
+        is *unknown*, not different -- that is a reporting gap, not a
+        cross-provenance comparison.
+        """
+        if self.corner_evidence is None or self.mc_evidence is None:
+            return False
+        classes = {self.corner_evidence.provenance, self.mc_evidence.provenance}
+        return UNKNOWN_PROVENANCE not in classes and len(classes) > 1
 
     @property
     def anchors_agree(self) -> bool:
@@ -679,15 +978,15 @@ def render(
         "",
         "## Legs combined (evidence, by path)",
         "",
-        "| Leg | Bench | Record | Raw logs | Source |",
-        "|---|---|---|---|---|",
+        "| Leg | Bench | Record | Netlist provenance | Raw logs | Source |",
+        "|---|---|---|---|---|---|",
     ]
     for label, ref in (
         ("process corners", combined.corner_evidence),
         ("mismatch MC", combined.mc_evidence),
     ):
         if ref is None:
-            lines.append(f"| {label} | — | **missing** | — | — |")
+            lines.append(f"| {label} | — | **missing** | — | — | — |")
             continue
         record = (
             f"[`{ref.record}`]({_relative_link(ref.record)})"
@@ -695,7 +994,16 @@ def render(
             else "not recorded (`--no-write` run)"
         )
         logs = f"`{ref.logs}/`" if ref.logs else "—"
-        lines.append(f"| {label} | `{ref.slug}` | {record} | {logs} | {ref.origin} |")
+        provenance = (
+            "not stated"
+            if ref.provenance == UNKNOWN_PROVENANCE
+            else f"**{ref.provenance}**"
+        )
+        lines.append(
+            f"| {label} | `{ref.slug}` | {record} | {provenance} | {logs} "
+            f"| {ref.origin} |"
+        )
+    lines += _provenance_pairing_lines(combined)
 
     lines += ["", "## Verdict", ""]
     headline = {
@@ -705,8 +1013,16 @@ def render(
         "FAIL": None,  # filled in below with the count
         "INVALID": "**INVALID** — the anchor cross-check below failed, so the "
         "two legs are not describing the same circuit and no combined verdict "
-        "is claimed from them.",
-        "NO DATA": "**NO DATA** — one or both legs could not be read; see the "
+        "is claimed from them."
+        + (
+            " The two records were pinned to **different** netlist provenance "
+            "classes, which is reason enough for the check to fail: read the "
+            "disagreement as the pairing's, not the design's."
+            if combined.cross_provenance
+            else ""
+        ),
+        "NO DATA": "**NO DATA** — one or both legs could not be read, or the two "
+        "legs could not be paired on a shared netlist provenance; see the "
         "problems listed below.",
     }[combined.status]
     if combined.status == "FAIL":
@@ -736,6 +1052,49 @@ def render(
 def _relative_link(repo_relative: str) -> str:
     """Link from ``sim/suite/combined/<file>.md`` back to a repo path."""
     return "../../../" + repo_relative
+
+
+def _provenance_pairing_lines(combined: CombinedVerdict) -> list[str]:
+    """State, in the report, which provenance class the two legs were paired on.
+
+    Without this a reader has to open both records to find out whether the
+    comparison was apples-to-apples -- the exact thing that made a
+    cross-provenance pairing readable as a bench disagreement.
+    """
+    if combined.corner_evidence is None or combined.mc_evidence is None:
+        return []
+    if combined.cross_provenance:
+        return [
+            "",
+            "**Provenance pairing: CROSS-PROVENANCE.** The process-corner leg is "
+            f"**{combined.corner_evidence.provenance}**-netlist evidence and the "
+            f"mismatch leg is **{combined.mc_evidence.provenance}**-netlist "
+            "evidence, so the two legs do not describe the same circuit. Their "
+            "anchor cross-check disagrees by construction; nothing below should "
+            "be read as a disagreement between the two benches, still less as a "
+            "property of the design.",
+        ]
+    if combined.matched_provenance == UNKNOWN_PROVENANCE:
+        return [
+            "",
+            "**Provenance pairing: not stated.** Neither record carries the "
+            "**Netlist provenance** field `sim/README.md` requires, so the two "
+            "legs could not be confirmed to describe the same circuit.",
+        ]
+    if combined.matched_provenance is None:
+        return [
+            "",
+            "**Provenance pairing: unconfirmed.** Only one of the two legs states "
+            "a **Netlist provenance** class, so the pairing could not be checked.",
+        ]
+    return [
+        "",
+        f"**Provenance pairing: {combined.matched_provenance}.** Both legs were "
+        f"matched on the same **{combined.matched_provenance}**-netlist "
+        "provenance class (`sim/README.md`'s **Netlist provenance** field), so "
+        "the two legs describe the same circuit and the graft below is "
+        "apples-to-apples.",
+    ]
 
 
 def _rollup_section(combined: CombinedVerdict) -> list[str]:
@@ -1005,10 +1364,22 @@ def _methodology_section(combined: CombinedVerdict) -> list[str]:
         "this approximation from being applied to two benches that disagree "
         "about the circuit itself.",
         "",
-        "**Re-running.** This report reads whichever record is newest under each "
-        "bench's `records/` directory, so once either leg is re-run — for "
-        "instance after the temperature-coefficient / centre re-centring work — "
-        "a bare `python3 sim/run_combined_accuracy.py` re-judges against the new "
+        "**Which records are read.** The two legs are paired on a *shared* "
+        "netlist provenance (`sim/README.md`'s **Netlist provenance** field): "
+        "the newest record across both benches names the class, and each leg "
+        "then contributes its own newest record of that class — schematic with "
+        "schematic, extracted with extracted. A bench that has not been re-run "
+        "post-layout therefore never drags the other leg's extracted record "
+        "into the graft; when no same-provenance pair exists at all, this "
+        "report says so and claims no verdict instead of reporting the "
+        "resulting anchor disagreement as if the benches disagreed. An "
+        "explicit `--corner-record`/`--mc-record` pin always overrides the "
+        "pairing, including deliberately across classes.",
+        "",
+        "**Re-running.** Within that pairing rule, both legs default to their "
+        "newest record, so once either leg is re-run — for instance after the "
+        "temperature-coefficient / centre re-centring work — a bare "
+        "`python3 sim/run_combined_accuracy.py` re-judges against the new "
         "evidence with no argument changes, and mints a new report beside this "
         "one. Nothing here is ever edited in place.",
         "",
@@ -1032,15 +1403,42 @@ def load(
     corner_samples: dict[str, dict[str, float]] | None = None,
     corner_evidence: EvidenceRef | None = None,
 ) -> CombinedVerdict:
-    """Read both legs off disk (or take the corner leg from a live run) and judge."""
-    if corner_samples is None:
-        corner_evidence = evidence_for(CORNER_SLUG, corner_record, sim_dir)
+    """Read both legs off disk (or take the corner leg from a live run) and judge.
+
+    Record selection goes through :func:`select_records`, so an unpinned run
+    pairs the two legs on a *shared* netlist-provenance class rather than
+    taking the newest record of each bench independently.
+    """
+    live_corner = corner_samples is not None
+    if live_corner and corner_evidence is not None:
+        corner_evidence = _with_live_provenance(corner_evidence, sim_dir)
+    pairing = select_records(
+        corner_record,
+        mc_record,
+        sim_dir,
+        corner_provenance=(
+            corner_evidence.provenance
+            if live_corner
+            and corner_evidence is not None
+            and corner_evidence.provenance != UNKNOWN_PROVENANCE
+            else None
+        ),
+        live_corner=live_corner,
+    )
+    if not live_corner:
+        corner_evidence = (
+            evidence_for(CORNER_SLUG, pairing.corner_record, sim_dir)
+            if pairing.corner_record
+            else None
+        )
         corner_samples = (
             read_corner_logs(sim_dir / CORNER_SLUG / "corners" / corner_evidence.record_id)
             if corner_evidence
             else {}
         )
-    mc_evidence = evidence_for(MC_SLUG, mc_record, sim_dir)
+    mc_evidence = (
+        evidence_for(MC_SLUG, pairing.mc_record, sim_dir) if pairing.mc_record else None
+    )
     mc_stats = (
         read_mc_groups(sim_dir / MC_SLUG / "corners" / mc_evidence.record_id)
         if mc_evidence
@@ -1050,6 +1448,15 @@ def load(
     combined = evaluate(corner_samples, mc_stats)
     combined.corner_evidence = corner_evidence
     combined.mc_evidence = mc_evidence
+    combined.matched_provenance = (
+        corner_evidence.provenance
+        if corner_evidence is not None
+        and mc_evidence is not None
+        and corner_evidence.provenance == mc_evidence.provenance
+        else None
+    )
+    for problem in reversed(pairing.problems):
+        combined.problems.insert(0, problem)
     if corner_evidence is None and not corner_samples:
         combined.problems.insert(
             0, f"no readable record + raw logs found under `sim/{CORNER_SLUG}/`"
@@ -1071,12 +1478,14 @@ def _build_parser() -> argparse.ArgumentParser:
         description=(
             "Combine sim/mc-untrimmed's mismatch leg and sim/output-voltage-tc's "
             "process-corner leg into one pass/fail verdict against the ratified "
-            "untrimmed-accuracy row."
+            "untrimmed-accuracy row. Unpinned, the two legs are paired on a "
+            "shared netlist provenance (schematic with schematic, extracted "
+            "with extracted) -- each leg's newest record of that class."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
             "Examples:\n"
-            "  python3 sim/run_combined_accuracy.py                  # newest record of each leg\n"
+            "  python3 sim/run_combined_accuracy.py                  # newest same-provenance pair\n"
             "  python3 sim/run_combined_accuracy.py --no-write       # print only\n"
             "  python3 sim/run_combined_accuracy.py --mc-record 20260802-034414-5066d85\n"
             "\n"
@@ -1088,13 +1497,15 @@ def _build_parser() -> argparse.ArgumentParser:
         "--corner-record",
         metavar="RECORD-ID",
         help=f"pin the process-corner leg to one sim/{CORNER_SLUG}/records/<id> "
-        "(default: the newest)",
+        "(default: the newest of the provenance class the legs pair on; a pin "
+        "is never overridden, and the other leg then matches its class)",
     )
     parser.add_argument(
         "--mc-record",
         metavar="RECORD-ID",
         help=f"pin the mismatch leg to one sim/{MC_SLUG}/records/<id> "
-        "(default: the newest)",
+        "(default: the newest of the provenance class the legs pair on; a pin "
+        "is never overridden, and the other leg then matches its class)",
     )
     parser.add_argument(
         "--no-write",
