@@ -262,6 +262,62 @@ class RecordCheckTests(unittest.TestCase):
         problems = self.check(paths)
         self.assertTrue(any("orphan" in p for p in problems), problems)
 
+    def test_a_head_record_with_a_partial_corner_set_is_rejected(self):
+        """Regression for #98: a record whose own Result table (implicitly,
+        its predecessor's full corner set) names more points than its
+        `corners/<record-id>/` directory actually carries -- e.g. 4 of the
+        12 logs a 4-groups-x-3-temperatures record like `mc-untrimmed`
+        commits -- must fail, not merely "directory is non-empty"."""
+        predecessor_logs = tuple(f"pt{i}_27c_3.30v.log" for i in range(12))
+        partial_logs = predecessor_logs[:4]
+        paths = write_experiment(self.root, record_id=OLDER_ID, logs=predecessor_logs)
+        paths += write_experiment(
+            self.root, text=valid_record(Supersedes=OLDER_ID), logs=partial_logs
+        )
+        problems = self.check(paths)
+        self.assertTrue(
+            any(
+                "holds 4 log(s), fewer than its Supersedes predecessor" in p
+                for p in problems
+            ),
+            problems,
+        )
+
+    def test_a_head_record_with_at_least_as_many_logs_as_its_predecessor_passes(self):
+        predecessor_logs = tuple(f"pt{i}_27c_3.30v.log" for i in range(12))
+        paths = write_experiment(self.root, record_id=OLDER_ID, logs=predecessor_logs)
+        paths += write_experiment(
+            self.root, text=valid_record(Supersedes=OLDER_ID), logs=predecessor_logs
+        )
+        self.assertEqual(self.check(paths), [])
+
+    def test_a_superseded_records_partial_corner_set_is_not_rechecked(self):
+        """Once a later record supersedes a partial-corner-set record, that
+        record is no longer the current head -- readers follow the chain to
+        the new head for self-supporting evidence, and the older record's
+        already-committed shortfall cannot be fixed in place (append-only).
+        The full-corner-set head must still pass on its own."""
+        newer_id = "20260801-120000-abc1234"
+        oldest_logs = tuple(f"pt{i}_27c_3.30v.log" for i in range(12))
+        partial_logs = oldest_logs[:4]
+        paths = write_experiment(self.root, record_id="20260731-000000-0000000", logs=oldest_logs)
+        paths += write_experiment(
+            self.root,
+            record_id=OLDER_ID,
+            text=valid_record(OLDER_ID, Supersedes="20260731-000000-0000000"),
+            logs=partial_logs,
+        )
+        paths += write_experiment(
+            self.root,
+            record_id=newer_id,
+            text=valid_record(newer_id, Supersedes=OLDER_ID),
+            logs=oldest_logs,
+        )
+        problems = self.check(paths)
+        self.assertFalse(
+            any("fewer than its Supersedes predecessor" in p for p in problems), problems
+        )
+
     def test_non_evidence_paths_are_ignored(self):
         paths = write_experiment(self.root)
         paths += ["sim/harness/report.py", "sim/README.md", "README.md"]
