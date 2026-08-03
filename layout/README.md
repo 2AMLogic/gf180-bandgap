@@ -95,9 +95,14 @@ Expected results (as committed):
 | Step | Result |
 |---|---|
 | `matching_report.py` | all tier-1/2/3 checks pass, exit 0 |
-| `run_drc.py` | `status: violations`, `violation_count: 1` (`mim.enclosing.fusetop.1` — the tracked `fb` top-plate tab finding, #82) |
-| `run_lvs.py` | `status: match`, 156/156 devices, 93/93 nets |
-| `area_report.py` | 48,938.26 µm² vs. 50,000 µm² target — PASS, 2.1 % headroom |
+| `run_drc.py` | `status: clean`, `violation_count: 0` (`20260803-054725-8d21bf1.drc.json` — first clean verdict since klayout-tools#318 stopped false-negativing `mim.enclosing.fusetop.1`; see #88) |
+| `run_lvs.py` | `status: match`, 156/156 devices, 92/92 nets (`20260803-054735-8d21bf1.lvs.json`) |
+| `area_report.py` | 48,805.68 µm² vs. 50,000 µm² target — PASS, 2.4 % headroom |
+
+`net_count` is 92, not 93, because gf180-bandgap#88 redrew the MiM cap's `fb`
+up-hop contact to land inside the recognised top plate — the top plate no
+longer extracts as its own isolated net, so it no longer contributes a
+distinct entry to the net count (see "Findings and escalations" below).
 
 **RESOLVED — `run_lvs.py`'s `match` result went stale between commits,
 independent of any code change here** ([#89](https://github.com/2AMLogic/gf180-bandgap/issues/89)).

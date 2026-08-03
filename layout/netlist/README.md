@@ -18,36 +18,42 @@ layout/netlist/
     bandgap_top/                  <record-id>.{extract.json,extracted.spice}
 ```
 
-Current state, against `origin/main`'s `bandgap_top.gds` and the current
+Current state, against `main`'s `bandgap_top.gds` (post-#88) and the current
 klayout-tools deck:
 
 ```
 extracted devices: 156 {'bjt': 8, 'cap_mim_2f0_m4m5_noshield': 1,
                         'nfet': 34, 'pfet': 47, 'ppolyf_u': 65,
                         'ppolyf_u_1k': 1}
-net_count        : 93
-lvs status       : match   (156/156 devices, 93/93 nets)
-drc status       : 1 violation -- mim.enclosing.fusetop.1, the MiM top-plate
-                   routing tab (gf180-bandgap#82); see layout/README.md
-parasitics       : 82 R / 82 C, 209.6 kohm and 2483.0 fF total
+net_count        : 92
+lvs status       : match   (156/156 devices, 92/92 nets)
+drc status       : clean, 0 violations -- the MiM top-plate routing tab that
+                   used to draw mim.enclosing.fusetop.1 (gf180-bandgap#82) is
+                   gone, redrawn DRM-legal by gf180-bandgap#88
+parasitics       : 82 R / 82 C, 209.2 kohm and 2479.2 fF total
 ```
 
-Taken at `20260803-010547-9e558e6` (extract) / `20260803-010523-9e558e6`
-(LVS), i.e. **after** [gf180-bandgap#91](https://github.com/2AMLogic/gf180-bandgap/pull/91)
-fixed `plan.res_geometry`'s fold-length budget. The earlier report sets in
-`reports/` (`…-dbcd5ab`, `…-1478626`) were taken against the pre-fix drawing,
-in which every folded `ppolyf_u` came out `(n−1)·W` short; they are kept
-because layout reports are append-only, but the three folded resistors they
-measure are not the ones this layout draws now:
+Taken at `20260803-054749-8d21bf1` (extract) / `20260803-054735-8d21bf1`
+(LVS) / `20260803-054725-8d21bf1` (DRC), i.e. the first regeneration since
+[gf180-bandgap#88](https://github.com/2AMLogic/gf180-bandgap/issues/88)
+redrew the `fb` top-plate contact. `net_count` moved 93 → 92 because the top
+plate no longer extracts as its own isolated net (it now resolves onto the
+same `fb` net every other `fb`-connected terminal already shares). Older
+report sets in `reports/` (`…-9e558e6` and earlier) were taken against the
+pre-#88 tab geometry and, further back, against the pre-#91 fold-length
+budget bug; both are kept because layout reports are append-only. The
+pre-#91 sets' three folded resistors are not the ones this layout draws now:
 
-| Device | pre-#91 `l_um` | current `l_um` | schematic `r_length` |
-|---|---|---|---|
-| `core.R1` (`$95`) | 407.08 | 460.70 | 460.701871 µm |
-| `core.R2` (`$91`) | 30.74 | 36.34 | 36.341871 µm |
-| `startup.RPU` (`$156`) | 3888.36 | 3999.96 | 4000 µm |
+| Device | pre-#91 `l_um` | at #91 `l_um` | current `l_um` | schematic `r_length` |
+|---|---|---|---|---|
+| `core.R1` (`$95`) | 407.08 | 460.70 | **436.70** (#96/#88, see below) | 436.705296 µm |
+| `core.R2` (`$91`) | 30.74 | 36.34 | 36.34 (unchanged) | 36.341871 µm |
+| `startup.RPU` (`$156`) | 3888.36 | 3999.96 | 3999.96 (unchanged) | 4000 µm |
 
-so the drawn PTAT ratio `(R1+trim)/R2` is 15.118 again, not the 16.128 the
-pre-fix reports measured.
+so at #91 the drawn PTAT ratio `(R1+trim)/R2` was 15.118 again, not the
+16.128 the pre-fix reports measured. `core.R2` and `startup.RPU` are
+unaffected by everything below; only `core.R1` moves again, for the
+unrelated reason the next paragraph explains.
 
 **A second, unrelated `core.R1` change lands in the same regeneration
 (#88).** [gf180-bandgap#96](https://github.com/2AMLogic/gf180-bandgap/issues/96)/PR#102
@@ -64,8 +70,10 @@ resyncs `core.R1` to #96's already-ratified value. This is not a #88 change
 in its own right, and #88's own diff touches nothing resistor-related; it is
 main's first layout regeneration since #96 merged, so this is the first
 point that staleness surfaces. `layout/lvs/bandgap_top.ref.spice`'s
-`Rcore_R1` value drops with it (predicted from the same schematic-driven
-formula), so LVS stays self-consistent throughout.
+`Rcore_R1` value (`80622.5` → `76423.2` Ω) drops with it (predicted from the
+same schematic-driven formula), so LVS stays self-consistent throughout —
+confirmed: `20260803-054735-8d21bf1.lvs.json` reports `status: match`,
+156/156 devices, 92/92 nets, no resistor-value mismatch.
 
 ## `mk_extracted_dut.py` — extraction report to simulatable DUT
 
