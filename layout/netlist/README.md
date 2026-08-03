@@ -29,8 +29,25 @@ net_count        : 93
 lvs status       : match   (156/156 devices, 93/93 nets)
 drc status       : 1 violation -- mim.enclosing.fusetop.1, the MiM top-plate
                    routing tab (gf180-bandgap#82); see layout/README.md
-parasitics       : 82 R / 82 C, 207.9 kohm and 2466.8 fF total
+parasitics       : 82 R / 82 C, 209.6 kohm and 2483.0 fF total
 ```
+
+Taken at `20260803-010547-9e558e6` (extract) / `20260803-010523-9e558e6`
+(LVS), i.e. **after** [gf180-bandgap#91](https://github.com/2AMLogic/gf180-bandgap/pull/91)
+fixed `plan.res_geometry`'s fold-length budget. The earlier report sets in
+`reports/` (`…-dbcd5ab`, `…-1478626`) were taken against the pre-fix drawing,
+in which every folded `ppolyf_u` came out `(n−1)·W` short; they are kept
+because layout reports are append-only, but the three folded resistors they
+measure are not the ones this layout draws now:
+
+| Device | pre-#91 `l_um` | current `l_um` | schematic `r_length` |
+|---|---|---|---|
+| `core.R1` (`$95`) | 407.08 | 460.70 | 460.701871 µm |
+| `core.R2` (`$91`) | 30.74 | 36.34 | 36.341871 µm |
+| `startup.RPU` (`$156`) | 3888.36 | 3999.96 | 4000 µm |
+
+so the drawn PTAT ratio `(R1+trim)/R2` is 15.118 again, not the 16.128 the
+pre-fix reports measured.
 
 ## `mk_extracted_dut.py` — extraction report to simulatable DUT
 
@@ -150,7 +167,11 @@ report set and this one, and both are visible in the numbers:
   instead of a floating node of its own, which took `net_count` from 94 to 93
   and required `layout/lvs/make_reference.py`'s step 9 to model that terminal
   as `vdd` (done in #17; without it `klt lvs` reports `mismatch`, 155/156
-  devices, 91/94 nets).
+  devices, 91/94 nets). That un-updated-reference mismatch is what
+  `origin/main` observed and filed as
+  [gf180-bandgap#89](https://github.com/2AMLogic/gf180-bandgap/issues/89)
+  (attributing it to the follow-on `klayout-tools#329`); step 9 here is its
+  fix, and `klt lvs` reports `match` again.
 - **`klayout-tools#318`** fixed `enclosing_check` silently passing when the
   enclosed shape lies *entirely* outside the enclosing layer. `klt drc` now
   reports the MiM top-plate tab's `mim.enclosing.fusetop.1` violation
