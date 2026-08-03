@@ -21,6 +21,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from . import SUITE_VERSION
+from . import combined as combined_verdict
 from .analysis import (
     LineOutcome,
     compare_box_to_endpoints,
@@ -28,7 +29,7 @@ from .analysis import (
     evaluate_line,
     read_corner_logs,
 )
-from .spec import NOT_CLAIMED_HERE, SUITE, SpecLine, by_slug, slugs
+from .spec import COMBINED_ACCURACY, NOT_CLAIMED_HERE, SUITE, SpecLine, by_slug, slugs
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SIM_DIR = REPO_ROOT / "sim"
@@ -248,6 +249,84 @@ def _tc_section(benches: list[BenchRun]) -> list[str]:
     return lines
 
 
+def combined_accuracy(benches: list[BenchRun]) -> combined_verdict.CombinedVerdict:
+    """Judge the two-legged accuracy row: this run's corners + the MC record.
+
+    The corner leg is taken from *this* run when the suite just ran that bench
+    (so the summary judges the evidence it minted, not an older record); the
+    mismatch leg always comes from ``sim/mc-untrimmed``'s newest committed
+    record, because that bench has its own runner and is not part of the
+    corner-runner suite.
+    """
+    bench = next(
+        (b for b in benches if b.slug == combined_verdict.CORNER_SLUG and b.samples),
+        None,
+    )
+    if bench is None:
+        return combined_verdict.load()
+    reference = combined_verdict.EvidenceRef(
+        slug=bench.slug,
+        record_id=Path(bench.record).stem if bench.record else "",
+        record=bench.record,
+        logs=_repo_relative(bench.logs_dir) if bench.logs_dir else "",
+        live=True,
+    )
+    return combined_verdict.load(
+        corner_samples=bench.samples, corner_evidence=reference
+    )
+
+
+def _combined_section(combined: combined_verdict.CombinedVerdict | None) -> list[str]:
+    """The two-legged accuracy row, summarised; full detail in its own report."""
+    if combined is None:
+        return []
+    row = COMBINED_ACCURACY
+    lines = [
+        "",
+        f"## {row.row}",
+        "",
+        f"Ratified target: {row.target}. No single bench's verdict is this row's "
+        "verdict — it is ratified on two legs, combined here:",
+        "",
+    ]
+    lines += [f"- `{slug}`: {supplies}" for slug, supplies in row.legs]
+    lines += [
+        "",
+        f"**Combined verdict: {combined.status}**"
+        + (
+            f" — {combined.n_fail} of {len(combined.verdicts)} corners fail."
+            if combined.verdicts
+            else ""
+        ),
+        "",
+        "| T (degC) | corners | failing | worst corner | combined 3-sigma interval (V) "
+        "| margin (mV) | verdict |",
+        "|---|---|---|---|---|---|---|",
+    ]
+    for rollup in combined.rollups:
+        worst = rollup.worst
+        if worst is None:
+            lines.append(f"| {rollup.temp_c:g} | 0 | — | — | — | — | NO DATA |")
+            continue
+        lines.append(
+            f"| {rollup.temp_c:g} | {len(rollup.verdicts)} | {rollup.n_fail} "
+            f"| `{worst.corner_id}` | [{worst.low_v:.5f}, {worst.high_v:.5f}] "
+            f"| {worst.margin_v * 1e3:.3f} | {rollup.status} |"
+        )
+    if combined.problems:
+        lines += [""] + [f"- {problem}" for problem in combined.problems]
+    lines += [
+        "",
+        f"Method: {row.note}",
+        "",
+        "Full per-corner detail, the anchor cross-check and the `par_r` "
+        "sensitivity band are in the standalone report: "
+        "`python3 sim/run_combined_accuracy.py` "
+        "(written to `sim/suite/combined/`).",
+    ]
+    return lines
+
+
 def _reference_section(benches: list[BenchRun]) -> list[str]:
     lines: list[str] = []
     for bench in benches:
@@ -276,17 +355,36 @@ def render_summary(
     git: dict,
     mode: str,
     wrote_evidence: bool,
+    combined: combined_verdict.CombinedVerdict | None = None,
 ) -> str:
     gated = [o for b in benches for o in b.outcomes if o.line.gated and b.available]
     passing = [o for o in gated if o.status == "PASS"]
     failing = [o for o in gated if o.status == "FAIL"]
     pending = [o for b in benches for o in b.outcomes if not o.line.gated or not b.available]
 
-    if failing:
-        verdict = (
-            f"**NOT simulation-complete**: {len(failing)} of {len(gated)} claimed spec "
-            f"lines FAIL against the ratified table."
+    # The untrimmed-accuracy row is ratified on TWO legs, so no per-bench line
+    # is that row's verdict: a summary that reads "simulation-complete" while
+    # the combined verdict fails would be claiming the row on one leg.
+    combined_short = ""
+    if combined is not None and combined.status != "PASS":
+        combined_short = (
+            f" The two-legged untrimmed-accuracy row (mismatch MC + process "
+            f"corners) reads **{combined.status}**"
+            + (
+                f" — {combined.n_fail}/{len(combined.verdicts)} corners."
+                if combined.verdicts
+                else "."
+            )
         )
+
+    if failing or combined_short:
+        counted = (
+            f"{len(failing)} of {len(gated)} claimed spec lines FAIL against the "
+            "ratified table."
+            if failing
+            else f"every per-bench spec line passes ({len(passing)}/{len(gated)})."
+        )
+        verdict = f"**NOT simulation-complete**: {counted}{combined_short}"
     elif pending:
         verdict = (
             f"**Not yet simulation-complete**: every claimed spec line passes "
@@ -296,7 +394,8 @@ def render_summary(
     else:
         verdict = (
             f"**Simulation-complete**: all {len(passing)} spec lines in the suite "
-            "index pass against the ratified table."
+            "index pass against the ratified table, and the two-legged "
+            "untrimmed-accuracy row passes at every corner."
         )
 
     lines = [
@@ -316,6 +415,7 @@ def render_summary(
     lines += _verdict_rows(benches)
     lines += ["", "## Benches and their evidence", ""]
     lines += _bench_evidence_rows(benches)
+    lines += _combined_section(combined)
     lines += _tc_section(benches)
     lines += _reference_section(benches)
 
@@ -468,12 +568,19 @@ def main(argv: list[str] | None = None) -> int:
         for slug in targets
     ]
 
+    combined = (
+        combined_accuracy(benches)
+        if combined_verdict.CORNER_SLUG in targets
+        else None
+    )
+
     summary = render_summary(
         benches,
         started=started,
         git=git,
         mode="smoke" if args.smoke else "full PVT",
         wrote_evidence=not no_write,
+        combined=combined,
     )
     print()
     print(summary)
@@ -489,6 +596,10 @@ def main(argv: list[str] | None = None) -> int:
 
     if any(bench.status == "error" for bench in benches):
         return EXIT_RUN_ERROR
+    if combined is not None and combined.status in {"NO DATA", "INVALID"}:
+        return EXIT_RUN_ERROR
+    if combined is not None and combined.status == "FAIL":
+        return EXIT_SPEC_FAIL
     if any(
         outcome.status == "FAIL"
         for bench in benches
