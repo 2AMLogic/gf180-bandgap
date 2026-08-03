@@ -166,12 +166,12 @@ report set and this one, and both are visible in the numbers:
   metal stack. The MiM cap's bottom plate now extracts on the real `vdd` net
   instead of a floating node of its own, which took `net_count` from 94 to 93
   and required `layout/lvs/make_reference.py`'s step 9 to model that terminal
-  as `vdd` (done in #17; without it `klt lvs` reports `mismatch`, 155/156
-  devices, 91/94 nets). That un-updated-reference mismatch is what
-  `origin/main` observed and filed as
-  [gf180-bandgap#89](https://github.com/2AMLogic/gf180-bandgap/issues/89)
-  (attributing it to the follow-on `klayout-tools#329`); step 9 here is its
-  fix, and `klt lvs` reports `match` again.
+  on the cap's real net; without that update `klt lvs` reports `mismatch`
+  (155/156 devices, 91/94 nets). That un-updated-reference mismatch was filed
+  as [gf180-bandgap#89](https://github.com/2AMLogic/gf180-bandgap/issues/89)
+  (against the follow-on `klayout-tools#329`) and fixed on `main` by
+  [#93](https://github.com/2AMLogic/gf180-bandgap/pull/93); `klt lvs` reports
+  `match` again, which is the state every number above was taken in.
 - **`klayout-tools#318`** fixed `enclosing_check` silently passing when the
   enclosed shape lies *entirely* outside the enclosing layer. `klt drc` now
   reports the MiM top-plate tab's `mim.enclosing.fusetop.1` violation
