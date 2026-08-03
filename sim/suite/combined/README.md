@@ -32,9 +32,19 @@ table, not by their filename.
 |---|---|---|
 | `20260803-023422-40990fd.md` | newest of each leg: corners `20260802-064729-75ca562`, MC `20260802-034414-5066d85` | FAIL — 66/81 corners |
 | `20260803-023457-ae39de2.md` | pinned pair, both from commit `960f726`: corners `20260801-234837-960f726`, MC `20260801-232002-960f726` | FAIL — 66/81 corners |
+| `20260803-024856-b4a0e6a.md` | same legs as `…-40990fd` — supersedes it (corrected methodology text) | FAIL — 66/81 corners |
+| `20260803-024953-3e50aad.md` | same legs as `…-ae39de2` — supersedes it (corrected methodology text) | FAIL — 66/81 corners |
 
-The second report is pinned deliberately: that MC record is the newest one
-whose committed logs carry **all four** Monte Carlo groups, so it is the one
+The first two reports are superseded, not withdrawn: their **Methodology**
+section stated the graft offset as `mean(mm_all, T) − vref(mm_ctrl, T)`, which
+is not what the tool computes — `delta` is anchored on the corner leg's own
+`tt`/3.30 V point and `mm_ctrl` feeds only the anchor cross-check. Every
+number in those two reports was always computed from the real rule and is
+unchanged in the reports that supersede them; only the prose was wrong. They
+stay here because this directory is append-only.
+
+The pinned pair (`…-ae39de2`, superseded by `…-3e50aad`) is pinned
+deliberately: that MC record is the newest one whose committed logs carry **all four** Monte Carlo groups, so it is the one
 that can evaluate the two checks the newest record cannot — the anchor
 cross-check (`mm_ctrl` vs the corner leg's `tt`/3.30 V point: agreement
 within 0.5 µV at every temperature, against a 100 µV tolerance) and the

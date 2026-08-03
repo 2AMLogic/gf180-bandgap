@@ -853,7 +853,7 @@ row's verdict. `python3 sim/run_combined_accuracy.py`
 (`sim/suite/combined.py`) grafts the measured mismatch distribution onto
 every corner of `sim/output-voltage-tc/`'s 81-point matrix — one pass/fail
 per corner, rolled up per temperature — and the first combined report is
-[`sim/suite/combined/20260803-023422-40990fd.md`](../sim/suite/combined/20260803-023422-40990fd.md).
+[`sim/suite/combined/20260803-024856-b4a0e6a.md`](../sim/suite/combined/20260803-024856-b4a0e6a.md).
 Against the current records it reads
 **FAIL at all three temperatures: 66 of 81 corners** put part of
 the 3σ interval outside 1.176–1.224 V (12/27 at −40 °C, 27/27 at 27 °C and
