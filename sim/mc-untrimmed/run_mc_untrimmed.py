@@ -785,7 +785,13 @@ def main() -> int:
 
     pdk = dc.resolve_pdk()
     root = dc.repo_root(HERE)
-    dut_path = args.dut or (root / "design" / "netlist" / "bandgap_top.spice")
+    # Resolved, because the record cites it repo-relative: a `--dut` given as
+    # a relative path (the natural way to type it from the repo root) is not
+    # a subpath of the absolute repo root until it is resolved, and the
+    # default below always was absolute -- so the record-building step used
+    # to fail only when `--dut` was actually used, i.e. only on the
+    # post-layout run the flag exists for (#17).
+    dut_path = (args.dut.resolve() if args.dut else root / "design" / "netlist" / "bandgap_top.spice")
     if not dut_path.is_file():
         sys.exit(f"ERROR: DUT netlist not found: {dut_path}")
 
