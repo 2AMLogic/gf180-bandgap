@@ -976,13 +976,22 @@ def _methodology_section(combined: CombinedVerdict) -> list[str]:
         "**The rule.** For each corner `c` at temperature `T`:",
         "",
         "```",
-        "centre(c) = vref_det(c) + delta(T)                  # corner leg + mismatch mean shift",
-        "delta(T)  = mean(mm_all, T) - vref(mm_ctrl, T)",
+        "centre(c) = vref_det(c) + delta(T)                  # corner leg + graft offset",
+        "delta(T)  = mean(mm_all, T) - vref_det(tt_<T>c_3.30v)  # anchored on the corner",
+        "                                                    # leg's own tt/3.30 V point",
         f"half(T)   = {SIGMA_MULTIPLE:g} * sigma(mm_all, T)"
         "                    # the ratified 3-sigma width",
         f"PASS(c)  <=> [centre - half, centre + half] within "
         f"[{WINDOW_LO_V:.3f}, {WINDOW_HI_V:.3f}] V",
         "```",
+        "",
+        "`delta` is anchored on the corner leg's own `tt`/3.30 V point — the one "
+        "point both benches simulate — so the combined interval at that corner "
+        "*is* the mismatch record's own `mean +/- 3 sigma` window rather than a "
+        "restatement of it. The MC bench's deterministic control group "
+        f"(`{MC_CONTROL_GROUP}`) never enters the graft; it is used only by the "
+        "anchor cross-check above, and the combined verdict still stands when "
+        "that group is absent from the record.",
         "",
         "**Approximation carried (stated, not hidden).** The mismatch "
         "distribution is measured at `tt`/3.30 V only and is applied unchanged "
