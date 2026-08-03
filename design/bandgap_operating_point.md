@@ -852,9 +852,17 @@ mismatch MC **+** process corners, so neither bench's own verdict is this
 row's verdict. `python3 sim/run_combined_accuracy.py`
 (`sim/suite/combined.py`) grafts the measured mismatch distribution onto
 every corner of `sim/output-voltage-tc/`'s 81-point matrix — one pass/fail
-per corner, rolled up per temperature — and the first combined report is
-[`sim/suite/combined/20260803-024856-b4a0e6a.md`](../sim/suite/combined/20260803-024856-b4a0e6a.md).
-Against the current records it reads
+per corner, rolled up per temperature. The first combined report,
+[`sim/suite/combined/20260803-024856-b4a0e6a.md`](../sim/suite/combined/20260803-024856-b4a0e6a.md),
+read the mismatch leg's newest record at the time
+(`20260802-034414-5066d85`), whose committed logs turned out to carry only 4
+of its own 12 named Monte Carlo points — the anchor cross-check and `par_r`
+sensitivity band below were `not evaluable` against it (#98). #98's re-run,
+[`sim/suite/combined/20260803-033127-b71297b.md`](../sim/suite/combined/20260803-033127-b71297b.md),
+reads the superseding, complete-evidence mismatch record
+(`20260803-031207-294fb1d`, which reproduces the prior one's numbers
+bit-for-bit) against the newest schematic-provenance corner record; both
+checks now evaluate and agree. Against the current records it reads
 **FAIL at all three temperatures: 66 of 81 corners** put part of
 the 3σ interval outside 1.176–1.224 V (12/27 at −40 °C, 27/27 at 27 °C and
 125 °C; worst margin −23.7 mV at `bjt_ss_125c_3.30v`). The attribution is

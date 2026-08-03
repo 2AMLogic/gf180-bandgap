@@ -34,6 +34,7 @@ table, not by their filename.
 | `20260803-023457-ae39de2.md` | pinned pair, both from commit `960f726`: corners `20260801-234837-960f726`, MC `20260801-232002-960f726` | FAIL — 66/81 corners |
 | `20260803-024856-b4a0e6a.md` | same legs as `…-40990fd` — supersedes it (corrected methodology text) | FAIL — 66/81 corners |
 | `20260803-024953-3e50aad.md` | same legs as `…-ae39de2` — supersedes it (corrected methodology text) | FAIL — 66/81 corners |
+| `20260803-033127-b71297b.md` | pinned pair, both schematic-provenance: corners `20260802-064729-75ca562`, MC `20260803-031207-294fb1d` (#98's re-run, all 12 logs) | FAIL — 66/81 corners |
 
 The first two reports are superseded, not withdrawn: their **Methodology**
 section stated the graft offset as `mean(mm_all, T) − vref(mm_ctrl, T)`, which
@@ -52,6 +53,22 @@ within 0.5 µV at every temperature, against a 100 µV tolerance) and the
 half-width by at most +1.34 mV and changes no corner's verdict). It is the
 evidence behind
 [`spec/decision-records/0004-par-r-mismatch-coefficient-risk.md`](../../../spec/decision-records/0004-par-r-mismatch-coefficient-risk.md).
+
+`…-b71297b` is pinned for the same reason `…-ae39de2` was: it is the current
+schematic-provenance pair (#98 minted `20260803-031207-294fb1d` specifically
+to restore the mismatch leg's missing 8 of 12 raw logs, so both checks are
+evaluable again against current evidence rather than falling back to
+`960f726`). It is **not** the bare `python3 sim/run_combined_accuracy.py`
+default: `sim/output-voltage-tc/`'s newest record is now #92's
+extracted-netlist re-run, and `latest_record_id()` picks strictly the newest
+record per leg with no provenance awareness, so the unpinned default now
+pairs an extracted-netlist corner leg against this schematic-netlist mismatch
+leg — an apples-to-oranges comparison whose anchor cross-check fails by
+design (tens of mV, both legs read exactly the deterministic operating point
+correctly, they just no longer share a netlist). That mismatch is a
+pre-existing gap in `latest_record_id()`'s selection rule, out of #98's scope
+(reported separately); this report sidesteps it with `--corner-record` rather
+than let a misleading `INVALID` verdict stand as the current one.
 
 ## Re-running after a design change
 
