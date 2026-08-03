@@ -93,8 +93,23 @@ Expected results (as committed):
 |---|---|
 | `matching_report.py` | all tier-1/2/3 checks pass, exit 0 |
 | `run_drc.py` | `status: violations`, `violation_count: 1` (`mim.enclosing.fusetop.1` — the tracked `fb` top-plate tab finding, #82) |
-| `run_lvs.py` | `lvs status: match` — 156/156 devices, 94/94 nets, 16 `warning`-severity entries (2 `device.body_unverified`, 14 `topology` ambiguous-pairing), 0 errors |
-| `area_report.py` | 48,339.11 µm² vs. 50,000 µm² target — PASS, 3.3 % headroom |
+| `run_lvs.py` | **currently `status: mismatch`, unrelated to this layout — see below** |
+| `area_report.py` | 48,938.26 µm² vs. 50,000 µm² target — PASS, 2.1 % headroom |
+
+**`run_lvs.py`'s `match` result went stale between commits, independent of
+any code change here (gf180-bandgap#89):** the installed `klt` picked up
+[`klayout-tools#329`](https://github.com/2AMLogic/klayout-tools/pull/329)
+(merged 2026-08-02), which now wires the compensation MIM capacitor's plates
+into the deck's ordinary `metals[]` connectivity instead of leaving them as
+isolated nodes — `layout/lvs/make_reference.py` still models the pre-#329
+floating-plate assumption, so `AMP_CC`'s device/net comparison now mismatches
+(18 mismatches, all on `amp.CC`/`vdd`/`fb` and structurally-resolved
+`topology` warnings — 0 mismatches involving any resistor). Reproduced
+identically on a from-scratch checkout of bare `origin/main` with **no**
+code changes at all, at both the current tip and the commit the last
+committed "match" evidence cites, so this is a pre-existing, tool-version
+regression unrelated to any resistor-geometry change — tracked as #89, not
+fixed here to keep this layout's own re-verification pass in scope.
 
 `run_lvs.py`'s 156 compared devices are 34 `nfet` + 47 `pfet` (81 MOS,
 including the 14 edge dummies), 65 `ppolyf_u` + 1 `ppolyf_u_1k` resistors, 8
@@ -110,13 +125,20 @@ taught `make_reference.py` to model all three classes (it briefly reported
 new `ppolyf_u_1k` entry so `startup.RPU` extracts as a real resistor instead
 of a short.
 
-The 16 `warning` entries are not defects: the two `device.body_unverified`
-ones are the deck's standing "no substrate/well tap layer" caveat (see
-below), and the 14 `topology` ones are ambiguous net pairings the comparer
-resolved structurally — the MIM cap's two interchangeable plate nets, the six
-per-unit PNP Nwell nets, and the symmetric interior nodes of the strapped-out
-trim loops. `status: match` is `NetlistComparer`'s own boolean verdict, which
-`klt lvs` never re-derives from the mismatch list.
+Of the current 18 mismatches, 14 are `warning`-severity and not defects: two
+`device.body_unverified` entries are the deck's standing "no substrate/well
+tap layer" caveat (see below), and 12 `topology` entries are ambiguous net
+pairings the comparer resolved structurally — the six per-unit PNP Nwell
+nets and the symmetric interior nodes of the strapped-out trim loops (the
+MIM cap's own topology-ambiguity entry dropped out of this list because
+klayout-tools#329 gave its bottom plate a real net instead of an
+interchangeable floating one — see #89, that net now has nowhere to match on
+the *reference* side, which is exactly the new `error`-severity mismatches
+below). The remaining 4 are `error`-severity and *are* the #89 regression
+described above (`device.unmatched` + 2×`net.merged` + `net.split`, all on
+`amp.CC`/`vdd`/`fb`) — until #89 lands, `status: match` does not hold.
+`status` is `NetlistComparer`'s own boolean verdict, which `klt lvs` never
+re-derives from the mismatch list.
 
 ## How the layout is built
 

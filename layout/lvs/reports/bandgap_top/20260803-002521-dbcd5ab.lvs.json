@@ -1,0 +1,735 @@
+{
+  "schema_version": 1,
+  "engine": "klayout",
+  "layout": "../../../bandgap_top/bandgap_top.gds",
+  "reference": "../../bandgap_top.ref.spice",
+  "top": "bandgap_top",
+  "status": "mismatch",
+  "mismatch_count": 18,
+  "category_counts": {
+    "device.body_unverified": 2,
+    "device.unmatched": 1,
+    "net.merged": 2,
+    "net.split": 1,
+    "topology": 12
+  },
+  "counts": {
+    "nets": {
+      "layout": 93,
+      "reference": 94,
+      "matched": 91
+    },
+    "devices": {
+      "layout": 156,
+      "reference": 156,
+      "matched": 155
+    },
+    "pins": {
+      "layout": 4,
+      "reference": 5,
+      "matched": 5
+    }
+  },
+  "device_classes": [
+    "nfet",
+    "pfet",
+    "bjt",
+    "cap_mim_2f0_m4m5_noshield",
+    "resistor"
+  ],
+  "environment": {
+    "engine": "klayout",
+    "engine_version": "0.30.10",
+    "layout_sha256": "736d4a634c9ff39b9fbc2455f8ac8897e9d41160cb5461a17bb1da8b3ad5cdf0",
+    "reference_sha256": "a1cbbcc046b3c85f47f77c23de71376b0f9dbfda03682ab71ae7484d294315e0",
+    "extracted_netlist": null
+  },
+  "provenance": {
+    "klt_version": "0.1.0",
+    "klayout_version": "0.30.10",
+    "pdk": null,
+    "deck": {
+      "name": "gf180mcu",
+      "content_hash": "sha256:be1a89e0f899a68c60baeeedffe1b4d76b965bd763e1b16beed1c85937872b1d"
+    },
+    "input": null
+  },
+  "mismatches": [
+    {
+      "category": "device.body_unverified",
+      "severity": "warning",
+      "description": "34 NMOS device body terminal(s) were compared against the 'vsubs' deck-synthesized substrate net, not a real schematic net -- this deck draws no distinct NMOS substrate/tap layer (see docs/cli/extract.md, \"Coverage\")",
+      "side": "layout",
+      "net": null,
+      "device": {
+        "layout": null,
+        "reference": null,
+        "class": "nfet"
+      },
+      "property": null
+    },
+    {
+      "category": "device.body_unverified",
+      "severity": "warning",
+      "description": "47 PMOS device body terminal(s) were compared against an anonymous, deck-synthesized well net, not a real schematic net -- this deck has no distinct well-tap layer (see docs/cli/extract.md, \"Coverage\")",
+      "side": "layout",
+      "net": null,
+      "device": {
+        "layout": null,
+        "reference": null,
+        "class": "pfet"
+      },
+      "property": null
+    },
+    {
+      "category": "device.unmatched",
+      "severity": "error",
+      "description": "device has no counterpart on the other side",
+      "side": "reference",
+      "net": null,
+      "device": {
+        "layout": "$90",
+        "reference": "AMP_CC",
+        "class": "cap_mim_2f0_m4m5_noshield"
+      },
+      "property": null
+    },
+    {
+      "category": "net.merged",
+      "severity": "error",
+      "description": "multiple reference nets were collapsed into one layout net",
+      "side": "reference",
+      "net": {
+        "layout": null,
+        "reference": "AMP_CC_BOT"
+      },
+      "device": null,
+      "property": null
+    },
+    {
+      "category": "net.merged",
+      "severity": "error",
+      "description": "multiple reference nets were collapsed into one layout net",
+      "side": "reference",
+      "net": {
+        "layout": null,
+        "reference": "AMP_CC_TOP"
+      },
+      "device": null,
+      "property": null
+    },
+    {
+      "category": "net.split",
+      "severity": "error",
+      "description": "a reference net's role is divided across multiple layout nets",
+      "side": "layout",
+      "net": {
+        "layout": "$16",
+        "reference": null
+      },
+      "device": null,
+      "property": null
+    },
+    {
+      "category": "topology",
+      "severity": "warning",
+      "description": "nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)",
+      "side": "both",
+      "net": {
+        "layout": "$25",
+        "reference": "NW_DUM_PNP_L"
+      },
+      "device": null,
+      "property": null
+    },
+    {
+      "category": "topology",
+      "severity": "warning",
+      "description": "nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)",
+      "side": "both",
+      "net": {
+        "layout": "$28",
+        "reference": "NW_CORE_Q2_0"
+      },
+      "device": null,
+      "property": null
+    },
+    {
+      "category": "topology",
+      "severity": "warning",
+      "description": "nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)",
+      "side": "both",
+      "net": {
+        "layout": "$30",
+        "reference": "NW_CORE_Q2_1"
+      },
+      "device": null,
+      "property": null
+    },
+    {
+      "category": "topology",
+      "severity": "warning",
+      "description": "nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)",
+      "side": "both",
+      "net": {
+        "layout": "$32",
+        "reference": "NW_CORE_Q2_2"
+      },
+      "device": null,
+      "property": null
+    },
+    {
+      "category": "topology",
+      "severity": "warning",
+      "description": "nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)",
+      "side": "both",
+      "net": {
+        "layout": "$33",
+        "reference": "NW_CORE_Q2_3"
+      },
+      "device": null,
+      "property": null
+    },
+    {
+      "category": "topology",
+      "severity": "warning",
+      "description": "nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)",
+      "side": "both",
+      "net": {
+        "layout": "$34",
+        "reference": "NW_DUM_PNP_R"
+      },
+      "device": null,
+      "property": null
+    },
+    {
+      "category": "topology",
+      "severity": "warning",
+      "description": "nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)",
+      "side": "both",
+      "net": {
+        "layout": "$37",
+        "reference": "CORE_TRIM_U2_0"
+      },
+      "device": null,
+      "property": null
+    },
+    {
+      "category": "topology",
+      "severity": "warning",
+      "description": "nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)",
+      "side": "both",
+      "net": {
+        "layout": "$39",
+        "reference": "CORE_TRIM_U2_2"
+      },
+      "device": null,
+      "property": null
+    },
+    {
+      "category": "topology",
+      "severity": "warning",
+      "description": "nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)",
+      "side": "both",
+      "net": {
+        "layout": "$40",
+        "reference": "CORE_TRIM_U3_0"
+      },
+      "device": null,
+      "property": null
+    },
+    {
+      "category": "topology",
+      "severity": "warning",
+      "description": "nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)",
+      "side": "both",
+      "net": {
+        "layout": "$46",
+        "reference": "CORE_TRIM_U3_6"
+      },
+      "device": null,
+      "property": null
+    },
+    {
+      "category": "topology",
+      "severity": "warning",
+      "description": "nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)",
+      "side": "both",
+      "net": {
+        "layout": "$47",
+        "reference": "CORE_TRIM_U4_0"
+      },
+      "device": null,
+      "property": null
+    },
+    {
+      "category": "topology",
+      "severity": "warning",
+      "description": "nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)",
+      "side": "both",
+      "net": {
+        "layout": "$61",
+        "reference": "CORE_TRIM_U4_14"
+      },
+      "device": null,
+      "property": null
+    }
+  ],
+  "net_correspondence": [
+    {
+      "layout": "$14",
+      "reference": "AMP_A3",
+      "pin": false
+    },
+    {
+      "layout": "$15",
+      "reference": "AMP_A4",
+      "pin": false
+    },
+    {
+      "layout": "$9",
+      "reference": "AMP_N1",
+      "pin": false
+    },
+    {
+      "layout": "$11",
+      "reference": "AMP_N2",
+      "pin": false
+    },
+    {
+      "layout": "$7",
+      "reference": "AMP_NB1",
+      "pin": false
+    },
+    {
+      "layout": "$8",
+      "reference": "AMP_NCASC",
+      "pin": false
+    },
+    {
+      "layout": "$10",
+      "reference": "AMP_ND1",
+      "pin": false
+    },
+    {
+      "layout": "$6",
+      "reference": "AMP_PBIAS",
+      "pin": false
+    },
+    {
+      "layout": "$13",
+      "reference": "AMP_TAIL",
+      "pin": false
+    },
+    {
+      "layout": "$4",
+      "reference": "CASC",
+      "pin": false
+    },
+    {
+      "layout": "$19",
+      "reference": "CORE_D1",
+      "pin": false
+    },
+    {
+      "layout": "$21",
+      "reference": "CORE_D2",
+      "pin": false
+    },
+    {
+      "layout": "$23",
+      "reference": "CORE_D3",
+      "pin": false
+    },
+    {
+      "layout": "$18",
+      "reference": "CORE_D4",
+      "pin": false
+    },
+    {
+      "layout": "$29",
+      "reference": "CORE_E2",
+      "pin": false
+    },
+    {
+      "layout": "$27",
+      "reference": "CORE_E3",
+      "pin": false
+    },
+    {
+      "layout": "$62",
+      "reference": "CORE_TN0",
+      "pin": false
+    },
+    {
+      "layout": "$36",
+      "reference": "CORE_TRIM_U1_0",
+      "pin": false
+    },
+    {
+      "layout": "$37",
+      "reference": "CORE_TRIM_U2_0",
+      "pin": false
+    },
+    {
+      "layout": "$38",
+      "reference": "CORE_TRIM_U2_1",
+      "pin": false
+    },
+    {
+      "layout": "$39",
+      "reference": "CORE_TRIM_U2_2",
+      "pin": false
+    },
+    {
+      "layout": "$40",
+      "reference": "CORE_TRIM_U3_0",
+      "pin": false
+    },
+    {
+      "layout": "$41",
+      "reference": "CORE_TRIM_U3_1",
+      "pin": false
+    },
+    {
+      "layout": "$42",
+      "reference": "CORE_TRIM_U3_2",
+      "pin": false
+    },
+    {
+      "layout": "$43",
+      "reference": "CORE_TRIM_U3_3",
+      "pin": false
+    },
+    {
+      "layout": "$44",
+      "reference": "CORE_TRIM_U3_4",
+      "pin": false
+    },
+    {
+      "layout": "$45",
+      "reference": "CORE_TRIM_U3_5",
+      "pin": false
+    },
+    {
+      "layout": "$46",
+      "reference": "CORE_TRIM_U3_6",
+      "pin": false
+    },
+    {
+      "layout": "$47",
+      "reference": "CORE_TRIM_U4_0",
+      "pin": false
+    },
+    {
+      "layout": "$48",
+      "reference": "CORE_TRIM_U4_1",
+      "pin": false
+    },
+    {
+      "layout": "$57",
+      "reference": "CORE_TRIM_U4_10",
+      "pin": false
+    },
+    {
+      "layout": "$58",
+      "reference": "CORE_TRIM_U4_11",
+      "pin": false
+    },
+    {
+      "layout": "$59",
+      "reference": "CORE_TRIM_U4_12",
+      "pin": false
+    },
+    {
+      "layout": "$60",
+      "reference": "CORE_TRIM_U4_13",
+      "pin": false
+    },
+    {
+      "layout": "$61",
+      "reference": "CORE_TRIM_U4_14",
+      "pin": false
+    },
+    {
+      "layout": "$49",
+      "reference": "CORE_TRIM_U4_2",
+      "pin": false
+    },
+    {
+      "layout": "$50",
+      "reference": "CORE_TRIM_U4_3",
+      "pin": false
+    },
+    {
+      "layout": "$51",
+      "reference": "CORE_TRIM_U4_4",
+      "pin": false
+    },
+    {
+      "layout": "$52",
+      "reference": "CORE_TRIM_U4_5",
+      "pin": false
+    },
+    {
+      "layout": "$53",
+      "reference": "CORE_TRIM_U4_6",
+      "pin": false
+    },
+    {
+      "layout": "$54",
+      "reference": "CORE_TRIM_U4_7",
+      "pin": false
+    },
+    {
+      "layout": "$55",
+      "reference": "CORE_TRIM_U4_8",
+      "pin": false
+    },
+    {
+      "layout": "$56",
+      "reference": "CORE_TRIM_U4_9",
+      "pin": false
+    },
+    {
+      "layout": "$93",
+      "reference": "CORE_TRIM_U5_0",
+      "pin": false
+    },
+    {
+      "layout": "$92",
+      "reference": "CORE_TRIM_U5_1",
+      "pin": false
+    },
+    {
+      "layout": "$83",
+      "reference": "CORE_TRIM_U5_10",
+      "pin": false
+    },
+    {
+      "layout": "$82",
+      "reference": "CORE_TRIM_U5_11",
+      "pin": false
+    },
+    {
+      "layout": "$81",
+      "reference": "CORE_TRIM_U5_12",
+      "pin": false
+    },
+    {
+      "layout": "$80",
+      "reference": "CORE_TRIM_U5_13",
+      "pin": false
+    },
+    {
+      "layout": "$79",
+      "reference": "CORE_TRIM_U5_14",
+      "pin": false
+    },
+    {
+      "layout": "$78",
+      "reference": "CORE_TRIM_U5_15",
+      "pin": false
+    },
+    {
+      "layout": "$77",
+      "reference": "CORE_TRIM_U5_16",
+      "pin": false
+    },
+    {
+      "layout": "$76",
+      "reference": "CORE_TRIM_U5_17",
+      "pin": false
+    },
+    {
+      "layout": "$75",
+      "reference": "CORE_TRIM_U5_18",
+      "pin": false
+    },
+    {
+      "layout": "$74",
+      "reference": "CORE_TRIM_U5_19",
+      "pin": false
+    },
+    {
+      "layout": "$91",
+      "reference": "CORE_TRIM_U5_2",
+      "pin": false
+    },
+    {
+      "layout": "$73",
+      "reference": "CORE_TRIM_U5_20",
+      "pin": false
+    },
+    {
+      "layout": "$72",
+      "reference": "CORE_TRIM_U5_21",
+      "pin": false
+    },
+    {
+      "layout": "$71",
+      "reference": "CORE_TRIM_U5_22",
+      "pin": false
+    },
+    {
+      "layout": "$70",
+      "reference": "CORE_TRIM_U5_23",
+      "pin": false
+    },
+    {
+      "layout": "$69",
+      "reference": "CORE_TRIM_U5_24",
+      "pin": false
+    },
+    {
+      "layout": "$68",
+      "reference": "CORE_TRIM_U5_25",
+      "pin": false
+    },
+    {
+      "layout": "$67",
+      "reference": "CORE_TRIM_U5_26",
+      "pin": false
+    },
+    {
+      "layout": "$66",
+      "reference": "CORE_TRIM_U5_27",
+      "pin": false
+    },
+    {
+      "layout": "$65",
+      "reference": "CORE_TRIM_U5_28",
+      "pin": false
+    },
+    {
+      "layout": "$64",
+      "reference": "CORE_TRIM_U5_29",
+      "pin": false
+    },
+    {
+      "layout": "$90",
+      "reference": "CORE_TRIM_U5_3",
+      "pin": false
+    },
+    {
+      "layout": "$63",
+      "reference": "CORE_TRIM_U5_30",
+      "pin": false
+    },
+    {
+      "layout": "$89",
+      "reference": "CORE_TRIM_U5_4",
+      "pin": false
+    },
+    {
+      "layout": "$88",
+      "reference": "CORE_TRIM_U5_5",
+      "pin": false
+    },
+    {
+      "layout": "$87",
+      "reference": "CORE_TRIM_U5_6",
+      "pin": false
+    },
+    {
+      "layout": "$86",
+      "reference": "CORE_TRIM_U5_7",
+      "pin": false
+    },
+    {
+      "layout": "$85",
+      "reference": "CORE_TRIM_U5_8",
+      "pin": false
+    },
+    {
+      "layout": "$84",
+      "reference": "CORE_TRIM_U5_9",
+      "pin": false
+    },
+    {
+      "layout": "$12",
+      "reference": "FB",
+      "pin": false
+    },
+    {
+      "layout": "$3",
+      "reference": "IBIAS",
+      "pin": false
+    },
+    {
+      "layout": "$35",
+      "reference": "NWL",
+      "pin": false
+    },
+    {
+      "layout": "$31",
+      "reference": "NW_CORE_Q1",
+      "pin": false
+    },
+    {
+      "layout": "$28",
+      "reference": "NW_CORE_Q2_0",
+      "pin": false
+    },
+    {
+      "layout": "$30",
+      "reference": "NW_CORE_Q2_1",
+      "pin": false
+    },
+    {
+      "layout": "$32",
+      "reference": "NW_CORE_Q2_2",
+      "pin": false
+    },
+    {
+      "layout": "$33",
+      "reference": "NW_CORE_Q2_3",
+      "pin": false
+    },
+    {
+      "layout": "$26",
+      "reference": "NW_CORE_Q3",
+      "pin": false
+    },
+    {
+      "layout": "$25",
+      "reference": "NW_DUM_PNP_L",
+      "pin": false
+    },
+    {
+      "layout": "$34",
+      "reference": "NW_DUM_PNP_R",
+      "pin": false
+    },
+    {
+      "layout": "$20",
+      "reference": "SNS1",
+      "pin": false
+    },
+    {
+      "layout": "$22",
+      "reference": "SNS2",
+      "pin": false
+    },
+    {
+      "layout": "$5",
+      "reference": "STARTUP_DET",
+      "pin": false
+    },
+    {
+      "layout": "vref",
+      "reference": "VREF",
+      "pin": true
+    },
+    {
+      "layout": "vss",
+      "reference": "VSS",
+      "pin": true
+    },
+    {
+      "layout": "vsubs",
+      "reference": "VSUBS",
+      "pin": true
+    }
+  ]
+}
