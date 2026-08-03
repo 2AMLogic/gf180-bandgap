@@ -14,7 +14,7 @@
 * capacitors      : 1 cap_mim_2f0_m4m5_noshield
 
 .SUBCKT bandgap_top vdd vss vref vsubs nwl
-Camp_CC vdd amp_CC_top 6.914880e-12 cap_mim_2f0_m4m5_noshield
+Camp_CC vdd fb 6.914880e-12 cap_mim_2f0_m4m5_noshield
 Mamp_M1_0 amp_n1 sns2 amp_tail vsubs nfet L=4U W=25U
 Mamp_M1_1 amp_n1 sns2 amp_tail vsubs nfet L=4U W=25U
 Mamp_M1_2 amp_n1 sns2 amp_tail vsubs nfet L=4U W=25U
@@ -104,7 +104,7 @@ Qcore_Q2_3 vsubs nw_core_Q2_3 core_e2 bjt AE=2.500000e-11
 Qcore_Q3 vsubs nw_core_Q3 core_e3 bjt AE=2.500000e-11
 Qdum_pnp_l vsubs nw_dum_pnp_l vss bjt AE=2.500000e-11
 Qdum_pnp_r vsubs nw_dum_pnp_r vss bjt AE=2.500000e-11
-Rcore_R1 core_e3 core_tn0 vsubs 80622.500000 ppolyf_u
+Rcore_R1 core_e3 core_tn0 vsubs 76423.200000 ppolyf_u
 Rcore_R2 core_e2 sns2 vsubs 6359.500000 ppolyf_u
 Rcore_trim_RU0 core_tn0 core_tn0 vsubs 485.100000 ppolyf_u
 Rcore_trim_RU1 core_tn0 core_trim_u1_0 vsubs 485.100000 ppolyf_u

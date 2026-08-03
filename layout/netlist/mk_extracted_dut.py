@@ -144,7 +144,7 @@ TRANSFORMS = [
 
 
 class Aliaser:
-    """Applies, and audits, the schematic-asserted net merges (BA1..BA4)."""
+    """Applies, and audits, the schematic-asserted net merges (BA1..BA3)."""
 
     def __init__(self) -> None:
         self.alias: dict[str, str] = {}
@@ -193,12 +193,20 @@ def build_back_annotations(extract: dict, names: dict[str, str]) -> Aliaser:
 
     Every one of these exists because a *terminal region* of a recognised
     device sits on a layer the extraction deck's connectivity stack does not
-    carry (Nwell, the deck-synthesised substrate, or a MiM plate), so the
-    extractor gives that terminal a private node instead of the net the layout
-    physically routes it to. They are not layout corrections: three of the
-    four are pure tool-coverage gaps, and the fourth (BA4) is a layout defect
-    already tracked in its own right -- see the module docstring and
-    layout/netlist/README.md.
+    carry (Nwell or the deck-synthesised substrate), so the extractor gives
+    that terminal a private node instead of the net the layout physically
+    routes it to. All three are pure tool-coverage gaps -- see the module
+    docstring and layout/netlist/README.md.
+
+    A fourth back-annotation, BA4 (MiM cap top plate -> fb), existed here
+    until gf180-bandgap#88: the drawn Via4 used to land on a FuseTop routing
+    tab held outside CAP_MK/MIM_L_MK, which was a genuine layout defect (not
+    a tool gap) rather than something to assert around. #88 redrew that
+    contact -- the Via4 now lands directly inside the recognised top plate,
+    which klayout-tools#364/PR #368 made safe to extract without shorting
+    the two plates together -- so the top plate now extracts on the real
+    `fb` net with no back-annotation needed, and BA4 is deleted rather than
+    adjusted.
     """
     aliaser = Aliaser()
 
@@ -248,36 +256,30 @@ def build_back_annotations(extract: dict, names: dict[str, str]) -> Aliaser:
     for net in sorted(base_nets):
         aliaser.add(net, "vss", "BA3")
 
-    # BA4 -- MiM cap top plate. Unlike BA1..BA3 this one is *not* purely a
-    # tool gap any more. klayout-tools#314 joined recognised plate nets to the
-    # connectivity stack, and it works: this cap's bottom plate now extracts
-    # on the real `vdd` net. The top plate does not, because the drawn Via4
-    # that carries `fb` off it lands on a routing tab deliberately kept
-    # outside `CAP_MK`/`MIM_L_MK` -- i.e. outside the region the deck
-    # recognises as the plate -- a shape drawn as a workaround for the very
-    # limitation #314 has since removed, and one already known to be
-    # non-manufacturable (gf180-bandgap#82: zero bottom-plate overlap, against
-    # MIMTM.2/MIMTM.3). The schematic's `XCC vdd out ...` puts this cap
-    # between `vdd` and the amp output (`fb` at the top level), and that is
-    # the circuit the layout is trying to be, so the run is done against it --
-    # loudly, here and in every record's provenance note.
+    # BA4 (MiM cap top plate) is gone -- see this function's own docstring
+    # and gf180-bandgap#88. Assert the premise that removal rests on: the
+    # cap's two plates now extract on two distinct, non-floating nets (their
+    # real `vdd`/`fb`), not one isolated node needing a back-annotation.
     cap_devs = [d for d in extract["devices"] if d["class"] == CAP_MODEL]
     assert len(cap_devs) == 1, f"expected exactly one MiM cap, got {len(cap_devs)}"
     cap = cap_devs[0]
     plates = {t: n for t, n in cap["nets"].items()}
     floating = [n for n in plates.values() if len(degree[n]) == 1]
-    assert len(floating) == 1, (
-        "expected exactly one isolated MiM plate net (the fb top plate); got "
-        f"{floating} -- if this is now empty the layout's top-plate contact "
-        "extracts for real and BA4 must be deleted, not adjusted"
+    assert not floating, (
+        "expected neither MiM plate net to be isolated (gf180-bandgap#88 "
+        f"redrew the fb contact to extract for real); got isolated net(s) {floating} "
+        "-- if the top-plate contact has regressed to a floating net, BA4 must "
+        "be restored, not this assertion silenced"
     )
     assert "vdd" in plates.values(), (
         "expected the MiM bottom plate to extract on the real vdd net "
-        "(klayout-tools#314); got " + repr(plates)
+        "(klayout-tools#329); got " + repr(plates)
     )
-    fb = names.get("$12")
-    assert fb == "fb", f"expected an extracted net paired with schematic FB, got {fb!r}"
-    aliaser.add(floating[0], "$12", "BA4")
+    top_plate_net = next(n for n in plates.values() if n != "vdd")
+    assert names.get(top_plate_net) == "fb", (
+        "expected the MiM top plate to extract paired with schematic fb "
+        f"(gf180-bandgap#88); got {names.get(top_plate_net)!r}"
+    )
 
     return aliaser
 
@@ -446,11 +448,9 @@ def main() -> int:
         "* BA3  8 PNP base nets  -> `vss`      (Nwell is not a connectivity metal;",
         "*      the capacitor-plate gap klayout-tools#314 fixed, still open for",
         "*      BipolarDevice -- filed upstream, see layout/netlist/README.md)",
-        "* BA4  MiM cap top plate -> `fb`      (the drawn Via4 lands on a routing",
-        "*      tab outside CAP_MK, so the deck does not see the contact; that tab",
-        "*      is also non-manufacturable per gf180-bandgap#82. The BOTTOM plate",
-        "*      extracts on the real `vdd` net with no help, so #314's join does",
-        "*      work here -- this half is a layout defect, not a tool gap.)",
+        "* (BA4, the MiM cap top plate, is gone as of gf180-bandgap#88: the redrawn",
+        "*  Via4 lands inside the recognised top plate and extracts on the real `fb`",
+        "*  net with no back-annotation -- see this file's build_back_annotations().)",
         "*",
         "* Applied merges (source -> target, in extractor net names):",
     ]

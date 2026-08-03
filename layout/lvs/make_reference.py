@@ -57,24 +57,27 @@ editing, no per-device fudging:
    drawn unit extracts as exactly one ``bjt``, which is what this step now
    emits — see gf180-bandgap#84 and ``layout/README.md`` § "Friction filed".
 9. **Emit one MIM-capacitor card whose bottom plate is the cap's real
-   ``vdd`` net and whose top plate is a floating net of its own.**
+   ``vdd`` net and whose top plate is the cap's real ``fb`` net.**
    klayout-tools#329 taught the deck to tie a recognised cap's ``bottom_plate``
    into its own ``metals[]`` connectivity node when that plate layer is one of
    the deck's tracked metals (gf180mcu's is ``Metal4``) — so the drawn
    ``Via1``..``Via3`` stack that lands inside the Metal4 bottom-plate box
-   (``generate._mim_cap``, #77) now puts that terminal on the real ``vdd`` net
-   here too, not a synthesized one. The **top** plate does not get the same
-   treatment: klayout-tools#329 wires it the same way *in principle*
-   (``top_plate_via``/``top_plate_via_metal`` -> ``Via4``/``Metal5``), but only
-   where a ``Via4`` shape actually lands on the *recognised* top-plate region
-   (``FuseTop & CAP_MK & MIM_L_MK``) — and this layout's ``fb`` up-hop via
-   deliberately lands on a routing tab drawn *outside* ``CAP_MK``/``MIM_L_MK``
-   (kept there so the extracted capacitance stays unaffected; see
-   ``generate._mim_cap``'s docstring and gf180-bandgap#82 for why that tab is
-   drawn that way, and why it is not DRM-legal). So the top plate is still its
-   own floating net here, verified against a real ``klt extract`` run of the
-   committed GDS (gf180-bandgap#89) rather than assumed from the deck's
-   docstring.
+   (``generate._mim_cap``, #77) puts that terminal on the real ``vdd`` net
+   here too, not a synthesized one. **The top plate now gets the same
+   treatment** (gf180-bandgap#88): klayout-tools#329 already wired it the same
+   way in principle (``top_plate_via``/``top_plate_via_metal`` ->
+   ``Via4``/``Metal5``), but only where a ``Via4`` shape actually lands on the
+   *recognised* top-plate region (``FuseTop & CAP_MK & MIM_L_MK``) *and*
+   without also shorting it to the bottom plate underneath — the second half
+   is what klayout-tools#364/PR #368 fixed (excludes a capacitor's own
+   ``top_plate_via`` / ``bottom_plate`` overlap from the deck's generic
+   per-layer connectivity loop). This layout's ``fb`` up-hop via now lands
+   directly inside the recognised top-plate region, inside the Metal4
+   bottom-plate footprint (DRM-legal per ``MIMTM.2`` — see
+   ``generate._mim_cap``'s docstring), so the top plate resolves to the real
+   ``fb`` net just like the bottom plate resolves to ``vdd`` — verified
+   against a real ``klt extract`` run of the committed GDS (gf180-bandgap#88)
+   rather than assumed from the deck's docstring.
 
 Every one of those steps is a **tool-capability or drawn-decomposition
 consequence**, not a design simplification. What the resulting verdict does
@@ -244,11 +247,12 @@ def build_reference(trim_code: int) -> tuple[str, dict]:
     cap_name = device_name(cap.key)
     # Step 9: klayout-tools#329 ties the recognised bottom plate (Metal4)
     # into the deck's ordinary metals[] connectivity, so it resolves to the
-    # cap's real net here (`vdd` for `amp.CC`) instead of a synthesized one.
-    # The top plate (FuseTop) stays its own floating net: its Via4 up-hop
-    # lands on a routing tab drawn outside CAP_MK/MIM_L_MK (#82), so the
-    # deck's top-plate connectivity wiring never sees it touch that via.
-    plate_top = f"{cap_name}_top"
+    # cap's real net here (`vdd` for `amp.CC`). Since gf180-bandgap#88, the
+    # top plate (FuseTop) does too: its Via4 up-hop now lands inside the
+    # recognised CAP_MK/MIM_L_MK region (and inside the Metal4 bottom-plate
+    # footprint, DRM-legal per MIMTM.2), which klayout-tools#364/PR #368
+    # made safe to extract without shorting the two plates together.
+    plate_top = net_of(cap.nets[1])
     plate_bot = net_of(cap.nets[0])
     use(plate_top, plate_bot)
     farads = plan_mod.mim_plate_area_nm2(cap) / 1e6 * plan_mod.MIM_CAP_F_PER_UM2

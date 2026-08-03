@@ -27,18 +27,20 @@ import plan  # noqa: E402
 
 class MimCapPlateNetTests(unittest.TestCase):
     """The compensation MIM cap's plate nets must match `klt`'s current
-    ``CapacitorDevice`` connectivity behaviour (klayout-tools#329), not the
-    pre-#329 "both plates floating" assumption.
+    ``CapacitorDevice`` connectivity behaviour (klayout-tools#329/#364), not
+    the pre-#329 "both plates floating" assumption, nor the intermediate
+    (post-#329, pre-#88) "bottom real, top floating" state.
 
     Verified against a real ``klt extract`` run of the committed GDS
-    (gf180-bandgap#89, deck content hash ``sha256:be1a89e0…872b1d``): the
-    extracted netlist reports the bottom plate (``Metal4``) resolved onto
-    the real ``vdd`` net (``C$90 vdd $16 …``) while the top plate
-    (``FuseTop``) stays its own isolated net, because its ``Via4`` up-hop
-    lands on the ``fb`` routing tab drawn outside ``CAP_MK``/``MIM_L_MK``
-    (#82) rather than on the recognised top-plate region. This test pins
-    that split so a regression back to the pre-#329 (both floating) or an
-    over-eager fully-wired (both tied) model cannot silently reoccur.
+    (gf180-bandgap#88): the extracted netlist reports the bottom plate
+    (``Metal4``) resolved onto the real ``vdd`` net and, since #88 redrew the
+    ``fb`` up-hop ``Via4`` to land directly inside the recognised top-plate
+    region (inside the ``Metal4`` bottom-plate footprint, DRM-legal per
+    ``MIMTM.2``, and no longer read as a short since klayout-tools#364/PR
+    #368), the top plate (``FuseTop``) now resolves onto the real ``fb`` net
+    too. This test pins that both plates now resolve to their real nets, so
+    a regression back to the pre-#329 (both floating) or pre-#88
+    (bottom real, top floating) model cannot silently reoccur.
     """
 
     @classmethod
@@ -59,19 +61,19 @@ class MimCapPlateNetTests(unittest.TestCase):
         bottom plate must be the cap's real net, not a synthesized one."""
         self.assertEqual(self.plate_bot, "vdd")
 
-    def test_top_plate_is_not_vdd_or_fb(self) -> None:
-        """The fb up-hop Via4 lands on a routing tab kept outside
-        CAP_MK/MIM_L_MK (#82), so the deck's top-plate connectivity wiring
-        never ties it to the recognised top plate -- it must stay its own
-        floating net, not silently merged onto vdd or fb."""
-        self.assertNotIn(self.plate_top, ("vdd", "fb"))
+    def test_top_plate_resolves_to_fb(self) -> None:
+        """The fb up-hop Via4 now lands directly inside the recognised top
+        plate (#88), so the deck's top-plate connectivity wiring ties it to
+        the real fb net -- it must no longer stay its own floating net."""
+        self.assertEqual(self.plate_top, "fb")
 
     def test_top_plate_is_not_a_synthesized_bot_suffix(self) -> None:
         """Regression guard for the pre-#89 code, which derived both plate
         names from the same synthesized `{cap_name}_bot`/`{cap_name}_top`
-        pattern -- the bottom plate is a real net name now, so the two
-        plate identifiers must no longer share that synthesized-pair shape."""
+        pattern -- both plates are real net names now, so neither identifier
+        may share that synthesized-pair shape."""
         self.assertNotEqual(self.plate_bot, "amp_CC_bot")
+        self.assertNotEqual(self.plate_top, "amp_CC_top")
 
     def test_exactly_one_mim_cap_card(self) -> None:
         self.assertEqual(self.meta["counts"]["cap_mim_2f0_m4m5_noshield"], 1)

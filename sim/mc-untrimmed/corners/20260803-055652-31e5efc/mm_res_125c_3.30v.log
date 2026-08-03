@@ -1,0 +1,5124 @@
+* ====================================================================
+* record-id  : 20260803-055652-31e5efc
+* testbench  : tb_mc_untrimmed.spice
+* group      : mm_res (resistor mismatch only)
+* temp       : 125 C
+* supply     : 3.30v (fixed nominal -- mismatch claim, no supply sweep)
+* sw_stat_mismatch : 0
+* dut variant : mm
+* pdk        : gf180mcuD (/Users/rwalters/.volare)
+* ngspice    : ngspice-46
+* run (UTC)  : 2026-08-03T05:56:52Z
+* ====================================================================
+
+Note: Compatibility modes selected: hs a
+
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238275e+00
+ibias_val = 6.476880e-01
+isup_val = 2.864899e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239228e+00
+ibias_val = 6.478014e-01
+isup_val = 2.868431e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239073e+00
+ibias_val = 6.478412e-01
+isup_val = 2.869668e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238307e+00
+ibias_val = 6.476994e-01
+isup_val = 2.865254e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.241195e+00
+ibias_val = 6.480678e-01
+isup_val = 2.876734e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+vref_val = 1.239223e+00
+ibias_val = 6.478190e-01
+isup_val = 2.868979e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238943e+00
+ibias_val = 6.477357e-01
+isup_val = 2.866383e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+vref_val = 1.238402e+00
+ibias_val = 6.477122e-01
+isup_val = 2.865653e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238860e+00
+ibias_val = 6.477890e-01
+isup_val = 2.868044e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238464e+00
+ibias_val = 6.477501e-01
+isup_val = 2.866832e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239148e+00
+ibias_val = 6.478181e-01
+isup_val = 2.868949e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239880e+00
+ibias_val = 6.478899e-01
+isup_val = 2.871186e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238238e+00
+ibias_val = 6.476813e-01
+isup_val = 2.864692e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239034e+00
+ibias_val = 6.477945e-01
+isup_val = 2.868216e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240803e+00
+ibias_val = 6.479634e-01
+isup_val = 2.873477e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240625e+00
+ibias_val = 6.478991e-01
+isup_val = 2.871473e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240238e+00
+ibias_val = 6.478220e-01
+isup_val = 2.869071e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+vref_val = 1.238667e+00
+ibias_val = 6.477221e-01
+isup_val = 2.865961e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239813e+00
+ibias_val = 6.478965e-01
+isup_val = 2.871393e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239557e+00
+ibias_val = 6.478267e-01
+isup_val = 2.869217e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238932e+00
+ibias_val = 6.477810e-01
+isup_val = 2.867795e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240164e+00
+ibias_val = 6.478952e-01
+isup_val = 2.871353e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239727e+00
+ibias_val = 6.478473e-01
+isup_val = 2.869860e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+vref_val = 1.236494e+00
+ibias_val = 6.474706e-01
+isup_val = 2.858140e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238399e+00
+ibias_val = 6.476652e-01
+isup_val = 2.864191e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.237647e+00
+ibias_val = 6.476165e-01
+isup_val = 2.862674e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238250e+00
+ibias_val = 6.476814e-01
+isup_val = 2.864695e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239800e+00
+ibias_val = 6.478026e-01
+isup_val = 2.868467e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.237342e+00
+ibias_val = 6.475904e-01
+isup_val = 2.861864e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238857e+00
+ibias_val = 6.477568e-01
+isup_val = 2.867042e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238815e+00
+ibias_val = 6.477427e-01
+isup_val = 2.866601e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240410e+00
+ibias_val = 6.479539e-01
+isup_val = 2.873182e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238182e+00
+ibias_val = 6.476254e-01
+isup_val = 2.862951e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240851e+00
+ibias_val = 6.479515e-01
+isup_val = 2.873106e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.237860e+00
+ibias_val = 6.476704e-01
+isup_val = 2.864353e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238059e+00
+ibias_val = 6.476461e-01
+isup_val = 2.863594e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239461e+00
+ibias_val = 6.477986e-01
+isup_val = 2.868343e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238330e+00
+ibias_val = 6.477040e-01
+isup_val = 2.865396e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.241052e+00
+ibias_val = 6.480020e-01
+isup_val = 2.874682e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239108e+00
+ibias_val = 6.477911e-01
+isup_val = 2.868110e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238621e+00
+ibias_val = 6.477613e-01
+isup_val = 2.867182e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238813e+00
+ibias_val = 6.477365e-01
+isup_val = 2.866408e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238999e+00
+ibias_val = 6.477499e-01
+isup_val = 2.866827e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239486e+00
+ibias_val = 6.478084e-01
+isup_val = 2.868648e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.237721e+00
+ibias_val = 6.476563e-01
+isup_val = 2.863915e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238925e+00
+ibias_val = 6.477848e-01
+isup_val = 2.867914e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238687e+00
+ibias_val = 6.477398e-01
+isup_val = 2.866513e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.237374e+00
+ibias_val = 6.475770e-01
+isup_val = 2.861448e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240529e+00
+ibias_val = 6.479323e-01
+isup_val = 2.872509e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240519e+00
+ibias_val = 6.479464e-01
+isup_val = 2.872947e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238958e+00
+ibias_val = 6.478409e-01
+isup_val = 2.869660e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239132e+00
+ibias_val = 6.478327e-01
+isup_val = 2.869406e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240680e+00
+ibias_val = 6.479593e-01
+isup_val = 2.873350e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239856e+00
+ibias_val = 6.478874e-01
+isup_val = 2.871108e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239824e+00
+ibias_val = 6.478873e-01
+isup_val = 2.871107e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.236281e+00
+ibias_val = 6.474976e-01
+isup_val = 2.858980e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238596e+00
+ibias_val = 6.476454e-01
+isup_val = 2.863574e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239845e+00
+ibias_val = 6.478256e-01
+isup_val = 2.869184e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239546e+00
+ibias_val = 6.478582e-01
+isup_val = 2.870198e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239213e+00
+ibias_val = 6.477636e-01
+isup_val = 2.867251e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238859e+00
+ibias_val = 6.477835e-01
+isup_val = 2.867871e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239611e+00
+ibias_val = 6.479441e-01
+isup_val = 2.872875e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239540e+00
+ibias_val = 6.477969e-01
+isup_val = 2.868288e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239096e+00
+ibias_val = 6.477310e-01
+isup_val = 2.866236e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239092e+00
+ibias_val = 6.477869e-01
+isup_val = 2.867979e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238091e+00
+ibias_val = 6.477060e-01
+isup_val = 2.865458e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.236341e+00
+ibias_val = 6.473754e-01
+isup_val = 2.855185e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238873e+00
+ibias_val = 6.478279e-01
+isup_val = 2.869256e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238425e+00
+ibias_val = 6.476709e-01
+isup_val = 2.864366e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240126e+00
+ibias_val = 6.479092e-01
+isup_val = 2.871788e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239797e+00
+ibias_val = 6.478084e-01
+isup_val = 2.868646e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239220e+00
+ibias_val = 6.477812e-01
+isup_val = 2.867802e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238088e+00
+ibias_val = 6.476786e-01
+isup_val = 2.864608e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239676e+00
+ibias_val = 6.478471e-01
+isup_val = 2.869854e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238350e+00
+ibias_val = 6.477664e-01
+isup_val = 2.867340e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.237814e+00
+ibias_val = 6.475877e-01
+isup_val = 2.861779e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.235560e+00
+ibias_val = 6.473731e-01
+isup_val = 2.855115e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.237958e+00
+ibias_val = 6.476466e-01
+isup_val = 2.863613e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.241441e+00
+ibias_val = 6.480154e-01
+isup_val = 2.875101e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.235973e+00
+ibias_val = 6.474314e-01
+isup_val = 2.856922e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239152e+00
+ibias_val = 6.478255e-01
+isup_val = 2.869180e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240601e+00
+ibias_val = 6.478956e-01
+isup_val = 2.871365e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240499e+00
+ibias_val = 6.479264e-01
+isup_val = 2.872323e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240463e+00
+ibias_val = 6.479639e-01
+isup_val = 2.873495e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.241302e+00
+ibias_val = 6.479884e-01
+isup_val = 2.874257e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239307e+00
+ibias_val = 6.478409e-01
+isup_val = 2.869661e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.237174e+00
+ibias_val = 6.475429e-01
+isup_val = 2.860388e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.241421e+00
+ibias_val = 6.480897e-01
+isup_val = 2.877419e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.241108e+00
+ibias_val = 6.479914e-01
+isup_val = 2.874353e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238072e+00
+ibias_val = 6.476690e-01
+isup_val = 2.864307e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240768e+00
+ibias_val = 6.479910e-01
+isup_val = 2.874339e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238369e+00
+ibias_val = 6.477570e-01
+isup_val = 2.867046e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238800e+00
+ibias_val = 6.477551e-01
+isup_val = 2.866987e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.241233e+00
+ibias_val = 6.480291e-01
+isup_val = 2.875527e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238694e+00
+ibias_val = 6.477479e-01
+isup_val = 2.866764e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.237898e+00
+ibias_val = 6.476591e-01
+isup_val = 2.864002e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.237216e+00
+ibias_val = 6.475822e-01
+isup_val = 2.861608e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240056e+00
+ibias_val = 6.479051e-01
+isup_val = 2.871660e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.237031e+00
+ibias_val = 6.476054e-01
+isup_val = 2.862331e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239294e+00
+ibias_val = 6.477601e-01
+isup_val = 2.867144e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.237113e+00
+ibias_val = 6.475389e-01
+isup_val = 2.860263e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.237201e+00
+ibias_val = 6.475727e-01
+isup_val = 2.861314e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238500e+00
+ibias_val = 6.476610e-01
+isup_val = 2.864060e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240849e+00
+ibias_val = 6.480014e-01
+isup_val = 2.874664e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.241033e+00
+ibias_val = 6.480070e-01
+isup_val = 2.874839e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238756e+00
+ibias_val = 6.477118e-01
+isup_val = 2.865642e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240418e+00
+ibias_val = 6.479898e-01
+isup_val = 2.874302e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240676e+00
+ibias_val = 6.479384e-01
+isup_val = 2.872699e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239014e+00
+ibias_val = 6.476778e-01
+isup_val = 2.864581e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239988e+00
+ibias_val = 6.479146e-01
+isup_val = 2.871955e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238778e+00
+ibias_val = 6.477772e-01
+isup_val = 2.867676e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238514e+00
+ibias_val = 6.477008e-01
+isup_val = 2.865299e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.236307e+00
+ibias_val = 6.474604e-01
+isup_val = 2.857824e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.241826e+00
+ibias_val = 6.481232e-01
+isup_val = 2.878465e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238629e+00
+ibias_val = 6.477749e-01
+isup_val = 2.867604e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239802e+00
+ibias_val = 6.478876e-01
+isup_val = 2.871116e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.241529e+00
+ibias_val = 6.480860e-01
+isup_val = 2.877303e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238105e+00
+ibias_val = 6.477022e-01
+isup_val = 2.865342e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.237150e+00
+ibias_val = 6.476431e-01
+isup_val = 2.863504e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239909e+00
+ibias_val = 6.479001e-01
+isup_val = 2.871504e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239152e+00
+ibias_val = 6.478180e-01
+isup_val = 2.868945e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.236939e+00
+ibias_val = 6.475690e-01
+isup_val = 2.861199e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238619e+00
+ibias_val = 6.477524e-01
+isup_val = 2.866904e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.237969e+00
+ibias_val = 6.476755e-01
+isup_val = 2.864511e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238805e+00
+ibias_val = 6.477981e-01
+isup_val = 2.868326e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238285e+00
+ibias_val = 6.477283e-01
+isup_val = 2.866154e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238835e+00
+ibias_val = 6.477915e-01
+isup_val = 2.868122e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.237106e+00
+ibias_val = 6.475837e-01
+isup_val = 2.861656e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239665e+00
+ibias_val = 6.478867e-01
+isup_val = 2.871086e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238320e+00
+ibias_val = 6.476876e-01
+isup_val = 2.864887e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240144e+00
+ibias_val = 6.478344e-01
+isup_val = 2.869456e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239284e+00
+ibias_val = 6.478149e-01
+isup_val = 2.868849e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240301e+00
+ibias_val = 6.479170e-01
+isup_val = 2.872030e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240885e+00
+ibias_val = 6.479778e-01
+isup_val = 2.873929e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239753e+00
+ibias_val = 6.477741e-01
+isup_val = 2.867578e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239323e+00
+ibias_val = 6.478370e-01
+isup_val = 2.869540e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239307e+00
+ibias_val = 6.477673e-01
+isup_val = 2.867369e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238706e+00
+ibias_val = 6.478053e-01
+isup_val = 2.868552e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239021e+00
+ibias_val = 6.477557e-01
+isup_val = 2.867008e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239107e+00
+ibias_val = 6.477458e-01
+isup_val = 2.866698e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240135e+00
+ibias_val = 6.478854e-01
+isup_val = 2.871046e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.241658e+00
+ibias_val = 6.480652e-01
+isup_val = 2.876655e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240322e+00
+ibias_val = 6.479513e-01
+isup_val = 2.873101e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.237984e+00
+ibias_val = 6.476408e-01
+isup_val = 2.863431e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.241068e+00
+ibias_val = 6.479923e-01
+isup_val = 2.874378e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.237904e+00
+ibias_val = 6.477128e-01
+isup_val = 2.865670e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.237212e+00
+ibias_val = 6.475452e-01
+isup_val = 2.860458e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239125e+00
+ibias_val = 6.478004e-01
+isup_val = 2.868399e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.241469e+00
+ibias_val = 6.480536e-01
+isup_val = 2.876292e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238584e+00
+ibias_val = 6.477246e-01
+isup_val = 2.866037e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238686e+00
+ibias_val = 6.477124e-01
+isup_val = 2.865658e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238624e+00
+ibias_val = 6.478453e-01
+isup_val = 2.869796e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238118e+00
+ibias_val = 6.476725e-01
+isup_val = 2.864416e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.241314e+00
+ibias_val = 6.481024e-01
+isup_val = 2.877815e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239448e+00
+ibias_val = 6.478272e-01
+isup_val = 2.869234e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239578e+00
+ibias_val = 6.478578e-01
+isup_val = 2.870188e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240047e+00
+ibias_val = 6.478573e-01
+isup_val = 2.870171e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239771e+00
+ibias_val = 6.479016e-01
+isup_val = 2.871552e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238654e+00
+ibias_val = 6.477407e-01
+isup_val = 2.866541e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238048e+00
+ibias_val = 6.476664e-01
+isup_val = 2.864228e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239050e+00
+ibias_val = 6.477748e-01
+isup_val = 2.867601e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240856e+00
+ibias_val = 6.479966e-01
+isup_val = 2.874514e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238034e+00
+ibias_val = 6.477001e-01
+isup_val = 2.865277e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.237940e+00
+ibias_val = 6.477559e-01
+isup_val = 2.867014e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239533e+00
+ibias_val = 6.478356e-01
+isup_val = 2.869495e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239787e+00
+ibias_val = 6.478888e-01
+isup_val = 2.871151e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240752e+00
+ibias_val = 6.480476e-01
+isup_val = 2.876105e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239141e+00
+ibias_val = 6.477837e-01
+isup_val = 2.867879e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240261e+00
+ibias_val = 6.478528e-01
+isup_val = 2.870032e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238371e+00
+ibias_val = 6.476901e-01
+isup_val = 2.864966e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239154e+00
+ibias_val = 6.477894e-01
+isup_val = 2.868055e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.241923e+00
+ibias_val = 6.480986e-01
+isup_val = 2.877696e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238479e+00
+ibias_val = 6.476888e-01
+isup_val = 2.864926e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240269e+00
+ibias_val = 6.478629e-01
+isup_val = 2.870344e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239138e+00
+ibias_val = 6.478182e-01
+isup_val = 2.868954e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240694e+00
+ibias_val = 6.480012e-01
+isup_val = 2.874656e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240798e+00
+ibias_val = 6.480183e-01
+isup_val = 2.875190e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238878e+00
+ibias_val = 6.478368e-01
+isup_val = 2.869532e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.236824e+00
+ibias_val = 6.475192e-01
+isup_val = 2.859650e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238361e+00
+ibias_val = 6.477101e-01
+isup_val = 2.865587e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238074e+00
+ibias_val = 6.476811e-01
+isup_val = 2.864685e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240108e+00
+ibias_val = 6.478515e-01
+isup_val = 2.869990e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.237527e+00
+ibias_val = 6.475572e-01
+isup_val = 2.860832e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.236454e+00
+ibias_val = 6.474915e-01
+isup_val = 2.858790e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238517e+00
+ibias_val = 6.476958e-01
+isup_val = 2.865143e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240592e+00
+ibias_val = 6.479519e-01
+isup_val = 2.873120e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239729e+00
+ibias_val = 6.478991e-01
+isup_val = 2.871475e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238997e+00
+ibias_val = 6.478062e-01
+isup_val = 2.868580e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239728e+00
+ibias_val = 6.478210e-01
+isup_val = 2.869039e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238748e+00
+ibias_val = 6.477459e-01
+isup_val = 2.866703e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.237586e+00
+ibias_val = 6.475589e-01
+isup_val = 2.860884e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240572e+00
+ibias_val = 6.479480e-01
+isup_val = 2.872998e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239858e+00
+ibias_val = 6.478520e-01
+isup_val = 2.870004e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238766e+00
+ibias_val = 6.477373e-01
+isup_val = 2.866433e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238275e+00
+ibias_val = 6.476947e-01
+isup_val = 2.865108e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239166e+00
+ibias_val = 6.477914e-01
+isup_val = 2.868119e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.237763e+00
+ibias_val = 6.476748e-01
+isup_val = 2.864490e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240100e+00
+ibias_val = 6.479040e-01
+isup_val = 2.871625e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239091e+00
+ibias_val = 6.478438e-01
+isup_val = 2.869751e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.241852e+00
+ibias_val = 6.481215e-01
+isup_val = 2.878411e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.237697e+00
+ibias_val = 6.476124e-01
+isup_val = 2.862548e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238775e+00
+ibias_val = 6.477062e-01
+isup_val = 2.865466e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.237243e+00
+ibias_val = 6.475967e-01
+isup_val = 2.862060e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239713e+00
+ibias_val = 6.478461e-01
+isup_val = 2.869823e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238778e+00
+ibias_val = 6.477646e-01
+isup_val = 2.867285e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239658e+00
+ibias_val = 6.479194e-01
+isup_val = 2.872108e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.241437e+00
+ibias_val = 6.480502e-01
+isup_val = 2.876185e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238420e+00
+ibias_val = 6.477292e-01
+isup_val = 2.866182e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239880e+00
+ibias_val = 6.478524e-01
+isup_val = 2.870020e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238921e+00
+ibias_val = 6.477260e-01
+isup_val = 2.866081e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238365e+00
+ibias_val = 6.477679e-01
+isup_val = 2.867386e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239363e+00
+ibias_val = 6.477504e-01
+isup_val = 2.866841e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239964e+00
+ibias_val = 6.479036e-01
+isup_val = 2.871612e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.241076e+00
+ibias_val = 6.479731e-01
+isup_val = 2.873779e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239753e+00
+ibias_val = 6.478849e-01
+isup_val = 2.871030e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238705e+00
+ibias_val = 6.477792e-01
+isup_val = 2.867738e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239211e+00
+ibias_val = 6.477690e-01
+isup_val = 2.867422e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238175e+00
+ibias_val = 6.476611e-01
+isup_val = 2.864064e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.237428e+00
+ibias_val = 6.476550e-01
+isup_val = 2.863872e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238038e+00
+ibias_val = 6.476952e-01
+isup_val = 2.865124e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238830e+00
+ibias_val = 6.477708e-01
+isup_val = 2.867478e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239523e+00
+ibias_val = 6.477890e-01
+isup_val = 2.868044e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.237583e+00
+ibias_val = 6.476410e-01
+isup_val = 2.863436e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240587e+00
+ibias_val = 6.479580e-01
+isup_val = 2.873310e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239105e+00
+ibias_val = 6.477708e-01
+isup_val = 2.867478e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239710e+00
+ibias_val = 6.478593e-01
+isup_val = 2.870233e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.236148e+00
+ibias_val = 6.474705e-01
+isup_val = 2.858136e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239289e+00
+ibias_val = 6.478514e-01
+isup_val = 2.869988e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238144e+00
+ibias_val = 6.477211e-01
+isup_val = 2.865930e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240870e+00
+ibias_val = 6.480083e-01
+isup_val = 2.874879e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238457e+00
+ibias_val = 6.476676e-01
+isup_val = 2.864266e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239967e+00
+ibias_val = 6.478877e-01
+isup_val = 2.871117e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240603e+00
+ibias_val = 6.479344e-01
+isup_val = 2.872572e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240277e+00
+ibias_val = 6.478620e-01
+isup_val = 2.870316e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239504e+00
+ibias_val = 6.477626e-01
+isup_val = 2.867222e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239837e+00
+ibias_val = 6.478876e-01
+isup_val = 2.871115e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238828e+00
+ibias_val = 6.477741e-01
+isup_val = 2.867580e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238646e+00
+ibias_val = 6.477491e-01
+isup_val = 2.866801e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238930e+00
+ibias_val = 6.476661e-01
+isup_val = 2.864218e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239465e+00
+ibias_val = 6.478448e-01
+isup_val = 2.869781e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.236687e+00
+ibias_val = 6.475107e-01
+isup_val = 2.859387e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239409e+00
+ibias_val = 6.478205e-01
+isup_val = 2.869024e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.236964e+00
+ibias_val = 6.475402e-01
+isup_val = 2.860304e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.241163e+00
+ibias_val = 6.479878e-01
+isup_val = 2.874240e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240991e+00
+ibias_val = 6.480238e-01
+isup_val = 2.875361e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239545e+00
+ibias_val = 6.478374e-01
+isup_val = 2.869552e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239698e+00
+ibias_val = 6.478804e-01
+isup_val = 2.870891e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239607e+00
+ibias_val = 6.479134e-01
+isup_val = 2.871918e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240031e+00
+ibias_val = 6.478797e-01
+isup_val = 2.870870e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238340e+00
+ibias_val = 6.476539e-01
+isup_val = 2.863840e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240209e+00
+ibias_val = 6.479046e-01
+isup_val = 2.871645e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.237268e+00
+ibias_val = 6.476139e-01
+isup_val = 2.862594e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239005e+00
+ibias_val = 6.477985e-01
+isup_val = 2.868338e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239513e+00
+ibias_val = 6.478937e-01
+isup_val = 2.871305e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239378e+00
+ibias_val = 6.477971e-01
+isup_val = 2.868295e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240477e+00
+ibias_val = 6.479374e-01
+isup_val = 2.872668e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.242252e+00
+ibias_val = 6.481178e-01
+isup_val = 2.878296e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240110e+00
+ibias_val = 6.479333e-01
+isup_val = 2.872540e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.236944e+00
+ibias_val = 6.475708e-01
+isup_val = 2.861255e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238535e+00
+ibias_val = 6.477482e-01
+isup_val = 2.866773e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.237563e+00
+ibias_val = 6.475460e-01
+isup_val = 2.860484e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.237795e+00
+ibias_val = 6.476314e-01
+isup_val = 2.863137e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.237152e+00
+ibias_val = 6.475840e-01
+isup_val = 2.861665e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238719e+00
+ibias_val = 6.477288e-01
+isup_val = 2.866170e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.237400e+00
+ibias_val = 6.475883e-01
+isup_val = 2.861799e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240867e+00
+ibias_val = 6.480029e-01
+isup_val = 2.874710e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238727e+00
+ibias_val = 6.477154e-01
+isup_val = 2.865752e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239434e+00
+ibias_val = 6.477921e-01
+isup_val = 2.868139e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240312e+00
+ibias_val = 6.479444e-01
+isup_val = 2.872885e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238354e+00
+ibias_val = 6.476425e-01
+isup_val = 2.863483e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240398e+00
+ibias_val = 6.479581e-01
+isup_val = 2.873312e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238820e+00
+ibias_val = 6.477012e-01
+isup_val = 2.865309e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240375e+00
+ibias_val = 6.479430e-01
+isup_val = 2.872841e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.241706e+00
+ibias_val = 6.480443e-01
+isup_val = 2.876002e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239980e+00
+ibias_val = 6.479009e-01
+isup_val = 2.871531e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238640e+00
+ibias_val = 6.477197e-01
+isup_val = 2.865885e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239055e+00
+ibias_val = 6.477079e-01
+isup_val = 2.865518e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240852e+00
+ibias_val = 6.480478e-01
+isup_val = 2.876110e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238773e+00
+ibias_val = 6.477466e-01
+isup_val = 2.866724e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239848e+00
+ibias_val = 6.478416e-01
+isup_val = 2.869683e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239772e+00
+ibias_val = 6.478466e-01
+isup_val = 2.869837e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239713e+00
+ibias_val = 6.478966e-01
+isup_val = 2.871397e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238654e+00
+ibias_val = 6.477848e-01
+isup_val = 2.867911e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238536e+00
+ibias_val = 6.477114e-01
+isup_val = 2.865627e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239187e+00
+ibias_val = 6.477838e-01
+isup_val = 2.867881e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240431e+00
+ibias_val = 6.479454e-01
+isup_val = 2.872918e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239134e+00
+ibias_val = 6.477974e-01
+isup_val = 2.868306e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238350e+00
+ibias_val = 6.476630e-01
+isup_val = 2.864122e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.241050e+00
+ibias_val = 6.479648e-01
+isup_val = 2.873523e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238960e+00
+ibias_val = 6.478580e-01
+isup_val = 2.870192e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.240084e+00
+ibias_val = 6.478770e-01
+isup_val = 2.870784e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.237876e+00
+ibias_val = 6.476761e-01
+isup_val = 2.864529e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.236540e+00
+ibias_val = 6.474793e-01
+isup_val = 2.858410e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.237148e+00
+ibias_val = 6.475275e-01
+isup_val = 2.859910e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.236796e+00
+ibias_val = 6.474986e-01
+isup_val = 2.859009e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239084e+00
+ibias_val = 6.477153e-01
+isup_val = 2.865749e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239507e+00
+ibias_val = 6.477951e-01
+isup_val = 2.868234e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.241243e+00
+ibias_val = 6.479587e-01
+isup_val = 2.873332e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.238305e+00
+ibias_val = 6.477298e-01
+isup_val = 2.866201e-05
+Reset re-loads circuit * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Circuit: * tb_mc_untrimmed.spice -- issue #13 monte carlo mismatch analysis for the
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+vref_val = 1.239646e+00
+ibias_val = 6.478096e-01
+isup_val = 2.868685e-05
+ngspice-46 done
+Warning: m=xx on .subckt line will override multiplier m hierarchy!
+
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+Warning : IC on non-existent node - xx1.casc, ignored
+   Please check line .ic v(fb)=1.0 v(sns1)=0.6 v(sns2)=0.6 v(vref)=1.2 v(ibias)=0.6 v(xx1.casc)=1.8
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed

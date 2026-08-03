@@ -206,9 +206,12 @@ VIA_W = 240  # via1..via4 width, matches CT's width
 VIA_ENC = 100  # metal enclosure of a via, matches ENC_CT
 VIA_PAD = VIA_W + 2 * VIA_ENC  # 440 nm square landing pad
 FB_M5_WIRE_W = 700  # fb top-plate route: Metal5 wire width (>> VIA_W, margin)
-FB_TAB_H = 700  # top-plate routing tab height
-FB_TAB_OVERHANG = 800  # how far the tab extends past the bottom plate's edge
-FB_DOWNHOP_CLEAR = 3000  # fb down-hop x, clear of the tab and the bottom plate
+# MIMTM.2 ("min. MiM bottom-plate overlap of Via4", 0.4um) is not transcribed
+# into the gf180mcu DRC deck (see layout/README.md's "The gf180mcu DRC deck:
+# coverage"), but the fb up-hop Via4 below is still placed to honour it by a
+# wide margin -- see the asserts in `_mim_cap`.
+MIM_VIA_OVERLAP_MIN = 400  # MIMTM.2 minimum, nm
+FB_DOWNHOP_CLEAR = 3000  # fb down-hop x, clear of the bottom plate (mim.space.1: 1.2um min Metal4-Metal4 spacing)
 
 
 @dataclass
@@ -784,7 +787,7 @@ def _mim_cap(
     fb_ty: int,
     fb_span: tuple[int, int],
 ) -> None:
-    """Draw the compensation MIM cap, plates wired for real (#77).
+    """Draw the compensation MIM cap, both plates wired for real (#77, #88).
 
     ``vdd_ty``/``fb_ty`` are the heights of the already-drawn ``vdd``/``fb``
     Metal1 rails in the row the cap stacks over (``AMPPCASC`` -- see
@@ -794,10 +797,12 @@ def _mim_cap(
 
     Two different via-stack shapes, because the two plates sit on different
     layers relative to the deck's ``metals``/``vias`` connectivity stack
-    (Metal1..Metal5, Via1..Via4 -- see ``klayout_tools.decks.gf180mcu``), and
-    both have to leave the recognised bottom/top plate geometry -- so the
-    device's extracted ``C`` -- *exactly* as before, since `klt lvs` (see
-    below) still checks it against the reference with no real tolerance:
+    (Metal1..Metal5, Via1..Via4 -- see ``klayout_tools.decks.gf180mcu``), but
+    both now land their up-hop ``Via4`` *inside* the recognised plate
+    footprint they contact, and both have to leave the recognised bottom/top
+    plate geometry -- so the device's extracted ``C`` -- unchanged, since
+    `klt lvs` (see below) still checks it against the reference with no real
+    tolerance:
 
     * **Bottom plate (``vdd``, Metal4)** is *itself* one of the stack's
       metals, so the via stack just climbs Metal1 -> Via1 -> Metal2 -> Via2
@@ -807,86 +812,62 @@ def _mim_cap(
       ``MIM_PLATE_INSET`` margin (the ring between the Metal4 box's edge and
       the smaller FuseTop box inset within it), clear of the top plate.
 
-    * **Top plate (``fb``, FuseTop)** is *not* one of the stack's metals at
-      all -- the deck has no via type that connects it to anything, and the
-      bottom plate's Metal4 box already covers the *entire* footprint the
-      top plate could contact from directly above (real MiM stack-ups always
-      draw the bottom plate at least as large as the top plate), so any via
-      landing inside that footprint reads, to `klt extract`'s ordinary
-      connectivity graph, as touching Metal4 too -- physically shorting
-      ``vdd``/``fb`` through the via (both for real, and in the tool's own
-      Metal1-Metal5 graph, which has no notion of the MIM dielectric that
-      would keep such a via from ever reaching Metal4 in real silicon). So
-      the top plate is drawn with a small routing **tab**, extending past
-      the bottom plate's own right edge where there is no Metal4 at all,
-      and the contact via (Via4 -> Metal5) lands on that tab, clear of the
-      bottom plate.
+    * **Top plate (``fb``, FuseTop)** used to be routed through a small
+      **tab** drawn outside ``CAP_MK``/``MIM_L_MK``, entirely past the
+      bottom plate's own right edge, specifically so its contact ``Via4``
+      would *not* land inside the Metal4 bottom-plate footprint. That was a
+      workaround for a real tool limitation
+      (`klayout-tools#364 <https://github.com/2AMLogic/klayout-tools/issues/364>`_,
+      fixed by
+      `PR #368 <https://github.com/2AMLogic/klayout-tools/pull/368>`_): a
+      DRM-legal top-plate ``Via4`` -- one landing inside the bottom-plate
+      footprint, exactly what ``MIMTM.2`` requires -- necessarily overlaps
+      the Metal4 conductor in plan view, and before that fix `klt extract`'s
+      generic per-layer ``metals[]``/``vias[]`` connectivity loop read that
+      overlap as an ordinary via, merging the two plates onto one net. The
+      tab routed *around* the bottom plate instead, at the cost of not being
+      DRM-legal (gf180-bandgap#82: the tab itself had **zero** bottom-plate
+      overlap, against ``MIMTM.3``'s 0.6um minimum, and the up-hop ``Via4``
+      landing on it had **zero** ``Metal4`` overlap, against ``MIMTM.2``'s
+      0.4um minimum).
 
-      **This is not DRM-legal, and it is not "the standard MiM-cap
-      top-plate routing technique"** -- an earlier version of this
-      docstring claimed exactly that; it was wrong (gf180-bandgap#82).
-      ``MIMTM.2``'s own existence (min. MiM bottom-plate overlap of Via4,
-      0.4um) says the *opposite*: a real top-plate contact is a Via4
-      landing *inside* the bottom-plate footprint, relying on the MIM
-      dielectric -- which klt's connectivity graph does not model -- to
-      keep it from shorting to Metal4. Drawn here, the tab gives the
-      FuseTop-vs-Metal4 overlap at that corner as exactly zero, versus the
-      0.6um ``MIMTM.3`` minimum this same function's bottom-plate margin
-      (``MIM_PLATE_INSET``) honours on the other three edges, and the Via4
-      landing on it has zero Metal4 overlap versus ``MIMTM.2``'s 0.4um
-      minimum. **Neither violation is caught: DRC still reports
-      ``status: clean``.** klt's ``enclosing`` check maps onto KLayout's
-      ``Region.enclosing_check``, which reports nothing when a shape lies
-      entirely outside the enclosing layer rather than flagging the
-      under-enclosure -- a false negative on this exact geometry, filed
-      upstream as
-      `klayout-tools#318 <https://github.com/2AMLogic/klayout-tools/issues/318>`_.
-      ``MIMTM.2`` itself is not transcribed into the deck at all (see the
-      deck's own module docstring), so the Via4/Metal4 violation has no
-      rule to even false-negative on. As drawn, this contact is not
-      manufacturable; revisit once
-      `klayout-tools#314 <https://github.com/2AMLogic/klayout-tools/issues/314>`_
-      (plate nets joined to the connectivity stack) makes it possible to
-      draw the DRM-legal contact without `klt extract` reading it as a
-      ``vdd``/``fb`` short.
+      **PR #368 excludes a capacitor's own ``top_plate_via`` /
+      ``bottom_plate`` overlap from that generic connectivity loop before it
+      runs**, so a DRM-legal top-plate ``Via4`` now wires the top plate to
+      ``top_plate_via_metal`` (Metal5) without also shorting it to the
+      bottom plate. gf180-bandgap#88 re-verified this directly (a minimal
+      repro: a `Via4` landing inside both a capacitor's declared
+      `top_plate`/`bottom_plate` footprints now extracts `net_count == 2`,
+      not `1`) before redrawing this contact against it. The tab, the
+      Metal5 sideways wire that carried its signal *around* the bottom
+      plate, the down-hop `Via4` that dropped back onto a disjoint Metal4
+      pad, and that standalone pad are all gone: the up-hop `Via4` now lands
+      directly on the recognised top plate, well inside the Metal4
+      bottom-plate footprint (see the asserts below for the exact margins
+      against ``MIMTM.2``), and climbs straight to Metal5 from there. A
+      *new* Metal5 wire then carries the signal sideways to a down-hop point
+      clear of the bottom plate (``FB_DOWNHOP_CLEAR`` past its right edge,
+      the same margin the old down-hop kept, now measured from the bottom
+      plate rather than from the tab that no longer exists), where an
+      ordinary Via4 -> Metal4 (a small disjoint pad, spaced by
+      ``mim.space.1``'s 1.2um Metal4-Metal4 minimum) -> Via3 -> Metal3 ->
+      Via2 -> Metal2 -> Via1 chain reaches down into the already-drawn ``fb``
+      rail, same as before.
 
-      The tab is *not* covered by ``CAP_MK``/``MIM_L_MK`` (this function
-      pulls the markers' own right edge in to match the plate's, rather than
-      the ``+400`` margin the other three edges keep), so `klt extract`'s
-      ``top_region = FuseTop & CAP_MK & MIM_L_MK`` clips the tab away and
-      the recognised top plate is pixel-identical to before -- the tab, and
-      the ``Via4`` landing on it, are real copper (a real electrical
-      extension of the same plate) that the *device recognition* deliberately
-      does not see, which is what keeps the top plate its own floating net on
-      the extracted side (see ``layout/lvs/make_reference.py``,
-      gf180-bandgap#89). The bottom plate's own via stack, by contrast, lands
-      on bottom-plate copper that *is* device-recognition-visible for
-      connectivity purposes since klayout-tools#329: ``Metal4`` is one of the
-      deck's tracked ``metals[]`` layers, so that terminal resolves to the
-      real ``vdd`` net rather than a floating one.
+      ``CAP_MK``/``MIM_L_MK`` no longer need the tab-shaped right-edge
+      exception either: with no tab to exclude, both markers are drawn with
+      the same ``+400`` overhang on all four sides the other three edges
+      already had, so the recognised top plate is exactly the FuseTop box
+      -- unchanged from before, so the extracted ``C`` is unchanged too.
 
-      From the tab the via climbs to Metal5 (``FB_M5_WIRE_W`` wire), which
-      carries the signal sideways to a *second*, ordinary Via4 landing on a
-      small, wholly disjoint Metal4 pad placed ``FB_DOWNHOP_CLEAR`` past the
-      bottom plate's own right edge -- far enough past the tab's own end,
-      too, that neither Metal4 shape can ever touch or merge with the tab or
-      the bottom plate -- and from there down through Via3/Via2/Via1 into
-      the already-drawn ``fb`` rail, same as the bottom plate's stack.
-
-    Since klayout-tools#329, the two via stacks are *not* equally invisible
-    to `klt lvs`'s device-recognition graph: the bottom-plate stack lands
-    inside the recognised Metal4 bottom plate, which the deck now ties into
-    its own ``metals[]`` connectivity node, so that terminal resolves to the
-    real ``vdd`` net (see plan.MimCapItem and
-    ``layout/lvs/make_reference.py``, gf180-bandgap#89). The top-plate
-    stack's up-hop via lands on the routing tab above, which is drawn
-    outside ``CAP_MK``/``MIM_L_MK`` and so outside the *recognised* top
-    plate -- the deck's equivalent top-plate connectivity wiring never sees
-    that via touch it, so the top plate stays its own floating net despite
-    being routed for real. Both via chains were checked by hand at review
-    time (#77): each contact point's ``(x, y)`` traced back to the specific
-    net it targets, and both plates' via chains confirmed disjoint from each
-    other and from every other row's own rails.
+    Since both plates' up-hop vias now land inside their own recognised
+    plate's footprint, `klt extract` resolves *both* terminals to their real
+    net without any marker-widening trick: the bottom plate to ``vdd``
+    (klayout-tools#329, gf180-bandgap#89) and the top plate to ``fb``
+    (klayout-tools#364/PR #368, gf180-bandgap#88). See
+    ``layout/lvs/make_reference.py`` step 9 for the reference-netlist side of
+    that, and ``layout/netlist/mk_extracted_dut.py`` for the now-deleted
+    ``BA4`` back-annotation this made unnecessary.
     """
     w, h = cap.width_nm, cap.height_nm
     inset = MIM_PLATE_INSET
@@ -902,37 +883,50 @@ def _mim_cap(
     assert vdd_span[0] <= vdd_x <= vdd_span[1], f"{cap.key}: vdd contact x falls outside the drawn vdd rail"
     assert y0 <= vdd_ty <= y0 + h, f"{cap.key}: vdd rail height falls outside the cap's own footprint"
 
-    # -- fb (top plate) contact points: the up-hop lands on the routing tab,
-    # entirely past the bottom plate's own right edge; the down-hop is
-    # clear of the tab as well (see docstring).
-    fb_tab_end = x0 + w + FB_TAB_OVERHANG
-    fb_up_x = x0 + w + FB_TAB_OVERHANG // 2
-    assert x0 + w <= fb_up_x - VIA_PAD // 2, f"{cap.key}: fb up-hop via overlaps the bottom plate"
-    assert fb_up_x + VIA_PAD // 2 <= fb_tab_end, f"{cap.key}: fb up-hop via overlaps the tab's own end"
-    assert y0 + inset <= fb_ty <= y0 + h - inset, f"{cap.key}: fb rail height falls outside the top plate"
+    # -- fb (top plate) up-hop contact point: centred on the cap's own
+    # width, well inside both the recognised FuseTop plate (MIM_PLATE_INSET
+    # margin) and the Metal4 bottom plate beneath it (MIMTM.2's 0.4um
+    # minimum overlap, honoured here with a much wider margin -- see the
+    # asserts immediately below).
+    fb_up_x = x0 + w // 2
+    assert x0 + inset + VIA_W // 2 <= fb_up_x <= x0 + w - inset - VIA_W // 2, (
+        f"{cap.key}: fb up-hop via does not land inside the recognised FuseTop top plate"
+    )
+    assert (
+        x0 + MIM_VIA_OVERLAP_MIN + VIA_W // 2 <= fb_up_x <= x0 + w - MIM_VIA_OVERLAP_MIN - VIA_W // 2
+    ), f"{cap.key}: fb up-hop via does not meet MIMTM.2's bottom-plate overlap minimum"
+    assert y0 + inset + VIA_W // 2 <= fb_ty <= y0 + h - inset - VIA_W // 2, (
+        f"{cap.key}: fb rail height falls outside the top plate (with via clearance)"
+    )
+    assert (
+        y0 + MIM_VIA_OVERLAP_MIN + VIA_W // 2 <= fb_ty <= y0 + h - MIM_VIA_OVERLAP_MIN - VIA_W // 2
+    ), f"{cap.key}: fb rail height does not meet MIMTM.2's bottom-plate overlap minimum"
+
+    # -- fb down-hop: clear of the bottom plate's own right edge by
+    # FB_DOWNHOP_CLEAR, which leaves mim.space.1's 1.2um Metal4-Metal4
+    # minimum spacing comfortably satisfied between the bottom plate and the
+    # standalone down-hop pad below.
     fb_down_x = x0 + w + FB_DOWNHOP_CLEAR
-    assert fb_tab_end + VIA_PAD // 2 <= fb_down_x - VIA_PAD // 2, (
-        f"{cap.key}: fb down-hop pad overlaps the routing tab"
+    assert fb_down_x - VIA_PAD // 2 - (x0 + w) >= 1200, (
+        f"{cap.key}: fb down-hop pad does not clear the bottom plate by mim.space.1's 1.2um minimum"
     )
     assert fb_span[0] <= fb_down_x <= fb_span[1], f"{cap.key}: fb down-hop x falls outside the drawn fb rail"
 
-    # Bottom plate (Metal4) -- unchanged, solid box; the top-plate contact
-    # routes *around* it (via the tab below), not through it, so its shape
-    # (and so `klt extract`'s recognised bottom-plate area) never changes.
+    # Bottom plate (Metal4) -- unchanged, solid box.
     b.box(L_METAL4, x0, y0, x0 + w, y0 + h)
 
-    # Top plate (FuseTop): the recognised box, plus the routing tab.
+    # Top plate (FuseTop): just the recognised box -- no more routing tab.
     b.box(L_FUSETOP, x0 + inset, y0 + inset, x0 + w - inset, y0 + h - inset)
-    b.box(L_FUSETOP, x0 + w - inset, fb_ty - FB_TAB_H // 2, fb_tab_end, fb_ty + FB_TAB_H // 2)
 
     b.box(L_METAL5, x0 + 900, y0 + 900, x0 + w - 900, y0 + h - 900)
     # The deck's MiM recogniser requires both CAP_MK and MIM_L_MK on the top
-    # plate (`top_plate_requires`); draw CAP_MK over the same footprint as
-    # the existing MIM_L_MK box (#73), except pull the right edge in to the
-    # plate's own edge (no +400 overhang there) so it does not also cover
-    # the routing tab -- see docstring.
-    b.box(L_MIM_MK, x0 - 400, y0 - 400, x0 + w - inset, y0 + h + 400)
-    b.box(L_CAP_MK, x0 - 400, y0 - 400, x0 + w - inset, y0 + h + 400)
+    # plate (`top_plate_requires`); draw both over the same +400 margin on
+    # all four sides -- there is no tab to exclude any more, so this is now a
+    # plain symmetric marker box (#88; previously the right edge was pulled
+    # in to the plate's own edge to keep the tab unrecognised -- see the
+    # docstring for why that is gone).
+    b.box(L_MIM_MK, x0 - 400, y0 - 400, x0 + w + 400, y0 + h + 400)
+    b.box(L_CAP_MK, x0 - 400, y0 - 400, x0 + w + 400, y0 + h + 400)
 
     # vdd: Metal1 (existing AMPPCASC rail) -> Via1 -> Metal2 -> Via2 ->
     # Metal3 -> Via3 -> straight into the bottom plate drawn above.
@@ -940,12 +934,15 @@ def _mim_cap(
     _via_pad(b, L_METAL3, L_VIA2, vdd_x, vdd_ty)
     b.box(L_VIA3, vdd_x - VIA_W // 2, vdd_ty - VIA_W // 2, vdd_x + VIA_W // 2, vdd_ty + VIA_W // 2)
 
-    # fb up-hop: Via4 on the routing tab (FuseTop only there -- the bottom
-    # plate's Metal4 box ends at x0 + w, well clear) -> Metal5.
+    # fb up-hop: Via4 lands directly on the recognised FuseTop top plate,
+    # inside the Metal4 bottom-plate footprint (DRM-legal per MIMTM.2, and
+    # no longer read as a vdd/fb short since klayout-tools#364/PR #368) ->
+    # Metal5.
     b.box(L_VIA4, fb_up_x - VIA_W // 2, fb_ty - VIA_W // 2, fb_up_x + VIA_W // 2, fb_ty + VIA_W // 2)
+    b.box(L_METAL5, fb_up_x - VIA_PAD // 2, fb_ty - VIA_PAD // 2, fb_up_x + VIA_PAD // 2, fb_ty + VIA_PAD // 2)
 
-    # fb Metal5 wire: up-hop (over the tab) to down-hop (clear of the tab
-    # and the bottom plate), both at the same rail height so this is one
+    # fb Metal5 wire: up-hop (over the bottom plate) to down-hop (clear of
+    # the bottom plate), both at the same rail height so this is one
     # straight run.
     b.box(
         L_METAL5,
@@ -956,8 +953,8 @@ def _mim_cap(
     )
 
     # fb down-hop: Metal5 -> Via4 -> Metal4 (a standalone pad, spaced clear
-    # of the tab and the bottom plate) -> Via3 -> Metal3 -> Via2 -> Metal2
-    # -> Via1 -> Metal1 (the existing AMPPCASC fb rail).
+    # of the bottom plate) -> Via3 -> Metal3 -> Via2 -> Metal2 -> Via1 ->
+    # Metal1 (the existing AMPPCASC fb rail).
     b.box(L_VIA4, fb_down_x - VIA_W // 2, fb_ty - VIA_W // 2, fb_down_x + VIA_W // 2, fb_ty + VIA_W // 2)
     _via_pad(b, L_METAL4, L_VIA3, fb_down_x, fb_ty)
     _via_pad(b, L_METAL3, L_VIA2, fb_down_x, fb_ty)
