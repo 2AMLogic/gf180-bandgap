@@ -279,8 +279,9 @@ def main() -> int:
             raise SystemExit(f"{extracted.path}: expected extracted provenance")
         pairs[slug] = (schematic, extracted)
 
-    args.output.write_text(render(pairs, args.append))
-    print(f"wrote {args.output.relative_to(REPO_ROOT)}")
+    output = args.output.resolve()
+    output.write_text(render(pairs, args.append))
+    print(f"wrote {output.relative_to(REPO_ROOT)}")
     return 0
 
 
