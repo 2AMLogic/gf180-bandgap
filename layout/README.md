@@ -103,8 +103,8 @@ Expected results (as committed):
 |---|---|
 | `matching_report.py` | all tier-1/2/3 checks pass, exit 0 |
 | `run_drc.py` | `status: clean`, `violation_count: 0` (`20260803-054725-8d21bf1.drc.json` — first clean verdict since klayout-tools#318 stopped false-negativing `mim.enclosing.fusetop.1`; see #88) |
-| `run_lvs.py` | `status: match`, 156/156 devices, 92/92 nets (`20260803-054735-8d21bf1.lvs.json`; reproduced unchanged by `20260804-143026-c876a0f.lvs.json`) |
-| `run_lvs.py --engine both` | klayout `match`; netgen `mismatch`, 25 entries, **all device-parameter or pin-matching, none topological** (`20260804-143026-c876a0f.lvs-netgen.json`) — see "The netgen cross-check" below |
+| `run_lvs.py` | `status: match`, 156/156 devices, 92/92 nets (`20260803-054735-8d21bf1.lvs.json`; reproduced unchanged by `20260804-143026-c876a0f.lvs.json` and `20260804-151012-fefb292.lvs.json`) |
+| `run_lvs.py --engine both` | klayout `match`, 14 mismatches; netgen `match`, 2 mismatches — **both engines agree** (`20260804-151012-fefb292.lvs-netgen.json`) — see "The netgen cross-check" below |
 | `area_report.py` | 48,805.68 µm² vs. 50,000 µm² target — PASS, 2.4 % headroom |
 
 `net_count` is 92, not 93, because gf180-bandgap#88 redrew the MiM cap's `fb`
@@ -335,8 +335,10 @@ none is a design simplification, and nothing in the reference is hand-written.
     compared the bottom-plate one — no blind spot remains on either plate.
   - **Resistor and bipolar *values* versus the schematic.** The comparison
     is layout-vs-layout-prediction for these: the reference predicts the
-    `R`/`AE` the extractor will measure off the drawn marker geometry
-    (`plan.res_body_area_nm2`, `plan.pnp_emitter_area_nm2`), because
+    `R`/`AE PE AB PB AC PC` the extractor will measure off the drawn marker
+    geometry (`plan.res_body_area_nm2`, `plan.pnp_emitter_area_nm2` and,
+    since gf180-bandgap#111, `plan.pnp_emitter_perimeter_nm` /
+    `plan.pnp_base_area_nm2` / `plan.pnp_base_perimeter_nm`), because
     KLayout's own extractors report a serpentine's `R` from an
     area/perimeter fit that does not equal `sheet_rho · r_length/r_width`
     (corner squares are shared). So a *drawn* geometry error is caught; a
@@ -372,7 +374,7 @@ both. What it independently exercises is the graph-matching step, in a
 separate codebase (`netgen -batch lvs` vs. `klayout.db.NetlistComparer`).
 
 **First cross-checked run (`20260804-143026-c876a0f`, netgen 1.5.323): the
-two engines DISAGREE, and the disagreement is entirely device-parameter and
+two engines DISAGREED, and the disagreement was entirely device-parameter and
 pin-matching, not topological.**
 
 | | klayout | netgen |
@@ -383,32 +385,81 @@ pin-matching, not topological.**
 | nets / devices | 92/92, 156/156 | layout 92 vs reference 92, layout 156 vs reference 156 |
 
 netgen reported **zero** unmatched nets and **zero** unmatched devices, and
-both engines see the same 92 nets and 156 devices on each side. Its 22
-`device.property` entries all land on the 8 `bjt` devices, and they trace to
-one known gap in the reference generator rather than to the drawn layout:
+both engines saw the same 92 nets and 156 devices on each side. Its 22
+`device.property` entries all landed on the 8 `bjt` devices, and its 1
+`pin.unmatched` entry traced to two gaps in the reference generator, not the
+drawn layout:
 
 - `klt extract` emits six junction parameters per PNP
-  (`AE PE AB PB AC PC`), but `make_reference.py` models only `AE` — so
+  (`AE PE AB PB AC PC`), but `make_reference.py` modelled only `AE` — so
   `PE`/`AB`/`PB`/`AC`/`PC` read as `0` on the reference side. The `AE` values
-  themselves agree (`2.5e-11` both sides). KLayout's deck-driven comparer
+  themselves agreed (`2.5e-11` both sides). KLayout's deck-driven comparer
   ignores the unmodelled five; netgen, comparing parameters with no
-  PDK-specific tolerance rules, does not.
-- The two `M` deltas (layout `2`/`4` vs. reference `1`) are the same gap
+  PDK-specific tolerance rules, did not.
+- The two `M` deltas (layout `2`/`4` vs. reference `1`) were the same gap
   downstream: netgen folded layout-side parallel PNP units into `M=2`/`M=4`
   groups and paired them against single-unit reference cards.
-- The single `pin.unmatched` is the top-level pin-count asymmetry **both**
-  engines see — the reference declares five pins
-  (`.SUBCKT bandgap_top vdd vss vref vsubs nwl`) and extraction yields four.
-  KLayout's comparer tolerates it (`counts.pins`: layout 4, reference 5,
-  matched 5); netgen calls it a top-level pin-matching failure.
+- The single `pin.unmatched` was the top-level pin-count asymmetry **both**
+  engines saw — the reference declared five pins
+  (`.SUBCKT bandgap_top vdd vss vref vsubs nwl`) and extraction yielded four.
+  KLayout's comparer tolerated it (`counts.pins`: layout 4, reference 5,
+  matched 5); netgen called it a top-level pin-matching failure.
 
-So the honest reading is: **the netgen cross-check corroborates the
-topology** the klayout `match` verdict rests on (no unmatched net or device
-from an independent comparator), and **separately exposes that this repo's
-reference netlist under-models PNP junction parameters and top-level pins** —
-a gap the klayout engine's deck-aware tolerances were hiding. Reconciling
-`make_reference.py` against netgen's stricter parameter comparison is
-follow-up work, not a claim this run makes.
+**RESOLVED** ([#111](https://github.com/2AMLogic/gf180-bandgap/issues/111)):
+both gaps were in `make_reference.py`, not the drawn layout, and both are
+mechanical consequences of drawn geometry already available in `plan.py` —
+so the fix is Option 1 (model the missing BJT parameters) *and* Option 2
+(reconcile the pin count) from that issue's suggested scope, not Option 3
+(accept the delta). Rationale for choosing 1+2 over 3: netgen's stricter
+parameter comparator is a legitimate second reading of the same `klt
+extract` output — accepting a self-inflicted 25-entry delta indefinitely
+would make every future genuinely-new netgen mismatch (an actual
+regression) harder to see against a permanently-noisy baseline, which cuts
+against CLAUDE.md's "verification is the product." Both gaps closed without
+touching drawn geometry (the GDS is byte-identical, `sha256:17e27435…`,
+before and after):
+
+- `plan.py` gained `pnp_emitter_perimeter_nm` (`PE = 4 * emitter_side`) and
+  `pnp_base_nwell_side_nm`/`pnp_base_area_nm2`/`pnp_base_perimeter_nm`,
+  which derive `AB`/`PB` from the side length of the drawn Nwell island
+  already computed by `pnp_size` (`base_outer + 2*PNP_NW_ENC` —
+  `generate.draw_pnp`'s own `nwell` local uses the identical expression).
+  `make_reference.py` now emits all six parameters per `bjt` card, with
+  `AC`/`PC` set equal to `AB`/`PB`. That duplication is not a
+  simplification: verified against `klt extract`'s real output
+  (`20260804-143026-c876a0f.extracted.spice`), every drawn unit reports
+  `AC`/`PC` numerically identical to `AB`/`PB` — the deck's vertical-BJT
+  extractor has no drawn collector-region shape to measure separately (the
+  collector is the undrawn substrate beneath the whole cell), so it reports
+  the same enclosing-Nwell geometry for both junctions. This is the same
+  layout-vs-layout-prediction relationship already noted for `AE` (see
+  "Resistor and bipolar *values* versus the schematic" above) — the
+  reference predicts what the extractor measures off the drawn geometry,
+  not the schematic's own BJT model, and that was already true of `AE`
+  before this change.
+- `make_reference.py`'s pin list no longer appends `nwl` unconditionally.
+  The comment immediately above that code already documented why: only
+  `vdd`/`vss`/`vref` carry a Metal1 label in the layout (plus the
+  deck-synthesized `vsubs`), so those four are the only nets the deck ever
+  promotes to a top-level pin — `nwl` (the PMOS band's Nwell) never gets
+  one, because the deck never connects Nwell to Contact. The reference
+  simply hadn't been updated to match its own documented pin set.
+
+Fresh evidence (`20260804-151012-fefb292`, same `netgen 1.5.323`, GDS
+unchanged): **netgen mismatch count 25 → 2, status `mismatch` → `match`.**
+The `22 device.property` and `1 pin.unmatched` categories are gone
+entirely; the remaining 2 are `device.body_unverified` — the same
+standing "no substrate/well-tap layer" caveat klayout already carries (and
+carried before this change too), unrelated to this issue, not silently
+re-labelled to make a count look better. Both engines now agree the layout
+matches its reference.
+
+| | klayout | netgen |
+|---|---|---|
+| `status` | `match` | `match` |
+| `mismatch_count` | 14 | 2 |
+| categories | 2 `device.body_unverified`, 12 `topology` | 2 `device.body_unverified` |
+| nets / devices / pins | 92/92, 156/156, 4/4 | 92/92, 156/156, 4/4 |
 
 `options.netgen_setup` (a PDK-specific netgen setup `.tcl`, resolvable via
 `klayout_tools.pdk.netgen_setup_file()`) is deliberately **not** wired in:

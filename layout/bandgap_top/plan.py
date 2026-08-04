@@ -427,9 +427,7 @@ def trim_geometry(item: TrimLadderItem) -> tuple[int, int, int, int]:
 
 
 def pnp_size(item: PnpItem) -> tuple[int, int]:
-    emitter = int(item.emitter_um * 1000)
-    base_outer = emitter + 2 * (PNP_GAP + PNP_RING)
-    nwell = base_outer + 2 * PNP_NW_ENC
+    nwell = pnp_base_nwell_side_nm(item)
     coll_outer = nwell + 2 * (PNP_COL_GAP + PNP_RING)
     return coll_outer, coll_outer
 
@@ -438,6 +436,49 @@ def pnp_emitter_area_nm2(item: PnpItem) -> int:
     """Area of the drawn p+ emitter square (the deck's ``AE`` for the unit)."""
     emitter = int(item.emitter_um * 1000)
     return emitter * emitter
+
+
+def pnp_emitter_perimeter_nm(item: PnpItem) -> int:
+    """Perimeter of the drawn p+ emitter square (the deck's ``PE`` for the
+    unit). Verified against a real ``klt extract`` run of the committed GDS
+    (``20260804-143026-c876a0f.extracted.spice``, gf180-bandgap#111): every
+    drawn unit's ``PE`` equals ``4 * sqrt(AE)`` exactly (``PE=20um`` at this
+    layout's 5um/``AE=25um^2`` emitter)."""
+    emitter = int(item.emitter_um * 1000)
+    return 4 * emitter
+
+
+def pnp_base_nwell_side_nm(item: PnpItem) -> int:
+    """Side length of the drawn Nwell island enclosing one PNP unit.
+
+    Exactly the ``L_NWELL`` box ``generate.draw_pnp`` draws (its own
+    ``nwell`` local uses this same expression) — **not** the base ring's own
+    annulus. Verified against a real ``klt extract`` run of the committed
+    GDS (``20260804-143026-c876a0f.extracted.spice``, gf180-bandgap#111):
+    every drawn unit's ``AB``/``PB`` *and* ``AC``/``PC`` equal this square's
+    area/perimeter exactly (``AB=AC=108.16um^2``, ``PB=PC=41.6um`` at this
+    layout's 5um emitter). The deck's vertical-BJT extractor has no drawn
+    collector-region shape to measure (the collector is the undrawn
+    substrate beneath the whole cell), so it reports this same
+    enclosing-Nwell geometry for both the base and collector junction
+    parameters.
+    """
+    emitter = int(item.emitter_um * 1000)
+    base_outer = emitter + 2 * (PNP_GAP + PNP_RING)
+    return base_outer + 2 * PNP_NW_ENC
+
+
+def pnp_base_area_nm2(item: PnpItem) -> int:
+    """Area of the recognised base region -- the deck's ``AB`` *and* ``AC``
+    for the unit; see :func:`pnp_base_nwell_side_nm`."""
+    side = pnp_base_nwell_side_nm(item)
+    return side * side
+
+
+def pnp_base_perimeter_nm(item: PnpItem) -> int:
+    """Perimeter of the recognised base region -- the deck's ``PB`` *and*
+    ``PC`` for the unit; see :func:`pnp_base_nwell_side_nm`."""
+    return 4 * pnp_base_nwell_side_nm(item)
 
 
 def mim_plate_area_nm2(cap: MimCapItem) -> int:

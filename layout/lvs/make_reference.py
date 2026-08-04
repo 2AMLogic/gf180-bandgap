@@ -42,9 +42,16 @@ editing, no per-device fudging:
    draws its metal strap option for (``plan.DRAWN_TRIM_CODE``). The drawn
    Metal1 straps are derived from these same expressions
    (``plan.trim_strap_spans``), so the two sides short the same chain nodes.
-8. **Emit one ``bjt`` card per drawn PNP unit** (the real p+ emitter,
-   ``AE = 2.5e-11``). Each unit's Nwell is its own island, so each unit's
-   base is its own (unnamed) net — the deck never connects Nwell to Contact.
+8. **Emit one ``bjt`` card per drawn PNP unit**, with all six junction
+   parameters the deck reports (``AE PE AB PB AC PC``) derived from drawn
+   geometry (gf180-bandgap#111): ``AE``/``PE`` from the p+ emitter square
+   (``plan.pnp_emitter_area_nm2``/``pnp_emitter_perimeter_nm``), ``AB``/``PB``
+   and (duplicated) ``AC``/``PC`` from the enclosing Nwell island
+   (``plan.pnp_base_area_nm2``/``pnp_base_perimeter_nm`` — see that
+   function's docstring for why the deck reports the same value for both
+   the base and collector parameters). Each unit's Nwell is its own island,
+   so each unit's base is its own (unnamed) net — the deck never connects
+   Nwell to Contact.
 
    **Historical note.** Before klayout-tools#304, the deck recognised a
    bipolar emitter as ``Comp & Nwell & DRC_BJT`` and modelled no implant
@@ -230,14 +237,24 @@ def build_reference(trim_code: int) -> tuple[str, dict]:
             elif isinstance(item, plan_mod.PnpItem):
                 # Step 8: each unit's own Nwell island is its own (unnamed)
                 # extracted net -- the deck connects Nwell to nothing. One
-                # real p+ emitter extracts per unit (klayout-tools#304).
+                # real p+ emitter extracts per unit (klayout-tools#304). All
+                # six junction parameters the deck reports are modelled from
+                # drawn geometry (gf180-bandgap#111): AE/PE from the emitter
+                # square, AB/PB/AC/PC from the enclosing Nwell island --
+                # plan.pnp_base_nwell_side_nm's docstring explains why AC/PC
+                # duplicate AB/PB.
                 base = f"nw_{name}"
                 emitter = net_of(item.emitter_net)
                 use(base, emitter, SUBSTRATE_NET)
-                area_nm2 = plan_mod.pnp_emitter_area_nm2(item)
+                ae_nm2 = plan_mod.pnp_emitter_area_nm2(item)
+                pe_nm = plan_mod.pnp_emitter_perimeter_nm(item)
+                ab_nm2 = plan_mod.pnp_base_area_nm2(item)
+                pb_nm = plan_mod.pnp_base_perimeter_nm(item)
                 lines.append(
-                    f"Q{name} {SUBSTRATE_NET} {base} {emitter} "
-                    f"{BJT_CLASS} AE={area_nm2 * 1e-18:.6e}"
+                    f"Q{name} {SUBSTRATE_NET} {base} {emitter} {BJT_CLASS} "
+                    f"AE={ae_nm2 * 1e-18:.6e} PE={pe_nm * 1e-9:.6e} "
+                    f"AB={ab_nm2 * 1e-18:.6e} PB={pb_nm * 1e-9:.6e} "
+                    f"AC={ab_nm2 * 1e-18:.6e} PC={pb_nm * 1e-9:.6e}"
                 )
                 counts[BJT_CLASS] += 1
 
@@ -259,13 +276,16 @@ def build_reference(trim_code: int) -> tuple[str, dict]:
     lines.append(f"C{cap_name} {plate_bot} {plate_top} {farads:.6e} {CAP_CLASS}")
     counts[CAP_CLASS] += 1
 
-    # Pins: the block's three real ports plus the two body nets the deck
+    # Pins: the block's three real ports plus the one body net the deck
     # synthesises. `Netlist.make_top_level_pins()` promotes every *named*
     # extracted net to a pin, and only vdd/vss/vref carry a Metal1 label in
     # the layout, so those three plus `vsubs` are the extracted pin set.
+    # `nwl` (the PMOS band's Nwell) is never promoted -- the deck never
+    # connects Nwell to Contact, so it has no Metal1 label to promote on --
+    # so it stays an internal (unnamed-equivalent) net here too, not a
+    # declared top-level pin (gf180-bandgap#111).
     pins = [p for p in ("vdd", "vss", "vref") if p in used_nets]
     pins.append(SUBSTRATE_NET)
-    pins.append(NWELL_NET)
 
     header = [
         "* LVS reference netlist for bandgap_top -- GENERATED, do not edit.",
