@@ -1,0 +1,40 @@
+layout: ../../../bandgap_top/bandgap_top.gds
+reference: ../../bandgap_top.ref.spice
+top: bandgap_top
+engine: netgen
+status: mismatch
+mismatches: 25
+  nets: layout=92  reference=92  matched=0
+  devices: layout=156  reference=156  matched=0
+  pins: layout=4  reference=5  matched=0
+
+category_counts:
+  device.body_unverified: 2
+  device.property: 22
+  pin.unmatched: 1
+
+[warning] device.body_unverified  (layout)  34 NMOS device body terminal(s) were compared against the 'vsubs' deck-synthesized substrate net, not a real schematic net -- this deck draws no distinct NMOS substrate/tap layer (see docs/cli/extract.md, "Coverage")
+[warning] device.body_unverified  (layout)  47 PMOS device body terminal(s) were compared against an anonymous, deck-synthesized well net, not a real schematic net -- this deck has no distinct well-tap layer (see docs/cli/extract.md, "Coverage")
+[error] device.property  (both)  netgen: matched device parameter 'PC' differs (netgen reported a property difference)
+[error] device.property  (both)  netgen: matched device parameter 'AC' differs (netgen reported a property difference)
+[error] device.property  (both)  netgen: matched device parameter 'PB' differs (netgen reported a property difference)
+[error] device.property  (both)  netgen: matched device parameter 'AB' differs (netgen reported a property difference)
+[error] device.property  (both)  netgen: matched device parameter 'PE' differs (netgen reported a property difference)
+[error] device.property  (both)  netgen: matched device parameter 'M' differs (delta=1, cutoff=0)
+[error] device.property  (both)  netgen: matched device parameter 'PC' differs (netgen reported a property difference)
+[error] device.property  (both)  netgen: matched device parameter 'AC' differs (netgen reported a property difference)
+[error] device.property  (both)  netgen: matched device parameter 'PB' differs (netgen reported a property difference)
+[error] device.property  (both)  netgen: matched device parameter 'AB' differs (netgen reported a property difference)
+[error] device.property  (both)  netgen: matched device parameter 'PE' differs (netgen reported a property difference)
+[error] device.property  (both)  netgen: matched device parameter 'PC' differs (netgen reported a property difference)
+[error] device.property  (both)  netgen: matched device parameter 'AC' differs (netgen reported a property difference)
+[error] device.property  (both)  netgen: matched device parameter 'PB' differs (netgen reported a property difference)
+[error] device.property  (both)  netgen: matched device parameter 'AB' differs (netgen reported a property difference)
+[error] device.property  (both)  netgen: matched device parameter 'PE' differs (netgen reported a property difference)
+[error] device.property  (both)  netgen: matched device parameter 'M' differs (delta=3, cutoff=0)
+[error] device.property  (both)  netgen: matched device parameter 'PC' differs (netgen reported a property difference)
+[error] device.property  (both)  netgen: matched device parameter 'AC' differs (netgen reported a property difference)
+[error] device.property  (both)  netgen: matched device parameter 'PB' differs (netgen reported a property difference)
+[error] device.property  (both)  netgen: matched device parameter 'AB' differs (netgen reported a property difference)
+[error] device.property  (both)  netgen: matched device parameter 'PE' differs (netgen reported a property difference)
+[error] pin.unmatched  (both)  netgen: top-level cell failed pin matching
