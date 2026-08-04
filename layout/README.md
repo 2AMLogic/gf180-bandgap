@@ -41,9 +41,12 @@ layout/
       trivial_poly_res/    <record-id>.drc.{json,txt}
   lvs/
     make_reference.py  derives the LVS reference netlist from the schematic
-    run_lvs.py         klt extract + klt lvs -> committed report
+    run_lvs.py         klt extract + klt lvs -> committed report (--engine selects the comparator)
+    test_run_lvs.py    unit tests for run_lvs.py's engine selection (no klt/netgen needed)
     bandgap_top.ref.spice  generated reference netlist (do not hand-edit)
     reports/bandgap_top/   <record-id>.{extract.json,extracted.spice,lvs.json,lvs.txt,lvs-request.json}
+                           plus <record-id>.lvs-netgen.{json,txt} + .lvs-netgen-request.json
+                           from the optional netgen cross-check (--engine netgen/both)
   netlist/
     run_extract.py     reproducible klt extract --parasitics invocation (#17) -> committed report
     README.md           post-layout parasitic-extraction findings; resistor/MiM-cap
@@ -86,6 +89,10 @@ python3 layout/drc/run_drc.py layout/bandgap_top/bandgap_top.gds
 # 4. Extract + LVS
 python3 layout/lvs/run_lvs.py layout/bandgap_top/bandgap_top.gds
 
+# 4b. (optional) same run, cross-checked by a second, independent comparator.
+#     Needs the `netgen` binary on PATH; see "The netgen cross-check" below.
+python3 layout/lvs/run_lvs.py layout/bandgap_top/bandgap_top.gds --engine both
+
 # 5. Area budget
 uv run --with klayout python3 layout/bandgap_top/area_report.py
 ```
@@ -96,7 +103,8 @@ Expected results (as committed):
 |---|---|
 | `matching_report.py` | all tier-1/2/3 checks pass, exit 0 |
 | `run_drc.py` | `status: clean`, `violation_count: 0` (`20260803-054725-8d21bf1.drc.json` — first clean verdict since klayout-tools#318 stopped false-negativing `mim.enclosing.fusetop.1`; see #88) |
-| `run_lvs.py` | `status: match`, 156/156 devices, 92/92 nets (`20260803-054735-8d21bf1.lvs.json`) |
+| `run_lvs.py` | `status: match`, 156/156 devices, 92/92 nets (`20260803-054735-8d21bf1.lvs.json`; reproduced unchanged by `20260804-143026-c876a0f.lvs.json`) |
+| `run_lvs.py --engine both` | klayout `match`; netgen `mismatch`, 25 entries, **all device-parameter or pin-matching, none topological** (`20260804-143026-c876a0f.lvs-netgen.json`) — see "The netgen cross-check" below |
 | `area_report.py` | 48,805.68 µm² vs. 50,000 µm² target — PASS, 2.4 % headroom |
 
 `net_count` is 92, not 93, because gf180-bandgap#88 redrew the MiM cap's `fb`
@@ -335,6 +343,81 @@ none is a design simplification, and nothing in the reference is hand-written.
     disagreement between KLayout's serpentine model and the PDK's own
     `ppolyf_u` subcircuit is not — see `layout/netlist/README.md`'s "Known
     additional fidelity gaps".
+
+### The netgen cross-check (`--engine both`)
+
+`klt lvs` ships two comparators (klayout-tools#343/#360), and `run_lvs.py`
+can drive either or both:
+
+```bash
+python3 layout/lvs/run_lvs.py layout/bandgap_top/bandgap_top.gds              # klayout only (default)
+python3 layout/lvs/run_lvs.py layout/bandgap_top/bandgap_top.gds --engine netgen
+python3 layout/lvs/run_lvs.py layout/bandgap_top/bandgap_top.gds --engine both
+```
+
+The default is unchanged: `--engine klayout` writes exactly the
+`<record-id>.lvs.{json,txt}` + `.lvs-request.json` series it always has, with
+a request document byte-identical to the pre-`--engine` ones. `netgen` writes
+its own `<record-id>.lvs-netgen.*` series alongside, so the two engines can
+never overwrite each other and the trail stays append-only. `netgen` is
+**opt-in** because it needs the `RTimothyEdwards/netgen` binary on `$PATH`
+(not bundled, not pip-installable); asking for it without that binary is an
+actionable `klt lvs` error and a non-zero exit, never a silent fall back to
+the klayout engine.
+
+**What the second engine is worth: comparator independence, not extraction
+independence.** netgen has no layout front-end here — both engines compare
+the *same* `klt extract` output — so a bug in extraction is invisible to
+both. What it independently exercises is the graph-matching step, in a
+separate codebase (`netgen -batch lvs` vs. `klayout.db.NetlistComparer`).
+
+**First cross-checked run (`20260804-143026-c876a0f`, netgen 1.5.323): the
+two engines DISAGREE, and the disagreement is entirely device-parameter and
+pin-matching, not topological.**
+
+| | klayout | netgen |
+|---|---|---|
+| `status` | `match` | `mismatch` |
+| `mismatch_count` | 14 | 25 |
+| categories | 2 `device.body_unverified`, 12 `topology` | 2 `device.body_unverified`, 22 `device.property`, 1 `pin.unmatched` |
+| nets / devices | 92/92, 156/156 | layout 92 vs reference 92, layout 156 vs reference 156 |
+
+netgen reported **zero** unmatched nets and **zero** unmatched devices, and
+both engines see the same 92 nets and 156 devices on each side. Its 22
+`device.property` entries all land on the 8 `bjt` devices, and they trace to
+one known gap in the reference generator rather than to the drawn layout:
+
+- `klt extract` emits six junction parameters per PNP
+  (`AE PE AB PB AC PC`), but `make_reference.py` models only `AE` — so
+  `PE`/`AB`/`PB`/`AC`/`PC` read as `0` on the reference side. The `AE` values
+  themselves agree (`2.5e-11` both sides). KLayout's deck-driven comparer
+  ignores the unmodelled five; netgen, comparing parameters with no
+  PDK-specific tolerance rules, does not.
+- The two `M` deltas (layout `2`/`4` vs. reference `1`) are the same gap
+  downstream: netgen folded layout-side parallel PNP units into `M=2`/`M=4`
+  groups and paired them against single-unit reference cards.
+- The single `pin.unmatched` is the top-level pin-count asymmetry **both**
+  engines see — the reference declares five pins
+  (`.SUBCKT bandgap_top vdd vss vref vsubs nwl`) and extraction yields four.
+  KLayout's comparer tolerates it (`counts.pins`: layout 4, reference 5,
+  matched 5); netgen calls it a top-level pin-matching failure.
+
+So the honest reading is: **the netgen cross-check corroborates the
+topology** the klayout `match` verdict rests on (no unmatched net or device
+from an independent comparator), and **separately exposes that this repo's
+reference netlist under-models PNP junction parameters and top-level pins** —
+a gap the klayout engine's deck-aware tolerances were hiding. Reconciling
+`make_reference.py` against netgen's stricter parameter comparison is
+follow-up work, not a claim this run makes.
+
+`options.netgen_setup` (a PDK-specific netgen setup `.tcl`, resolvable via
+`klayout_tools.pdk.netgen_setup_file()`) is deliberately **not** wired in:
+an uncommitted one-off probe pointing netgen at the installed
+`gf180mcuA_setup.tcl` raised the count to 43 `device.property`-dominated
+entries rather than reducing it, and the resolved path is machine-specific,
+which would break the request documents' machine-independence. netgen's own
+default setup is still topologically correct, which is the part this
+cross-check is for.
 
 **Limitation carried from klayout-tools:** DRC is whole-layout, flattened per
 top cell — there is no `--top <cell>` filter to scope a check to one cell

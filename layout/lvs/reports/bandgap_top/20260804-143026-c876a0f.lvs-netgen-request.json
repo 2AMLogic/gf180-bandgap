@@ -1,0 +1,12 @@
+{
+  "layout": {
+    "file": "../../../bandgap_top/bandgap_top.gds",
+    "deck": "gf180mcu",
+    "top": "bandgap_top"
+  },
+  "reference": {
+    "netlist": "../../bandgap_top.ref.spice",
+    "top": "bandgap_top"
+  },
+  "engine": "netgen"
+}
