@@ -5,49 +5,19 @@ Drop-in replacement for `gh` that caches read-only command responses
 to reduce API calls. Mutations bypass the cache and invalidate
 related entries.
 
-Cache is file-backed under /tmp/gh-cache/ for cross-process sharing.
-
-Repo scoping
-------------
-`gh` is implicitly repo-scoped (by `-R/--repo`, `GH_REPO`, or the git remote
-of the working directory), so the cache must be too. Every entry lives in a
-per-repo subdirectory of the cache root, and the resolved repo context is also
-folded into the entry key. Without this, two repos on the same host running a
-textually identical read (e.g. `gh pr list --label=... --state=open`) collide
-on one entry and silently serve each other's results.
-
-Repo context is resolved in the same precedence order `gh` itself uses:
-
-    1. `-R` / `--repo` on the command line
-    2. `$GH_REPO`
-    3. the `origin` (else first) git remote URL of the working directory
-    4. the shared git dir (`git rev-parse --git-common-dir`) — keeps linked
-       worktrees of the same repo on one cache, for repos with no remote
-    5. the absolute working directory (non-git directories)
-
-Steps 3 and 4 use local git only — never a `gh repo view` network call, which
-would defeat the point of the cache.
-
-Cache layout:
-
-    $GH_CACHE_DIR/<repo-slug>-<hash>/<entry-key>.json
-    $GH_CACHE_DIR/<repo-slug>-<hash>/_stats.json
-
-`--clear-cache`, LRU eviction (`GH_CACHE_MAX_SIZE`), mutation invalidation and
-`--cache-stats` all operate within the current repo's subdirectory only.
+Cache is file-backed in /tmp/gh-cache/ for cross-process sharing.
 
 Usage:
     gh-cached issue view 42 --json labels
     gh-cached pr list --label "loom:review-requested" --state open
     gh-cached --no-cache issue view 42 --json labels  # bypass cache
-    gh-cached --clear-cache                            # clear this repo's entries
+    gh-cached --clear-cache                            # clear all cached entries
     gh-cached --cache-stats                            # show hit/miss statistics
 
 Environment:
-    GH_CACHE_DIR       Cache root directory (default: /tmp/gh-cache); per-repo
-                       subdirectories are created beneath it
+    GH_CACHE_DIR       Cache directory (default: /tmp/gh-cache)
     GH_CACHE_TTL       Default TTL in seconds (default: 30)
-    GH_CACHE_MAX_SIZE  Max cached entries per repo (default: 256)
+    GH_CACHE_MAX_SIZE  Max cached entries (default: 256)
     GH_CACHE_DISABLE   Set to "1" to disable caching entirely
     GH_CACHE_DEBUG     Set to "1" for debug logging to stderr
 """
@@ -57,29 +27,32 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-import re
 import subprocess
 import sys
 import time
-import urllib.parse
 
 # ─── Configuration ──────────────────────────────────────────────────────────
 
-# Root of the cache. Entries never live here directly — they live in a
-# per-repo subdirectory (see resolve_repo_context / cache_dir below).
-CACHE_ROOT = os.environ.get("GH_CACHE_DIR", "/tmp/gh-cache")
+CACHE_DIR = os.environ.get("GH_CACHE_DIR", "/tmp/gh-cache")
 DEFAULT_TTL = int(os.environ.get("GH_CACHE_TTL", "30"))
 MAX_CACHE_SIZE = int(os.environ.get("GH_CACHE_MAX_SIZE", "256"))
 CACHE_DISABLED = os.environ.get("GH_CACHE_DISABLE", "") == "1"
 DEBUG = os.environ.get("GH_CACHE_DEBUG", "") == "1"
 
-# TTL overrides by command type (seconds)
+# TTL overrides by command type (seconds).
+#
+# These are the hot polling shapes the sweep/judge/champion skills route through
+# this wrapper (#4667). They all track DEFAULT_TTL so that GH_CACHE_TTL is a real
+# knob: previously these were hard-coded 30s, which silently made GH_CACHE_TTL a
+# no-op for exactly the commands that matter (it only applied to the shapes that
+# fell through to the default). Unset GH_CACHE_TTL still yields 30s, so this is
+# behavior-identical unless an operator deliberately tunes the window.
 TTL_BY_COMMAND = {
-    ("issue", "view"):   30,
-    ("issue", "list"):   30,
-    ("pr", "view"):      30,
-    ("pr", "list"):      30,
-    ("api",):            30,
+    ("issue", "view"):   DEFAULT_TTL,
+    ("issue", "list"):   DEFAULT_TTL,
+    ("pr", "view"):      DEFAULT_TTL,
+    ("pr", "list"):      DEFAULT_TTL,
+    ("api",):            DEFAULT_TTL,
 }
 
 # Commands that are read-only and safe to cache
@@ -105,227 +78,22 @@ def debug(msg: str) -> None:
         print(f"[gh-cached] {msg}", file=sys.stderr)
 
 
-# ─── Repo Scoping ───────────────────────────────────────────────────────────
-
-def _git(*args: str) -> str | None:
-    """Run a local git command; return trimmed stdout, or None on any failure."""
-    try:
-        proc = subprocess.run(
-            ["git", *args], capture_output=True, text=True, timeout=5
-        )
-    except (OSError, subprocess.SubprocessError):
-        return None
-    if proc.returncode != 0:
-        return None
-    return proc.stdout.strip() or None
-
-
-def normalize_repo(value: str) -> str | None:
-    """Normalize a repo reference to a canonical `host/owner/repo` string.
-
-    Accepts everything `gh -R` and a git remote can produce:
-    `owner/repo`, `host/owner/repo`, `https://host/owner/repo.git`,
-    `git@host:owner/repo.git`, `ssh://git@host/owner/repo`.
-    """
-    value = (value or "").strip()
-    if not value:
-        return None
-
-    scp = re.match(r"^[^/@]+@([^:/]+):(.+)$", value)  # git@host:owner/repo.git
-    if scp:
-        host, path = scp.group(1), scp.group(2)
-    elif "://" in value:
-        parsed = urllib.parse.urlsplit(value)
-        host, path = parsed.hostname or "", parsed.path
-    else:
-        host, path = "", value
-
-    path = path.strip("/")
-    if path.endswith(".git"):
-        path = path[:-4]
-    if not path:
-        return None
-
-    if not host:
-        # Bare `-R` value: `[HOST/]OWNER/REPO`
-        parts = path.split("/")
-        if len(parts) >= 3:
-            host, path = parts[0], "/".join(parts[1:])
-        else:
-            host = os.environ.get("GH_HOST", "github.com")
-
-    return f"{host.lower()}/{path.lower()}"
-
-
-def repo_from_args(args: list[str]) -> str | None:
-    """Extract a `-R` / `--repo` override from gh arguments, if present."""
-    for i, arg in enumerate(args):
-        if arg == "--":
-            break
-        if arg in ("-R", "--repo"):
-            return args[i + 1] if i + 1 < len(args) else None
-        if arg.startswith("--repo="):
-            return arg[len("--repo="):]
-        if arg.startswith("-R") and len(arg) > 2:
-            value = arg[2:]
-            # A real `gh -R` value is always `[HOST/]OWNER/REPO` and so always
-            # contains a `/`. Without this guard, any other flag's value that
-            # happens to start with `-R` (e.g. `--search "-Reopened"`) is
-            # misread as a repo override.
-            if "/" in value:
-                return value
-            continue
-    return None
-
-
-def resolve_repo_context(args: list[str]) -> tuple[str, str]:
-    """Resolve the repo context this invocation of `gh` will act on.
-
-    Returns (context, source). The context is an opaque string; only its
-    stability and uniqueness matter. Never falls back to a repo-agnostic
-    value — an unresolvable context degrades to the absolute cwd, which is
-    still isolating.
-    """
-    override = repo_from_args(args)
-    if override:
-        repo = normalize_repo(override)
-        if repo:
-            return f"repo:{repo}", "flag"
-
-    env_repo = os.environ.get("GH_REPO", "")
-    if env_repo:
-        repo = normalize_repo(env_repo)
-        if repo:
-            return f"repo:{repo}", "GH_REPO"
-
-    # Local git only — a `gh repo view` here would cost the API call the
-    # cache exists to avoid.
-    url = _git("remote", "get-url", "origin")
-    if url is None:
-        remotes = _git("remote")
-        if remotes:
-            url = _git("remote", "get-url", remotes.splitlines()[0].strip())
-    if url:
-        repo = normalize_repo(url)
-        if repo:
-            return f"repo:{repo}", "git-remote"
-
-    # No remote: key on the shared git dir so linked worktrees of the same
-    # repo share one cache (they resolve to the same `--git-common-dir`).
-    common_dir = _git("rev-parse", "--git-common-dir")
-    if common_dir:
-        return (
-            f"gitdir:{os.path.realpath(os.path.join(os.getcwd(), common_dir))}",
-            "git-dir",
-        )
-
-    # If cwd itself has been deleted out from under this process, even
-    # os.getcwd() raises FileNotFoundError (as OSError). Degrade to a
-    # constant context rather than let that propagate — the wrapper's
-    # contract is to never raise, always falling back to plain `gh`.
-    try:
-        return f"cwd:{os.path.realpath(os.getcwd())}", "cwd"
-    except OSError:
-        return "cwd:unresolvable", "cwd-unresolvable"
-
-
-def namespace_for(context: str) -> str:
-    """Filesystem-safe, human-recognizable directory name for a context."""
-    digest = hashlib.sha256(context.encode()).hexdigest()[:12]
-    slug = re.sub(r"[^A-Za-z0-9._-]+", "-", context).strip("-")
-    if len(slug) > 48:
-        slug = slug[-48:].lstrip("-")
-    return f"{slug}-{digest}" if slug else digest
-
-
-_CACHE_CONTEXT: str | None = None
-_CACHE_CONTEXT_SOURCE: str | None = None
-_CACHE_DIR: str | None = None
-
-
-def init_cache_context(args: list[str] | None = None) -> str:
-    """Resolve and memoize the repo context + per-repo cache directory."""
-    global _CACHE_CONTEXT, _CACHE_CONTEXT_SOURCE, _CACHE_DIR
-    if args is None:
-        args = sys.argv[1:]
-    context, source = resolve_repo_context(args)
-    _CACHE_CONTEXT = context
-    _CACHE_CONTEXT_SOURCE = source
-    _CACHE_DIR = os.path.join(CACHE_ROOT, namespace_for(context))
-    debug(f"CONTEXT {context} (source={source}) dir={_CACHE_DIR}")
-    return _CACHE_DIR
-
-
-def cache_context() -> str:
-    if _CACHE_CONTEXT is None:
-        init_cache_context()
-    return _CACHE_CONTEXT  # type: ignore[return-value]
-
-
-def cache_dir() -> str:
-    if _CACHE_DIR is None:
-        init_cache_context()
-    return _CACHE_DIR  # type: ignore[return-value]
-
-
-def purge_legacy_root_entries() -> None:
-    """Remove entries written by the pre-repo-scoping layout.
-
-    Older versions wrote every entry straight into the cache root, shared by
-    every repo on the host. Those files are now unreachable (nothing reads the
-    root) and are exactly the cross-repo-poisoned entries this scoping fixes,
-    so drop them the first time a repo namespace is created. Directories (other
-    repos' namespaces) are never touched.
-    """
-    try:
-        for name in os.listdir(CACHE_ROOT):
-            if not name.endswith(".json"):
-                continue
-            path = os.path.join(CACHE_ROOT, name)
-            if not os.path.isfile(path):
-                continue
-            debug(f"PURGE legacy unscoped entry {name}")
-            try:
-                os.unlink(path)
-            except OSError:
-                pass
-    except OSError:
-        pass
-
-
-# ─── Cache Paths ────────────────────────────────────────────────────────────
-
 def ensure_cache_dir() -> None:
-    path = cache_dir()
-    existed = os.path.isdir(path)
-    # os.makedirs only applies `mode` to the leaf directory it creates, so
-    # CACHE_ROOT itself must be created (at 0700) explicitly first — otherwise
-    # it's created at the umask default and becomes world-listable after any
-    # reboot or /tmp clean, exposing every repo's namespace dir name.
-    os.makedirs(CACHE_ROOT, mode=0o700, exist_ok=True)
-    os.makedirs(path, mode=0o700, exist_ok=True)
-    if not existed:
-        purge_legacy_root_entries()
+    os.makedirs(CACHE_DIR, mode=0o700, exist_ok=True)
 
 
 def cache_key(args: list[str]) -> str:
-    """Generate a cache key from the repo context and gh command arguments.
-
-    The context is part of the hash so that identical argv issued against
-    different repos can never share an entry, even if two repos were somehow
-    pointed at the same cache directory. NUL-joining also keeps argument
-    boundaries unambiguous (`["a b"]` vs `["a", "b"]`).
-    """
-    raw = "\0".join([cache_context(), *args])
+    """Generate a cache key from the gh command arguments."""
+    raw = " ".join(args)
     return hashlib.sha256(raw.encode()).hexdigest()[:16]
 
 
 def cache_path(key: str) -> str:
-    return os.path.join(cache_dir(), f"{key}.json")
+    return os.path.join(CACHE_DIR, f"{key}.json")
 
 
 def stats_path() -> str:
-    return os.path.join(cache_dir(), "_stats.json")
+    return os.path.join(CACHE_DIR, "_stats.json")
 
 
 def read_stats() -> dict:
@@ -334,7 +102,7 @@ def read_stats() -> dict:
         with open(path) as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
-        return {"hits": 0, "misses": 0, "bypasses": 0, "invalidations": 0}
+        return {"hits": 0, "misses": 0, "bypasses": 0, "invalidations": 0, "etag": 0}
 
 
 def write_stats(stats: dict) -> None:
@@ -396,10 +164,10 @@ def enforce_max_size() -> None:
     """Evict least-recently-accessed entries if cache exceeds max size."""
     try:
         entries = []
-        for name in os.listdir(cache_dir()):
+        for name in os.listdir(CACHE_DIR):
             if name.startswith("_") or not name.endswith(".json"):
                 continue
-            path = os.path.join(cache_dir(), name)
+            path = os.path.join(CACHE_DIR, name)
             try:
                 with open(path) as f:
                     data = json.load(f)
@@ -435,10 +203,10 @@ def invalidate_for_resource(resource_type: str, resource_id: str | None) -> None
     debug(f"INVALIDATE {resource_type} {resource_id}")
     count = 0
     try:
-        for name in os.listdir(cache_dir()):
+        for name in os.listdir(CACHE_DIR):
             if name.startswith("_") or not name.endswith(".json"):
                 continue
-            path = os.path.join(cache_dir(), name)
+            path = os.path.join(CACHE_DIR, name)
             try:
                 with open(path) as f:
                     data = json.load(f)
@@ -478,18 +246,12 @@ def invalidate_all_for_type(resource_type: str) -> None:
 
 
 def clear_cache() -> None:
-    """Remove all cached entries for the current repo context.
-
-    Scoped to this repo's namespace: clearing here never wipes another repo's
-    entries (which the pre-namespacing shared layout did).
-    """
+    """Remove all cached entries."""
     try:
-        for name in os.listdir(cache_dir()):
+        for name in os.listdir(CACHE_DIR):
             if name.startswith("_"):
                 continue
-            path = os.path.join(cache_dir(), name)
-            if not os.path.isfile(path):
-                continue
+            path = os.path.join(CACHE_DIR, name)
             os.unlink(path)
     except OSError:
         pass
@@ -583,28 +345,76 @@ def run_gh(args: list[str]) -> tuple[str, str, int]:
     return proc.stdout, proc.stderr, proc.returncode
 
 
+# ─── ETag/REST cached listing (#5056) ────────────────────────────────────────
+
+def locate_loom_daemon() -> str | None:
+    """Resolve a loom-daemon binary for the ETag-cached `forge … list --cached`
+    path. Mirrors lib/locate-daemon-bin.sh's common cases: $LOOM_DAEMON_BIN, then
+    PATH, then the machine-level install. Returns None when none is executable —
+    the caller then degrades to plain `gh` (the "daemon unreachable" fallback)."""
+    bin_env = os.environ.get("LOOM_DAEMON_BIN", "")
+    if bin_env and os.access(bin_env, os.X_OK):
+        return bin_env
+    from shutil import which
+    found = which("loom-daemon")
+    if found:
+        return found
+    machine = os.path.join(
+        os.environ.get("LOOM_DAEMON_BIN_DIR", os.path.expanduser("~/.local/bin")),
+        "loom-daemon",
+    )
+    if os.access(machine, os.X_OK):
+        return machine
+    return None
+
+
+def try_etag_list(resource_type: str, args: list[str]) -> tuple[str, int] | None:
+    """Route a cacheable `issue list` / `pr list` through loom-daemon's
+    disk-persistent ETag REST cache (#5056).
+
+    A validated 304 costs **zero** rate-limit units — and, unlike the local TTL
+    cache below, is never stale (a 304 is positive proof nothing changed). So
+    this is tried *before* the TTL cache for the label/state listing shape.
+
+    Returns (stdout, 0) when the daemon served the query, or None to fall back
+    to the normal path (binary absent → daemon unreachable; or the daemon
+    declined an uncacheable shape — e.g. `--search head:…`, a table `list` with
+    no `--json`, a PR-only field — with a non-zero exit)."""
+    if os.environ.get("LOOM_ETAG_LIST_DISABLE", "") == "1":
+        return None
+    daemon = locate_loom_daemon()
+    if not daemon:
+        return None
+    # args == [resource_type, "list", <rest…>]; forward everything after "list".
+    rest = args[2:]
+    cmd = [daemon, "forge", resource_type, "list", "--cached", *rest]
+    try:
+        proc = subprocess.run(cmd, capture_output=True, text=True)
+    except OSError:
+        return None
+    if proc.returncode == 0:
+        return proc.stdout, 0
+    return None
+
+
 def main() -> int:
     args = sys.argv[1:]
-
-    # Resolve the repo context up front: every cache path below (entries,
-    # stats, eviction, invalidation, --clear-cache) is scoped to it.
-    init_cache_context(args)
 
     # Handle meta-commands
     if "--clear-cache" in args:
         clear_cache()
-        print(f"Cache cleared ({cache_context()}).", file=sys.stderr)
+        print("Cache cleared.", file=sys.stderr)
         return 0
 
     if "--cache-stats" in args:
         stats = read_stats()
         total = stats["hits"] + stats["misses"]
         rate = (stats["hits"] / total * 100) if total > 0 else 0
-        print(f"Scope: {cache_context()} ({cache_dir()})", file=sys.stderr)
         print(f"Hits: {stats['hits']}", file=sys.stderr)
         print(f"Misses: {stats['misses']}", file=sys.stderr)
         print(f"Bypasses: {stats['bypasses']}", file=sys.stderr)
         print(f"Invalidations: {stats['invalidations']}", file=sys.stderr)
+        print(f"ETag (free 304 listings): {stats.get('etag', 0)}", file=sys.stderr)
         print(f"Hit rate: {rate:.1f}%", file=sys.stderr)
         return 0
 
@@ -643,6 +453,19 @@ def main() -> int:
 
         increment_stat("bypasses")
         return rc
+
+    # ETag/REST cached listing (#5056): `issue list` / `pr list` can be served
+    # for free on a validated 304 through loom-daemon's disk-persistent cache —
+    # a separate rate-limit pool (REST, not GraphQL) AND zero cost when nothing
+    # changed. Tried before the local TTL cache because a 304 is both free and
+    # never stale. On decline / absent binary it falls through to the TTL path.
+    if parsed["subcommand"] == "list" and parsed["resource_type"] in ("issue", "pr"):
+        etag_result = try_etag_list(parsed["resource_type"], args)
+        if etag_result is not None:
+            etag_stdout, etag_rc = etag_result
+            sys.stdout.write(etag_stdout)
+            increment_stat("etag")
+            return etag_rc
 
     # Read-only: check cache
     key = cache_key(args)
