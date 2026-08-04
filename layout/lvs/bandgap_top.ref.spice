@@ -13,7 +13,7 @@
 * bipolars        : 8 bjt (1 per drawn PNP unit -- see the docstring's step 8)
 * capacitors      : 1 cap_mim_2f0_m4m5_noshield
 
-.SUBCKT bandgap_top vdd vss vref vsubs nwl
+.SUBCKT bandgap_top vdd vss vref vsubs
 Camp_CC vdd fb 6.914880e-12 cap_mim_2f0_m4m5_noshield
 Mamp_M1_0 amp_n1 sns2 amp_tail vsubs nfet L=4U W=25U
 Mamp_M1_1 amp_n1 sns2 amp_tail vsubs nfet L=4U W=25U
@@ -96,14 +96,14 @@ Mstartup_MKCASC_0 casc startup_det vss vsubs nfet L=2U W=2U
 Mstartup_MKFB_0 fb startup_det vss vsubs nfet L=2U W=2U
 Mstartup_MSENSE_0 startup_det ibias vss vsubs nfet L=2U W=10U
 Mstartup_MSENSE_1 startup_det ibias vss vsubs nfet L=2U W=10U
-Qcore_Q1 vsubs nw_core_Q1 sns1 bjt AE=2.500000e-11
-Qcore_Q2_0 vsubs nw_core_Q2_0 core_e2 bjt AE=2.500000e-11
-Qcore_Q2_1 vsubs nw_core_Q2_1 core_e2 bjt AE=2.500000e-11
-Qcore_Q2_2 vsubs nw_core_Q2_2 core_e2 bjt AE=2.500000e-11
-Qcore_Q2_3 vsubs nw_core_Q2_3 core_e2 bjt AE=2.500000e-11
-Qcore_Q3 vsubs nw_core_Q3 core_e3 bjt AE=2.500000e-11
-Qdum_pnp_l vsubs nw_dum_pnp_l vss bjt AE=2.500000e-11
-Qdum_pnp_r vsubs nw_dum_pnp_r vss bjt AE=2.500000e-11
+Qcore_Q1 vsubs nw_core_Q1 sns1 bjt AE=2.500000e-11 PE=2.000000e-05 AB=1.081600e-10 PB=4.160000e-05 AC=1.081600e-10 PC=4.160000e-05
+Qcore_Q2_0 vsubs nw_core_Q2_0 core_e2 bjt AE=2.500000e-11 PE=2.000000e-05 AB=1.081600e-10 PB=4.160000e-05 AC=1.081600e-10 PC=4.160000e-05
+Qcore_Q2_1 vsubs nw_core_Q2_1 core_e2 bjt AE=2.500000e-11 PE=2.000000e-05 AB=1.081600e-10 PB=4.160000e-05 AC=1.081600e-10 PC=4.160000e-05
+Qcore_Q2_2 vsubs nw_core_Q2_2 core_e2 bjt AE=2.500000e-11 PE=2.000000e-05 AB=1.081600e-10 PB=4.160000e-05 AC=1.081600e-10 PC=4.160000e-05
+Qcore_Q2_3 vsubs nw_core_Q2_3 core_e2 bjt AE=2.500000e-11 PE=2.000000e-05 AB=1.081600e-10 PB=4.160000e-05 AC=1.081600e-10 PC=4.160000e-05
+Qcore_Q3 vsubs nw_core_Q3 core_e3 bjt AE=2.500000e-11 PE=2.000000e-05 AB=1.081600e-10 PB=4.160000e-05 AC=1.081600e-10 PC=4.160000e-05
+Qdum_pnp_l vsubs nw_dum_pnp_l vss bjt AE=2.500000e-11 PE=2.000000e-05 AB=1.081600e-10 PB=4.160000e-05 AC=1.081600e-10 PC=4.160000e-05
+Qdum_pnp_r vsubs nw_dum_pnp_r vss bjt AE=2.500000e-11 PE=2.000000e-05 AB=1.081600e-10 PB=4.160000e-05 AC=1.081600e-10 PC=4.160000e-05
 Rcore_R1 core_e3 core_tn0 vsubs 76423.200000 ppolyf_u
 Rcore_R2 core_e2 sns2 vsubs 6359.500000 ppolyf_u
 Rcore_trim_RU0 core_tn0 core_tn0 vsubs 485.100000 ppolyf_u
