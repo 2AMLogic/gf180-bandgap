@@ -51,14 +51,24 @@ is invented here; each will be closed out as its own future decision record
 when the relevant design work (output stage, #10) resolves it.
 
 **Status**: simulation-complete → layout DRC/LVS-clean → measured silicon
-over temperature. Currently in simulation: device characterization and PVT
-corner sweeps are recorded as append-only evidence under `sim/` (see
+over temperature. Device characterization and PVT corner sweeps are
+recorded as append-only evidence under `sim/` (see
 [`sim/README.md`](sim/README.md) for the record format). A full block layout
-is now drawn and verified — DRC-clean and LVS-matching against the schematic
-netlist, with committed reports under `layout/` (see
+is drawn and verified — DRC-clean (0 violations) and LVS-matching against the
+schematic netlist on both comparators (`klt lvs` and an independent `netgen`
+cross-check), with committed reports under `layout/` (see
 [`layout/README.md`](layout/README.md), including what that LVS verdict does
-and does not cover). Post-layout extracted re-verification has not run yet;
-tapeout is not yet scheduled.
+and does not cover). Post-layout extracted re-verification **has** run — see
+[`sim/postlayout-delta.md`](sim/postlayout-delta.md): the schematic-level
+record passes the full spec-line suite, but the parasitic-extracted record
+currently fails the output-reference and temperature-coefficient rows. That
+gap is attributed to the drawn PNP array's 4.03 effective dVBE ratio versus
+the schematic's 3.63
+([#87](https://github.com/2AMLogic/gf180-bandgap/issues/87), blocked on a
+spec decision record), not to a layout or extraction defect. Tapeout is not
+scheduled; it is pending that decision and a subsequent passing
+extracted-netlist re-run (tracked in
+[#94](https://github.com/2AMLogic/gf180-bandgap/issues/94)).
 
 ## Layout
 
