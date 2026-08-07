@@ -152,19 +152,6 @@ def _run_corner(deck: Path, pdk: harness_pdk.Pdk, section: str, temp_c: float) -
     return log
 
 
-def _write_record(records_dir: Path, record: str, body: str) -> Path:
-    """Write `records/<record-id>.md`, refusing to overwrite (append-only)."""
-    records_dir.mkdir(parents=True, exist_ok=True)
-    path = records_dir / f"{record}.md"
-    if path.exists():
-        raise RuntimeError(
-            f"refusing to overwrite existing record {path} -- sim/ is append-only; "
-            "a re-run must mint a new record ID"
-        )
-    path.write_text(body, encoding="utf-8")
-    return path
-
-
 _OP_LINE = re.compile(r"^([a-zA-Z_][\w()\-.,+@#]*)\s*=\s*([-+0-9.eE]+)\s*$")
 
 
@@ -403,7 +390,7 @@ def main() -> int:
     harness_report.write_device_netlist_snapshot(
         HERE / "netlist-snapshots", record, deck
     )
-    path = _write_record(
+    path = harness_report.device_write_record(
         HERE / "records", record, build_record(record, stamp, pdk, ngspice, results)
     )
     print(f"wrote {path}")

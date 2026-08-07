@@ -403,6 +403,37 @@ class RecordIdTests(unittest.TestCase):
                 )
 
 
+class DeviceWriteRecordTests(unittest.TestCase):
+    """sim/device-*/run_*.py's shared append-only-guarded string writer.
+
+    Replaces the byte-identical private ``_write_record`` copies formerly
+    duplicated across all five ``sim/device-*/run_*.py`` scripts (#132).
+    """
+
+    def test_writes_the_body_verbatim_to_records_dir(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            records_dir = Path(tmp) / "records"
+            path = report.device_write_record(
+                records_dir, "20260729-153000-abc1234", "# a device record\n"
+            )
+            self.assertEqual(path, records_dir / "20260729-153000-abc1234.md")
+            self.assertEqual(path.read_text(), "# a device record\n")
+
+    def test_refuses_to_overwrite_an_existing_record(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            records_dir = Path(tmp) / "records"
+            records_dir.mkdir(parents=True)
+            (records_dir / "20260729-153000-abc1234.md").write_text("keep\n")
+            with self.assertRaises(RuntimeError):
+                report.device_write_record(
+                    records_dir, "20260729-153000-abc1234", "clobber\n"
+                )
+            # the existing record was not touched
+            self.assertEqual(
+                (records_dir / "20260729-153000-abc1234.md").read_text(), "keep\n"
+            )
+
+
 class MatrixConformanceTests(unittest.TestCase):
     """sim/README.md requires the full mandated matrix, or a stated reason."""
 

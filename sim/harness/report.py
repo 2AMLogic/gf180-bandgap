@@ -663,3 +663,22 @@ def write_device_netlist_snapshot(snapshot_dir: Path, record: str, deck: Path) -
     path = snapshot_dir / f"{record}.spice"
     shutil.copyfile(deck, path)
     return path
+
+
+def device_write_record(records_dir: Path, record: str, body: str) -> Path:
+    """Write ``records/<record-id>.md``, refusing to overwrite (append-only).
+
+    Unlike :func:`write_record`, which renders a structured ``dict`` via
+    :func:`render_record` for the ``tb.json``/``PvtPoint``-grid record model,
+    the ``device-*`` experiments compose their own pre-rendered markdown
+    ``body`` string and just need an append-only-guarded string writer.
+    """
+    records_dir.mkdir(parents=True, exist_ok=True)
+    path = records_dir / f"{record}.md"
+    if path.exists():
+        raise RuntimeError(
+            f"refusing to overwrite existing record {path} -- sim/ is append-only; "
+            "a re-run must mint a new record ID"
+        )
+    path.write_text(body, encoding="utf-8")
+    return path
