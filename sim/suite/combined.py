@@ -175,8 +175,9 @@ def parse_mc_samples(text: str) -> list[dict[str, float]]:
     """Split one Monte Carlo log's repeated ``op``/``print`` blocks into samples.
 
     A new sample starts whenever a name that has already been seen repeats --
-    the same rule ``sim/tools/devchar.py``'s ``parse_op_series`` uses, kept
-    local so the suite stays a self-contained reader of raw logs.
+    the same rule the Monte Carlo benches' own ``_parse_op_series`` uses (see
+    ``sim/mc-untrimmed/run_mc_untrimmed.py``), kept local so the suite stays a
+    self-contained reader of raw logs.
     """
     samples: list[dict[str, float]] = []
     current: dict[str, float] = {}

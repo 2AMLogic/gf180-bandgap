@@ -64,8 +64,9 @@ for a qualitative ranking within the combined bucket.
 `--dut` (default `design/netlist/bandgap_top.spice`) is copied into each
 run's ngspice working directory as `dut.spice` (mismatch-injected or
 verbatim, depending on the group), the same "corner shim" pattern
-`sim/tools/devchar.py` already uses for `corner.spice`. Pointing `--dut` at
-#17's future extracted netlist re-runs `testbench/tb_mc_untrimmed.spice`
+`sim/harness` (`sim/device-resistor-tc/run_resistor_tc.py`, the reference
+harness-as-library consumer) already uses for `corner.spice`. Pointing
+`--dut` at #17's future extracted netlist re-runs `testbench/tb_mc_untrimmed.spice`
 unmodified, provided the extracted netlist still calls `ppolyf_u` primitives
 by name for the matched resistors (true of a schematic-preserving PEX flow;
 flagged here rather than assumed).
@@ -86,12 +87,16 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE.parent / "tools"))
+sys.path.insert(0, str(HERE.parent))
 
-import devchar as dc  # noqa: E402
+from harness import corners as harness_corners  # noqa: E402
+from harness import pdk as harness_pdk  # noqa: E402
+from harness import report as harness_report  # noqa: E402
+from harness.runner import ngspice_version  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Run parameters
@@ -268,24 +273,30 @@ def inject_resistor_mismatch(text: str) -> tuple[str, list[dict]]:
 # ---------------------------------------------------------------------------
 
 
-def section_shim(pdk: dc.Pdk, temp_c: float, sw_stat_mismatch: int) -> str:
+def section_shim(pdk: harness_pdk.Pdk, temp_c: float, sw_stat_mismatch: int) -> str:
     lines = [
         "* Generated per (group, temperature) point by run_mc_untrimmed.py from",
-        "* $PDK_ROOT/$PDK -- do not edit by hand, and do not commit.",
-        f".include {pdk.design}",
+        "* $PDK_ROOT/$PDK (via sim/harness/pdk.py) -- do not edit by hand, and "
+        "do not commit.",
+        f'.include "{pdk.design_include}"',
     ]
-    lines += [f".lib {pdk.models} {section}" for section in SECTIONS]
+    lines += [f'.lib "{pdk.model_lib}" {section}' for section in SECTIONS]
     lines.append(f".temp {temp_c:g}")
     lines.append(f".param sw_stat_mismatch = {sw_stat_mismatch}")
     return "\n".join(lines) + "\n"
 
 
 def run_point(
-    deck: Path, pdk: dc.Pdk, temp_c: float, sw_stat_mismatch: int, dut_text: str
+    deck: Path,
+    pdk: harness_pdk.Pdk,
+    temp_c: float,
+    sw_stat_mismatch: int,
+    dut_text: str,
 ) -> str:
     """Run `deck` (the committed MC testbench) with a generated `shim.spice`
     (models/temp/switch) and `dut.spice` (this point's DUT variant) alongside
-    it, mirroring `sim/tools/devchar.py`'s single-file corner shim.
+    it, mirroring the corner-shim pattern `sim/harness`'s device-level
+    consumers use (see `device-resistor-tc/run_resistor_tc.py`).
     """
     with tempfile.TemporaryDirectory(prefix="mc-untrimmed-") as tmp:
         work = Path(tmp)
@@ -313,14 +324,24 @@ def run_point(
 
 
 def log_header(
-    pdk: dc.Pdk,
+    pdk: harness_pdk.Pdk,
     deck: Path,
     group: str,
     cfg: dict,
     temp_c: float,
     record: str,
     stamp,
+    ngspice: str,
 ) -> str:
+    """Provenance banner for this bench's corner logs.
+
+    Local rather than `harness.report.device_log_header`: that banner is the
+    two-terminal device-level shape (a single `corner` line, `supply : n/a`),
+    while this bench's points are named by mismatch *group* and do carry a
+    real supply rail plus the `sw_stat_mismatch` / DUT-variant switches that
+    define the group. The log body itself still lands through the harness
+    (`report.write_device_corner_log`).
+    """
     return (
         "* ====================================================================\n"
         f"* record-id  : {record}\n"
@@ -330,20 +351,84 @@ def log_header(
         f"* supply     : {SUPPLY_ID} (fixed nominal -- mismatch claim, no supply sweep)\n"
         f"* sw_stat_mismatch : {cfg['sw_stat_mismatch']}\n"
         f"* dut variant : {cfg['dut']}\n"
-        f"* pdk        : {pdk.label}\n"
-        f"* ngspice    : {dc.ngspice_version()}\n"
+        f"* pdk        : {pdk.variant} ({pdk.path})\n"
+        f"* ngspice    : {ngspice}\n"
         f"* run (UTC)  : {stamp:%Y-%m-%dT%H:%M:%SZ}\n"
         "* ====================================================================\n"
     )
 
 
+def _write_record(records_dir: Path, record: str, body: str) -> Path:
+    """Write `records/<record-id>.md`, refusing to overwrite (append-only).
+
+    Local rather than `harness.report.write_record`: that one takes the
+    structured `Testbench`/`PvtPoint`-grid record dict `report.build_record()`
+    produces and renders it itself, whereas this bench's own `build_record()`
+    returns a fully rendered Markdown body shaped around Monte Carlo *groups*
+    (see `GROUPS`), not a PVT corner grid. Same append-only guard either way.
+    """
+    records_dir.mkdir(parents=True, exist_ok=True)
+    path = records_dir / f"{record}.md"
+    if path.exists():
+        raise RuntimeError(
+            f"refusing to overwrite existing record {path} -- sim/ is append-only; "
+            "a re-run must mint a new record ID"
+        )
+    path.write_text(body, encoding="utf-8")
+    return path
+
+
 # ---------------------------------------------------------------------------
-# Extraction
+# Extraction -- ngspice `print` output parsing and the small stats helpers it
+# feeds. Not sourced from sim/harness (which has no equivalent -- its own
+# `runner.parse_measurements()` targets a single `let m_<name>` scalar per
+# corner, not a repeated Monte Carlo `op` series), so this is a local copy of
+# the same logic the retired `sim/tools/devchar.py` used to provide, kept
+# device/experiment-specific here per this experiment's actual output shape.
 # ---------------------------------------------------------------------------
+
+_OP_LINE = re.compile(r"^([a-zA-Z_][\w()\-.,+@#]*)\s*=\s*([-+0-9.eE]+)\s*$")
+
+
+def _parse_op_series(log: str) -> list[dict[str, float]]:
+    """Parse repeated `op`+`print` blocks (the Monte Carlo loop) into samples.
+
+    A new sample starts whenever a name that has already been seen repeats.
+    """
+    samples: list[dict[str, float]] = []
+    current: dict[str, float] = {}
+    for line in log.splitlines():
+        match = _OP_LINE.match(line.strip())
+        if not match:
+            continue
+        name = match.group(1).lower()
+        try:
+            value = float(match.group(2))
+        except ValueError:
+            continue
+        if name in current:
+            samples.append(current)
+            current = {}
+        current[name] = value
+    if current:
+        samples.append(current)
+    return samples
+
+
+def _mean(values: list[float]) -> float:
+    return sum(values) / len(values)
+
+
+def _stdev(values: list[float]) -> float:
+    n = len(values)
+    if n < 2:
+        return 0.0
+    mean_v = _mean(values)
+    return math.sqrt(sum((v - mean_v) ** 2 for v in values) / (n - 1))
 
 
 def extract(log: str) -> dict:
-    samples = dc.parse_op_series(log)
+    samples = _parse_op_series(log)
     if len(samples) != N_SAMPLES:
         raise RuntimeError(
             f"expected {N_SAMPLES} Monte Carlo samples in the log, parsed "
@@ -354,11 +439,11 @@ def extract(log: str) -> dict:
     degenerate = [i for i, cur in enumerate(isup) if abs(cur) < DEGENERATE_ISUP_THRESHOLD_A]
     return {
         "n": len(samples),
-        "mean": dc.mean(vref),
-        "sigma": dc.stdev(vref),
+        "mean": _mean(vref),
+        "sigma": _stdev(vref),
         "min": min(vref),
         "max": max(vref),
-        "isup_mean": dc.mean(isup),
+        "isup_mean": _mean(isup),
         "degenerate_count": len(degenerate),
         "degenerate_indices": degenerate,
     }
@@ -440,7 +525,9 @@ def provenance_origin(relative: Path) -> str:
     return ", from `design/bandgap_top.sch`, #8"
 
 
-def build_record(record, stamp, pdk, dut_path: Path, injected: list[dict], results: dict) -> str:
+def build_record(
+    record, stamp, pdk, ngspice: str, dut_path: Path, injected: list[dict], results: dict
+) -> str:
     lines: list[str] = []
     add = lines.append
 
@@ -466,7 +553,7 @@ def build_record(record, stamp, pdk, dut_path: Path, injected: list[dict], resul
         "(#14) and the layout matching plan (#16)."
     )
     add(f"  - {RUN_CONTEXT['netlist_caveat']}")
-    relative = dut_path.relative_to(dc.repo_root(HERE))
+    relative = dut_path.relative_to(harness_pdk.REPO_ROOT)
     add(
         f"- **Netlist provenance**: {provenance_class(relative)} "
         f"(`{relative}`{provenance_origin(relative)}), with the "
@@ -696,7 +783,7 @@ def build_record(record, stamp, pdk, dut_path: Path, injected: list[dict], resul
     add(f"  - Netlist snapshot (mismatch-injected DUT): `sim/mc-untrimmed/netlist-snapshots/{record}.spice`")
     add(f"  - Raw logs: `sim/mc-untrimmed/corners/{record}/`")
     add("  - Device-level supporting evidence: `sim/device-mos-mismatch/records/20260731-031718-8fb0ea6.md`, `sim/device-pnp-mismatch/records/20260731-040850-187a336.md`")
-    add(f"  - PDK: {pdk.label}, ngspice {dc.ngspice_version()}")
+    add(f"  - PDK: {pdk.variant} ({pdk.path}), ngspice {ngspice}")
     add(
         "  - Friction-protocol candidate (to file generically, no design "
         "details, per CLAUDE.md): gf180mcu's ngspice models expose a single "
@@ -783,8 +870,9 @@ def main() -> int:
         RUN_CONTEXT["miss_note"] = args.miss_note
     RUN_CONTEXT["author"] = args.author
 
-    pdk = dc.resolve_pdk()
-    root = dc.repo_root(HERE)
+    pdk = harness_pdk.find_pdk()
+    root = harness_pdk.REPO_ROOT
+    ngspice = ngspice_version()
     # Resolved, because the record cites it repo-relative: a `--dut` given as
     # a relative path (the natural way to type it from the repo root) is not
     # a subpath of the absolute repo root until it is resolved, and the
@@ -799,7 +887,9 @@ def main() -> int:
     dut_mm, injected = inject_resistor_mismatch(dut_baseline)
     dut_by_variant = {"baseline": dut_baseline, "mm": dut_mm}
 
-    record, stamp = dc.mint_record_id(root)
+    git = harness_report.git_provenance(root)
+    record = harness_report.allocate_record_id(root, HERE / "records", git=git)
+    stamp = datetime.strptime(record[:15], "%Y%m%d-%H%M%S").replace(tzinfo=timezone.utc)
     deck = HERE / "testbench" / "tb_mc_untrimmed.spice"
 
     total_points = len(GROUPS) * len(TEMPS)
@@ -824,13 +914,13 @@ def main() -> int:
         }
         for future in concurrent.futures.as_completed(futures):
             group, cfg, temp = futures[future]
-            cid = dc.corner_id(group, temp, supply=SUPPLY_ID)
+            cid = harness_corners.device_corner_id(group, temp, SUPPLY_ID)
             log = future.result()
-            dc.write_log(
+            harness_report.write_device_corner_log(
                 HERE / "corners",
                 record,
                 cid,
-                log_header(pdk, deck, group, cfg, temp, record, stamp),
+                log_header(pdk, deck, group, cfg, temp, record, stamp, ngspice),
                 log,
             )
             stats = extract(log)
@@ -849,10 +939,10 @@ def main() -> int:
         raise RuntimeError(f"refusing to overwrite existing snapshot {snap_path}")
     snap_path.write_text(dut_mm, encoding="utf-8")
 
-    path = dc.write_record(
+    path = _write_record(
         HERE / "records",
         record,
-        build_record(record, stamp, pdk, dut_path, injected, results),
+        build_record(record, stamp, pdk, ngspice, dut_path, injected, results),
     )
     print(f"wrote {path}")
     return 0
