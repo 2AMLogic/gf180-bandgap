@@ -16,5 +16,26 @@
     "dr1": "v(er1a) - v(er1b)",
     "dr10": "v(er10a) - v(er10b)"
   },
-  "checks": {}
+  "checks": {
+    "da1": {
+      "min": -0.001,
+      "max": 0.001,
+      "description": "loose wiring sanity bound on the unseeded single-draw dVBE for the identical pair (run_pnp_mismatch.py's seeded N=300 record reports sigma ~0.04-0.05 mV here); +/-1 mV is a wide margin and should never flake"
+    },
+    "da10": {
+      "min": -0.001,
+      "max": 0.001,
+      "description": "loose wiring sanity bound on the unseeded single-draw dVBE for the identical pair (run_pnp_mismatch.py's seeded N=300 record reports sigma ~0.04-0.05 mV here); +/-1 mV is a wide margin and should never flake"
+    },
+    "dr1": {
+      "min": 0.015,
+      "max": 0.055,
+      "description": "loose wiring sanity bound on the unseeded single-draw dVBE for the area-ratioed pair. This pair's dVBE is dominated by the deterministic emitter-area ratio (~25.5-44.7 mV across -40..125 C in run_pnp_mismatch.py's seeded N=300 record), not by mismatch, so the bound is asymmetric and centered on that range rather than on zero -- min_spread_pct is not used because this generic-CLI run's three temperatures are independent unseeded draws"
+    },
+    "dr10": {
+      "min": 0.015,
+      "max": 0.055,
+      "description": "loose wiring sanity bound on the unseeded single-draw dVBE for the area-ratioed pair. This pair's dVBE is dominated by the deterministic emitter-area ratio (~25.6-44.7 mV across -40..125 C in run_pnp_mismatch.py's seeded N=300 record), not by mismatch, so the bound is asymmetric and centered on that range rather than on zero -- min_spread_pct is not used because this generic-CLI run's three temperatures are independent unseeded draws"
+    }
+  }
 }

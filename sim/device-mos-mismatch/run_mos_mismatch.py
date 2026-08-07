@@ -51,6 +51,18 @@ TEMPS = [-40.0, 27.0, 125.0]
 N_SAMPLES = 300  # must match `let mc_runs` in the control block below
 SEED = 20260731  # must match `setseed` in the control block below
 
+# Guards against a silently-ignored `sw_stat_mismatch`: if the switch were not
+# actually wired up, every `reset` draw would resolve to the same op point and
+# every pair would report sigma == 0.000 without complaint (issue #121).
+# SIGMA_FLOOR_V is well under the smallest sigma ever observed on this
+# experiment (~1.10 mV, `dn4`/`dp4` @ -40 C) -- about an order of magnitude
+# down -- so it only trips on a genuinely non-randomizing draw, not on normal
+# run-to-run variation. MEAN_K bounds the sample mean to a generous multiple
+# of its expected standard error (sigma / sqrt(N)); a mean far outside that
+# is the other symptom of a non-random (or otherwise miswired) draw.
+SIGMA_FLOOR_V = 1e-4  # 0.1 mV
+MEAN_K = 8
+
 # vector -> (label, W um, L um, bias A)
 PAIRS = {
     "dn1": ("nfet_03v3 10/1", 10.0, 1.0, 1e-6),
@@ -248,9 +260,24 @@ def extract(log: str) -> dict[str, dict[str, float]]:
     out: dict[str, dict[str, float]] = {}
     for key in PAIRS:
         values = [s[key] for s in samples]
+        mean = _mean(values)
+        sigma = _stdev(values)
+        if sigma <= SIGMA_FLOOR_V:
+            raise RuntimeError(
+                f"pair {key!r}: sigma={sigma * 1e3:.6f} mV is at or below the "
+                f"{SIGMA_FLOOR_V * 1e3:g} mV floor -- the Monte Carlo draw does "
+                "not appear to be re-randomizing (sw_stat_mismatch ignored?)"
+            )
+        bound = MEAN_K * sigma / math.sqrt(N_SAMPLES)
+        if abs(mean) > bound:
+            raise RuntimeError(
+                f"pair {key!r}: mean={mean * 1e3:+.6f} mV exceeds {MEAN_K}x its "
+                f"expected standard error ({bound * 1e3:.6f} mV) -- the draw may "
+                "not be centered at zero / re-randomizing correctly"
+            )
         out[key] = {
-            "mean": _mean(values),
-            "sigma": _stdev(values),
+            "mean": mean,
+            "sigma": sigma,
             "max_abs": max(abs(v) for v in values),
         }
     return out
