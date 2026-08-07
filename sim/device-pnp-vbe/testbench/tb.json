@@ -1,0 +1,26 @@
+{
+  "name": "device-pnp-vbe",
+  "description": "gf180mcu vertical (substrate) PNP characterization: four emitter geometries (pnp_05p00x05p00, pnp_10p00x10p00, pnp_05p00x00p42, pnp_10p00x00p42), diode-connected in the bandgap-core configuration. This manifest lets sim/run_corners.py run the same fragment as a generic representative check (VBE/Ib at the fragment's fixed 1 uA bias, --list/--check-env discovery); the authoritative evidence record -- VBE(I,T), dVBE/dT, dVBE between the area-ratioed pair, ideality factor, forward beta and the usable emitter-current window over a 1 pA .. 1 mA DC sweep -- is produced by run_pnp_vbe.py, which drives sim/harness's library (pdk.py, runner.py, report.py, corners.py) directly because a DC-sweep-plus-interpolation extraction does not fit a single tb.json op-point grid.",
+  "claim": "gf180mcu vertical (substrate) PNP device characterization for the Brokaw core selected in DR-0001 (spec/decision-records/0001-bandgap-topology-selection.md). See run_pnp_vbe.py's records/ output for the full VBE(I,T)/dVBE/ideality/beta extraction; this manifest's own generic-CLI run reports raw VBE/Ib at the fragment's fixed 1 uA bias only.",
+  "netlist": "tb_pnp_vbe.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0,
+  "temperatures_c": [-40, 27, 125],
+  "corners": ["tt", "bjt_ff", "bjt_ss"],
+  "analyses": ["op"],
+  "subset_reason": "No supply rail: every DUT is a two-terminal diode-connected device driven by an ideal current source with its collector/base at ground, so the +/-10% supply axis has nothing to sweep -- see the 'nosupply' corner-id production in sim/README.md. run_pnp_vbe.py's own records/ output uses that convention directly (corner-ids like bjt_ff_-40c_nosupply); this generic-CLI run collapses the supply axis to nominal instead, since sim/run_corners.py's grid always carries a vdd_val.",
+  "measure": {
+    "vbe_5x5": "v(e5x5)",
+    "vbe_10x10": "v(e10x10)",
+    "ib_5x5": "abs(i(vb5x5))",
+    "ib_10x10": "abs(i(vb10x10))"
+  },
+  "checks": {
+    "vbe_5x5": {
+      "min": 0.4,
+      "max": 0.9,
+      "min_spread_pct": 1.0,
+      "description": "sanity range for pnp_05p00x05p00 VBE at the fragment's fixed 1 uA bias; the spread floor proves the BJT .lib sections and .temp actually change the bias point"
+    }
+  }
+}

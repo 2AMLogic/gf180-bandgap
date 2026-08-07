@@ -1,0 +1,20 @@
+{
+  "name": "device-mos-mismatch",
+  "description": "gf180mcu 3.3V MOS local-mismatch: eight nominally identical, equally biased nfet_03v3/pfet_03v3 pairs (W/L = 10/1 and 10/4, at 1 uA and 10 uA). This manifest lets sim/run_corners.py run the same fragment as a generic representative check (one un-reproducible, single-draw sample of each pair's gate-voltage difference, --list/--check-env discovery); the authoritative evidence record -- N=300, seeded Monte Carlo mean/sigma/3-sigma per pair, at three temperatures -- is produced by run_mos_mismatch.py, which drives sim/harness's library (pdk.py, runner.py, report.py, corners.py) directly because a `dowhile`/`reset` Monte Carlo loop does not fit a single tb.json op-point grid.",
+  "claim": "gf180mcu 3.3 V MOS local mismatch for the mirror and amplifier-input devices of the Brokaw core selected in DR-0001 (spec/decision-records/0001-bandgap-topology-selection.md). See run_mos_mismatch.py's records/ output for the full N=300 seeded distribution; this manifest's own generic-CLI run reports one un-reproducible sample only, with no statistical claim.",
+  "netlist": "tb_mos_mismatch.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0,
+  "temperatures_c": [-40, 27, 125],
+  "corners": ["tt"],
+  "analyses": ["op"],
+  "params": {"sw_stat_mismatch": 1},
+  "subset_reason": "No supply rail: every DUT is referred to its own source node at ground and driven by an ideal current source, so the +/-10% supply axis has nothing to sweep -- see the 'nosupply' corner-id production in sim/README.md. Process is `typical` only: local mismatch is intra-die variation, deliberately decoupled from the global process-corner axis already recorded in device-mos-vth (see run_mos_mismatch.py's own subset justification). run_mos_mismatch.py's own records/ output uses the 'nosupply' convention directly (corner-ids like typical_-40c_nosupply); this generic-CLI run collapses the supply axis to nominal instead, since sim/run_corners.py's grid always carries a vdd_val, and reports one un-seeded op-point sample rather than the N=300 seeded distribution -- see 'claim' above.",
+  "measure": {
+    "dn1": "v(gn1a) - v(gn1b)",
+    "dn4": "v(gn4a) - v(gn4b)",
+    "dp1": "v(gp1a) - v(gp1b)",
+    "dp4": "v(gp4a) - v(gp4b)"
+  },
+  "checks": {}
+}

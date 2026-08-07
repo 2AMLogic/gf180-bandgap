@@ -1,0 +1,26 @@
+{
+  "name": "device-mos-vth",
+  "description": "gf180mcu 3.3V MOS threshold-adjacent characterization (nfet_03v3/pfet_03v3, diode-connected, W/L = 10/1 and 10/4). This manifest lets sim/run_corners.py run the same fragment as a generic representative check (Vgs at the fragment's fixed 1 uA bias, --list/--check-env discovery); the authoritative evidence record -- constant-current |Vth| extraction over a 10 nA .. 1 mA DC sweep, temperature drift, process-corner spread and Vgs at candidate bias currents -- is produced by run_mos_vth.py, which drives sim/harness's library (pdk.py, runner.py, report.py, corners.py) directly because a DC-sweep-plus-interpolation extraction does not fit a single tb.json op-point grid.",
+  "claim": "gf180mcu 3.3 V MOS threshold characterization for the mirror/cascode/amplifier devices of the Brokaw core selected in DR-0001 (spec/decision-records/0001-bandgap-topology-selection.md). See run_mos_vth.py's records/ output for the full constant-current |Vth| extraction; this manifest's own generic-CLI run reports raw Vgs at the fragment's fixed 1 uA bias only.",
+  "netlist": "tb_mos_vth.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0,
+  "temperatures_c": [-40, 27, 125],
+  "corners": ["mos"],
+  "analyses": ["op"],
+  "subset_reason": "No supply rail: every DUT is referred to its own source node at ground and driven by an ideal current source, so the +/-10% supply axis has nothing to sweep -- see the 'nosupply' corner-id production in sim/README.md. run_mos_vth.py's own records/ output uses that convention directly (corner-ids like ff_-40c_nosupply); this generic-CLI run collapses the supply axis to nominal instead, since sim/run_corners.py's grid always carries a vdd_val.",
+  "measure": {
+    "vgs_n1": "v(gn1)",
+    "vgs_n4": "v(gn4)",
+    "vgs_p1": "abs(v(gp1))",
+    "vgs_p4": "abs(v(gp4))"
+  },
+  "checks": {
+    "vgs_n1": {
+      "min": 0.3,
+      "max": 1.2,
+      "min_spread_pct": 1.0,
+      "description": "sanity range for nfet_03v3 10/1 Vgs at the fragment's fixed 1 uA bias; the spread floor proves the MOS .lib sections and .temp actually change the bias point"
+    }
+  }
+}

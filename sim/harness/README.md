@@ -300,11 +300,16 @@ evidence record is written by the experiment's own `run_*.py`, which imports
 `sim/harness` as a library rather than going through `run_corners.py`'s CLI.
 `device-resistor-tc/run_resistor_tc.py` is the reference example.
 
-As of issue #117, `device-resistor-tc` has been migrated onto this pattern;
-`device-mos-vth`, `device-pnp-vbe`, `device-mos-mismatch` and
-`device-pnp-mismatch` still depend on `sim/tools/devchar.py` and are tracked
-for the same migration in follow-up issues. `sim/tools/devchar.py` cannot be
-deleted until all five have moved off it.
+As of issue #117, all five `sim/device-*/` experiments (`device-resistor-tc`,
+`device-mos-vth`, `device-pnp-vbe`, `device-mos-mismatch`,
+`device-pnp-mismatch`) have migrated onto this pattern -- none of them import
+`sim/tools/devchar.py` any more. `sim/tools/devchar.py` is nonetheless **not
+yet deleted**: `sim/mc-untrimmed/run_mc_untrimmed.py` (a circuit-level Monte
+Carlo bench, not one of the five device-level experiments issue #117 scoped)
+also imports it for the same PDK-resolution / record-id / corner-id / log /
+record plumbing, and was not accounted for in the issue's original grep
+evidence. Retiring `sim/tools/devchar.py` needs that sixth consumer migrated
+first, tracked as a follow-up to issue #117.
 
 ## xschem
 
