@@ -1468,10 +1468,6 @@ def load(
     return combined
 
 
-def build_parser() -> argparse.ArgumentParser:
-    return _build_parser()
-
-
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="run_combined_accuracy.py",
