@@ -6,19 +6,42 @@ Executes `testbench/tb_resistor_tc.spice` headlessly through ngspice at every
 commits the raw per-corner logs, freezes the netlist snapshot, and writes one
 append-only summary record under `records/` per `sim/README.md`.
 
+This experiment is driven directly against `sim/harness`'s library modules
+(`pdk.py`, `runner.py`, `report.py`, `corners.py`) rather than the retired
+`sim/tools/devchar.py` (issue #117): PDK discovery, ngspice-version detection,
+git provenance / record-id minting and the two-terminal device-testbench
+corner-id naming (`sim/README.md`'s `nosupply` grammar) are all harness
+functions now. What stays local is genuinely specific to this experiment --
+composing/running the per-corner deck for a 12-DUT, no-supply-rail
+characterization plus its well-bias and HV-bias sub-sweeps, parsing raw
+`print` output, and the sheet-resistance / TC / corner-spread / VCR analysis
+-- none of which the current `tb.json` single-grid contract expresses.
+`testbench/tb.json` still documents this experiment for harness discovery
+(`sim/run_corners.py --list`) and supports a secondary, representative
+generic-CLI run (`python3 sim/run_corners.py device-resistor-tc`) that reports
+the raw DUT currents; it is not what produces the record below.
+
 Usage:
     PDK_ROOT=... PDK=gf180mcuD sim/device-resistor-tc/run_resistor_tc.py
 """
 
 from __future__ import annotations
 
+import re
+import shutil
+import subprocess
 import sys
+import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE.parent / "tools"))
+sys.path.insert(0, str(HERE.parent))
 
-import devchar as dc  # noqa: E402
+from harness import corners as harness_corners  # noqa: E402
+from harness import pdk as harness_pdk  # noqa: E402
+from harness import report as harness_report  # noqa: E402
+from harness.runner import ngspice_version  # noqa: E402
 
 SECTIONS = ["res_ss", "res_typical", "res_ff"]
 TEMPS = [-40.0, 27.0, 125.0]
@@ -49,8 +72,150 @@ HV_DUTS = {
 }
 
 
+# --------------------------------------------------------------------------
+# Deck composition / ngspice execution -- this experiment measures 12 DUTs
+# per corner via raw `print` (not the single-scalar `let m_<name>` convention
+# sim/harness/runner.py's compose_deck() targets) and layers a well-bias
+# sub-sweep with an extra `.param` on top of the main grid, so it composes
+# its own minimal shim instead of going through compose_deck(). PDK model
+# paths still come from sim/harness/pdk.py -- nothing here re-resolves the
+# PDK on its own.
+# --------------------------------------------------------------------------
+
+
+def _corner_shim(pdk: harness_pdk.Pdk, section: str, temp_c: float, extra: str) -> str:
+    return (
+        "* Generated per corner point by run_resistor_tc.py from\n"
+        "* $PDK_ROOT/$PDK (via sim/harness/pdk.py) -- do not edit by hand, "
+        "and do not commit.\n"
+        f'.include "{pdk.design_include}"\n'
+        f'.lib "{pdk.model_lib}" {section}\n'
+        f".temp {temp_c:g}\n" + (extra + "\n" if extra else "")
+    )
+
+
+def _run_corner(
+    deck: Path, pdk: harness_pdk.Pdk, section: str, temp_c: float, extra_shim: str = ""
+) -> str:
+    """Run `deck` through ngspice at one (model section, temperature) point."""
+    with tempfile.TemporaryDirectory(prefix="device-resistor-tc-") as tmp:
+        work = Path(tmp)
+        local_deck = work / deck.name
+        (work / "corner.spice").write_text(
+            _corner_shim(pdk, section, temp_c, extra_shim), encoding="utf-8"
+        )
+        (work / "control.spice").write_text(
+            ".control\n"
+            "op\n"
+            "print i(v_pu_w1) i(v_pu_w5)\n"
+            "print i(v_p1k_w1) i(v_p1k_w5)\n"
+            "print i(v_p2k_w1) i(v_p2k_w5)\n"
+            "print i(v_p3k_w1) i(v_p3k_w5)\n"
+            "print i(v_pp_w1) i(v_pp_w5)\n"
+            "print i(v_np_w1) i(v_np_w5)\n"
+            "print i(v_p1k_hv) i(v_p2k_hv) i(v_p3k_hv)\n"
+            "quit\n"
+            ".endc\n",
+            encoding="utf-8",
+        )
+        local_deck.write_text(
+            '.include "corner.spice"\n'
+            + deck.read_text(encoding="utf-8")
+            + '\n.include "control.spice"\n.end\n',
+            encoding="utf-8",
+        )
+        proc = subprocess.run(
+            ["ngspice", "-b", deck.name],
+            cwd=work,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    log = proc.stdout + proc.stderr
+    if proc.returncode != 0:
+        raise RuntimeError(
+            f"ngspice exited {proc.returncode} for {deck.name} "
+            f"[{section} @ {temp_c} C]\n{log}"
+        )
+    if re.search(r"^\s*(Error|ERROR|fatal)", log, re.MULTILINE):
+        raise RuntimeError(f"ngspice reported an error for {deck.name}:\n{log}")
+    return log
+
+
+def _log_header(
+    pdk: harness_pdk.Pdk,
+    deck: Path,
+    section: str,
+    temp_c: float,
+    record: str,
+    stamp: datetime,
+    ngspice: str,
+) -> str:
+    return (
+        "* ====================================================================\n"
+        f"* record-id : {record}\n"
+        f"* testbench : {deck.name}\n"
+        f"* corner    : {section}\n"
+        f"* temp      : {temp_c:g} C\n"
+        "* supply    : n/a (no supply rail in this device-level testbench)\n"
+        f"* pdk       : {pdk.variant} ({pdk.path})\n"
+        f"* ngspice   : {ngspice}\n"
+        f"* run (UTC) : {stamp:%Y-%m-%dT%H:%M:%SZ}\n"
+        "* ====================================================================\n"
+    )
+
+
+def _write_log(corners_dir: Path, record: str, cid: str, header: str, log: str) -> Path:
+    out_dir = corners_dir / record
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path = out_dir / f"{cid}.log"
+    path.write_text(header + log, encoding="utf-8")
+    return path
+
+
+def _snapshot_netlist(snapshot_dir: Path, record: str, deck: Path) -> Path:
+    snapshot_dir.mkdir(parents=True, exist_ok=True)
+    path = snapshot_dir / f"{record}.spice"
+    shutil.copyfile(deck, path)
+    return path
+
+
+def _write_record(records_dir: Path, record: str, body: str) -> Path:
+    """Write `records/<record-id>.md`, refusing to overwrite (append-only)."""
+    records_dir.mkdir(parents=True, exist_ok=True)
+    path = records_dir / f"{record}.md"
+    if path.exists():
+        raise RuntimeError(
+            f"refusing to overwrite existing record {path} -- sim/ is append-only; "
+            "a re-run must mint a new record ID"
+        )
+    path.write_text(body, encoding="utf-8")
+    return path
+
+
+_OP_LINE = re.compile(r"^([a-zA-Z_][\w()\-.,+@#]*)\s*=\s*([-+0-9.eE]+)\s*$")
+
+
+def _parse_op(log: str) -> dict[str, float]:
+    """Parse `print a b c` scalars emitted by an `op` analysis."""
+    values: dict[str, float] = {}
+    for line in log.splitlines():
+        match = _OP_LINE.match(line.strip())
+        if match:
+            try:
+                values[match.group(1).lower()] = float(match.group(2))
+            except ValueError:
+                continue
+    return values
+
+
+# --------------------------------------------------------------------------
+# Device-specific analysis
+# --------------------------------------------------------------------------
+
+
 def resistances(log: str) -> dict[str, float]:
-    values = dc.parse_op(log)
+    values = _parse_op(log)
     out: dict[str, float] = {}
     for name, (_flavor, vec, _w, _l, bias) in DUTS.items():
         out[name] = bias / abs(values[vec])
@@ -68,7 +233,7 @@ def ppm_per_c(r_hot: float, r_cold: float, r_ref: float, dt: float) -> float:
     return 1e6 * (r_hot - r_cold) / (r_ref * dt)
 
 
-def build_record(record, stamp, pdk, results, supply_check) -> str:
+def build_record(record, stamp, pdk, ngspice, results, supply_check) -> str:
     lines: list[str] = []
     add = lines.append
 
@@ -252,32 +417,38 @@ def build_record(record, stamp, pdk, results, supply_check) -> str:
         f"  - Netlist snapshot: `sim/device-resistor-tc/netlist-snapshots/{record}.spice`"
     )
     add(f"  - Raw logs: `sim/device-resistor-tc/corners/{record}/`")
-    add(f"  - PDK: {pdk.label}, ngspice {dc.ngspice_version()}")
-    add(f"- **Timestamp / author**: {stamp:%Y-%m-%dT%H:%M:%SZ}, agent-builder (issue #4)")
+    add(f"  - PDK: {pdk.variant} ({pdk.path}), ngspice {ngspice}")
+    add(
+        f"- **Timestamp / author**: {stamp:%Y-%m-%dT%H:%M:%SZ}, agent-builder "
+        "(issue #4, re-run onto sim/harness by issue #117)"
+    )
     add("- **Supersedes**: (none -- first record for this claim)")
     add("")
     return "\n".join(lines)
 
 
 def main() -> int:
-    pdk = dc.resolve_pdk()
-    root = dc.repo_root(HERE)
-    record, stamp = dc.mint_record_id(root)
+    pdk = harness_pdk.find_pdk()
+    root = harness_pdk.REPO_ROOT
+    ngspice = ngspice_version()
+    git = harness_report.git_provenance(root)
+    record = harness_report.allocate_record_id(root, HERE / "records", git=git)
+    stamp = datetime.strptime(record[:15], "%Y%m%d-%H%M%S").replace(tzinfo=timezone.utc)
     deck = HERE / "testbench" / "tb_resistor_tc.spice"
 
     print(f"record {record}: {len(SECTIONS) * len(TEMPS)} corner points + 2 well-bias")
     results: dict[tuple[str, float], dict[str, float]] = {}
     for section in SECTIONS:
         for temp in TEMPS:
-            cid = dc.corner_id(section, temp)
-            log = dc.run_corner(
+            cid = harness_corners.device_corner_id(section, temp)
+            log = _run_corner(
                 deck, pdk, section, temp, f".param v_nwell = {NOMINAL_NWELL}"
             )
-            dc.write_log(
+            _write_log(
                 HERE / "corners",
                 record,
                 cid,
-                dc.log_header(pdk, deck, section, temp, record, stamp),
+                _log_header(pdk, deck, section, temp, record, stamp, ngspice),
                 log,
             )
             results[(section, temp)] = resistances(log)
@@ -286,23 +457,23 @@ def main() -> int:
     supply_check: dict[float, dict[str, float]] = {}
     for vnw in (2.97, 3.63):
         tag = f"nwell{vnw:.2f}v".replace(".", "p")
-        cid = dc.corner_id("res_typical", 27.0, tag)
-        log = dc.run_corner(deck, pdk, "res_typical", 27.0, f".param v_nwell = {vnw}")
-        dc.write_log(
+        cid = harness_corners.device_corner_id("res_typical", 27.0, tag)
+        log = _run_corner(deck, pdk, "res_typical", 27.0, f".param v_nwell = {vnw}")
+        _write_log(
             HERE / "corners",
             record,
             cid,
-            dc.log_header(pdk, deck, "res_typical", 27.0, record, stamp),
+            _log_header(pdk, deck, "res_typical", 27.0, record, stamp, ngspice),
             log,
         )
         supply_check[vnw] = resistances(log)
         print(f"  {cid}: ok")
 
-    dc.snapshot_netlist(HERE / "netlist-snapshots", record, deck)
-    path = dc.write_record(
+    _snapshot_netlist(HERE / "netlist-snapshots", record, deck)
+    path = _write_record(
         HERE / "records",
         record,
-        build_record(record, stamp, pdk, results, supply_check),
+        build_record(record, stamp, pdk, ngspice, results, supply_check),
     )
     print(f"wrote {path}")
     return 0

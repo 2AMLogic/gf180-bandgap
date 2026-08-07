@@ -270,6 +270,42 @@ record writer — actually does what it claims across every PVT point. A green
 `smoke_test` with a red `smoke-bias` means the harness is broken; the reverse
 cannot happen, because `smoke-bias` cannot run without a working install.
 
+## sim/device-\*/ — device-level characterization
+
+`sim/device-<flavor>-<claim>/` (`device-resistor-tc`, `device-mos-vth`,
+`device-pnp-vbe`, `device-mos-mismatch`, `device-pnp-mismatch`) are one-device
+or one-family characterization decks: sheet resistance, threshold/Vbe
+extraction, local-mismatch Monte Carlo, and so on. They are a third harness
+consumer alongside `sim/smoke-bias/` and `sim/smoke_test/`, but unlike either
+they are two-terminal or source-referred testbenches with **no supply rail**
+— so their corner-ids use `sim/README.md`'s device-level grammar
+(`<model-section>_<temp>c_nosupply`, e.g. `res_ff_-40c_nosupply`) instead of
+the `<corner-name>_<temp>c_<volts>v` form a circuit-level bench gets. That
+naming, and the PDK/ngspice/record-identity plumbing underneath it, is
+factored into this package (`pdk.find_pdk`, `runner.ngspice_version`,
+`report.git_provenance` / `allocate_record_id`,
+`corners.device_corner_id`) rather than reimplemented per experiment
+(issue #117 — this consolidated a prior standalone `sim/tools/devchar.py`
+that duplicated the same plumbing).
+
+Some of these experiments' shape — several DUTs measured simultaneously per
+corner, an internal sub-sweep on a parameter outside the main PVT grid (e.g.
+`device-resistor-tc`'s n-well bias check), a Monte Carlo loop — does not fit
+today's single-grid `tb.json` contract (one `measure` map, one `checks` set,
+one corner × temperature × supply grid). Where that is true, the experiment
+still carries a `testbench/tb.json` so it is discoverable
+(`sim/run_corners.py --list`) and so `sim/run_corners.py <slug>` can run its
+netlist fragment as a secondary, representative check, but its authoritative
+evidence record is written by the experiment's own `run_*.py`, which imports
+`sim/harness` as a library rather than going through `run_corners.py`'s CLI.
+`device-resistor-tc/run_resistor_tc.py` is the reference example.
+
+As of issue #117, `device-resistor-tc` has been migrated onto this pattern;
+`device-mos-vth`, `device-pnp-vbe`, `device-mos-mismatch` and
+`device-pnp-mismatch` still depend on `sim/tools/devchar.py` and are tracked
+for the same migration in follow-up issues. `sim/tools/devchar.py` cannot be
+deleted until all five have moved off it.
+
 ## xschem
 
 `design/xschemrc` resolves the PDK the same way the harness does and sources
