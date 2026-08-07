@@ -1,0 +1,38 @@
+{
+  "name": "device-resistor-tc",
+  "description": "gf180mcu resistor-flavor device characterization (ppolyf_u family + pplus_u/nplus_u): sheet resistance, TC, corner spread, VCR. This manifest lets sim/run_corners.py run the same fragment as a generic representative check (raw DUT currents, --list/--check-env discovery); the authoritative evidence record -- effective sheet resistance, ppm/C, process-corner spread, VCR and the well-bias/HV-bias sub-sweeps -- is produced by run_resistor_tc.py, which drives sim/harness's library (pdk.py, runner.py, report.py, corners.py) directly because this experiment's shape (12 simultaneous DUT probes, no supply rail, an internal well-bias sub-sweep) does not fit a single tb.json grid.",
+  "claim": "gf180mcu resistor-flavor characterization for the PTAT / trim network of the Brokaw core selected in DR-0001 (spec/decision-records/0001-bandgap-topology-selection.md). See run_resistor_tc.py's records/ output for the full analysis (sheet resistance, ppm/C, corner spread, VCR); this manifest's own generic-CLI run reports raw DUT currents only.",
+  "netlist": "tb_resistor_tc.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0,
+  "temperatures_c": [-40, 27, 125],
+  "corners": ["tt", "res_ff", "res_ss"],
+  "analyses": ["op"],
+  "params": {"v_nwell": 3.3},
+  "subset_reason": "No supply rail: every DUT is a two-terminal resistor driven from an independent low-field source (50 mV / 500 mV), so the +/-10% supply axis has nothing to sweep -- see the 'nosupply' corner-id production in sim/README.md. run_resistor_tc.py's own records/ output uses that convention directly (corner-ids like res_ff_-40c_nosupply); this generic-CLI run collapses the supply axis to nominal instead, since sim/run_corners.py's grid always carries a vdd_val.",
+  "measure": {
+    "i_pu_w1": "abs(i(v_pu_w1))",
+    "i_pu_w5": "abs(i(v_pu_w5))",
+    "i_p1k_w1": "abs(i(v_p1k_w1))",
+    "i_p1k_w5": "abs(i(v_p1k_w5))",
+    "i_p2k_w1": "abs(i(v_p2k_w1))",
+    "i_p2k_w5": "abs(i(v_p2k_w5))",
+    "i_p3k_w1": "abs(i(v_p3k_w1))",
+    "i_p3k_w5": "abs(i(v_p3k_w5))",
+    "i_pp_w1": "abs(i(v_pp_w1))",
+    "i_pp_w5": "abs(i(v_pp_w5))",
+    "i_np_w1": "abs(i(v_np_w1))",
+    "i_np_w5": "abs(i(v_np_w5))",
+    "i_p1k_hv": "abs(i(v_p1k_hv))",
+    "i_p2k_hv": "abs(i(v_p2k_hv))",
+    "i_p3k_hv": "abs(i(v_p3k_hv))"
+  },
+  "checks": {
+    "i_pu_w1": {
+      "min": 8e-6,
+      "max": 20e-6,
+      "min_spread_pct": 5.0,
+      "description": "sanity range for a ~3.1-4.6 kohm resistor at 50 mV; the spread floor proves the res_* .lib sections and .temp actually change the current"
+    }
+  }
+}

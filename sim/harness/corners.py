@@ -188,3 +188,30 @@ def build_grid(
         )
     ]
     return points
+
+
+def device_corner_id(section: str, temp_c: float, supply: str = "nosupply") -> str:
+    """``<section>_<temp>c_<supply>`` -- the corner-id grammar's two-terminal
+    device-testbench form documented in ``sim/README.md``.
+
+    ``PvtPoint.corner_id`` always names a *bundle* corner (``tt``, ``ss``, ...)
+    and always carries a real supply voltage, because a circuit-level bench
+    has a supply rail to sweep. A device-level testbench that exercises one
+    model family directly (a bare resistor, a diode-connected BJT, a
+    source-referred MOS extraction) has neither: it selects a single
+    ``.lib`` section by name (``res_ff``, ``bjt_typical``, ...) and usually has
+    no supply node at all, which ``sim/README.md``'s corner-id grammar spells
+    with the literal ``supply`` token ``nosupply`` -- see its ``<supply>``
+    production and the ``<process>`` note ("for a device-level testbench [the
+    process field] is the gf180mcu model-section name that testbench
+    selects"). This is that naming rule, factored out so every
+    ``sim/device-*/`` testbench mints ids the same way instead of each
+    reimplementing it.
+
+    ``supply`` may also carry a named auxiliary sweep node instead of the
+    literal ``nosupply`` -- e.g. ``nwell2p97v`` for a well-tie sensitivity
+    check that is not part of the main PVT grid -- which is why it is a
+    parameter rather than hardcoded.
+    """
+    temp = f"{temp_c:g}".replace(".", "p")
+    return f"{section}_{temp}c_{supply}"
