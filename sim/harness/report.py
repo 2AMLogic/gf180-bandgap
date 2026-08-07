@@ -23,6 +23,7 @@ import datetime as _dt
 import getpass
 import platform
 import re
+import shutil
 import socket
 import subprocess
 import sys
@@ -591,4 +592,74 @@ def write_record(record: dict, experiment_dir: Path) -> Path:
             f"{path} already exists; records are append-only -- mint a new record-id"
         )
     path.write_text(render_record(record, experiment_dir.name))
+    return path
+
+
+# --------------------------------------------------------------------------
+# Device-level evidence plumbing
+#
+# The ``sim/device-*/run_*.py`` experiments do not go through the ``tb.json``
+# single-grid contract the functions above serve (they sweep DC tables, run
+# Monte Carlo, or interpolate at a current criterion), so they compose and run
+# their own decks. What they share with each other -- and what lived as five
+# byte-identical private copies before -- is the *evidence* plumbing: the
+# corner-log comment header, where a corner log is written, and freezing the
+# deck as this record's netlist snapshot. Those live here, next to
+# ``write_netlist_snapshot`` / ``write_record``, so the evidence layout
+# ``sim/README.md`` ratifies has exactly one implementation.
+#
+# The ``device_`` naming follows ``corners.device_corner_id``: it marks the
+# two-terminal, ``nosupply`` device-testbench flavour of the same convention.
+# --------------------------------------------------------------------------
+
+
+def device_log_header(
+    pdk: Pdk,
+    deck: Path,
+    section: str,
+    temp_c: float,
+    record: str,
+    stamp: _dt.datetime,
+    ngspice: str,
+) -> str:
+    """Provenance banner prepended to a device-level corner log.
+
+    ``supply`` is fixed at ``n/a`` because a device-level testbench has no
+    supply rail to sweep -- the same fact ``corners.device_corner_id`` spells
+    ``nosupply`` in the corner-id.
+    """
+    return (
+        "* ====================================================================\n"
+        f"* record-id : {record}\n"
+        f"* testbench : {deck.name}\n"
+        f"* corner    : {section}\n"
+        f"* temp      : {temp_c:g} C\n"
+        "* supply    : n/a (no supply rail in this device-level testbench)\n"
+        f"* pdk       : {pdk.variant} ({pdk.path})\n"
+        f"* ngspice   : {ngspice}\n"
+        f"* run (UTC) : {stamp:%Y-%m-%dT%H:%M:%SZ}\n"
+        "* ====================================================================\n"
+    )
+
+
+def write_device_corner_log(
+    corners_dir: Path, record: str, cid: str, header: str, log: str
+) -> Path:
+    """Write ``corners/<record-id>/<corner-id>.log`` -- raw ngspice output."""
+    out_dir = corners_dir / record
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path = out_dir / f"{cid}.log"
+    path.write_text(header + log, encoding="utf-8")
+    return path
+
+
+def write_device_netlist_snapshot(snapshot_dir: Path, record: str, deck: Path) -> Path:
+    """Freeze ``deck`` as ``netlist-snapshots/<record-id>.spice``.
+
+    A device testbench is a single self-contained file with no separate DUT to
+    fold in, so unlike :func:`write_netlist_snapshot` this is a verbatim copy.
+    """
+    snapshot_dir.mkdir(parents=True, exist_ok=True)
+    path = snapshot_dir / f"{record}.spice"
+    shutil.copyfile(deck, path)
     return path

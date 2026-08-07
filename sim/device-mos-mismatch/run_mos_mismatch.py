@@ -31,7 +31,6 @@ from __future__ import annotations
 
 import math
 import re
-import shutil
 import subprocess
 import sys
 import tempfile
@@ -152,44 +151,6 @@ def _run_corner(deck: Path, pdk: harness_pdk.Pdk, section: str, temp_c: float) -
     if re.search(r"^\s*(Error|ERROR|fatal)", log, re.MULTILINE):
         raise RuntimeError(f"ngspice reported an error for {deck.name}:\n{log}")
     return log
-
-
-def _log_header(
-    pdk: harness_pdk.Pdk,
-    deck: Path,
-    section: str,
-    temp_c: float,
-    record: str,
-    stamp: datetime,
-    ngspice: str,
-) -> str:
-    return (
-        "* ====================================================================\n"
-        f"* record-id : {record}\n"
-        f"* testbench : {deck.name}\n"
-        f"* corner    : {section}\n"
-        f"* temp      : {temp_c:g} C\n"
-        "* supply    : n/a (no supply rail in this device-level testbench)\n"
-        f"* pdk       : {pdk.variant} ({pdk.path})\n"
-        f"* ngspice   : {ngspice}\n"
-        f"* run (UTC) : {stamp:%Y-%m-%dT%H:%M:%SZ}\n"
-        "* ====================================================================\n"
-    )
-
-
-def _write_log(corners_dir: Path, record: str, cid: str, header: str, log: str) -> Path:
-    out_dir = corners_dir / record
-    out_dir.mkdir(parents=True, exist_ok=True)
-    path = out_dir / f"{cid}.log"
-    path.write_text(header + log, encoding="utf-8")
-    return path
-
-
-def _snapshot_netlist(snapshot_dir: Path, record: str, deck: Path) -> Path:
-    snapshot_dir.mkdir(parents=True, exist_ok=True)
-    path = snapshot_dir / f"{record}.spice"
-    shutil.copyfile(deck, path)
-    return path
 
 
 def _write_record(records_dir: Path, record: str, body: str) -> Path:
@@ -414,17 +375,21 @@ def main() -> int:
     for temp in TEMPS:
         cid = harness_corners.device_corner_id(SECTION, temp)
         log = _run_corner(deck, pdk, SECTION, temp)
-        _write_log(
+        harness_report.write_device_corner_log(
             HERE / "corners",
             record,
             cid,
-            _log_header(pdk, deck, SECTION, temp, record, stamp, ngspice),
+            harness_report.device_log_header(
+                pdk, deck, SECTION, temp, record, stamp, ngspice
+            ),
             log,
         )
         results[temp] = extract(log)
         print(f"  {cid}: ok")
 
-    _snapshot_netlist(HERE / "netlist-snapshots", record, deck)
+    harness_report.write_device_netlist_snapshot(
+        HERE / "netlist-snapshots", record, deck
+    )
     path = _write_record(
         HERE / "records", record, build_record(record, stamp, pdk, ngspice, results)
     )
