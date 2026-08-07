@@ -18,7 +18,7 @@ sim/
   harness/                  the runner itself (this directory)
   suite/                    the spec-line suite -- see sim/suite/README.md
   dut/                      swappable DUT netlists -- see sim/dut/README.md
-  tools/                    helper scripts (mk_dut.py, devchar.py)
+  tools/                    helper scripts (mk_dut.py)
   tests/                    harness unit tests (no PDK, no ngspice required)
   .work/                    generated ngspice decks (git-ignored, disposable)
 
@@ -302,14 +302,13 @@ evidence record is written by the experiment's own `run_*.py`, which imports
 
 As of issue #117, all five `sim/device-*/` experiments (`device-resistor-tc`,
 `device-mos-vth`, `device-pnp-vbe`, `device-mos-mismatch`,
-`device-pnp-mismatch`) have migrated onto this pattern -- none of them import
-`sim/tools/devchar.py` any more. `sim/tools/devchar.py` is nonetheless **not
-yet deleted**: `sim/mc-untrimmed/run_mc_untrimmed.py` (a circuit-level Monte
-Carlo bench, not one of the five device-level experiments issue #117 scoped)
-also imports it for the same PDK-resolution / record-id / corner-id / log /
-record plumbing, and was not accounted for in the issue's original grep
-evidence. Retiring `sim/tools/devchar.py` needs that sixth consumer migrated
-first, tracked in issue #123.
+`device-pnp-mismatch`) had migrated onto this pattern. The sixth and last
+consumer of the standalone plumbing, `sim/mc-untrimmed/run_mc_untrimmed.py`
+(a circuit-level Monte Carlo bench, not one of the five device-level
+experiments issue #117 scoped -- it was not accounted for in that issue's
+original grep evidence), migrated onto this pattern in issue #123.
+`sim/tools/devchar.py` has since been **deleted**: no experiment imports it
+any more.
 
 ## xschem
 
