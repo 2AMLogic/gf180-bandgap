@@ -6,6 +6,23 @@ temperatures on the `typical` corner, commits the raw per-point logs, freezes
 the netlist snapshot, and writes one append-only summary record under
 `records/` per `sim/README.md`.
 
+This experiment is driven directly against `sim/harness`'s library modules
+(`pdk.py`, `runner.py`, `report.py`, `corners.py`) rather than the retired
+`sim/tools/devchar.py` (issue #117): PDK discovery, ngspice-version detection,
+git provenance / record-id minting and the two-terminal device-testbench
+corner-id naming (`sim/README.md`'s `nosupply` grammar) are all harness
+functions now. What stays local is genuinely specific to this experiment --
+composing/running the per-point Monte Carlo deck (a `dowhile` / `reset` loop,
+not a single PVT point), parsing the repeated `print` samples, and the
+mean/sigma/Pelgrom-scaling analysis -- none of which the current `tb.json`
+single-grid contract expresses. `testbench/tb.json` still documents this
+experiment for harness discovery (`sim/run_corners.py --list`) and supports a
+secondary, representative generic-CLI run
+(`python3 sim/run_corners.py device-mos-mismatch`) that reports one
+(un-reproducible, single-draw) sample of each pair's gate-voltage difference;
+it is not what produces the record below, whose N=300, seeded distribution is
+the actual claim.
+
 Usage:
     PDK_ROOT=... PDK=gf180mcuD sim/device-mos-mismatch/run_mos_mismatch.py
 """
@@ -13,18 +30,26 @@ Usage:
 from __future__ import annotations
 
 import math
+import re
+import shutil
+import subprocess
 import sys
+import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE.parent / "tools"))
+sys.path.insert(0, str(HERE.parent))
 
-import devchar as dc  # noqa: E402
+from harness import corners as harness_corners  # noqa: E402
+from harness import pdk as harness_pdk  # noqa: E402
+from harness import report as harness_report  # noqa: E402
+from harness.runner import ngspice_version  # noqa: E402
 
 SECTION = "typical"
 TEMPS = [-40.0, 27.0, 125.0]
-N_SAMPLES = 300  # must match `let mc_runs` in the testbench
-SEED = 20260731  # must match `setseed` in the testbench
+N_SAMPLES = 300  # must match `let mc_runs` in the control block below
+SEED = 20260731  # must match `setseed` in the control block below
 
 # vector -> (label, W um, L um, bias A)
 PAIRS = {
@@ -39,25 +64,199 @@ PAIRS = {
 }
 
 
+# --------------------------------------------------------------------------
+# Deck composition / ngspice execution -- this experiment runs a `dowhile`
+# Monte Carlo loop (N=300 `reset` + `op` samples per point), not the
+# single-scalar `let m_<name>` convention sim/harness/runner.py's
+# compose_deck() targets, so it composes its own minimal shim instead of
+# going through compose_deck(). PDK model paths still come from
+# sim/harness/pdk.py -- nothing here re-resolves the PDK on its own.
+# --------------------------------------------------------------------------
+
+
+def _corner_shim(pdk: harness_pdk.Pdk, section: str, temp_c: float) -> str:
+    return (
+        "* Generated per corner point by run_mos_mismatch.py from\n"
+        "* $PDK_ROOT/$PDK (via sim/harness/pdk.py) -- do not edit by hand, "
+        "and do not commit.\n"
+        f'.include "{pdk.design_include}"\n'
+        f'.lib "{pdk.model_lib}" {section}\n'
+        f".temp {temp_c:g}\n"
+    )
+
+
+def _run_corner(deck: Path, pdk: harness_pdk.Pdk, section: str, temp_c: float) -> str:
+    """Run `deck` through ngspice's N_SAMPLES-sample Monte Carlo loop."""
+    with tempfile.TemporaryDirectory(prefix="device-mos-mismatch-") as tmp:
+        work = Path(tmp)
+        local_deck = work / deck.name
+        (work / "corner.spice").write_text(
+            _corner_shim(pdk, section, temp_c), encoding="utf-8"
+        )
+        (work / "control.spice").write_text(
+            ".control\n"
+            f"setseed {SEED}\n"
+            "set width  = 512\n"
+            "set height = 100000\n"
+            f"let mc_runs = {N_SAMPLES}\n"
+            "let run = 0\n"
+            "dowhile run < mc_runs\n"
+            "  reset\n"
+            "  op\n"
+            "  let dn1 = v(gn1a) - v(gn1b)\n"
+            "  let dn4 = v(gn4a) - v(gn4b)\n"
+            "  let dp1 = v(gp1a) - v(gp1b)\n"
+            "  let dp4 = v(gp4a) - v(gp4b)\n"
+            "  let en1 = v(hn1a) - v(hn1b)\n"
+            "  let en4 = v(hn4a) - v(hn4b)\n"
+            "  let ep1 = v(hp1a) - v(hp1b)\n"
+            "  let ep4 = v(hp4a) - v(hp4b)\n"
+            "  print dn1 dn4 dp1 dp4 en1 en4 ep1 ep4\n"
+            "  let run = run + 1\n"
+            "end\n"
+            "quit\n"
+            ".endc\n",
+            encoding="utf-8",
+        )
+        local_deck.write_text(
+            '.include "corner.spice"\n'
+            + deck.read_text(encoding="utf-8")
+            + '\n.include "control.spice"\n.end\n',
+            encoding="utf-8",
+        )
+        proc = subprocess.run(
+            ["ngspice", "-b", deck.name],
+            cwd=work,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    log = proc.stdout + proc.stderr
+    if proc.returncode != 0:
+        raise RuntimeError(
+            f"ngspice exited {proc.returncode} for {deck.name} "
+            f"[{section} @ {temp_c} C]\n{log}"
+        )
+    if re.search(r"^\s*(Error|ERROR|fatal)", log, re.MULTILINE):
+        raise RuntimeError(f"ngspice reported an error for {deck.name}:\n{log}")
+    return log
+
+
+def _log_header(
+    pdk: harness_pdk.Pdk,
+    deck: Path,
+    section: str,
+    temp_c: float,
+    record: str,
+    stamp: datetime,
+    ngspice: str,
+) -> str:
+    return (
+        "* ====================================================================\n"
+        f"* record-id : {record}\n"
+        f"* testbench : {deck.name}\n"
+        f"* corner    : {section}\n"
+        f"* temp      : {temp_c:g} C\n"
+        "* supply    : n/a (no supply rail in this device-level testbench)\n"
+        f"* pdk       : {pdk.variant} ({pdk.path})\n"
+        f"* ngspice   : {ngspice}\n"
+        f"* run (UTC) : {stamp:%Y-%m-%dT%H:%M:%SZ}\n"
+        "* ====================================================================\n"
+    )
+
+
+def _write_log(corners_dir: Path, record: str, cid: str, header: str, log: str) -> Path:
+    out_dir = corners_dir / record
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path = out_dir / f"{cid}.log"
+    path.write_text(header + log, encoding="utf-8")
+    return path
+
+
+def _snapshot_netlist(snapshot_dir: Path, record: str, deck: Path) -> Path:
+    snapshot_dir.mkdir(parents=True, exist_ok=True)
+    path = snapshot_dir / f"{record}.spice"
+    shutil.copyfile(deck, path)
+    return path
+
+
+def _write_record(records_dir: Path, record: str, body: str) -> Path:
+    """Write `records/<record-id>.md`, refusing to overwrite (append-only)."""
+    records_dir.mkdir(parents=True, exist_ok=True)
+    path = records_dir / f"{record}.md"
+    if path.exists():
+        raise RuntimeError(
+            f"refusing to overwrite existing record {path} -- sim/ is append-only; "
+            "a re-run must mint a new record ID"
+        )
+    path.write_text(body, encoding="utf-8")
+    return path
+
+
+_OP_LINE = re.compile(r"^([a-zA-Z_][\w()\-.,+@#]*)\s*=\s*([-+0-9.eE]+)\s*$")
+
+
+def _parse_op_series(log: str) -> list[dict[str, float]]:
+    """Parse repeated `op`+`print` blocks (the Monte Carlo loop) into samples.
+
+    A new sample starts whenever a name that has already been seen repeats.
+    """
+    samples: list[dict[str, float]] = []
+    current: dict[str, float] = {}
+    for line in log.splitlines():
+        match = _OP_LINE.match(line.strip())
+        if not match:
+            continue
+        name = match.group(1).lower()
+        try:
+            value = float(match.group(2))
+        except ValueError:
+            continue
+        if name in current:
+            samples.append(current)
+            current = {}
+        current[name] = value
+    if current:
+        samples.append(current)
+    return samples
+
+
+def _stdev(values: list[float]) -> float:
+    n = len(values)
+    if n < 2:
+        return 0.0
+    mean = sum(values) / n
+    return math.sqrt(sum((v - mean) ** 2 for v in values) / (n - 1))
+
+
+def _mean(values: list[float]) -> float:
+    return sum(values) / len(values)
+
+
+# --------------------------------------------------------------------------
+# Device-specific analysis
+# --------------------------------------------------------------------------
+
+
 def extract(log: str) -> dict[str, dict[str, float]]:
-    samples = dc.parse_op_series(log)
+    samples = _parse_op_series(log)
     if len(samples) != N_SAMPLES:
         raise RuntimeError(
             f"expected {N_SAMPLES} Monte Carlo samples in the log, parsed "
-            f"{len(samples)} -- testbench `let mc_runs` and N_SAMPLES disagree?"
+            f"{len(samples)} -- testbench control loop and N_SAMPLES disagree?"
         )
     out: dict[str, dict[str, float]] = {}
     for key in PAIRS:
         values = [s[key] for s in samples]
         out[key] = {
-            "mean": dc.mean(values),
-            "sigma": dc.stdev(values),
+            "mean": _mean(values),
+            "sigma": _stdev(values),
             "max_abs": max(abs(v) for v in values),
         }
     return out
 
 
-def build_record(record, stamp, pdk, results) -> str:
+def build_record(record, stamp, pdk, ngspice, results) -> str:
     lines: list[str] = []
     add = lines.append
 
@@ -164,37 +363,43 @@ def build_record(record, stamp, pdk, results) -> str:
         f"  - Netlist snapshot: `sim/device-mos-mismatch/netlist-snapshots/{record}.spice`"
     )
     add(f"  - Raw logs: `sim/device-mos-mismatch/corners/{record}/`")
-    add(f"  - PDK: {pdk.label}, ngspice {dc.ngspice_version()}")
-    add(f"- **Timestamp / author**: {stamp:%Y-%m-%dT%H:%M:%SZ}, agent-builder (issue #4)")
+    add(f"  - PDK: {pdk.variant} ({pdk.path}), ngspice {ngspice}")
+    add(
+        f"- **Timestamp / author**: {stamp:%Y-%m-%dT%H:%M:%SZ}, agent-builder "
+        "(issue #4, re-run onto sim/harness by issue #117)"
+    )
     add("- **Supersedes**: (none -- first record for this claim)")
     add("")
     return "\n".join(lines)
 
 
 def main() -> int:
-    pdk = dc.resolve_pdk()
-    root = dc.repo_root(HERE)
-    record, stamp = dc.mint_record_id(root)
+    pdk = harness_pdk.find_pdk()
+    root = harness_pdk.REPO_ROOT
+    ngspice = ngspice_version()
+    git = harness_report.git_provenance(root)
+    record = harness_report.allocate_record_id(root, HERE / "records", git=git)
+    stamp = datetime.strptime(record[:15], "%Y%m%d-%H%M%S").replace(tzinfo=timezone.utc)
     deck = HERE / "testbench" / "tb_mos_mismatch.spice"
 
     print(f"record {record}: {len(TEMPS)} Monte Carlo points, N={N_SAMPLES} each")
     results: dict[float, dict] = {}
     for temp in TEMPS:
-        cid = dc.corner_id(SECTION, temp)
-        log = dc.run_corner(deck, pdk, SECTION, temp)
-        dc.write_log(
+        cid = harness_corners.device_corner_id(SECTION, temp)
+        log = _run_corner(deck, pdk, SECTION, temp)
+        _write_log(
             HERE / "corners",
             record,
             cid,
-            dc.log_header(pdk, deck, SECTION, temp, record, stamp),
+            _log_header(pdk, deck, SECTION, temp, record, stamp, ngspice),
             log,
         )
         results[temp] = extract(log)
         print(f"  {cid}: ok")
 
-    dc.snapshot_netlist(HERE / "netlist-snapshots", record, deck)
-    path = dc.write_record(
-        HERE / "records", record, build_record(record, stamp, pdk, results)
+    _snapshot_netlist(HERE / "netlist-snapshots", record, deck)
+    path = _write_record(
+        HERE / "records", record, build_record(record, stamp, pdk, ngspice, results)
     )
     print(f"wrote {path}")
     return 0

@@ -6,6 +6,22 @@ Executes `testbench/tb_pnp_vbe.spice` headlessly through ngspice at every
 netlist snapshot, and writes one append-only summary record under `records/`
 per the evidence format in `sim/README.md`.
 
+This experiment is driven directly against `sim/harness`'s library modules
+(`pdk.py`, `runner.py`, `report.py`, `corners.py`) rather than the retired
+`sim/tools/devchar.py` (issue #117): PDK discovery, ngspice-version detection,
+git provenance / record-id minting and the two-terminal device-testbench
+corner-id naming (`sim/README.md`'s `nosupply` grammar) are all harness
+functions now. What stays local is genuinely specific to this experiment --
+composing/running the per-corner DC-sweep deck, parsing the resulting table,
+and the VBE(I,T) / dVBE / ideality-factor / beta extraction -- none of which
+the current `tb.json` single-grid contract expresses (it targets one scalar
+`op` measurement per PVT point, not a DC sweep interpolated at several
+current criteria). `testbench/tb.json` still documents this experiment for
+harness discovery (`sim/run_corners.py --list`) and supports a secondary,
+representative generic-CLI run
+(`python3 sim/run_corners.py device-pnp-vbe`) that reports VBE/Ib at the
+fragment's fixed 1 uA bias; it is not what produces the record below.
+
 Usage:
     PDK_ROOT=... PDK=gf180mcuD sim/device-pnp-vbe/run_pnp_vbe.py
 """
@@ -13,13 +29,21 @@ Usage:
 from __future__ import annotations
 
 import math
+import re
+import shutil
+import subprocess
 import sys
+import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE.parent / "tools"))
+sys.path.insert(0, str(HERE.parent))
 
-import devchar as dc  # noqa: E402
+from harness import corners as harness_corners  # noqa: E402
+from harness import pdk as harness_pdk  # noqa: E402
+from harness import report as harness_report  # noqa: E402
+from harness.runner import ngspice_version  # noqa: E402
 
 # --------------------------------------------------------------------------
 # Corner matrix
@@ -47,27 +71,220 @@ PAIR_BIAS_A = 10e-6
 
 
 # --------------------------------------------------------------------------
+# Deck composition / ngspice execution -- this experiment sweeps a DC table
+# (not the single-scalar `let m_<name>` convention sim/harness/runner.py's
+# compose_deck() targets) so it composes its own minimal shim instead of
+# going through compose_deck(). PDK model paths still come from
+# sim/harness/pdk.py -- nothing here re-resolves the PDK on its own.
+# --------------------------------------------------------------------------
+
+
+def _corner_shim(pdk: harness_pdk.Pdk, section: str, temp_c: float) -> str:
+    return (
+        "* Generated per corner point by run_pnp_vbe.py from\n"
+        "* $PDK_ROOT/$PDK (via sim/harness/pdk.py) -- do not edit by hand, "
+        "and do not commit.\n"
+        f'.include "{pdk.design_include}"\n'
+        f'.lib "{pdk.model_lib}" {section}\n'
+        f".temp {temp_c:g}\n"
+    )
+
+
+def _run_corner(deck: Path, pdk: harness_pdk.Pdk, section: str, temp_c: float) -> str:
+    """Run `deck` through ngspice at one (BJT corner, temperature) point."""
+    with tempfile.TemporaryDirectory(prefix="device-pnp-vbe-") as tmp:
+        work = Path(tmp)
+        local_deck = work / deck.name
+        (work / "corner.spice").write_text(
+            _corner_shim(pdk, section, temp_c), encoding="utf-8"
+        )
+        (work / "control.spice").write_text(
+            ".control\n"
+            "set width  = 512\n"
+            "set height = 100000\n"
+            "dc Vctrl -12 -3 0.1\n"
+            "print v(e5x5) v(e10x10) v(e5x042) v(e10x042) "
+            "i(vb5x5) i(vb10x10) i(vb5x042) i(vb10x042)\n"
+            "quit\n"
+            ".endc\n",
+            encoding="utf-8",
+        )
+        local_deck.write_text(
+            '.include "corner.spice"\n'
+            + deck.read_text(encoding="utf-8")
+            + '\n.include "control.spice"\n.end\n',
+            encoding="utf-8",
+        )
+        proc = subprocess.run(
+            ["ngspice", "-b", deck.name],
+            cwd=work,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    log = proc.stdout + proc.stderr
+    if proc.returncode != 0:
+        raise RuntimeError(
+            f"ngspice exited {proc.returncode} for {deck.name} "
+            f"[{section} @ {temp_c} C]\n{log}"
+        )
+    if re.search(r"^\s*(Error|ERROR|fatal)", log, re.MULTILINE):
+        raise RuntimeError(f"ngspice reported an error for {deck.name}:\n{log}")
+    return log
+
+
+def _log_header(
+    pdk: harness_pdk.Pdk,
+    deck: Path,
+    section: str,
+    temp_c: float,
+    record: str,
+    stamp: datetime,
+    ngspice: str,
+) -> str:
+    return (
+        "* ====================================================================\n"
+        f"* record-id : {record}\n"
+        f"* testbench : {deck.name}\n"
+        f"* corner    : {section}\n"
+        f"* temp      : {temp_c:g} C\n"
+        "* supply    : n/a (no supply rail in this device-level testbench)\n"
+        f"* pdk       : {pdk.variant} ({pdk.path})\n"
+        f"* ngspice   : {ngspice}\n"
+        f"* run (UTC) : {stamp:%Y-%m-%dT%H:%M:%SZ}\n"
+        "* ====================================================================\n"
+    )
+
+
+def _write_log(corners_dir: Path, record: str, cid: str, header: str, log: str) -> Path:
+    out_dir = corners_dir / record
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path = out_dir / f"{cid}.log"
+    path.write_text(header + log, encoding="utf-8")
+    return path
+
+
+def _snapshot_netlist(snapshot_dir: Path, record: str, deck: Path) -> Path:
+    snapshot_dir.mkdir(parents=True, exist_ok=True)
+    path = snapshot_dir / f"{record}.spice"
+    shutil.copyfile(deck, path)
+    return path
+
+
+def _write_record(records_dir: Path, record: str, body: str) -> Path:
+    """Write `records/<record-id>.md`, refusing to overwrite (append-only)."""
+    records_dir.mkdir(parents=True, exist_ok=True)
+    path = records_dir / f"{record}.md"
+    if path.exists():
+        raise RuntimeError(
+            f"refusing to overwrite existing record {path} -- sim/ is append-only; "
+            "a re-run must mint a new record ID"
+        )
+    path.write_text(body, encoding="utf-8")
+    return path
+
+
+def _parse_dc_table(log: str) -> tuple[list[str], list[list[float]]]:
+    """Parse the tabular output of `print v1 v2 ...` after a `dc` analysis.
+
+    Returns (column names excluding the Index column, rows). The leading
+    `v-sweep` column is kept as the first data column.
+    """
+    lines = log.splitlines()
+    header_idx = None
+    for i, line in enumerate(lines):
+        if line.strip().startswith("Index"):
+            header_idx = i
+            break
+    if header_idx is None:
+        raise ValueError("no DC table header ('Index ...') found in ngspice log")
+    columns = lines[header_idx].split()[1:]
+    rows: list[list[float]] = []
+    for line in lines[header_idx + 1 :]:
+        parts = line.split()
+        if not parts or not parts[0].isdigit():
+            continue
+        try:
+            values = [float(p) for p in parts[1:]]
+        except ValueError:
+            continue
+        if len(values) == len(columns):
+            rows.append(values)
+    if not rows:
+        raise ValueError("DC table header found but no data rows parsed")
+    return columns, rows
+
+
+def _column(columns: list[str], rows: list[list[float]], name: str) -> list[float]:
+    idx = columns.index(name)
+    return [row[idx] for row in rows]
+
+
+def _interp_at(xs: list[float], ys: list[float], x: float) -> float:
+    """Linear interpolation of y(x) on a monotonically increasing xs."""
+    if x <= xs[0]:
+        return ys[0]
+    if x >= xs[-1]:
+        return ys[-1]
+    for i in range(1, len(xs)):
+        if xs[i] >= x:
+            x0, x1 = xs[i - 1], xs[i]
+            y0, y1 = ys[i - 1], ys[i]
+            if x1 == x0:
+                return y0
+            return y0 + (y1 - y0) * (x - x0) / (x1 - x0)
+    return ys[-1]
+
+
+def _linfit(xs: list[float], ys: list[float]) -> tuple[float, float]:
+    """Ordinary least-squares fit; returns (slope, intercept)."""
+    n = len(xs)
+    if n < 2:
+        raise ValueError("linfit needs at least two points")
+    mean_x = sum(xs) / n
+    mean_y = sum(ys) / n
+    sxx = sum((x - mean_x) ** 2 for x in xs)
+    sxy = sum((x - mean_x) * (y - mean_y) for x, y in zip(xs, ys))
+    slope = sxy / sxx
+    return slope, mean_y - slope * mean_x
+
+
+def _max_abs_residual(
+    xs: list[float], ys: list[float], slope: float, intercept: float
+) -> float:
+    return max(abs(y - (slope * x + intercept)) for x, y in zip(xs, ys))
+
+
+VT_Q_OVER_K = 1.602176634e-19 / 1.380649e-23  # q/k, K/V
+
+
+def _thermal_voltage(temp_c: float) -> float:
+    """kT/q in volts at `temp_c` degrees Celsius."""
+    return (temp_c + 273.15) / VT_Q_OVER_K
+
+
+# --------------------------------------------------------------------------
 # Per-corner extraction
 # --------------------------------------------------------------------------
 
 
 def extract(log: str, temp_c: float) -> dict:
-    columns, rows = dc.parse_dc_table(log)
-    logi = dc.column(columns, rows, "v-sweep")
-    vt = dc.thermal_voltage(temp_c)
+    columns, rows = _parse_dc_table(log)
+    logi = _column(columns, rows, "v-sweep")
+    vt = _thermal_voltage(temp_c)
 
     out: dict = {"vbe": {}, "beta": {}, "ideality": {}, "window": {}}
     for key, (_model, vcol, icol, _area) in DEVICES.items():
-        vbe = dc.column(columns, rows, vcol)
-        ib = dc.column(columns, rows, icol)
+        vbe = _column(columns, rows, vcol)
+        ib = _column(columns, rows, icol)
 
         out["vbe"][key] = {
-            bias: dc.interp_at(logi, vbe, math.log10(bias)) for bias in BIASES_A
+            bias: _interp_at(logi, vbe, math.log10(bias)) for bias in BIASES_A
         }
 
         beta = [(10.0**x - b) / b if b > 0 else float("nan") for x, b in zip(logi, ib)]
         out["beta"][key] = {
-            bias: dc.interp_at(logi, beta, math.log10(bias)) for bias in BIASES_A
+            bias: _interp_at(logi, beta, math.log10(bias)) for bias in BIASES_A
         }
 
         # Local ideality factor from the slope of VBE vs ln(I), midpoint-sampled.
@@ -79,7 +296,7 @@ def extract(log: str, temp_c: float) -> dict:
             n_local.append(dv / (vt * dx))
             mid_logi.append(0.5 * (logi[i] + logi[i + 1]))
         out["ideality"][key] = {
-            bias: dc.interp_at(mid_logi, n_local, math.log10(bias))
+            bias: _interp_at(mid_logi, n_local, math.log10(bias))
             for bias in BIASES_A
         }
         out["window"][key] = usable_window(mid_logi, n_local)
@@ -154,7 +371,8 @@ def window_str(win: tuple[float, float, bool, bool]) -> str:
 def build_record(
     record: str,
     stamp,
-    pdk: dc.Pdk,
+    pdk: harness_pdk.Pdk,
+    ngspice: str,
     results: dict[tuple[str, float], dict],
 ) -> str:
     lines: list[str] = []
@@ -259,8 +477,8 @@ def build_record(
             worst = 0.0
             for bias in BIASES_A:
                 ys = [results[(section, t)]["vbe"][key][bias] for t in TEMPS]
-                slope, intercept = dc.linfit(TEMPS, ys)
-                worst = max(worst, dc.max_abs_residual(TEMPS, ys, slope, intercept))
+                slope, intercept = _linfit(TEMPS, ys)
+                worst = max(worst, _max_abs_residual(TEMPS, ys, slope, intercept))
                 cells.append(f"{slope * 1e3:.3f}")
             add(
                 f"| {section} | {key} | " + " | ".join(cells) + f" | {worst * 1e3:.2f} |"
@@ -288,8 +506,8 @@ def build_record(
     add("|---|---|---|---|---|---|---|---|")
     for section in SECTIONS:
         ys = [results[(section, t)]["dvbe"][PAIR_BIAS_A] for t in TEMPS]
-        slope, intercept = dc.linfit(TEMPS, ys)
-        resid = dc.max_abs_residual(TEMPS, ys, slope, intercept)
+        slope, intercept = _linfit(TEMPS, ys)
+        resid = _max_abs_residual(TEMPS, ys, slope, intercept)
         span = max(ys) - min(ys)
         add(
             f"| {section} | "
@@ -361,8 +579,11 @@ def build_record(
         f"  - Netlist snapshot: `sim/device-pnp-vbe/netlist-snapshots/{record}.spice`"
     )
     add(f"  - Raw logs: `sim/device-pnp-vbe/corners/{record}/`")
-    add(f"  - PDK: {pdk.label}, ngspice {dc.ngspice_version()}")
-    add(f"- **Timestamp / author**: {stamp:%Y-%m-%dT%H:%M:%SZ}, agent-builder (issue #4)")
+    add(f"  - PDK: {pdk.variant} ({pdk.path}), ngspice {ngspice}")
+    add(
+        f"- **Timestamp / author**: {stamp:%Y-%m-%dT%H:%M:%SZ}, agent-builder "
+        "(issue #4, re-run onto sim/harness by issue #117)"
+    )
     add("- **Supersedes**: (none -- first record for this claim)")
     add("")
     return "\n".join(lines)
@@ -372,30 +593,33 @@ def build_record(
 
 
 def main() -> int:
-    pdk = dc.resolve_pdk()
-    root = dc.repo_root(HERE)
-    record, stamp = dc.mint_record_id(root)
+    pdk = harness_pdk.find_pdk()
+    root = harness_pdk.REPO_ROOT
+    ngspice = ngspice_version()
+    git = harness_report.git_provenance(root)
+    record = harness_report.allocate_record_id(root, HERE / "records", git=git)
+    stamp = datetime.strptime(record[:15], "%Y%m%d-%H%M%S").replace(tzinfo=timezone.utc)
     deck = HERE / "testbench" / "tb_pnp_vbe.spice"
 
     print(f"record {record}: {len(SECTIONS) * len(TEMPS)} corner points")
     results: dict[tuple[str, float], dict] = {}
     for section in SECTIONS:
         for temp in TEMPS:
-            cid = dc.corner_id(section, temp)
-            log = dc.run_corner(deck, pdk, section, temp)
-            dc.write_log(
+            cid = harness_corners.device_corner_id(section, temp)
+            log = _run_corner(deck, pdk, section, temp)
+            _write_log(
                 HERE / "corners",
                 record,
                 cid,
-                dc.log_header(pdk, deck, section, temp, record, stamp),
+                _log_header(pdk, deck, section, temp, record, stamp, ngspice),
                 log,
             )
             results[(section, temp)] = extract(log, temp)
             print(f"  {cid}: ok")
 
-    dc.snapshot_netlist(HERE / "netlist-snapshots", record, deck)
-    path = dc.write_record(
-        HERE / "records", record, build_record(record, stamp, pdk, results)
+    _snapshot_netlist(HERE / "netlist-snapshots", record, deck)
+    path = _write_record(
+        HERE / "records", record, build_record(record, stamp, pdk, ngspice, results)
     )
     print(f"wrote {path}")
     return 0

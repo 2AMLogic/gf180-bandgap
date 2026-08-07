@@ -1,0 +1,5119 @@
+* ====================================================================
+* record-id : 20260807-181734-8e74fd6
+* testbench : tb_mos_mismatch.spice
+* corner    : typical
+* temp      : 27 C
+* supply    : n/a (no supply rail in this device-level testbench)
+* pdk       : gf180mcuD (/Users/rwalters/.volare/gf180mcuD)
+* ngspice   : ngspice-46 : Circuit level simulation program
+* run (UTC) : 2026-08-07T18:17:34Z
+* ====================================================================
+
+Note: Compatibility modes selected: hs a
+
+
+Circuit: *include "corner.spice
+
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -5.07206e-03
+dn4 = 1.198688e-03
+dp1 = -9.02914e-04
+dp4 = -6.88521e-04
+en1 = -1.29733e-03
+en4 = 6.607101e-04
+ep1 = -3.19745e-03
+ep4 = -1.01549e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -2.90961e-03
+dn4 = 1.475060e-04
+dp1 = -1.89220e-03
+dp4 = -4.48136e-06
+en1 = 9.205179e-04
+en4 = -6.70577e-04
+ep1 = -9.22939e-04
+ep4 = -1.44397e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 2.450574e-03
+dn4 = 3.862738e-04
+dp1 = 1.010271e-03
+dp4 = -1.41093e-03
+en1 = -2.01282e-03
+en4 = 1.038270e-03
+ep1 = -4.57318e-04
+ep4 = 3.905799e-05
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 4.155597e-04
+dn4 = 7.014403e-04
+dp1 = -1.46207e-03
+dp4 = 7.371454e-04
+en1 = 8.161361e-04
+en4 = -1.08259e-03
+ep1 = -2.53057e-03
+ep4 = -4.26409e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -2.26284e-03
+dn4 = 1.518511e-04
+dp1 = -4.39291e-04
+dp4 = -5.63678e-05
+en1 = -2.47363e-03
+en4 = 1.378456e-03
+ep1 = 2.091139e-03
+ep4 = -5.47990e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 4.247031e-03
+dn4 = -1.82564e-03
+dp1 = -7.50972e-04
+dp4 = -4.78731e-04
+en1 = -7.17081e-04
+en4 = 1.136363e-03
+ep1 = 1.090097e-04
+ep4 = 1.971318e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 6.763471e-03
+dn4 = 9.894173e-04
+dp1 = 1.781687e-03
+dp4 = 1.787053e-03
+en1 = -1.72034e-03
+en4 = 6.420829e-04
+ep1 = 8.895633e-04
+ep4 = -5.40857e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.50099e-03
+dn4 = -2.51411e-04
+dp1 = 1.377221e-03
+dp4 = -1.47032e-03
+en1 = -1.58854e-03
+en4 = 1.161709e-03
+ep1 = -3.85786e-03
+ep4 = -2.35399e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.79024e-04
+dn4 = -2.17525e-04
+dp1 = 7.953104e-04
+dp4 = -3.51595e-04
+en1 = -1.95261e-03
+en4 = 1.270272e-03
+ep1 = -6.28361e-04
+ep4 = -1.07482e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -8.08966e-04
+dn4 = -3.61037e-04
+dp1 = 2.249851e-03
+dp4 = -8.49854e-04
+en1 = -1.47105e-03
+en4 = -7.53932e-04
+ep1 = -7.53297e-04
+ep4 = -1.59638e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -2.68574e-03
+dn4 = 1.120494e-03
+dp1 = 1.141662e-03
+dp4 = 1.742585e-03
+en1 = -2.09056e-03
+en4 = 1.168816e-04
+ep1 = 2.794977e-03
+ep4 = 1.485288e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 2.849530e-03
+dn4 = -2.46340e-03
+dp1 = -3.09097e-03
+dp4 = -1.81070e-04
+en1 = -8.40481e-04
+en4 = 5.366531e-04
+ep1 = 1.028375e-04
+ep4 = 9.566981e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+dn1 = -1.65150e-06
+dn4 = 4.974228e-04
+dp1 = 1.585710e-03
+dp4 = 1.760677e-03
+en1 = -3.00592e-03
+en4 = 2.085744e-03
+ep1 = -1.72549e-03
+ep4 = -1.21167e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 6.682422e-03
+dn4 = 1.563842e-03
+dp1 = -3.87724e-03
+dp4 = 3.022719e-04
+en1 = 3.733284e-03
+en4 = 2.427562e-03
+ep1 = 9.932738e-04
+ep4 = 1.545947e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -7.93232e-04
+dn4 = -1.62272e-03
+dp1 = -2.52494e-03
+dp4 = 3.521699e-05
+en1 = 9.847268e-04
+en4 = -6.77547e-04
+ep1 = -2.18949e-03
+ep4 = -5.57996e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -9.73862e-04
+dn4 = 3.118859e-04
+dp1 = 2.463092e-03
+dp4 = -2.72442e-04
+en1 = 2.242415e-03
+en4 = -1.56289e-03
+ep1 = 3.409837e-03
+ep4 = 3.902735e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -9.38770e-04
+dn4 = -8.16155e-04
+dp1 = 3.536362e-03
+dp4 = 1.313927e-03
+en1 = -1.93562e-03
+en4 = 1.180109e-03
+ep1 = 3.644403e-03
+ep4 = 5.597299e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 1.383874e-03
+dn4 = 1.238913e-03
+dp1 = -2.06267e-03
+dp4 = 5.301330e-04
+en1 = 4.272493e-03
+en4 = 8.743451e-04
+ep1 = -3.25110e-03
+ep4 = 7.835026e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -3.15857e-03
+dn4 = 5.161278e-04
+dp1 = 2.604798e-03
+dp4 = -1.13058e-03
+en1 = -2.82088e-03
+en4 = 1.573401e-03
+ep1 = 3.018952e-03
+ep4 = -1.27067e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 1.448125e-03
+dn4 = 1.641299e-04
+dp1 = -6.79334e-04
+dp4 = 6.441649e-04
+en1 = -7.00425e-03
+en4 = 5.518089e-04
+ep1 = 9.387699e-04
+ep4 = -4.26371e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 6.294826e-05
+dn4 = 2.046858e-03
+dp1 = 1.496096e-03
+dp4 = 9.957195e-04
+en1 = -2.93218e-03
+en4 = -2.18670e-04
+ep1 = -1.13594e-03
+ep4 = 1.399311e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -7.14047e-04
+dn4 = -1.47572e-03
+dp1 = 9.592581e-04
+dp4 = 6.891467e-04
+en1 = 1.404202e-03
+en4 = -5.77428e-04
+ep1 = 3.439537e-03
+ep4 = 5.604504e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -4.06184e-03
+dn4 = -1.85430e-03
+dp1 = 9.500719e-04
+dp4 = -1.70211e-03
+en1 = 7.379689e-04
+en4 = 6.241077e-04
+ep1 = 3.107415e-04
+ep4 = 1.145814e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 3.964068e-03
+dn4 = -1.76752e-03
+dp1 = -1.38711e-03
+dp4 = 1.310873e-03
+en1 = 2.368236e-03
+en4 = -1.12346e-03
+ep1 = 6.955698e-04
+ep4 = 4.273711e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.47802e-04
+dn4 = 1.981364e-04
+dp1 = 3.052939e-04
+dp4 = 8.917921e-04
+en1 = 2.210967e-03
+en4 = -7.58229e-04
+ep1 = 8.661748e-05
+ep4 = 1.584852e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.78069e-03
+dn4 = 1.877375e-04
+dp1 = 3.512636e-03
+dp4 = 1.590359e-03
+en1 = 2.139964e-03
+en4 = 1.618298e-03
+ep1 = -3.10692e-03
+ep4 = -1.04657e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -7.96259e-04
+dn4 = -5.36075e-04
+dp1 = 7.266133e-04
+dp4 = 1.700676e-03
+en1 = 1.463319e-03
+en4 = -9.64693e-04
+ep1 = -3.59065e-03
+ep4 = 1.305024e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -2.85796e-04
+dn4 = 1.765363e-03
+dp1 = 9.132241e-04
+dp4 = 8.175019e-04
+en1 = 1.235193e-03
+en4 = 5.813143e-04
+ep1 = 8.257820e-04
+ep4 = -1.21229e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.50342e-03
+dn4 = 3.443687e-04
+dp1 = -1.11349e-03
+dp4 = 1.780134e-05
+en1 = 2.753086e-03
+en4 = 1.299363e-04
+ep1 = -2.47549e-03
+ep4 = -7.66435e-05
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -4.26511e-03
+dn4 = -1.56609e-03
+dp1 = -1.92888e-03
+dp4 = -1.02361e-03
+en1 = -6.55643e-04
+en4 = 6.440868e-04
+ep1 = -1.08001e-03
+ep4 = 2.016329e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -4.36563e-04
+dn4 = -4.26610e-04
+dp1 = 2.583041e-03
+dp4 = -4.24305e-04
+en1 = -1.51385e-03
+en4 = -2.60067e-04
+ep1 = 5.518026e-04
+ep4 = -6.54135e-05
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -4.55076e-05
+dn4 = -1.72946e-03
+dp1 = -9.69898e-04
+dp4 = 1.549964e-03
+en1 = 7.075460e-03
+en4 = -2.52697e-04
+ep1 = -1.86837e-03
+ep4 = -6.77505e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 1.151977e-03
+dn4 = -9.47001e-04
+dp1 = 3.761738e-03
+dp4 = 1.277773e-04
+en1 = -1.15576e-04
+en4 = -9.38953e-04
+ep1 = 3.093615e-03
+ep4 = -2.55952e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 2.687579e-03
+dn4 = -2.14883e-03
+dp1 = -4.14111e-04
+dp4 = -1.69626e-04
+en1 = 1.064988e-03
+en4 = -6.67549e-04
+ep1 = 1.995037e-03
+ep4 = 1.579676e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 3.098165e-03
+dn4 = 1.066348e-03
+dp1 = -6.00873e-03
+dp4 = 1.009025e-03
+en1 = -2.01682e-04
+en4 = -2.14844e-03
+ep1 = 4.806793e-03
+ep4 = 2.583484e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -3.20006e-04
+dn4 = -5.83737e-04
+dp1 = -3.40082e-03
+dp4 = -4.72566e-04
+en1 = 2.054840e-03
+en4 = -1.76810e-03
+ep1 = 1.877296e-03
+ep4 = -2.41894e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 4.498352e-04
+dn4 = -1.17153e-03
+dp1 = -2.34000e-03
+dp4 = -2.54824e-03
+en1 = -1.86284e-03
+en4 = -1.56345e-04
+ep1 = 5.004969e-03
+ep4 = -8.47546e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.53443e-03
+dn4 = 9.411954e-05
+dp1 = 1.735455e-04
+dp4 = -2.50964e-03
+en1 = 1.187203e-03
+en4 = 1.990999e-03
+ep1 = -1.09356e-03
+ep4 = 1.143002e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -9.34544e-04
+dn4 = 4.655150e-04
+dp1 = 1.120187e-03
+dp4 = 2.966326e-03
+en1 = -7.09282e-04
+en4 = -2.17688e-03
+ep1 = -1.56225e-03
+ep4 = -2.24935e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+dn1 = 4.729326e-05
+dn4 = 3.754511e-04
+dp1 = 7.472899e-04
+dp4 = 1.310488e-03
+en1 = 1.142881e-03
+en4 = 4.632558e-04
+ep1 = 3.892505e-03
+ep4 = -2.13072e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -3.12150e-04
+dn4 = 7.825417e-04
+dp1 = -9.54299e-04
+dp4 = 1.907806e-03
+en1 = -8.83586e-05
+en4 = 9.574826e-04
+ep1 = 4.248068e-03
+ep4 = 5.795821e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 2.572259e-03
+dn4 = 1.179809e-03
+dp1 = -2.48368e-03
+dp4 = 6.952937e-04
+en1 = 3.302142e-03
+en4 = -1.31040e-03
+ep1 = 8.591242e-04
+ep4 = -2.35224e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 4.454912e-04
+dn4 = -2.99455e-04
+dp1 = -1.89081e-04
+dp4 = 7.196072e-04
+en1 = -1.62121e-03
+en4 = 6.356290e-04
+ep1 = -7.96536e-04
+ep4 = -1.02569e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.65739e-03
+dn4 = 2.506122e-03
+dp1 = -4.53219e-04
+dp4 = -7.40673e-04
+en1 = -6.14718e-04
+en4 = -6.71982e-04
+ep1 = -2.68907e-03
+ep4 = -8.22930e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -4.13495e-03
+dn4 = 4.143269e-04
+dp1 = -2.01216e-03
+dp4 = 1.623587e-03
+en1 = 6.322349e-04
+en4 = 3.097407e-04
+ep1 = 3.071314e-03
+ep4 = -3.90742e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.78553e-04
+dn4 = 1.113925e-04
+dp1 = -1.26976e-03
+dp4 = 1.442867e-03
+en1 = -1.51212e-03
+en4 = -5.70738e-04
+ep1 = -2.63073e-03
+ep4 = -4.03061e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 2.314769e-03
+dn4 = 1.304068e-03
+dp1 = -1.48173e-03
+dp4 = 1.211781e-04
+en1 = 1.520620e-03
+en4 = -1.90346e-03
+ep1 = 3.070084e-03
+ep4 = 1.425498e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.65881e-03
+dn4 = 5.530052e-04
+dp1 = 5.139651e-04
+dp4 = -1.56116e-03
+en1 = 6.401605e-03
+en4 = -1.18769e-04
+ep1 = 1.543036e-03
+ep4 = 8.027029e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 1.124517e-03
+dn4 = -1.44810e-03
+dp1 = -1.06613e-03
+dp4 = -8.46491e-04
+en1 = -1.24278e-03
+en4 = -1.50523e-03
+ep1 = 1.030777e-03
+ep4 = -1.49912e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 3.092541e-03
+dn4 = -1.50453e-03
+dp1 = 2.889816e-03
+dp4 = -1.05578e-03
+en1 = -5.75086e-04
+en4 = 1.964290e-03
+ep1 = -6.99813e-04
+ep4 = -7.92135e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 4.752134e-03
+dn4 = 1.945275e-04
+dp1 = 2.578398e-03
+dp4 = -6.04950e-04
+en1 = -2.64939e-04
+en4 = -1.10194e-03
+ep1 = -6.53087e-03
+ep4 = 1.139110e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 3.043661e-03
+dn4 = -7.75328e-04
+dp1 = -2.02188e-03
+dp4 = 1.381617e-03
+en1 = 7.381102e-05
+en4 = 8.942540e-04
+ep1 = 1.301487e-03
+ep4 = -7.69713e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -2.86308e-03
+dn4 = 2.409831e-03
+dp1 = 5.514963e-04
+dp4 = -2.04272e-03
+en1 = 2.939876e-03
+en4 = -9.19654e-04
+ep1 = -9.13724e-04
+ep4 = 5.182417e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 2.482113e-03
+dn4 = 6.331123e-05
+dp1 = 3.106689e-03
+dp4 = -5.36084e-04
+en1 = 3.297557e-04
+en4 = -4.35869e-04
+ep1 = -8.14580e-04
+ep4 = 3.764196e-05
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.32871e-03
+dn4 = 6.908753e-04
+dp1 = 3.455445e-03
+dp4 = 5.159834e-04
+en1 = 1.179492e-03
+en4 = -1.03617e-03
+ep1 = -1.40947e-03
+ep4 = -1.53122e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -9.96392e-04
+dn4 = 6.669052e-04
+dp1 = -1.25724e-03
+dp4 = -1.21485e-03
+en1 = -3.69191e-04
+en4 = -3.44859e-05
+ep1 = 2.606593e-03
+ep4 = -7.10204e-05
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -2.14663e-03
+dn4 = -1.21469e-03
+dp1 = 1.068144e-03
+dp4 = 3.097833e-05
+en1 = -4.41695e-04
+en4 = 5.416345e-04
+ep1 = 1.330128e-03
+ep4 = 1.116265e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 4.778637e-04
+dn4 = -5.64418e-04
+dp1 = -3.40194e-03
+dp4 = 7.077296e-04
+en1 = 4.771158e-03
+en4 = 3.269210e-04
+ep1 = 1.470734e-03
+ep4 = -4.32738e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 4.981709e-03
+dn4 = 2.177187e-04
+dp1 = 2.149403e-03
+dp4 = 1.161187e-03
+en1 = 1.342396e-03
+en4 = 8.737267e-04
+ep1 = -1.03406e-03
+ep4 = 1.206534e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -2.97294e-03
+dn4 = 1.286248e-03
+dp1 = 3.018665e-04
+dp4 = -1.34464e-03
+en1 = 7.789276e-04
+en4 = 6.381914e-04
+ep1 = 2.596705e-03
+ep4 = -9.03864e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.78211e-03
+dn4 = -7.41987e-04
+dp1 = -3.47465e-05
+dp4 = -4.44330e-04
+en1 = 1.551307e-03
+en4 = -1.03343e-04
+ep1 = 1.188182e-03
+ep4 = -9.62804e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -9.57969e-04
+dn4 = 6.263244e-04
+dp1 = -8.59473e-04
+dp4 = -1.32314e-03
+en1 = 6.064490e-04
+en4 = 1.425936e-03
+ep1 = 3.110409e-04
+ep4 = 8.561184e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -4.48344e-03
+dn4 = 1.227332e-04
+dp1 = -2.14294e-03
+dp4 = 1.091663e-03
+en1 = -2.41081e-03
+en4 = 2.428091e-04
+ep1 = -1.60029e-04
+ep4 = 9.472873e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -2.81677e-03
+dn4 = -2.51156e-04
+dp1 = -9.85517e-04
+dp4 = -4.73739e-04
+en1 = -1.57390e-03
+en4 = -1.34781e-03
+ep1 = -1.52391e-03
+ep4 = 4.820737e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+dn1 = -6.76252e-03
+dn4 = 1.140351e-03
+dp1 = -4.93549e-03
+dp4 = -7.70605e-04
+en1 = -3.00935e-04
+en4 = 3.330101e-04
+ep1 = 2.390894e-03
+ep4 = -2.43684e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 3.615088e-04
+dn4 = -1.25603e-03
+dp1 = 5.144387e-03
+dp4 = -8.72739e-04
+en1 = -1.68747e-03
+en4 = -1.34539e-03
+ep1 = 1.804627e-03
+ep4 = 2.356068e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -3.93586e-03
+dn4 = 1.130516e-03
+dp1 = 1.187693e-03
+dp4 = -1.47881e-03
+en1 = -5.11494e-05
+en4 = -4.33254e-04
+ep1 = -8.83252e-04
+ep4 = 1.243363e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.56873e-03
+dn4 = -1.66490e-03
+dp1 = 2.192180e-03
+dp4 = -1.01399e-03
+en1 = -1.81668e-03
+en4 = 2.090105e-04
+ep1 = 2.185347e-03
+ep4 = -1.92540e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -4.86235e-03
+dn4 = -2.75501e-04
+dp1 = 3.551105e-03
+dp4 = 6.829835e-04
+en1 = 6.245171e-04
+en4 = 9.729304e-04
+ep1 = 3.889903e-03
+ep4 = 1.736374e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 2.173813e-03
+dn4 = 4.867708e-04
+dp1 = 5.452714e-04
+dp4 = 6.472403e-04
+en1 = -3.86944e-04
+en4 = 1.354961e-03
+ep1 = -2.26633e-03
+ep4 = 2.117861e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 3.420283e-03
+dn4 = 1.763744e-05
+dp1 = -2.29921e-03
+dp4 = 1.784556e-03
+en1 = -3.25347e-04
+en4 = -1.70840e-04
+ep1 = -1.10195e-03
+ep4 = -4.16041e-05
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -3.18957e-03
+dn4 = -4.48507e-04
+dp1 = -5.11522e-03
+dp4 = 8.335915e-04
+en1 = -3.99863e-04
+en4 = 1.500867e-03
+ep1 = -1.92748e-03
+ep4 = -5.90131e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 5.844277e-03
+dn4 = -1.08919e-03
+dp1 = -7.50371e-05
+dp4 = -3.51761e-04
+en1 = 1.899884e-03
+en4 = 8.891641e-04
+ep1 = 1.834320e-03
+ep4 = -1.00995e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.69419e-04
+dn4 = -2.07853e-03
+dp1 = 4.907503e-03
+dp4 = 2.233144e-03
+en1 = -3.83220e-03
+en4 = -1.03614e-03
+ep1 = 2.521555e-03
+ep4 = -1.35347e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.38739e-03
+dn4 = -2.06689e-04
+dp1 = -3.21504e-03
+dp4 = 1.223095e-04
+en1 = 2.803673e-03
+en4 = -3.71492e-03
+ep1 = -4.30383e-03
+ep4 = -1.61344e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 6.319598e-04
+dn4 = -1.26634e-03
+dp1 = 1.301108e-03
+dp4 = 1.827202e-03
+en1 = 4.017212e-03
+en4 = -1.87844e-03
+ep1 = -3.09436e-03
+ep4 = 2.674710e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -3.35441e-03
+dn4 = 6.039188e-04
+dp1 = 3.874391e-03
+dp4 = -3.77941e-04
+en1 = 2.006219e-03
+en4 = -3.17603e-05
+ep1 = -3.18564e-04
+ep4 = 1.636633e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 2.973515e-03
+dn4 = -5.05229e-04
+dp1 = -1.44741e-03
+dp4 = -8.19870e-04
+en1 = 5.587782e-03
+en4 = 8.215562e-04
+ep1 = -2.22117e-03
+ep4 = 5.438187e-05
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 2.045125e-03
+dn4 = -1.55515e-03
+dp1 = -1.41233e-04
+dp4 = -3.33333e-04
+en1 = -1.18125e-03
+en4 = -1.65998e-03
+ep1 = -4.09757e-03
+ep4 = -9.23257e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 1.554722e-03
+dn4 = 4.620642e-05
+dp1 = 4.387117e-03
+dp4 = 6.382881e-04
+en1 = -1.93266e-03
+en4 = 1.255577e-03
+ep1 = -2.20642e-03
+ep4 = -8.14398e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 1.097728e-03
+dn4 = -1.06276e-03
+dp1 = -2.30642e-03
+dp4 = 3.331191e-04
+en1 = -6.27870e-04
+en4 = 5.010789e-04
+ep1 = 1.118697e-03
+ep4 = -5.90417e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.79332e-03
+dn4 = 2.706789e-04
+dp1 = -2.54760e-03
+dp4 = -3.03671e-04
+en1 = 5.523793e-03
+en4 = 1.404345e-03
+ep1 = 1.309785e-03
+ep4 = 2.119194e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 5.841597e-03
+dn4 = -1.67508e-03
+dp1 = 1.780611e-03
+dp4 = 1.410755e-04
+en1 = 1.122881e-03
+en4 = 4.270527e-04
+ep1 = 9.000832e-04
+ep4 = 2.902002e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 2.381027e-04
+dn4 = 1.944640e-04
+dp1 = 3.905384e-03
+dp4 = -6.99911e-04
+en1 = 2.658202e-03
+en4 = -1.46261e-03
+ep1 = 7.506626e-04
+ep4 = 1.192718e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -3.35093e-04
+dn4 = 5.462318e-04
+dp1 = -1.71265e-03
+dp4 = -7.43509e-04
+en1 = -1.51728e-03
+en4 = -2.69612e-04
+ep1 = 8.403078e-04
+ep4 = 2.375119e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 5.774808e-04
+dn4 = 1.691585e-04
+dp1 = 1.308247e-03
+dp4 = 5.124299e-04
+en1 = -1.90516e-03
+en4 = 2.168177e-03
+ep1 = -1.75542e-03
+ep4 = 2.602988e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -6.00653e-05
+dn4 = -1.07272e-03
+dp1 = -1.91906e-03
+dp4 = 8.733131e-04
+en1 = 1.272250e-03
+en4 = -6.12791e-04
+ep1 = 4.803723e-03
+ep4 = -5.95924e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+dn1 = 3.230505e-05
+dn4 = 4.471546e-04
+dp1 = -1.70993e-03
+dp4 = 9.998057e-04
+en1 = -4.90182e-04
+en4 = -2.26971e-03
+ep1 = -1.06122e-03
+ep4 = 1.291797e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -5.29001e-03
+dn4 = 1.124460e-03
+dp1 = 1.436544e-03
+dp4 = 1.582156e-03
+en1 = 1.013769e-03
+en4 = 1.543442e-03
+ep1 = 3.715386e-04
+ep4 = -8.22710e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 8.328503e-04
+dn4 = 3.088172e-03
+dp1 = -4.06965e-04
+dp4 = -7.33285e-04
+en1 = 2.374490e-03
+en4 = 1.169083e-03
+ep1 = 3.498631e-03
+ep4 = 3.405001e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -5.48095e-04
+dn4 = 9.964918e-04
+dp1 = 5.596905e-03
+dp4 = 1.251377e-03
+en1 = -1.64175e-03
+en4 = -1.37116e-03
+ep1 = -3.66253e-03
+ep4 = 1.416079e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -4.43647e-04
+dn4 = 5.765478e-04
+dp1 = -2.80746e-04
+dp4 = 1.329502e-03
+en1 = -1.80272e-03
+en4 = 8.520706e-04
+ep1 = -2.33410e-03
+ep4 = -1.15081e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 3.644154e-03
+dn4 = -1.92394e-04
+dp1 = 1.553421e-04
+dp4 = -6.94900e-04
+en1 = -5.81695e-04
+en4 = 1.843207e-03
+ep1 = 1.860725e-03
+ep4 = -1.08256e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -6.89559e-03
+dn4 = 7.499041e-05
+dp1 = 4.127840e-04
+dp4 = 1.024890e-03
+en1 = -1.97644e-03
+en4 = -4.62591e-04
+ep1 = 1.748192e-03
+ep4 = -1.44176e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.32526e-04
+dn4 = 5.085691e-04
+dp1 = 9.132833e-04
+dp4 = -1.32660e-03
+en1 = -3.33838e-03
+en4 = 1.516105e-03
+ep1 = -2.73492e-03
+ep4 = 8.369754e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -5.51337e-03
+dn4 = 2.506188e-04
+dp1 = 2.875497e-03
+dp4 = -1.83442e-04
+en1 = 5.022310e-04
+en4 = -7.91960e-04
+ep1 = 1.962013e-03
+ep4 = -1.95094e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.18309e-03
+dn4 = -1.16822e-03
+dp1 = -3.07356e-03
+dp4 = 1.869275e-03
+en1 = 1.377126e-03
+en4 = 2.818735e-03
+ep1 = 1.113983e-03
+ep4 = -3.95526e-05
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 2.144272e-03
+dn4 = -1.06368e-03
+dp1 = -4.62794e-03
+dp4 = 9.708720e-06
+en1 = -3.41597e-04
+en4 = -1.24386e-03
+ep1 = 6.217062e-04
+ep4 = 1.125358e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -8.16927e-04
+dn4 = 1.791733e-03
+dp1 = -1.89091e-03
+dp4 = -7.61369e-04
+en1 = -1.85511e-03
+en4 = 4.190549e-04
+ep1 = -2.97010e-03
+ep4 = 7.680046e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 6.262781e-04
+dn4 = -7.79244e-04
+dp1 = 2.635965e-03
+dp4 = -1.09741e-03
+en1 = 1.617799e-03
+en4 = -1.86369e-04
+ep1 = 1.262621e-03
+ep4 = -1.16728e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 1.300402e-03
+dn4 = -2.33644e-04
+dp1 = 3.251719e-03
+dp4 = -5.49287e-04
+en1 = -3.71343e-03
+en4 = 1.436444e-03
+ep1 = 1.722510e-03
+ep4 = 1.521736e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -3.68251e-03
+dn4 = -1.27003e-03
+dp1 = 1.816903e-03
+dp4 = -6.99075e-04
+en1 = 4.443272e-04
+en4 = -6.47996e-04
+ep1 = 1.747299e-03
+ep4 = 4.042464e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 2.477508e-03
+dn4 = -1.34073e-04
+dp1 = 1.410138e-03
+dp4 = -1.70784e-03
+en1 = 2.954956e-03
+en4 = -6.79081e-04
+ep1 = -1.84437e-04
+ep4 = 1.151294e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 7.685305e-04
+dn4 = 1.017684e-03
+dp1 = -9.74427e-05
+dp4 = 9.397235e-04
+en1 = 1.691679e-03
+en4 = 3.995361e-04
+ep1 = -2.21194e-03
+ep4 = 1.523684e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.38755e-03
+dn4 = 2.754877e-04
+dp1 = -3.27084e-03
+dp4 = 8.670034e-04
+en1 = -6.97849e-04
+en4 = -1.13755e-03
+ep1 = 6.780239e-04
+ep4 = -4.96089e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -6.87768e-04
+dn4 = 2.127400e-03
+dp1 = -1.45815e-03
+dp4 = -1.77284e-03
+en1 = 2.111473e-03
+en4 = 1.518358e-03
+ep1 = 3.834088e-03
+ep4 = 5.355619e-05
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -8.05462e-04
+dn4 = 1.617567e-03
+dp1 = -1.77290e-03
+dp4 = -1.76084e-03
+en1 = -2.33311e-03
+en4 = 1.492570e-03
+ep1 = -2.94560e-04
+ep4 = -3.18538e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.00253e-03
+dn4 = 3.576533e-04
+dp1 = -7.12661e-04
+dp4 = 3.125617e-04
+en1 = 2.224596e-03
+en4 = 6.436678e-04
+ep1 = 2.216969e-03
+ep4 = -6.09221e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.55763e-03
+dn4 = 1.301881e-03
+dp1 = 2.719967e-03
+dp4 = 1.015732e-03
+en1 = 1.094452e-03
+en4 = -8.96344e-04
+ep1 = -1.55500e-03
+ep4 = 2.818616e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+dn1 = -2.96892e-03
+dn4 = -1.09093e-03
+dp1 = 1.161366e-03
+dp4 = 4.209787e-04
+en1 = 1.735810e-03
+en4 = 1.137143e-03
+ep1 = -9.23495e-04
+ep4 = 2.118270e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -2.26142e-03
+dn4 = 4.837388e-04
+dp1 = 2.723785e-03
+dp4 = -1.12483e-03
+en1 = 6.419992e-04
+en4 = 5.343418e-04
+ep1 = -2.08886e-03
+ep4 = 1.113672e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -7.22820e-04
+dn4 = 1.163398e-04
+dp1 = -3.30425e-03
+dp4 = -4.57623e-04
+en1 = -2.47116e-03
+en4 = 6.026697e-04
+ep1 = 1.141764e-03
+ep4 = -1.93094e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.30051e-03
+dn4 = 1.590683e-03
+dp1 = -1.95990e-03
+dp4 = 1.520107e-03
+en1 = 6.570041e-04
+en4 = -8.54827e-04
+ep1 = -2.24602e-03
+ep4 = 1.437415e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.80737e-03
+dn4 = 6.410790e-04
+dp1 = 3.818080e-03
+dp4 = 1.245724e-05
+en1 = -3.62797e-03
+en4 = -1.58040e-03
+ep1 = -1.12734e-03
+ep4 = 2.055198e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 1.974211e-03
+dn4 = 3.808296e-04
+dp1 = -1.29314e-04
+dp4 = 2.232054e-03
+en1 = -3.36680e-03
+en4 = 1.540200e-03
+ep1 = -2.47432e-03
+ep4 = 8.397796e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -5.11780e-04
+dn4 = -1.39210e-03
+dp1 = 2.765381e-03
+dp4 = 1.203329e-03
+en1 = -1.42255e-03
+en4 = -6.23319e-04
+ep1 = 3.767638e-04
+ep4 = -4.65292e-05
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -2.56758e-03
+dn4 = -1.28966e-04
+dp1 = -2.11429e-03
+dp4 = 1.056139e-06
+en1 = 3.171200e-04
+en4 = -3.33174e-04
+ep1 = 6.184731e-03
+ep4 = -1.41853e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -2.93214e-03
+dn4 = 1.747100e-03
+dp1 = -3.12081e-03
+dp4 = 1.322131e-03
+en1 = 9.596455e-05
+en4 = 1.439379e-03
+ep1 = -3.14232e-04
+ep4 = -9.58996e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -2.25064e-03
+dn4 = -1.27036e-04
+dp1 = -6.62530e-05
+dp4 = 5.767816e-04
+en1 = -2.04816e-03
+en4 = -7.53298e-04
+ep1 = 1.292358e-03
+ep4 = 1.112429e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -6.69827e-04
+dn4 = 8.612302e-04
+dp1 = 2.662933e-03
+dp4 = 7.778405e-04
+en1 = 2.673470e-03
+en4 = 1.435023e-03
+ep1 = -1.78005e-03
+ep4 = 2.040717e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -9.40252e-04
+dn4 = -4.51703e-05
+dp1 = -2.17408e-03
+dp4 = 5.489544e-04
+en1 = 9.302786e-04
+en4 = 6.335414e-04
+ep1 = -1.15681e-03
+ep4 = -7.06803e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -6.06325e-04
+dn4 = -6.07180e-05
+dp1 = -2.88192e-03
+dp4 = -4.48755e-04
+en1 = -3.44358e-03
+en4 = -1.62710e-03
+ep1 = 4.422079e-03
+ep4 = -4.77912e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 6.104524e-03
+dn4 = -1.73872e-03
+dp1 = -3.93200e-04
+dp4 = 1.073208e-03
+en1 = 9.586162e-04
+en4 = -3.57009e-04
+ep1 = -9.57767e-04
+ep4 = 7.401221e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 9.824744e-04
+dn4 = 1.026601e-04
+dp1 = -2.49717e-03
+dp4 = -1.71372e-03
+en1 = -2.45231e-04
+en4 = -1.21701e-03
+ep1 = 2.432295e-03
+ep4 = -7.94162e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 8.950906e-04
+dn4 = -8.27861e-04
+dp1 = 4.225723e-04
+dp4 = 1.549496e-03
+en1 = -1.38310e-03
+en4 = 1.499682e-03
+ep1 = 1.804500e-03
+ep4 = 6.149646e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 3.239572e-03
+dn4 = -8.15273e-04
+dp1 = 9.116192e-04
+dp4 = 3.220179e-04
+en1 = 2.697943e-04
+en4 = 1.199555e-03
+ep1 = 6.180225e-03
+ep4 = 2.482813e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -3.38557e-04
+dn4 = -4.45602e-04
+dp1 = -2.23026e-03
+dp4 = -3.57927e-04
+en1 = 3.417882e-03
+en4 = -1.09447e-03
+ep1 = -5.80842e-05
+ep4 = -1.57299e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.24507e-03
+dn4 = 5.383396e-04
+dp1 = 1.503638e-04
+dp4 = -5.05080e-04
+en1 = 8.808870e-04
+en4 = -1.16016e-03
+ep1 = -4.76734e-03
+ep4 = 2.136697e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 3.530746e-04
+dn4 = 1.383291e-04
+dp1 = 3.517603e-03
+dp4 = -2.56995e-03
+en1 = -1.91030e-03
+en4 = 4.657599e-04
+ep1 = 1.979130e-03
+ep4 = -5.41641e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+dn1 = -2.10205e-05
+dn4 = 8.078770e-04
+dp1 = -7.03677e-04
+dp4 = -6.69741e-04
+en1 = -1.39278e-03
+en4 = -4.61905e-04
+ep1 = 1.002235e-03
+ep4 = -3.21899e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 4.753899e-04
+dn4 = -1.20831e-03
+dp1 = 1.507802e-03
+dp4 = 5.177099e-04
+en1 = -3.17784e-03
+en4 = -1.98194e-03
+ep1 = -1.73909e-03
+ep4 = -6.34381e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -2.00416e-03
+dn4 = 7.610181e-04
+dp1 = -1.54689e-03
+dp4 = 8.530682e-05
+en1 = 1.891477e-03
+en4 = -1.87029e-03
+ep1 = 9.506203e-04
+ep4 = 7.973576e-06
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 7.010654e-03
+dn4 = -1.11620e-03
+dp1 = -1.39081e-03
+dp4 = 2.082407e-03
+en1 = -4.25804e-03
+en4 = 2.571989e-05
+ep1 = -2.00320e-03
+ep4 = 1.486967e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 3.554759e-03
+dn4 = -6.28680e-04
+dp1 = -1.94680e-03
+dp4 = 7.550638e-04
+en1 = -8.63457e-04
+en4 = -1.28417e-03
+ep1 = 2.460571e-03
+ep4 = 1.930846e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -4.23411e-03
+dn4 = -1.80472e-03
+dp1 = -3.97341e-03
+dp4 = -2.52275e-04
+en1 = -4.45447e-03
+en4 = -3.40664e-04
+ep1 = -2.52722e-03
+ep4 = -5.89862e-06
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -6.31450e-04
+dn4 = -1.44002e-03
+dp1 = -1.92753e-03
+dp4 = -1.41919e-03
+en1 = -3.18090e-04
+en4 = 5.195516e-04
+ep1 = 1.906714e-03
+ep4 = -7.57716e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -5.37640e-04
+dn4 = 4.692835e-04
+dp1 = 1.112427e-03
+dp4 = 1.981095e-03
+en1 = 6.018246e-03
+en4 = -1.60649e-03
+ep1 = -9.72697e-04
+ep4 = -1.60059e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.84513e-03
+dn4 = 6.051062e-04
+dp1 = 4.582275e-04
+dp4 = 2.916798e-03
+en1 = -2.13544e-03
+en4 = -4.32010e-05
+ep1 = -1.01849e-03
+ep4 = 1.335871e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 4.349764e-03
+dn4 = -6.23077e-04
+dp1 = -3.76541e-03
+dp4 = -4.84272e-04
+en1 = -3.59130e-03
+en4 = -1.67047e-03
+ep1 = 3.513711e-03
+ep4 = -8.14459e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -3.05774e-03
+dn4 = 7.976839e-04
+dp1 = 1.574215e-03
+dp4 = -1.78118e-03
+en1 = -5.17908e-04
+en4 = -2.41904e-03
+ep1 = -3.44523e-03
+ep4 = 5.753790e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 2.368883e-04
+dn4 = 1.025016e-03
+dp1 = -1.76754e-03
+dp4 = -6.34879e-04
+en1 = 5.021261e-04
+en4 = -1.03254e-03
+ep1 = -1.78488e-03
+ep4 = -1.26131e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 2.547641e-04
+dn4 = 1.883674e-03
+dp1 = 3.352423e-03
+dp4 = 1.087702e-03
+en1 = -4.55829e-03
+en4 = -1.10166e-03
+ep1 = 2.416386e-03
+ep4 = -5.38129e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -2.71038e-03
+dn4 = -6.11525e-04
+dp1 = 1.301004e-03
+dp4 = 9.647041e-04
+en1 = 1.483624e-03
+en4 = -1.18531e-03
+ep1 = 1.259060e-04
+ep4 = -2.99235e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 4.612148e-04
+dn4 = -6.17789e-04
+dp1 = -1.17617e-03
+dp4 = -3.42036e-04
+en1 = -5.34797e-04
+en4 = 8.938217e-04
+ep1 = -1.11381e-03
+ep4 = -1.21093e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -3.71766e-04
+dn4 = 1.033078e-03
+dp1 = -6.07395e-05
+dp4 = -1.69741e-04
+en1 = -2.44275e-03
+en4 = -2.90968e-04
+ep1 = -1.11997e-03
+ep4 = 2.262359e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -2.22021e-03
+dn4 = 5.716486e-04
+dp1 = 1.401604e-03
+dp4 = -1.14995e-05
+en1 = -2.56228e-03
+en4 = 4.326836e-05
+ep1 = -1.90080e-03
+ep4 = 9.165186e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.81700e-03
+dn4 = 9.939117e-04
+dp1 = -3.37099e-03
+dp4 = -8.38487e-04
+en1 = -2.36591e-03
+en4 = 5.050112e-04
+ep1 = 2.245703e-04
+ep4 = 1.025041e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 6.542222e-04
+dn4 = -7.30015e-04
+dp1 = -1.11634e-03
+dp4 = 1.675145e-03
+en1 = 8.602835e-04
+en4 = -1.36442e-03
+ep1 = 9.194311e-05
+ep4 = -1.08937e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+dn1 = -7.48969e-04
+dn4 = -5.50299e-04
+dp1 = 3.487735e-03
+dp4 = 2.852014e-03
+en1 = -3.28516e-03
+en4 = -6.27712e-04
+ep1 = -1.46828e-03
+ep4 = 1.552238e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -2.33972e-03
+dn4 = 2.037925e-03
+dp1 = 1.932506e-04
+dp4 = 1.203307e-03
+en1 = 3.536471e-04
+en4 = 5.015170e-04
+ep1 = 3.503876e-03
+ep4 = 7.302842e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.49247e-03
+dn4 = -2.04545e-03
+dp1 = -1.26441e-03
+dp4 = 8.981983e-04
+en1 = -4.37910e-03
+en4 = -1.12905e-04
+ep1 = 4.138844e-04
+ep4 = -1.34251e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 1.915687e-03
+dn4 = -1.78744e-03
+dp1 = -1.78858e-03
+dp4 = 1.013246e-03
+en1 = -4.36877e-04
+en4 = 5.540082e-04
+ep1 = 6.768864e-03
+ep4 = -2.10081e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -2.23415e-03
+dn4 = 8.746685e-04
+dp1 = 1.108052e-03
+dp4 = -5.33017e-04
+en1 = -1.15928e-03
+en4 = -9.35270e-04
+ep1 = -2.77143e-04
+ep4 = -9.80385e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 2.677427e-03
+dn4 = -1.24131e-03
+dp1 = 6.934916e-04
+dp4 = 9.283290e-04
+en1 = -6.51111e-03
+en4 = 1.524152e-03
+ep1 = -5.35147e-04
+ep4 = 2.884595e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 4.589319e-03
+dn4 = 1.491696e-03
+dp1 = -2.42630e-04
+dp4 = 1.685047e-03
+en1 = 2.353062e-03
+en4 = -1.98156e-04
+ep1 = -1.59590e-03
+ep4 = -7.30187e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 1.408740e-03
+dn4 = 2.121215e-04
+dp1 = -2.40380e-03
+dp4 = 1.064001e-03
+en1 = 1.101455e-03
+en4 = 1.969638e-03
+ep1 = -1.77080e-04
+ep4 = 1.627089e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 8.046368e-04
+dn4 = 1.164535e-03
+dp1 = -3.70109e-04
+dp4 = -7.55106e-05
+en1 = 2.891848e-03
+en4 = 1.473688e-03
+ep1 = 2.024097e-03
+ep4 = -1.46311e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 5.477781e-04
+dn4 = 4.082396e-04
+dp1 = 2.672536e-03
+dp4 = -6.59663e-04
+en1 = -2.72967e-03
+en4 = -5.43207e-04
+ep1 = 3.468485e-03
+ep4 = -1.54462e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 1.350753e-03
+dn4 = 1.538336e-04
+dp1 = -1.19090e-03
+dp4 = 1.186104e-03
+en1 = -1.41636e-03
+en4 = 9.413621e-04
+ep1 = -2.12814e-03
+ep4 = 1.657983e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 1.634471e-03
+dn4 = -1.05683e-03
+dp1 = -3.41828e-03
+dp4 = -1.79970e-03
+en1 = -2.95413e-03
+en4 = -1.34410e-03
+ep1 = 5.474238e-04
+ep4 = 2.301768e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 3.747881e-03
+dn4 = -2.51765e-04
+dp1 = -2.28969e-04
+dp4 = 3.236513e-04
+en1 = 2.906246e-03
+en4 = 1.306576e-03
+ep1 = 1.911971e-03
+ep4 = -3.10595e-05
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -7.49841e-04
+dn4 = 6.745779e-04
+dp1 = 7.278187e-04
+dp4 = -8.75974e-04
+en1 = 2.520784e-03
+en4 = -7.13557e-07
+ep1 = 2.397263e-03
+ep4 = -9.63394e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.04930e-03
+dn4 = 3.739514e-04
+dp1 = 3.174669e-03
+dp4 = -3.02301e-04
+en1 = -7.59822e-04
+en4 = -1.03611e-03
+ep1 = 2.181236e-03
+ep4 = 1.264495e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -2.86487e-03
+dn4 = 6.596240e-04
+dp1 = -1.10071e-03
+dp4 = 1.044434e-03
+en1 = 3.091604e-03
+en4 = -1.16794e-03
+ep1 = -3.45265e-03
+ep4 = 5.802562e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -7.83891e-04
+dn4 = -5.75667e-04
+dp1 = -1.56182e-04
+dp4 = 5.459829e-05
+en1 = 4.187320e-03
+en4 = -1.90304e-04
+ep1 = 2.904928e-03
+ep4 = -4.80391e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 7.952323e-04
+dn4 = -1.43830e-03
+dp1 = 1.858747e-03
+dp4 = 6.001915e-04
+en1 = 1.327173e-03
+en4 = 1.210749e-03
+ep1 = -4.95531e-04
+ep4 = -4.85819e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+dn1 = -9.76623e-04
+dn4 = -2.91076e-03
+dp1 = -9.92906e-04
+dp4 = -9.70366e-04
+en1 = -2.35176e-03
+en4 = 1.042781e-04
+ep1 = -2.08366e-04
+ep4 = 3.867210e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 3.461875e-03
+dn4 = 3.701880e-04
+dp1 = -1.86116e-03
+dp4 = -8.45941e-04
+en1 = 4.711123e-03
+en4 = 3.559924e-04
+ep1 = -7.60374e-04
+ep4 = -6.79052e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -5.60757e-04
+dn4 = -3.83928e-04
+dp1 = 1.292349e-03
+dp4 = -6.74933e-04
+en1 = -3.66956e-03
+en4 = -8.58228e-04
+ep1 = 2.250555e-04
+ep4 = 6.628232e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -2.86161e-03
+dn4 = 5.953083e-04
+dp1 = 1.570030e-03
+dp4 = 1.767190e-03
+en1 = 5.926884e-04
+en4 = 8.511334e-04
+ep1 = 6.470580e-05
+ep4 = 3.045792e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -3.44918e-03
+dn4 = 1.184748e-03
+dp1 = 1.975791e-03
+dp4 = 1.092248e-03
+en1 = -1.85902e-03
+en4 = 5.311983e-04
+ep1 = -5.91490e-03
+ep4 = 1.350931e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -5.81352e-04
+dn4 = 1.297266e-03
+dp1 = 7.426144e-04
+dp4 = -3.84286e-04
+en1 = -5.12872e-03
+en4 = -9.54823e-05
+ep1 = 2.482645e-03
+ep4 = -6.61536e-05
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 4.988121e-04
+dn4 = 9.210007e-04
+dp1 = 2.906579e-03
+dp4 = -5.10119e-05
+en1 = 2.008260e-03
+en4 = -2.31669e-03
+ep1 = 2.066022e-04
+ep4 = 1.988468e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.49781e-03
+dn4 = 6.848427e-04
+dp1 = -3.27270e-03
+dp4 = -1.27812e-03
+en1 = -1.04154e-03
+en4 = -4.60078e-04
+ep1 = 1.877352e-03
+ep4 = 1.340082e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.52995e-03
+dn4 = -6.46125e-05
+dp1 = 3.577098e-03
+dp4 = 1.957351e-04
+en1 = 3.109710e-03
+en4 = 4.499990e-04
+ep1 = -3.20250e-03
+ep4 = 4.428441e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 8.190300e-04
+dn4 = 1.287531e-03
+dp1 = 2.455902e-03
+dp4 = -4.38411e-04
+en1 = 1.195407e-03
+en4 = 6.379618e-04
+ep1 = 4.561780e-03
+ep4 = -1.23439e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -2.03967e-03
+dn4 = 1.253247e-03
+dp1 = -3.80285e-03
+dp4 = -7.26311e-04
+en1 = 1.933395e-03
+en4 = -2.11037e-03
+ep1 = 1.426105e-03
+ep4 = 7.513736e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -2.28162e-03
+dn4 = 7.923986e-04
+dp1 = -5.73033e-04
+dp4 = -5.62958e-04
+en1 = -2.57974e-03
+en4 = 1.492886e-03
+ep1 = -1.25042e-03
+ep4 = 8.939047e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 1.882923e-03
+dn4 = 2.230038e-03
+dp1 = 4.476730e-04
+dp4 = 2.863124e-04
+en1 = 1.094834e-03
+en4 = 1.147710e-04
+ep1 = 2.210368e-03
+ep4 = 6.526546e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 9.517207e-04
+dn4 = -2.44509e-03
+dp1 = -2.61195e-03
+dp4 = -1.43982e-03
+en1 = -1.79411e-03
+en4 = 2.537952e-04
+ep1 = -2.02981e-03
+ep4 = -1.45780e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.42697e-03
+dn4 = 6.043191e-04
+dp1 = -6.84323e-04
+dp4 = -3.12725e-04
+en1 = -1.94960e-03
+en4 = 2.444550e-03
+ep1 = -7.52865e-04
+ep4 = 8.770075e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 2.304475e-04
+dn4 = 5.306261e-04
+dp1 = 2.362127e-04
+dp4 = 4.237307e-04
+en1 = -3.99803e-03
+en4 = 7.090448e-04
+ep1 = 9.997841e-04
+ep4 = -1.16774e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -2.81668e-04
+dn4 = -5.17820e-04
+dp1 = -3.68942e-03
+dp4 = -3.05667e-04
+en1 = -3.65327e-03
+en4 = 4.972637e-04
+ep1 = -2.00660e-03
+ep4 = 6.238214e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+dn1 = -5.38341e-04
+dn4 = -2.11083e-03
+dp1 = -1.94573e-03
+dp4 = -9.62058e-04
+en1 = 2.158600e-03
+en4 = 8.606062e-04
+ep1 = -2.91439e-03
+ep4 = 5.075777e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 2.040668e-03
+dn4 = -1.16860e-03
+dp1 = -3.24512e-03
+dp4 = -1.37591e-03
+en1 = 1.236450e-03
+en4 = 1.049295e-03
+ep1 = 2.491107e-03
+ep4 = 5.697461e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 2.159106e-03
+dn4 = 9.336259e-04
+dp1 = 1.406201e-03
+dp4 = 9.374328e-04
+en1 = -1.83221e-03
+en4 = 2.391698e-04
+ep1 = 3.165375e-03
+ep4 = 7.047362e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -3.00948e-05
+dn4 = 1.788873e-04
+dp1 = -3.48297e-03
+dp4 = 2.533058e-03
+en1 = -2.35846e-03
+en4 = 1.180886e-03
+ep1 = 2.976856e-04
+ep4 = 6.261290e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -5.84550e-04
+dn4 = -1.15727e-03
+dp1 = -2.36467e-03
+dp4 = 2.195726e-04
+en1 = 2.355771e-03
+en4 = -1.20477e-03
+ep1 = 2.076648e-03
+ep4 = 5.053152e-05
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 1.693385e-03
+dn4 = -7.82225e-04
+dp1 = -2.67820e-03
+dp4 = 7.286801e-04
+en1 = 1.579090e-03
+en4 = -1.54269e-03
+ep1 = 1.972877e-03
+ep4 = 8.733795e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 2.061349e-03
+dn4 = 1.701279e-04
+dp1 = 1.602838e-04
+dp4 = 1.149132e-03
+en1 = 1.356759e-03
+en4 = 1.160732e-03
+ep1 = -9.91010e-04
+ep4 = -9.68935e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -2.24123e-03
+dn4 = 6.917489e-04
+dp1 = 1.645822e-03
+dp4 = 5.897456e-04
+en1 = -8.33758e-04
+en4 = 1.051829e-03
+ep1 = 1.568698e-03
+ep4 = 1.701114e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 3.313316e-05
+dn4 = 9.599009e-04
+dp1 = -2.44945e-03
+dp4 = -1.19215e-03
+en1 = 5.503509e-04
+en4 = 1.161432e-03
+ep1 = 1.161297e-03
+ep4 = 1.442327e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 6.751093e-04
+dn4 = -2.55489e-03
+dp1 = 1.963980e-03
+dp4 = 7.041204e-05
+en1 = -1.61232e-03
+en4 = -1.88361e-03
+ep1 = -2.87965e-03
+ep4 = -1.26681e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -5.95546e-03
+dn4 = 9.171101e-04
+dp1 = -1.82377e-03
+dp4 = -2.40147e-04
+en1 = -2.13743e-03
+en4 = 1.094852e-03
+ep1 = -8.88119e-05
+ep4 = 1.624747e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 4.390548e-04
+dn4 = -1.22839e-03
+dp1 = -1.10851e-03
+dp4 = -4.93663e-04
+en1 = -1.09369e-03
+en4 = -1.66549e-03
+ep1 = -2.05599e-03
+ep4 = -1.07789e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 3.501992e-03
+dn4 = 8.429505e-04
+dp1 = 1.715181e-03
+dp4 = -7.09393e-04
+en1 = 6.130937e-05
+en4 = 1.217593e-03
+ep1 = 2.831892e-03
+ep4 = 3.037915e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -2.93541e-03
+dn4 = 8.545544e-04
+dp1 = -1.99086e-04
+dp4 = -1.99222e-03
+en1 = -4.07641e-04
+en4 = 1.141594e-04
+ep1 = -3.31769e-03
+ep4 = -2.17235e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -2.71688e-03
+dn4 = 6.016393e-04
+dp1 = 6.250442e-04
+dp4 = 1.292637e-03
+en1 = 7.069348e-03
+en4 = 1.746246e-03
+ep1 = 2.259290e-03
+ep4 = -1.82129e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -4.63405e-03
+dn4 = -1.17862e-03
+dp1 = -6.62761e-04
+dp4 = -1.28383e-03
+en1 = 1.543200e-03
+en4 = -5.33264e-05
+ep1 = -3.12429e-04
+ep4 = 1.365482e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+dn1 = -2.15103e-03
+dn4 = 1.119951e-03
+dp1 = -2.13436e-04
+dp4 = 2.548024e-04
+en1 = -1.68008e-03
+en4 = 1.352022e-03
+ep1 = -5.61049e-04
+ep4 = 5.963708e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 8.869064e-04
+dn4 = 1.538300e-03
+dp1 = 2.238514e-03
+dp4 = 3.071000e-04
+en1 = -4.97862e-03
+en4 = 3.809498e-04
+ep1 = -3.26621e-03
+ep4 = -1.23907e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.55426e-03
+dn4 = 6.345225e-04
+dp1 = -2.41477e-03
+dp4 = 1.015206e-03
+en1 = 2.596824e-03
+en4 = -5.57544e-04
+ep1 = -7.63687e-04
+ep4 = -1.16157e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.47555e-03
+dn4 = 1.249050e-04
+dp1 = 4.705179e-04
+dp4 = 2.010970e-04
+en1 = 3.647219e-03
+en4 = 1.726906e-04
+ep1 = -1.23057e-03
+ep4 = -1.60056e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 9.394567e-04
+dn4 = 5.276026e-04
+dp1 = 6.374467e-04
+dp4 = -2.23267e-03
+en1 = 3.088410e-03
+en4 = 1.570809e-04
+ep1 = -1.69496e-03
+ep4 = 5.446756e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.18414e-03
+dn4 = 1.088429e-03
+dp1 = 3.428388e-03
+dp4 = 1.080937e-03
+en1 = -2.33493e-03
+en4 = 1.865127e-03
+ep1 = -8.66979e-04
+ep4 = -6.90947e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -4.65239e-06
+dn4 = 1.208907e-04
+dp1 = -2.95365e-03
+dp4 = 6.606314e-04
+en1 = -3.47149e-03
+en4 = 3.710571e-04
+ep1 = 2.691435e-03
+ep4 = 3.701871e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.61062e-04
+dn4 = 7.934501e-04
+dp1 = 2.363135e-03
+dp4 = 5.708279e-04
+en1 = 5.861347e-03
+en4 = -8.24900e-05
+ep1 = 1.600171e-03
+ep4 = 1.243103e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 1.820432e-03
+dn4 = -2.61609e-03
+dp1 = -2.23674e-03
+dp4 = -2.15949e-04
+en1 = 3.909126e-03
+en4 = -6.89667e-04
+ep1 = 4.581051e-04
+ep4 = -1.52664e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -2.22259e-03
+dn4 = 6.672961e-04
+dp1 = -2.35184e-03
+dp4 = 2.068816e-03
+en1 = -2.94851e-03
+en4 = 9.508884e-05
+ep1 = -3.58264e-04
+ep4 = 8.827669e-05
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 3.733391e-03
+dn4 = -1.69965e-03
+dp1 = -2.25498e-03
+dp4 = -1.90781e-04
+en1 = -4.16316e-04
+en4 = 2.934002e-04
+ep1 = 1.035137e-03
+ep4 = -2.62153e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -5.44651e-04
+dn4 = -1.31726e-03
+dp1 = -1.70633e-03
+dp4 = 6.879812e-04
+en1 = -3.18358e-03
+en4 = -3.74832e-04
+ep1 = -3.30623e-04
+ep4 = 3.585350e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 1.025604e-03
+dn4 = 5.183085e-04
+dp1 = 2.699219e-03
+dp4 = -6.70347e-04
+en1 = -2.36671e-03
+en4 = -9.39448e-04
+ep1 = 2.945081e-03
+ep4 = -6.91636e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.45213e-03
+dn4 = 2.415172e-04
+dp1 = 1.288808e-03
+dp4 = 1.129136e-03
+en1 = 8.130919e-04
+en4 = 1.978450e-03
+ep1 = -5.36944e-04
+ep4 = 3.149957e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -2.61196e-04
+dn4 = 9.366124e-04
+dp1 = -1.92890e-03
+dp4 = -6.52948e-05
+en1 = 1.439119e-05
+en4 = 6.470563e-04
+ep1 = 1.965579e-03
+ep4 = 1.361477e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+dn1 = -1.40968e-04
+dn4 = -7.96550e-04
+dp1 = -3.07159e-03
+dp4 = 2.310497e-03
+en1 = -1.63948e-03
+en4 = 6.077198e-04
+ep1 = -1.05064e-04
+ep4 = 1.822483e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 5.080449e-03
+dn4 = 2.736671e-04
+dp1 = -5.71205e-03
+dp4 = -1.85001e-03
+en1 = 7.253904e-04
+en4 = -3.54017e-04
+ep1 = -5.04146e-03
+ep4 = -7.24418e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -9.19887e-04
+dn4 = -7.87752e-04
+dp1 = -8.63443e-04
+dp4 = -8.76541e-05
+en1 = -1.25431e-03
+en4 = -3.82035e-04
+ep1 = -9.62228e-04
+ep4 = -1.10251e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -2.97804e-03
+dn4 = 2.462553e-03
+dp1 = -9.56487e-04
+dp4 = 1.485786e-03
+en1 = 1.486954e-05
+en4 = 1.357666e-03
+ep1 = -2.28389e-03
+ep4 = -2.12499e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 1.268531e-03
+dn4 = 1.028917e-03
+dp1 = 1.304212e-03
+dp4 = 9.362155e-04
+en1 = -2.52988e-03
+en4 = -3.07318e-04
+ep1 = -2.65654e-05
+ep4 = 2.286809e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 3.779483e-03
+dn4 = 2.806018e-04
+dp1 = 4.782487e-03
+dp4 = -1.21041e-03
+en1 = 1.797774e-03
+en4 = 1.950352e-05
+ep1 = 1.205846e-03
+ep4 = 4.166864e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -4.36870e-04
+dn4 = -2.08557e-04
+dp1 = 5.973475e-04
+dp4 = -4.47304e-04
+en1 = -5.15987e-03
+en4 = -1.12124e-04
+ep1 = 1.328175e-03
+ep4 = -8.77493e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -4.50604e-03
+dn4 = -1.62641e-03
+dp1 = -2.64204e-03
+dp4 = -2.93140e-04
+en1 = -1.95578e-03
+en4 = 1.661611e-03
+ep1 = 8.473541e-04
+ep4 = 1.863172e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 1.735694e-03
+dn4 = 4.333465e-04
+dp1 = -1.82630e-03
+dp4 = -8.28308e-04
+en1 = 4.394666e-03
+en4 = -5.61832e-04
+ep1 = -3.02113e-03
+ep4 = -3.43897e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 1.097253e-03
+dn4 = 1.331864e-03
+dp1 = -3.30870e-04
+dp4 = -2.07091e-03
+en1 = -6.52691e-04
+en4 = 5.897118e-04
+ep1 = -4.50137e-03
+ep4 = 9.866994e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -6.63661e-03
+dn4 = 1.269791e-03
+dp1 = 4.223914e-03
+dp4 = -1.32766e-04
+en1 = -3.17888e-03
+en4 = 9.184335e-06
+ep1 = -1.21698e-03
+ep4 = 1.086523e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -2.45013e-03
+dn4 = -1.09361e-03
+dp1 = -3.38541e-03
+dp4 = -8.88542e-05
+en1 = -3.19947e-03
+en4 = -9.25247e-04
+ep1 = -3.24407e-04
+ep4 = 1.351310e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.76961e-03
+dn4 = -7.08690e-04
+dp1 = -2.36226e-03
+dp4 = 9.820299e-04
+en1 = -2.99358e-04
+en4 = -1.75639e-04
+ep1 = 4.895411e-05
+ep4 = -1.40666e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 9.630759e-04
+dn4 = -5.16931e-05
+dp1 = -2.16589e-03
+dp4 = 7.999724e-04
+en1 = 2.146764e-03
+en4 = 9.691176e-04
+ep1 = 1.901402e-03
+ep4 = -1.01678e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+dn1 = -5.39495e-03
+dn4 = 1.424492e-04
+dp1 = 5.181129e-04
+dp4 = -1.55208e-03
+en1 = 6.435437e-04
+en4 = -9.99186e-04
+ep1 = 9.438716e-04
+ep4 = 8.682792e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 2.541516e-03
+dn4 = 1.394344e-03
+dp1 = -6.14250e-04
+dp4 = 2.357433e-04
+en1 = 2.313344e-03
+en4 = -2.67609e-03
+ep1 = 6.004116e-03
+ep4 = 2.073336e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -2.50323e-03
+dn4 = 4.655446e-04
+dp1 = -1.44306e-03
+dp4 = -5.05854e-04
+en1 = 6.198126e-03
+en4 = 6.948324e-04
+ep1 = 1.893546e-03
+ep4 = -3.03972e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 8.269058e-04
+dn4 = -4.04507e-04
+dp1 = 2.238046e-03
+dp4 = -3.57156e-04
+en1 = 1.112174e-03
+en4 = 3.185750e-04
+ep1 = -6.10703e-04
+ep4 = -1.49649e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -5.29078e-03
+dn4 = -3.36588e-06
+dp1 = 3.970762e-03
+dp4 = -1.88245e-03
+en1 = 3.696565e-03
+en4 = -1.39303e-04
+ep1 = -1.31014e-03
+ep4 = -1.54581e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 1.224289e-03
+dn4 = -5.79218e-04
+dp1 = -5.95918e-04
+dp4 = -8.30186e-04
+en1 = 1.335594e-03
+en4 = -6.30067e-04
+ep1 = 2.820911e-03
+ep4 = -3.41055e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 1.198283e-03
+dn4 = 1.072055e-03
+dp1 = -1.03676e-03
+dp4 = -2.24832e-03
+en1 = -9.25425e-04
+en4 = -4.10798e-04
+ep1 = 2.099017e-03
+ep4 = 2.463904e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -3.53471e-04
+dn4 = 2.102200e-04
+dp1 = 2.146981e-03
+dp4 = -5.26931e-04
+en1 = 4.485376e-03
+en4 = 1.225776e-03
+ep1 = -1.68220e-03
+ep4 = 9.145668e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -6.15937e-04
+dn4 = 1.363128e-03
+dp1 = 4.966437e-03
+dp4 = -6.21335e-04
+en1 = 2.213501e-03
+en4 = -3.20307e-03
+ep1 = -7.90497e-04
+ep4 = 4.808752e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 3.013871e-03
+dn4 = -3.03049e-04
+dp1 = -3.59348e-03
+dp4 = -2.21645e-04
+en1 = -4.83222e-03
+en4 = -1.06313e-04
+ep1 = -4.90343e-03
+ep4 = -3.39167e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 3.387580e-03
+dn4 = 9.257202e-04
+dp1 = 1.748898e-03
+dp4 = -2.99783e-04
+en1 = -1.57446e-03
+en4 = -1.55911e-03
+ep1 = -7.07200e-04
+ep4 = 3.229564e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.22841e-03
+dn4 = 1.858836e-03
+dp1 = -2.18161e-03
+dp4 = 3.069019e-04
+en1 = -3.70401e-03
+en4 = 8.978150e-04
+ep1 = -3.95553e-03
+ep4 = 2.406907e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 1.857868e-03
+dn4 = 2.526320e-04
+dp1 = 1.348685e-03
+dp4 = 6.237768e-04
+en1 = 5.025705e-04
+en4 = -5.47343e-04
+ep1 = 2.156135e-04
+ep4 = -1.40544e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+dn1 = 1.713997e-03
+dn4 = 2.857332e-03
+dp1 = 3.429759e-03
+dp4 = 4.364831e-05
+en1 = 2.022795e-03
+en4 = -2.42281e-03
+ep1 = 2.005093e-03
+ep4 = -5.35486e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.74114e-03
+dn4 = 1.673468e-04
+dp1 = -2.23300e-03
+dp4 = -4.39371e-04
+en1 = 6.266475e-04
+en4 = -5.76644e-04
+ep1 = -4.46593e-04
+ep4 = -1.25854e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -7.05494e-04
+dn4 = -2.26102e-04
+dp1 = -3.38325e-04
+dp4 = -9.51877e-04
+en1 = -3.08098e-03
+en4 = 7.345887e-04
+ep1 = -2.99135e-03
+ep4 = -1.16974e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 7.511599e-04
+dn4 = 1.085792e-05
+dp1 = 2.720666e-03
+dp4 = -1.44496e-03
+en1 = -4.07325e-03
+en4 = 1.801655e-03
+ep1 = 2.604160e-03
+ep4 = 1.688961e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -2.64523e-04
+dn4 = 5.760417e-04
+dp1 = -2.93244e-03
+dp4 = -1.28632e-03
+en1 = -1.26354e-03
+en4 = -2.33389e-03
+ep1 = -4.67589e-03
+ep4 = 2.151783e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 3.957880e-04
+dn4 = 1.996638e-04
+dp1 = -1.49600e-03
+dp4 = 5.677978e-04
+en1 = -3.88605e-03
+en4 = 1.117204e-03
+ep1 = 4.011841e-04
+ep4 = 1.223634e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 1.537116e-03
+dn4 = -8.53279e-04
+dp1 = 6.662321e-03
+dp4 = -5.61410e-04
+en1 = 3.062254e-03
+en4 = 4.789214e-04
+ep1 = 1.910359e-03
+ep4 = -4.50045e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.65075e-03
+dn4 = -7.68774e-04
+dp1 = 3.331926e-03
+dp4 = 1.047557e-04
+en1 = 6.599928e-03
+en4 = -1.74885e-03
+ep1 = -2.01660e-03
+ep4 = 2.061240e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -4.38845e-03
+dn4 = 2.796909e-04
+dp1 = -4.51185e-03
+dp4 = 9.560023e-04
+en1 = -1.04315e-04
+en4 = -9.45641e-04
+ep1 = -2.14211e-04
+ep4 = 7.879153e-05
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -2.29970e-04
+dn4 = 3.701890e-04
+dp1 = -3.68492e-04
+dp4 = 2.294139e-04
+en1 = 1.259746e-03
+en4 = -1.18482e-03
+ep1 = 1.204152e-03
+ep4 = 7.818866e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 2.108903e-04
+dn4 = -1.51440e-03
+dp1 = -2.79955e-03
+dp4 = -1.55177e-03
+en1 = 2.698120e-03
+en4 = -2.45366e-03
+ep1 = -1.36355e-03
+ep4 = -6.13056e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 2.307360e-03
+dn4 = 1.654954e-03
+dp1 = -3.53371e-03
+dp4 = 7.308238e-04
+en1 = -5.15601e-03
+en4 = 1.102318e-03
+ep1 = 3.852859e-03
+ep4 = 1.182947e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -9.27475e-04
+dn4 = 3.647837e-04
+dp1 = 8.847161e-04
+dp4 = 3.062283e-03
+en1 = -1.27517e-03
+en4 = -4.11836e-04
+ep1 = 1.802382e-03
+ep4 = 3.870288e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+dn1 = 2.407507e-03
+dn4 = -1.88847e-03
+dp1 = -1.03927e-03
+dp4 = -1.11992e-03
+en1 = 2.159673e-03
+en4 = 8.471548e-04
+ep1 = -5.01341e-04
+ep4 = 8.399097e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -2.04300e-03
+dn4 = 1.145434e-03
+dp1 = 1.621223e-03
+dp4 = 1.344949e-03
+en1 = 1.603283e-03
+en4 = 1.127392e-03
+ep1 = 6.355009e-03
+ep4 = -1.52458e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -4.60212e-03
+dn4 = 6.978143e-04
+dp1 = -3.26750e-04
+dp4 = -1.80212e-03
+en1 = 1.346318e-03
+en4 = -1.08121e-03
+ep1 = 1.366079e-04
+ep4 = -1.62777e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -6.98421e-06
+dn4 = -9.30131e-04
+dp1 = -2.24987e-03
+dp4 = -6.41119e-04
+en1 = -1.73114e-03
+en4 = -1.66491e-04
+ep1 = 3.886083e-03
+ep4 = -8.05936e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 1.403871e-03
+dn4 = 3.680117e-04
+dp1 = 2.672860e-04
+dp4 = 1.218747e-03
+en1 = 2.614047e-03
+en4 = 2.057471e-04
+ep1 = 2.906822e-04
+ep4 = 1.433753e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 5.996076e-04
+dn4 = -1.88255e-04
+dp1 = -4.22469e-04
+dp4 = 1.217404e-03
+en1 = 1.662107e-03
+en4 = -1.18458e-03
+ep1 = -1.09586e-03
+ep4 = -1.12420e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -4.40784e-04
+dn4 = -7.60393e-05
+dp1 = 1.215207e-03
+dp4 = -1.00503e-03
+en1 = -2.23554e-03
+en4 = 1.156538e-03
+ep1 = -1.59845e-03
+ep4 = 1.631901e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -7.55574e-04
+dn4 = 1.489619e-03
+dp1 = 3.639718e-04
+dp4 = -1.35628e-03
+en1 = -2.60255e-03
+en4 = 5.895008e-04
+ep1 = -1.64037e-03
+ep4 = -8.29670e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 1.048621e-03
+dn4 = -1.16919e-03
+dp1 = 1.199838e-03
+dp4 = -1.74325e-03
+en1 = 3.749779e-03
+en4 = 3.298402e-04
+ep1 = 3.140613e-03
+ep4 = -5.09004e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 4.012806e-03
+dn4 = -3.36702e-04
+dp1 = -2.03405e-03
+dp4 = 1.505896e-03
+en1 = -2.85173e-03
+en4 = 1.587082e-03
+ep1 = 7.074564e-05
+ep4 = 1.654810e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -8.26099e-03
+dn4 = 1.402978e-03
+dp1 = 9.044237e-04
+dp4 = -7.79314e-04
+en1 = -2.99610e-03
+en4 = -3.71633e-04
+ep1 = -2.16254e-03
+ep4 = 5.564715e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 1.716648e-04
+dn4 = 1.051825e-03
+dp1 = 1.071838e-03
+dp4 = -1.60997e-04
+en1 = -2.29194e-03
+en4 = -1.40094e-04
+ep1 = 1.002104e-03
+ep4 = 1.479743e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 3.208305e-03
+dn4 = 2.239437e-04
+dp1 = -2.26227e-03
+dp4 = 2.338514e-03
+en1 = -5.98930e-03
+en4 = -6.36484e-04
+ep1 = -3.15201e-03
+ep4 = 1.258709e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.16030e-03
+dn4 = 6.132486e-04
+dp1 = 3.146722e-03
+dp4 = 6.881218e-04
+en1 = -1.51418e-03
+en4 = -2.50266e-04
+ep1 = -1.19618e-03
+ep4 = 6.124032e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+dn1 = -1.83143e-03
+dn4 = 1.059570e-03
+dp1 = -1.88297e-03
+dp4 = -4.00417e-04
+en1 = -2.71556e-04
+en4 = -1.54266e-03
+ep1 = -3.12355e-03
+ep4 = -8.74815e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -3.26056e-03
+dn4 = 3.002244e-04
+dp1 = -1.60117e-04
+dp4 = 1.886632e-03
+en1 = -1.93060e-03
+en4 = -2.10552e-05
+ep1 = -1.93614e-03
+ep4 = -2.68571e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 4.632515e-03
+dn4 = -1.01991e-03
+dp1 = 6.073991e-03
+dp4 = -1.98590e-03
+en1 = -8.40441e-05
+en4 = -2.31121e-04
+ep1 = -3.70172e-04
+ep4 = 7.816574e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.69574e-03
+dn4 = -1.02546e-03
+dp1 = -3.43051e-03
+dp4 = -4.25820e-04
+en1 = -2.03895e-03
+en4 = 4.071624e-04
+ep1 = 1.486318e-03
+ep4 = 9.147634e-06
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -3.56853e-03
+dn4 = -2.31507e-03
+dp1 = 1.319777e-03
+dp4 = 1.298506e-04
+en1 = 5.419499e-04
+en4 = 7.486984e-04
+ep1 = -2.15969e-03
+ep4 = -2.85068e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 1.808317e-03
+dn4 = 3.998085e-04
+dp1 = -1.04262e-04
+dp4 = -1.36888e-03
+en1 = -4.87495e-03
+en4 = 3.839985e-04
+ep1 = -3.83130e-03
+ep4 = 2.238731e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 3.152922e-03
+dn4 = -1.97988e-05
+dp1 = -1.96192e-03
+dp4 = -1.49852e-03
+en1 = -3.50694e-03
+en4 = -1.10037e-03
+ep1 = 4.274903e-03
+ep4 = 1.672677e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 4.896284e-04
+dn4 = 1.312093e-04
+dp1 = -6.86192e-04
+dp4 = 8.998720e-04
+en1 = -2.95720e-03
+en4 = 1.095987e-04
+ep1 = -3.12980e-03
+ep4 = -5.20108e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -9.63761e-04
+dn4 = -7.97571e-04
+dp1 = -3.92499e-03
+dp4 = 2.281555e-04
+en1 = -2.51869e-03
+en4 = -1.16206e-03
+ep1 = 3.630069e-03
+ep4 = 2.931900e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -3.08338e-03
+dn4 = -1.57383e-03
+dp1 = 6.815067e-04
+dp4 = 7.336984e-04
+en1 = 5.552759e-04
+en4 = 9.307330e-04
+ep1 = 3.761099e-05
+ep4 = 8.415801e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.74725e-03
+dn4 = 9.097146e-04
+dp1 = -1.05774e-03
+dp4 = 4.806717e-04
+en1 = 1.386284e-05
+en4 = 1.032895e-03
+ep1 = -1.14367e-03
+ep4 = 1.072479e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -7.25172e-04
+dn4 = -1.64447e-04
+dp1 = 8.037866e-04
+dp4 = -4.64858e-04
+en1 = -3.92882e-03
+en4 = 6.377826e-04
+ep1 = -2.05875e-03
+ep4 = 2.526025e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+dn1 = 2.186686e-03
+dn4 = -2.74424e-05
+dp1 = 4.760851e-03
+dp4 = 2.016857e-03
+en1 = -3.67362e-04
+en4 = 1.261066e-05
+ep1 = 5.836067e-04
+ep4 = 8.309308e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 6.362905e-03
+dn4 = -6.69703e-04
+dp1 = 1.435137e-03
+dp4 = -8.73905e-04
+en1 = -3.93511e-03
+en4 = 8.549618e-04
+ep1 = -2.76696e-04
+ep4 = -9.43604e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 6.613137e-04
+dn4 = -1.29376e-03
+dp1 = 7.473215e-04
+dp4 = 1.034110e-03
+en1 = 2.137328e-03
+en4 = 1.921892e-03
+ep1 = 2.576102e-03
+ep4 = -4.23002e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 2.814054e-03
+dn4 = -2.08002e-03
+dp1 = -8.47573e-04
+dp4 = -6.47915e-05
+en1 = -1.91133e-03
+en4 = 6.030521e-04
+ep1 = 1.691754e-03
+ep4 = -2.46398e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 3.345436e-03
+dn4 = 9.544399e-04
+dp1 = -2.90303e-03
+dp4 = 3.980338e-04
+en1 = 6.215467e-04
+en4 = -8.20035e-04
+ep1 = -1.75383e-04
+ep4 = -9.52622e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -3.41242e-04
+dn4 = -2.52981e-03
+dp1 = 3.859131e-03
+dp4 = 2.158130e-04
+en1 = -1.15913e-03
+en4 = -2.10951e-04
+ep1 = 3.003558e-03
+ep4 = -1.04211e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -4.08062e-04
+dn4 = 1.337793e-03
+dp1 = 2.234737e-03
+dp4 = 2.065815e-04
+en1 = 2.317332e-04
+en4 = -9.38949e-04
+ep1 = 2.294219e-03
+ep4 = -9.02352e-05
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 1.198330e-03
+dn4 = 9.886732e-04
+dp1 = -8.83987e-04
+dp4 = 8.711093e-05
+en1 = -2.69975e-03
+en4 = 1.965392e-04
+ep1 = 4.942801e-05
+ep4 = -2.05828e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -5.78685e-05
+dn4 = -8.03750e-05
+dp1 = 3.493117e-03
+dp4 = 5.440464e-04
+en1 = -1.77822e-03
+en4 = 1.414500e-03
+ep1 = 1.276069e-03
+ep4 = -1.81470e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 2.653310e-03
+dn4 = 1.652804e-03
+dp1 = 3.050093e-03
+dp4 = 1.316156e-03
+en1 = -3.60396e-03
+en4 = -2.73437e-04
+ep1 = 4.092189e-03
+ep4 = -1.25611e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 1.015171e-03
+dn4 = 8.499450e-04
+dp1 = -1.56365e-03
+dp4 = -1.34279e-03
+en1 = 4.884974e-03
+en4 = 4.726743e-04
+ep1 = 1.391947e-03
+ep4 = -2.44725e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -1.87681e-04
+dn4 = -4.14418e-04
+dp1 = 3.013261e-04
+dp4 = -1.24111e-03
+en1 = -2.05460e-03
+en4 = -4.91421e-05
+ep1 = -5.70663e-03
+ep4 = -4.03701e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+ Reference value :  0.00000e+00
+No. of Data Rows : 1
+dn1 = 1.851199e-03
+dn4 = -9.19217e-04
+dp1 = -1.86244e-03
+dp4 = -1.13954e-03
+en1 = 1.464590e-03
+en4 = -8.18686e-04
+ep1 = -1.75705e-03
+ep4 = 9.832651e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 7.958353e-04
+dn4 = 2.972760e-04
+dp1 = 5.391604e-04
+dp4 = -4.17863e-04
+en1 = -3.59365e-03
+en4 = 1.819039e-04
+ep1 = 5.941035e-05
+ep4 = 8.173619e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 3.655143e-03
+dn4 = -1.66716e-03
+dp1 = -4.36330e-03
+dp4 = 1.737599e-04
+en1 = 6.046482e-04
+en4 = 1.213059e-03
+ep1 = 1.688226e-03
+ep4 = 4.224964e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 3.371390e-03
+dn4 = 4.848407e-04
+dp1 = 3.063220e-03
+dp4 = -2.22792e-04
+en1 = -2.53012e-04
+en4 = 5.570253e-04
+ep1 = -3.97305e-03
+ep4 = 2.658977e-04
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -2.18192e-03
+dn4 = 2.428519e-03
+dp1 = -2.08072e-03
+dp4 = -2.94486e-04
+en1 = -2.71565e-03
+en4 = 1.624711e-03
+ep1 = -1.68733e-03
+ep4 = -2.49368e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 2.248607e-03
+dn4 = -7.52144e-06
+dp1 = -2.91684e-03
+dp4 = -7.05684e-04
+en1 = -2.14314e-03
+en4 = 1.967987e-03
+ep1 = 4.618520e-04
+ep4 = -2.00919e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = 1.253476e-03
+dn4 = 1.809042e-04
+dp1 = -2.42502e-03
+dp4 = -1.90000e-03
+en1 = -1.13330e-03
+en4 = -1.44542e-03
+ep1 = 3.220611e-03
+ep4 = -1.09855e-03
+Reset re-loads circuit *include "corner.spice
+
+Circuit: *include "corner.spice
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+dn1 = -3.51249e-03
+dn4 = 1.122849e-03
+dp1 = -1.65508e-04
+dp4 = -2.05452e-04
+en1 = -2.87790e-03
+en4 = -5.03625e-04
+ep1 = 1.674973e-03
+ep4 = 2.953974e-04
+ngspice-46 done
+Warning: m=xx on .subckt line will override multiplier m hierarchy!
+
