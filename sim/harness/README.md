@@ -309,7 +309,7 @@ Carlo bench, not one of the five device-level experiments issue #117 scoped)
 also imports it for the same PDK-resolution / record-id / corner-id / log /
 record plumbing, and was not accounted for in the issue's original grep
 evidence. Retiring `sim/tools/devchar.py` needs that sixth consumer migrated
-first, tracked as a follow-up to issue #117.
+first, tracked in issue #123.
 
 ## xschem
 
