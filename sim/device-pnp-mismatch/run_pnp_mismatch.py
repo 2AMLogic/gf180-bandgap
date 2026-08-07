@@ -61,6 +61,23 @@ PAIRS = {
     "dr10": ("pnp_05p00x05p00 / pnp_10p00x10p00 area-ratioed pair", 10e-6),
 }
 
+# Guards against a silently-ignored `sw_stat_mismatch`: if the switch were not
+# actually wired up, every `reset` draw would resolve to the same op point and
+# every pair would report sigma == 0.000 without complaint (issue #121).
+# SIGMA_FLOOR_V is well under the smallest sigma ever observed on this
+# experiment (~0.038 mV, `dr1` @ -40 C) -- more than an order of magnitude
+# down -- so it only trips on a genuinely non-randomizing draw, not on normal
+# run-to-run variation. MEAN_K bounds the sample mean to a generous multiple
+# of its expected standard error (sigma / sqrt(N)), applied only to the
+# ZERO_MEAN_PAIRS: `da1`/`da10` are two nominally identical devices, so their
+# dVBE mean should sit at zero. `dr1`/`dr10` are the *area-ratioed* pair -- a
+# deterministic Vbe difference of several tens of mV from the area ratio
+# itself dominates their mean, so the same "mean near zero" check does not
+# apply to them; the sigma floor above still covers those two.
+SIGMA_FLOOR_V = 3e-6  # 0.003 mV
+MEAN_K = 8
+ZERO_MEAN_PAIRS = {"da1", "da10"}
+
 
 # --------------------------------------------------------------------------
 # Deck composition / ngspice execution -- this experiment runs a `dowhile`
@@ -242,9 +259,25 @@ def extract(log: str) -> dict[str, dict[str, float]]:
     out: dict[str, dict[str, float]] = {}
     for key in PAIRS:
         values = [s[key] for s in samples]
+        mean = _mean(values)
+        sigma = _stdev(values)
+        if sigma <= SIGMA_FLOOR_V:
+            raise RuntimeError(
+                f"pair {key!r}: sigma={sigma * 1e3:.6f} mV is at or below the "
+                f"{SIGMA_FLOOR_V * 1e3:g} mV floor -- the Monte Carlo draw does "
+                "not appear to be re-randomizing (sw_stat_mismatch ignored?)"
+            )
+        if key in ZERO_MEAN_PAIRS:
+            bound = MEAN_K * sigma / math.sqrt(N_SAMPLES)
+            if abs(mean) > bound:
+                raise RuntimeError(
+                    f"pair {key!r}: mean={mean * 1e3:+.6f} mV exceeds {MEAN_K}x "
+                    f"its expected standard error ({bound * 1e3:.6f} mV) -- the "
+                    "draw may not be centered at zero / re-randomizing correctly"
+                )
         out[key] = {
-            "mean": _mean(values),
-            "sigma": _stdev(values),
+            "mean": mean,
+            "sigma": sigma,
             "max_abs": max(abs(v) for v in values),
         }
     return out

@@ -16,5 +16,26 @@
     "dp1": "v(gp1a) - v(gp1b)",
     "dp4": "v(gp4a) - v(gp4b)"
   },
-  "checks": {}
+  "checks": {
+    "dn1": {
+      "min": -0.03,
+      "max": 0.03,
+      "description": "loose wiring sanity bound on the unseeded single-draw gate-voltage difference (run_mos_mismatch.py's seeded N=300 record reports sigma ~2.5 mV here); +/-30 mV is ~12 sigma and should never flake"
+    },
+    "dn4": {
+      "min": -0.03,
+      "max": 0.03,
+      "description": "loose wiring sanity bound on the unseeded single-draw gate-voltage difference (run_mos_mismatch.py's seeded N=300 record reports sigma ~1.1 mV here); +/-30 mV is a wide margin and should never flake"
+    },
+    "dp1": {
+      "min": -0.03,
+      "max": 0.03,
+      "description": "loose wiring sanity bound on the unseeded single-draw gate-voltage difference (run_mos_mismatch.py's seeded N=300 record reports sigma ~2.3 mV here); +/-30 mV is ~12 sigma and should never flake"
+    },
+    "dp4": {
+      "min": -0.03,
+      "max": 0.03,
+      "description": "loose wiring sanity bound on the unseeded single-draw gate-voltage difference (run_mos_mismatch.py's seeded N=300 record reports sigma ~1.0 mV here); +/-30 mV is a wide margin and should never flake"
+    }
+  }
 }
