@@ -53,6 +53,10 @@ import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO_ROOT / "layout" / "common"))
+
+import report_id  # noqa: E402
+
 REPORTS_ROOT = Path(__file__).resolve().parent / "reports"
 REFERENCE = Path(__file__).resolve().parent / "bandgap_top.ref.spice"
 MAKE_REFERENCE = Path(__file__).resolve().parent / "make_reference.py"
@@ -65,34 +69,6 @@ ENGINES = ("klayout", "netgen")
 #: The engine whose request document and report files keep the pre-#109 shape:
 #: no ``engine`` key in the request, no engine suffix on the report names.
 DEFAULT_ENGINE = ENGINES[0]
-
-
-def _short_sha() -> str:
-    out = subprocess.run(
-        ["git", "rev-parse", "HEAD"],
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    commit = out.stdout.strip()
-    return commit[:7] if commit else "unknown"
-
-
-def _record_id(reports_dir: Path, when: _dt.datetime, short_sha: str) -> str:
-    """Return the first ``<date>-<time>-<sha>`` id no artefact already claims.
-
-    The probe is over ``<record-id>.*`` rather than ``<record-id>.lvs.json``
-    specifically: a ``--engine netgen`` run writes ``.lvs-netgen.json`` and no
-    ``.lvs.json`` at all, so keying append-only-ness on one engine's file name
-    would let a later run of the *other* engine reuse the id and clobber the
-    extraction artefacts recorded under it.
-    """
-    while True:
-        record_id = f"{when.strftime('%Y%m%d-%H%M%S')}-{short_sha}"
-        if next(reports_dir.glob(f"{record_id}.*"), None) is None:
-            return record_id
-        when += _dt.timedelta(seconds=1)
 
 
 def _engine_stem(engine: str) -> str:
@@ -258,7 +234,9 @@ def main() -> int:
         print("error: could not regenerate the reference netlist", file=sys.stderr)
         return 1
 
-    record_id = _record_id(reports_dir, _dt.datetime.now(_dt.timezone.utc), _short_sha())
+    record_id = report_id.record_id(
+        reports_dir, _dt.datetime.now(_dt.timezone.utc), report_id.short_sha(REPO_ROOT)
+    )
     gds_rel = gds_path.relative_to(REPO_ROOT)
     extracted = reports_dir / f"{record_id}.extracted.spice"
 
