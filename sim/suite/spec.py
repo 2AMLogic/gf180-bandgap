@@ -21,7 +21,7 @@ the two copies agree, so the duplication cannot silently drift.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 #: Ratified nominal output, for reference in the summary header.
 VREF_NOMINAL_V = 1.20
@@ -257,15 +257,3 @@ def slugs() -> list[str]:
         if line.slug not in seen:
             seen.append(line.slug)
     return seen
-
-
-@dataclass
-class SlugPlan:
-    """What the suite intends to do with one experiment slug."""
-
-    slug: str
-    lines: list[SpecLine] = field(default_factory=list)
-
-    @property
-    def owner(self) -> str:
-        return self.lines[0].owner if self.lines else "#12"
