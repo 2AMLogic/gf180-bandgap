@@ -642,6 +642,33 @@ def device_log_header(
     )
 
 
+def corner_shim(
+    pdk: Pdk,
+    section: str,
+    temp_c: float,
+    *,
+    script_name: str,
+    extra: str = "",
+) -> str:
+    """``.include``/``.lib``/``.temp`` header for a device-level corner deck.
+
+    The ``sim/device-*/run_*.py`` experiments each compose their own minimal
+    per-corner shim (see the module comment above) rather than going through
+    :mod:`harness.runner`'s ``compose_deck()``. This is the one piece of that
+    shim every experiment shares -- only the leading comment's script name and
+    (for ``run_resistor_tc.py``'s well-bias sub-sweep) an optional trailing
+    ``extra`` line differ.
+    """
+    return (
+        f"* Generated per corner point by {script_name} from\n"
+        "* $PDK_ROOT/$PDK (via sim/harness/pdk.py) -- do not edit by hand, "
+        "and do not commit.\n"
+        f'.include "{pdk.design_include}"\n'
+        f'.lib "{pdk.model_lib}" {section}\n'
+        f".temp {temp_c:g}\n" + (extra + "\n" if extra else "")
+    )
+
+
 def write_device_corner_log(
     corners_dir: Path, record: str, cid: str, header: str, log: str
 ) -> Path:
