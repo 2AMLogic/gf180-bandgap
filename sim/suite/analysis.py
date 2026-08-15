@@ -46,11 +46,6 @@ class CornerKey:
     def corner_id(self) -> str:
         return f"{self.process}_{self.temp_c:g}c_{self.supply}"
 
-    @property
-    def pv(self) -> tuple[str, str]:
-        """(process, supply) -- the group a temperature sweep runs inside."""
-        return (self.process, self.supply)
-
 
 def parse_corner_id(corner_id: str) -> CornerKey | None:
     match = CORNER_ID_RE.match(corner_id)
