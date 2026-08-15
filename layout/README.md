@@ -33,6 +33,10 @@ layout/
     area_report.py    drawn area vs. floorplan.md §8 / the ratified target
     AREA.md           the area-budget finding (§11.1's owed re-check)
     bandgap_top.gds   committed, deterministic block GDS
+  common/
+    report_id.py      shared <record-id> minting (_git/short_sha/record_id) for
+                       run_drc.py, run_lvs.py, run_extract.py (#138)
+    test_report_id.py  unit tests for report_id.py
   drc/
     run_drc.py        reproducible klt drc invocation -> committed report
     fixtures/trivial_poly_res/   DRC bring-up proof fixture (#15)

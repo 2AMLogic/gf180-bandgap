@@ -35,27 +35,11 @@ import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO_ROOT / "layout" / "common"))
+
+import report_id  # noqa: E402
+
 REPORTS_ROOT = Path(__file__).resolve().parent / "reports"
-
-
-def _git(*args: str) -> str:
-    out = subprocess.run(
-        ["git", *args], cwd=REPO_ROOT, capture_output=True, text=True, check=False
-    )
-    return out.stdout.strip()
-
-
-def _short_sha() -> str:
-    commit = _git("rev-parse", "HEAD")
-    return commit[:7] if commit else "unknown"
-
-
-def _record_id(reports_dir: Path, when: _dt.datetime, short_sha: str) -> str:
-    while True:
-        record_id = f"{when.strftime('%Y%m%d-%H%M%S')}-{short_sha}"
-        if not (reports_dir / f"{record_id}.drc.json").exists():
-            return record_id
-        when += _dt.timedelta(seconds=1)
 
 
 def main() -> int:
@@ -90,7 +74,7 @@ def main() -> int:
     reports_dir.mkdir(parents=True, exist_ok=True)
 
     when = _dt.datetime.now(_dt.timezone.utc)
-    record_id = _record_id(reports_dir, when, _short_sha())
+    record_id = report_id.record_id(reports_dir, when, report_id.short_sha(REPO_ROOT))
 
     # Relative path from the repo root, so the committed report's "file"
     # field is reproducible regardless of invocation cwd.
