@@ -85,24 +85,16 @@ PAIRS = {
 # --------------------------------------------------------------------------
 
 
-def _corner_shim(pdk: harness_pdk.Pdk, section: str, temp_c: float) -> str:
-    return (
-        "* Generated per corner point by run_mos_mismatch.py from\n"
-        "* $PDK_ROOT/$PDK (via sim/harness/pdk.py) -- do not edit by hand, "
-        "and do not commit.\n"
-        f'.include "{pdk.design_include}"\n'
-        f'.lib "{pdk.model_lib}" {section}\n'
-        f".temp {temp_c:g}\n"
-    )
-
-
 def _run_corner(deck: Path, pdk: harness_pdk.Pdk, section: str, temp_c: float) -> str:
     """Run `deck` through ngspice's N_SAMPLES-sample Monte Carlo loop."""
     with tempfile.TemporaryDirectory(prefix="device-mos-mismatch-") as tmp:
         work = Path(tmp)
         local_deck = work / deck.name
         (work / "corner.spice").write_text(
-            _corner_shim(pdk, section, temp_c), encoding="utf-8"
+            harness_report.corner_shim(
+                pdk, section, temp_c, script_name="run_mos_mismatch.py"
+            ),
+            encoding="utf-8",
         )
         (work / "control.spice").write_text(
             ".control\n"
