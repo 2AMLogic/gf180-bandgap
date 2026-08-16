@@ -1,0 +1,1481 @@
+{
+  "schema_version": 1,
+  "file": "layout/bandgap_top/bandgap_top.gds",
+  "deck": "gf180mcu",
+  "dbu_um": 0.001,
+  "status": "violations",
+  "violation_count": 42,
+  "rule_counts": {
+    "metal1.enclosing.contact.1": 26,
+    "via1.width.1": 4,
+    "via2.width.1": 4,
+    "via3.width.1": 4,
+    "via4.width.1": 4
+  },
+  "violations": [
+    {
+      "rule": "metal1.enclosing.contact.1",
+      "description": "minimum metal1 overlap of contact",
+      "check": "enclosing",
+      "layer": "Metal1",
+      "cell": "bandgap_top",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 17000,
+        "bottom": 321790,
+        "right": 17240,
+        "top": 321910
+      },
+      "polygon": [
+        [
+          17000,
+          321790
+        ],
+        [
+          17000,
+          321910
+        ],
+        [
+          17240,
+          321910
+        ],
+        [
+          17240,
+          321790
+        ]
+      ]
+    },
+    {
+      "rule": "metal1.enclosing.contact.1",
+      "description": "minimum metal1 overlap of contact",
+      "check": "enclosing",
+      "layer": "Metal1",
+      "cell": "bandgap_top",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 17380,
+        "bottom": 288668,
+        "right": 17620,
+        "top": 288838
+      },
+      "polygon": [
+        [
+          17380,
+          288668
+        ],
+        [
+          17380,
+          288838
+        ],
+        [
+          17620,
+          288838
+        ],
+        [
+          17620,
+          288668
+        ]
+      ]
+    },
+    {
+      "rule": "metal1.enclosing.contact.1",
+      "description": "minimum metal1 overlap of contact",
+      "check": "enclosing",
+      "layer": "Metal1",
+      "cell": "bandgap_top",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 19000,
+        "bottom": 327390,
+        "right": 19240,
+        "top": 327510
+      },
+      "polygon": [
+        [
+          19000,
+          327390
+        ],
+        [
+          19000,
+          327510
+        ],
+        [
+          19240,
+          327510
+        ],
+        [
+          19240,
+          327390
+        ]
+      ]
+    },
+    {
+      "rule": "metal1.enclosing.contact.1",
+      "description": "minimum metal1 overlap of contact",
+      "check": "enclosing",
+      "layer": "Metal1",
+      "cell": "bandgap_top",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 20180,
+        "bottom": 288668,
+        "right": 20420,
+        "top": 288838
+      },
+      "polygon": [
+        [
+          20180,
+          288668
+        ],
+        [
+          20180,
+          288838
+        ],
+        [
+          20420,
+          288838
+        ],
+        [
+          20420,
+          288668
+        ]
+      ]
+    },
+    {
+      "rule": "metal1.enclosing.contact.1",
+      "description": "minimum metal1 overlap of contact",
+      "check": "enclosing",
+      "layer": "Metal1",
+      "cell": "bandgap_top",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 20180,
+        "bottom": 289238,
+        "right": 20420,
+        "top": 289408
+      },
+      "polygon": [
+        [
+          20180,
+          289238
+        ],
+        [
+          20180,
+          289408
+        ],
+        [
+          20420,
+          289408
+        ],
+        [
+          20420,
+          289238
+        ]
+      ]
+    },
+    {
+      "rule": "metal1.enclosing.contact.1",
+      "description": "minimum metal1 overlap of contact",
+      "check": "enclosing",
+      "layer": "Metal1",
+      "cell": "bandgap_top",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 32480,
+        "bottom": 288668,
+        "right": 32720,
+        "top": 288838
+      },
+      "polygon": [
+        [
+          32480,
+          288668
+        ],
+        [
+          32480,
+          288838
+        ],
+        [
+          32720,
+          288838
+        ],
+        [
+          32720,
+          288668
+        ]
+      ]
+    },
+    {
+      "rule": "metal1.enclosing.contact.1",
+      "description": "minimum metal1 overlap of contact",
+      "check": "enclosing",
+      "layer": "Metal1",
+      "cell": "bandgap_top",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 35280,
+        "bottom": 288668,
+        "right": 35520,
+        "top": 288838
+      },
+      "polygon": [
+        [
+          35280,
+          288668
+        ],
+        [
+          35280,
+          288838
+        ],
+        [
+          35520,
+          288838
+        ],
+        [
+          35520,
+          288668
+        ]
+      ]
+    },
+    {
+      "rule": "metal1.enclosing.contact.1",
+      "description": "minimum metal1 overlap of contact",
+      "check": "enclosing",
+      "layer": "Metal1",
+      "cell": "bandgap_top",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 35280,
+        "bottom": 289238,
+        "right": 35520,
+        "top": 289408
+      },
+      "polygon": [
+        [
+          35280,
+          289238
+        ],
+        [
+          35280,
+          289408
+        ],
+        [
+          35520,
+          289408
+        ],
+        [
+          35520,
+          289238
+        ]
+      ]
+    },
+    {
+      "rule": "metal1.enclosing.contact.1",
+      "description": "minimum metal1 overlap of contact",
+      "check": "enclosing",
+      "layer": "Metal1",
+      "cell": "bandgap_top",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 47580,
+        "bottom": 288668,
+        "right": 47820,
+        "top": 288838
+      },
+      "polygon": [
+        [
+          47580,
+          288668
+        ],
+        [
+          47580,
+          288838
+        ],
+        [
+          47820,
+          288838
+        ],
+        [
+          47820,
+          288668
+        ]
+      ]
+    },
+    {
+      "rule": "metal1.enclosing.contact.1",
+      "description": "minimum metal1 overlap of contact",
+      "check": "enclosing",
+      "layer": "Metal1",
+      "cell": "bandgap_top",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 50380,
+        "bottom": 288668,
+        "right": 50620,
+        "top": 288838
+      },
+      "polygon": [
+        [
+          50380,
+          288668
+        ],
+        [
+          50380,
+          288838
+        ],
+        [
+          50620,
+          288838
+        ],
+        [
+          50620,
+          288668
+        ]
+      ]
+    },
+    {
+      "rule": "metal1.enclosing.contact.1",
+      "description": "minimum metal1 overlap of contact",
+      "check": "enclosing",
+      "layer": "Metal1",
+      "cell": "bandgap_top",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 50380,
+        "bottom": 289238,
+        "right": 50620,
+        "top": 289408
+      },
+      "polygon": [
+        [
+          50380,
+          289238
+        ],
+        [
+          50380,
+          289408
+        ],
+        [
+          50620,
+          289408
+        ],
+        [
+          50620,
+          289238
+        ]
+      ]
+    },
+    {
+      "rule": "metal1.enclosing.contact.1",
+      "description": "minimum metal1 overlap of contact",
+      "check": "enclosing",
+      "layer": "Metal1",
+      "cell": "bandgap_top",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 62680,
+        "bottom": 288668,
+        "right": 62920,
+        "top": 288838
+      },
+      "polygon": [
+        [
+          62680,
+          288668
+        ],
+        [
+          62680,
+          288838
+        ],
+        [
+          62920,
+          288838
+        ],
+        [
+          62920,
+          288668
+        ]
+      ]
+    },
+    {
+      "rule": "metal1.enclosing.contact.1",
+      "description": "minimum metal1 overlap of contact",
+      "check": "enclosing",
+      "layer": "Metal1",
+      "cell": "bandgap_top",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 65480,
+        "bottom": 288668,
+        "right": 65720,
+        "top": 288838
+      },
+      "polygon": [
+        [
+          65480,
+          288668
+        ],
+        [
+          65480,
+          288838
+        ],
+        [
+          65720,
+          288838
+        ],
+        [
+          65720,
+          288668
+        ]
+      ]
+    },
+    {
+      "rule": "metal1.enclosing.contact.1",
+      "description": "minimum metal1 overlap of contact",
+      "check": "enclosing",
+      "layer": "Metal1",
+      "cell": "bandgap_top",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 65480,
+        "bottom": 289238,
+        "right": 65720,
+        "top": 289408
+      },
+      "polygon": [
+        [
+          65480,
+          289238
+        ],
+        [
+          65480,
+          289408
+        ],
+        [
+          65720,
+          289408
+        ],
+        [
+          65720,
+          289238
+        ]
+      ]
+    },
+    {
+      "rule": "metal1.enclosing.contact.1",
+      "description": "minimum metal1 overlap of contact",
+      "check": "enclosing",
+      "layer": "Metal1",
+      "cell": "bandgap_top",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 77780,
+        "bottom": 288668,
+        "right": 78020,
+        "top": 288838
+      },
+      "polygon": [
+        [
+          77780,
+          288668
+        ],
+        [
+          77780,
+          288838
+        ],
+        [
+          78020,
+          288838
+        ],
+        [
+          78020,
+          288668
+        ]
+      ]
+    },
+    {
+      "rule": "metal1.enclosing.contact.1",
+      "description": "minimum metal1 overlap of contact",
+      "check": "enclosing",
+      "layer": "Metal1",
+      "cell": "bandgap_top",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 80580,
+        "bottom": 288668,
+        "right": 80820,
+        "top": 288838
+      },
+      "polygon": [
+        [
+          80580,
+          288668
+        ],
+        [
+          80580,
+          288838
+        ],
+        [
+          80820,
+          288838
+        ],
+        [
+          80820,
+          288668
+        ]
+      ]
+    },
+    {
+      "rule": "metal1.enclosing.contact.1",
+      "description": "minimum metal1 overlap of contact",
+      "check": "enclosing",
+      "layer": "Metal1",
+      "cell": "bandgap_top",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 80580,
+        "bottom": 289238,
+        "right": 80820,
+        "top": 289408
+      },
+      "polygon": [
+        [
+          80580,
+          289238
+        ],
+        [
+          80580,
+          289408
+        ],
+        [
+          80820,
+          289408
+        ],
+        [
+          80820,
+          289238
+        ]
+      ]
+    },
+    {
+      "rule": "metal1.enclosing.contact.1",
+      "description": "minimum metal1 overlap of contact",
+      "check": "enclosing",
+      "layer": "Metal1",
+      "cell": "bandgap_top",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 92880,
+        "bottom": 288668,
+        "right": 93120,
+        "top": 288838
+      },
+      "polygon": [
+        [
+          92880,
+          288668
+        ],
+        [
+          92880,
+          288838
+        ],
+        [
+          93120,
+          288838
+        ],
+        [
+          93120,
+          288668
+        ]
+      ]
+    },
+    {
+      "rule": "metal1.enclosing.contact.1",
+      "description": "minimum metal1 overlap of contact",
+      "check": "enclosing",
+      "layer": "Metal1",
+      "cell": "bandgap_top",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 95680,
+        "bottom": 288668,
+        "right": 95920,
+        "top": 288838
+      },
+      "polygon": [
+        [
+          95680,
+          288668
+        ],
+        [
+          95680,
+          288838
+        ],
+        [
+          95920,
+          288838
+        ],
+        [
+          95920,
+          288668
+        ]
+      ]
+    },
+    {
+      "rule": "metal1.enclosing.contact.1",
+      "description": "minimum metal1 overlap of contact",
+      "check": "enclosing",
+      "layer": "Metal1",
+      "cell": "bandgap_top",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 95680,
+        "bottom": 289238,
+        "right": 95920,
+        "top": 289408
+      },
+      "polygon": [
+        [
+          95680,
+          289238
+        ],
+        [
+          95680,
+          289408
+        ],
+        [
+          95920,
+          289408
+        ],
+        [
+          95920,
+          289238
+        ]
+      ]
+    },
+    {
+      "rule": "metal1.enclosing.contact.1",
+      "description": "minimum metal1 overlap of contact",
+      "check": "enclosing",
+      "layer": "Metal1",
+      "cell": "bandgap_top",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 107980,
+        "bottom": 288668,
+        "right": 108220,
+        "top": 288838
+      },
+      "polygon": [
+        [
+          107980,
+          288668
+        ],
+        [
+          107980,
+          288838
+        ],
+        [
+          108220,
+          288838
+        ],
+        [
+          108220,
+          288668
+        ]
+      ]
+    },
+    {
+      "rule": "metal1.enclosing.contact.1",
+      "description": "minimum metal1 overlap of contact",
+      "check": "enclosing",
+      "layer": "Metal1",
+      "cell": "bandgap_top",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 110780,
+        "bottom": 288668,
+        "right": 111020,
+        "top": 288838
+      },
+      "polygon": [
+        [
+          110780,
+          288668
+        ],
+        [
+          110780,
+          288838
+        ],
+        [
+          111020,
+          288838
+        ],
+        [
+          111020,
+          288668
+        ]
+      ]
+    },
+    {
+      "rule": "metal1.enclosing.contact.1",
+      "description": "minimum metal1 overlap of contact",
+      "check": "enclosing",
+      "layer": "Metal1",
+      "cell": "bandgap_top",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 110780,
+        "bottom": 289238,
+        "right": 111020,
+        "top": 289408
+      },
+      "polygon": [
+        [
+          110780,
+          289238
+        ],
+        [
+          110780,
+          289408
+        ],
+        [
+          111020,
+          289408
+        ],
+        [
+          111020,
+          289238
+        ]
+      ]
+    },
+    {
+      "rule": "metal1.enclosing.contact.1",
+      "description": "minimum metal1 overlap of contact",
+      "check": "enclosing",
+      "layer": "Metal1",
+      "cell": "bandgap_top",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 123080,
+        "bottom": 288668,
+        "right": 123320,
+        "top": 288838
+      },
+      "polygon": [
+        [
+          123080,
+          288668
+        ],
+        [
+          123080,
+          288838
+        ],
+        [
+          123320,
+          288838
+        ],
+        [
+          123320,
+          288668
+        ]
+      ]
+    },
+    {
+      "rule": "metal1.enclosing.contact.1",
+      "description": "minimum metal1 overlap of contact",
+      "check": "enclosing",
+      "layer": "Metal1",
+      "cell": "bandgap_top",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 125880,
+        "bottom": 288668,
+        "right": 126120,
+        "top": 288838
+      },
+      "polygon": [
+        [
+          125880,
+          288668
+        ],
+        [
+          125880,
+          288838
+        ],
+        [
+          126120,
+          288838
+        ],
+        [
+          126120,
+          288668
+        ]
+      ]
+    },
+    {
+      "rule": "metal1.enclosing.contact.1",
+      "description": "minimum metal1 overlap of contact",
+      "check": "enclosing",
+      "layer": "Metal1",
+      "cell": "bandgap_top",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 125880,
+        "bottom": 289238,
+        "right": 126120,
+        "top": 289408
+      },
+      "polygon": [
+        [
+          125880,
+          289238
+        ],
+        [
+          125880,
+          289408
+        ],
+        [
+          126120,
+          289408
+        ],
+        [
+          126120,
+          289238
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "bandgap_top",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 17080,
+        "bottom": 175053,
+        "right": 17320,
+        "top": 175293
+      },
+      "polygon": [
+        [
+          17080,
+          175053
+        ],
+        [
+          17080,
+          175293
+        ],
+        [
+          17320,
+          175293
+        ],
+        [
+          17320,
+          175053
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "bandgap_top",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 17080,
+        "bottom": 175053,
+        "right": 17320,
+        "top": 175293
+      },
+      "polygon": [
+        [
+          17080,
+          175053
+        ],
+        [
+          17080,
+          175293
+        ],
+        [
+          17320,
+          175293
+        ],
+        [
+          17320,
+          175053
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "bandgap_top",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 79780,
+        "bottom": 172493,
+        "right": 80020,
+        "top": 172733
+      },
+      "polygon": [
+        [
+          79780,
+          172493
+        ],
+        [
+          79780,
+          172733
+        ],
+        [
+          80020,
+          172733
+        ],
+        [
+          80020,
+          172493
+        ]
+      ]
+    },
+    {
+      "rule": "via1.width.1",
+      "description": "minimum via1 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via1",
+      "cell": "bandgap_top",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 79780,
+        "bottom": 172493,
+        "right": 80020,
+        "top": 172733
+      },
+      "polygon": [
+        [
+          79780,
+          172493
+        ],
+        [
+          79780,
+          172733
+        ],
+        [
+          80020,
+          172733
+        ],
+        [
+          80020,
+          172493
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "bandgap_top",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 17080,
+        "bottom": 175053,
+        "right": 17320,
+        "top": 175293
+      },
+      "polygon": [
+        [
+          17080,
+          175053
+        ],
+        [
+          17080,
+          175293
+        ],
+        [
+          17320,
+          175293
+        ],
+        [
+          17320,
+          175053
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "bandgap_top",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 17080,
+        "bottom": 175053,
+        "right": 17320,
+        "top": 175293
+      },
+      "polygon": [
+        [
+          17080,
+          175053
+        ],
+        [
+          17080,
+          175293
+        ],
+        [
+          17320,
+          175293
+        ],
+        [
+          17320,
+          175053
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "bandgap_top",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 79780,
+        "bottom": 172493,
+        "right": 80020,
+        "top": 172733
+      },
+      "polygon": [
+        [
+          79780,
+          172493
+        ],
+        [
+          79780,
+          172733
+        ],
+        [
+          80020,
+          172733
+        ],
+        [
+          80020,
+          172493
+        ]
+      ]
+    },
+    {
+      "rule": "via2.width.1",
+      "description": "minimum via2 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via2",
+      "cell": "bandgap_top",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 79780,
+        "bottom": 172493,
+        "right": 80020,
+        "top": 172733
+      },
+      "polygon": [
+        [
+          79780,
+          172493
+        ],
+        [
+          79780,
+          172733
+        ],
+        [
+          80020,
+          172733
+        ],
+        [
+          80020,
+          172493
+        ]
+      ]
+    },
+    {
+      "rule": "via3.width.1",
+      "description": "minimum via3 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via3",
+      "cell": "bandgap_top",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 17080,
+        "bottom": 175053,
+        "right": 17320,
+        "top": 175293
+      },
+      "polygon": [
+        [
+          17080,
+          175053
+        ],
+        [
+          17080,
+          175293
+        ],
+        [
+          17320,
+          175293
+        ],
+        [
+          17320,
+          175053
+        ]
+      ]
+    },
+    {
+      "rule": "via3.width.1",
+      "description": "minimum via3 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via3",
+      "cell": "bandgap_top",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 17080,
+        "bottom": 175053,
+        "right": 17320,
+        "top": 175293
+      },
+      "polygon": [
+        [
+          17080,
+          175053
+        ],
+        [
+          17080,
+          175293
+        ],
+        [
+          17320,
+          175293
+        ],
+        [
+          17320,
+          175053
+        ]
+      ]
+    },
+    {
+      "rule": "via3.width.1",
+      "description": "minimum via3 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via3",
+      "cell": "bandgap_top",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 79780,
+        "bottom": 172493,
+        "right": 80020,
+        "top": 172733
+      },
+      "polygon": [
+        [
+          79780,
+          172493
+        ],
+        [
+          79780,
+          172733
+        ],
+        [
+          80020,
+          172733
+        ],
+        [
+          80020,
+          172493
+        ]
+      ]
+    },
+    {
+      "rule": "via3.width.1",
+      "description": "minimum via3 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via3",
+      "cell": "bandgap_top",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 79780,
+        "bottom": 172493,
+        "right": 80020,
+        "top": 172733
+      },
+      "polygon": [
+        [
+          79780,
+          172493
+        ],
+        [
+          79780,
+          172733
+        ],
+        [
+          80020,
+          172733
+        ],
+        [
+          80020,
+          172493
+        ]
+      ]
+    },
+    {
+      "rule": "via4.width.1",
+      "description": "minimum via4 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via4",
+      "cell": "bandgap_top",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 46780,
+        "bottom": 172493,
+        "right": 47020,
+        "top": 172733
+      },
+      "polygon": [
+        [
+          46780,
+          172493
+        ],
+        [
+          46780,
+          172733
+        ],
+        [
+          47020,
+          172733
+        ],
+        [
+          47020,
+          172493
+        ]
+      ]
+    },
+    {
+      "rule": "via4.width.1",
+      "description": "minimum via4 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via4",
+      "cell": "bandgap_top",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 46780,
+        "bottom": 172493,
+        "right": 47020,
+        "top": 172733
+      },
+      "polygon": [
+        [
+          46780,
+          172493
+        ],
+        [
+          46780,
+          172733
+        ],
+        [
+          47020,
+          172733
+        ],
+        [
+          47020,
+          172493
+        ]
+      ]
+    },
+    {
+      "rule": "via4.width.1",
+      "description": "minimum via4 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via4",
+      "cell": "bandgap_top",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 79780,
+        "bottom": 172493,
+        "right": 80020,
+        "top": 172733
+      },
+      "polygon": [
+        [
+          79780,
+          172493
+        ],
+        [
+          79780,
+          172733
+        ],
+        [
+          80020,
+          172733
+        ],
+        [
+          80020,
+          172493
+        ]
+      ]
+    },
+    {
+      "rule": "via4.width.1",
+      "description": "minimum via4 size (approximates official min/max size rule)",
+      "check": "width",
+      "layer": "Via4",
+      "cell": "bandgap_top",
+      "source_cell": null,
+      "source_path": null,
+      "bbox": {
+        "left": 79780,
+        "bottom": 172493,
+        "right": 80020,
+        "top": 172733
+      },
+      "polygon": [
+        [
+          79780,
+          172493
+        ],
+        [
+          79780,
+          172733
+        ],
+        [
+          80020,
+          172733
+        ],
+        [
+          80020,
+          172493
+        ]
+      ]
+    }
+  ],
+  "coverage": {
+    "deck_layers": [
+      "21/0",
+      "22/0",
+      "30/0",
+      "33/0",
+      "34/0",
+      "35/0",
+      "36/0",
+      "37/0",
+      "38/0",
+      "40/0",
+      "41/0",
+      "42/0",
+      "46/0",
+      "53/0",
+      "75/0",
+      "81/0",
+      "127/5"
+    ],
+    "layers_checked": [
+      "21/0",
+      "22/0",
+      "30/0",
+      "33/0",
+      "34/0",
+      "35/0",
+      "36/0",
+      "38/0",
+      "40/0",
+      "41/0",
+      "42/0",
+      "46/0",
+      "75/0",
+      "81/0",
+      "127/5"
+    ],
+    "layers_in_stream_without_rules": [
+      "31/0",
+      "32/0",
+      "34/10",
+      "49/0",
+      "62/0",
+      "110/5",
+      "117/5",
+      "117/10"
+    ],
+    "rules_skipped": [
+      "metaltop.space.1",
+      "metaltop.width.1",
+      "pad.enclosing.metal5.1"
+    ],
+    "voltage_domain_warnings": [],
+    "deck_scope": [
+      "10.4.2 MIM Option B",
+      "10.7 DRC_BJT Mark Layer",
+      "7.12 Contact",
+      "7.13 Metaln",
+      "7.14 Vian",
+      "7.15 MetalTop",
+      "7.4 Nwell",
+      "7.5 Comp",
+      "7.7 Poly2",
+      "9.1 Bond Pad"
+    ]
+  },
+  "provenance": {
+    "klt_version": "0.2.0",
+    "klayout_version": "0.30.10",
+    "pdk": null,
+    "deck": {
+      "name": "gf180mcu",
+      "content_hash": "sha256:e2726af899d1837fe8c9a99688483f145b23c92ded07323f54d627d06bdb2bbf"
+    },
+    "input": {
+      "content_hash": "sha256:8fb3c48899d7160acf9b87cb19280e56e4f6d3a1dcbbcf8ec4b89cc6b2505016"
+    }
+  }
+}

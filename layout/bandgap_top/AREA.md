@@ -11,18 +11,21 @@ uv run --with klayout python3 layout/bandgap_top/area_report.py
 
 | Quantity | Value |
 |---|---|
-| Drawn GDS bounding box (incl. guard ring) | **154.70 × 316.34 µm** |
-| Drawn GDS area | **48,938.26 µm² (0.04894 mm²)** |
+| Drawn GDS bounding box (incl. guard ring) | **239.20 × 337.85 µm** |
+| Drawn GDS area | **80,813.72 µm² (0.08081 mm²)** |
 | Ratified target (`README.md` "Target specification", issue #1/#35) | 50,000 µm² (0.05 mm²) |
-| Margin | **PASS — 1,061.74 µm² (2.1 %) of headroom** |
-| Device body area, current netlist | 19,994.36 µm² |
-| Realised overhead multiplier | **2.45× body area** |
+| Margin | **FAIL — 30,813.72 µm² (61.6 %) OVER budget** |
+| Device body area, current netlist | 25,327.78 µm² |
+| Realised overhead multiplier | **3.19× body area** |
 | `floorplan.md` §8 body-area estimate | 10,425.45 µm² |
-| Current netlist vs. that estimate | **1.92×** |
+| Current netlist vs. that estimate | **2.43×** |
 
-Verdict: **inside the ratified budget, but only just.** Three findings below
+Verdict: **over the ratified budget** — see Finding 5. Four findings below
 are flagged rather than smoothed over, per CLAUDE.md's no-spec-relaxation
-rule.
+rule; the headline numbers above are current as of issue #156 (regenerated
+2026-08-16), superseding the "inside the ratified budget, but only just"
+verdict this file previously carried (48,938.26 µm², PASS at 2.1 % headroom,
+last regenerated at `ba091ea`/#105 — stale since #96/#147/#151).
 
 ## Finding 1 — `floorplan.md` §8's body-area estimate is 1.92× stale
 
@@ -169,15 +172,62 @@ directly against `klt extract`'s per-device `R` (`core.R1`: 80,622.5 Ω vs.
 `startup.RPU`: 1,999,980.5 Ω vs. 2,000,000 Ω intended — all within the
 formula's own one-dbu-per-fold rounding tolerance).
 
+## Finding 5 — #96/#147/#151's accuracy/stability resizes broke the budget; this file's own committed GDS masked it (issue #156)
+
+This file's "Headline" and Findings 1–4 above described the layout as
+regenerated through `#86` (`ba091ea`, 2026-08-03) — 48,938.26 µm², PASS at
+2.1 % headroom. **No layout code changed after that commit, but three
+circuit-sizing issues did**: `#96` (TC/output-reference corner closure),
+`#147` (combined untrimmed-accuracy verdict — input pair to 300 µm/6 µm),
+and `#151` (M3/M4 mirror-load resize to 33 µm/26.4 µm for loop-stability
+margin; see `design/bandgap_error_budget.md` §5c/§5d for the electrical
+justification and measured PASS verdicts each closed). None of those issues
+touched `layout/bandgap_top/`, so the committed GDS silently drifted out of
+sync with the netlist it is supposed to represent — this file's own PASS
+verdict went stale without anyone re-running `generate.py` to catch it.
+
+`#156` regenerated `bandgap_top.gds` from the current netlist (no
+`generate.py`/`plan.py` change) and found the real verdict: **80,813.72 µm²
+drawn, 61.6 % over the ratified 50,000 µm² target** (current "Headline"
+table above). Root-caused directly against Finding 2's own overhead-
+multiplier framing: the realised multiplier is **3.19×** — *better* than the
+4× `floorplan.md` §8 called "generous," so single-metal routing overhead is
+not the problem. Drawn device body area itself grew from 19,994.36 µm² to
+**25,327.78 µm²** (+26.7 %, almost entirely `amp` — 8,140.00 → 11,242.40
+µm² from `#147`'s input-pair resize and `#151`'s mirror-load resize; `core`
+also grew 3,457.09 → 5,688.11 µm² from `#96`'s `core.R1` re-null and
+`#147`'s `core.M1`–`core.M4`/`MC1`–`MC4` resize to 85 µm/8.5 µm) — a real
+device-area increase required to close previously-failing electrical
+verdicts (§5c/§5d), not a layout regression to fix.
+
+Per CLAUDE.md's no-silent-relaxation rule, this is escalated rather than
+absorbed: `spec/decision-records/0005-area-target-overrun.md` proposes an
+interim revised Area target (`< 0.085 mm²`), filed `Status: proposed`
+pending operator ratification — `README.md`'s ratified Area row and this
+tool's `RATIFIED_TARGET_UM2` constant are unchanged until that ratification
+lands, so `area_report.py` keeps reporting `FAIL` honestly until then. A
+genuine fix — multi-level-metal routing, extraction-viable since
+klayout-tools#220, replacing the current Metal1/Poly2-only corridor-and-rail
+scheme — is named in that record and filed as
+[#160](https://github.com/2AMLogic/gf180-bandgap/issues/160), not attempted
+here.
+
+(Separately, and unrelated to this finding: regenerating the GDS surfaced a
+`klt`-version drift affecting DRC/LVS — see
+[#159](https://github.com/2AMLogic/gf180-bandgap/issues/159) and
+`layout/README.md`'s "Table currency note.")
+
 ## Body area by group (current netlist)
 
 | Group | Body area (µm²) |
 |---|---|
-| amp | 8,140.00 |
+| amp | 11,242.40 |
 | startup | 8,048.00 |
-| core | 3,457.09 |
+| core | 5,688.11 |
 | trim ladder | 349.27 |
-| **TOTAL** | **19,994.36** |
+| **TOTAL** | **25,327.78** |
 
-Largest single line items: `startup.RPU` 8,000; `amp.CC` (MIM) 3,600;
-`core.R1` 921.40; `amp.M1`/`amp.M2` 800 each; `amp.MC3`/`amp.MC4` 640 each.
+Largest single line items (current netlist, issue #156): `startup.RPU`
+8,000; `amp.CC` (MIM) 3,600; `amp.M1`/`amp.M2` (input pair, `#147`) 1,800
+each; `core.R1` 886.80; `amp.M3`/`amp.M4` (mirror load, `#151`) 871.20 each;
+`core.M1`/`core.MC1`/`core.M2` (mirror/cascode, `#147`) 722.50 each.

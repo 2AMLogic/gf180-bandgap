@@ -1,0 +1,5614 @@
+{
+  "schema_version": 2,
+  "file": "layout/bandgap_top/bandgap_top.gds",
+  "deck": "gf180mcu",
+  "top": "bandgap_top",
+  "dbu_um": 0.001,
+  "netlist_path": "/Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-156/layout/lvs/reports/bandgap_top/20260816-234811-94df4d7.extracted.spice",
+  "netlist_sha256": "87e206721ebf94e23b855f1d1a3121922ee788f3fc7c228b931e31f89273a3a0",
+  "status": "extracted",
+  "device_count": 164,
+  "net_count": 92,
+  "pin_count": 4,
+  "device_counts": {
+    "bjt": 8,
+    "cap_mim_2f0_m4m5_noshield": 1,
+    "nfet": 42,
+    "pfet": 47,
+    "ppolyf_u": 65,
+    "ppolyf_u_1k": 1
+  },
+  "dummy_devices_dropped": 0,
+  "ignored_layers": [],
+  "device_recognition_only_layers": [
+    {
+      "layer": 31,
+      "datatype": 0,
+      "shapes": 158
+    },
+    {
+      "layer": 32,
+      "datatype": 0,
+      "shapes": 76
+    },
+    {
+      "layer": 49,
+      "datatype": 0,
+      "shapes": 66
+    },
+    {
+      "layer": 62,
+      "datatype": 0,
+      "shapes": 1
+    },
+    {
+      "layer": 75,
+      "datatype": 0,
+      "shapes": 1
+    },
+    {
+      "layer": 110,
+      "datatype": 5,
+      "shapes": 66
+    },
+    {
+      "layer": 117,
+      "datatype": 5,
+      "shapes": 1
+    },
+    {
+      "layer": 117,
+      "datatype": 10,
+      "shapes": 1
+    },
+    {
+      "layer": 127,
+      "datatype": 5,
+      "shapes": 8
+    }
+  ],
+  "device_classes": [
+    "nfet",
+    "pfet",
+    "bjt",
+    "cap_mim_2f0_m4m5_noshield",
+    "resistor",
+    "diode_nd2ps_06v0",
+    "diode_pd2nw_06v0"
+  ],
+  "devices": [
+    {
+      "name": "$1",
+      "class": "nfet",
+      "nets": {
+        "s": "vss",
+        "g": "$3",
+        "d": "$3",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 2.0,
+        "w_um": 2.5,
+        "as_um2": 2.25,
+        "ad_um2": 2.25,
+        "ps_um": 6.8,
+        "pd_um": 6.8
+      }
+    },
+    {
+      "name": "$10",
+      "class": "nfet",
+      "nets": {
+        "s": "$9",
+        "g": "$8",
+        "d": "$10",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 16.0,
+        "w_um": 10.0,
+        "as_um2": 9.0,
+        "ad_um2": 9.0,
+        "ps_um": 21.8,
+        "pd_um": 21.8
+      }
+    },
+    {
+      "name": "$100",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$25",
+        "b": "$60",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 77594.3,
+        "l_um": 443.396,
+        "w_um": 2.0,
+        "area_um2": 886.792,
+        "perimeter_um": 890.792
+      }
+    },
+    {
+      "name": "$101",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$60",
+        "b": "$60",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$102",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$60",
+        "b": "$34",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$103",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$34",
+        "b": "$60",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$104",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$60",
+        "b": "$35",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$105",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$35",
+        "b": "$36",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$106",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$36",
+        "b": "$37",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$107",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$37",
+        "b": "$60",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$108",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$60",
+        "b": "$38",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$109",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$38",
+        "b": "$39",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$11",
+      "class": "nfet",
+      "nets": {
+        "s": "$7",
+        "g": "$8",
+        "d": "$8",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 4.0,
+        "w_um": 1.0,
+        "as_um2": 0.9,
+        "ad_um2": 0.9,
+        "ps_um": 3.8,
+        "pd_um": 3.8
+      }
+    },
+    {
+      "name": "$110",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$39",
+        "b": "$40",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$111",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$40",
+        "b": "$41",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$112",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$41",
+        "b": "$42",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$113",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$42",
+        "b": "$43",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$114",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$43",
+        "b": "$44",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$115",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$44",
+        "b": "$60",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$116",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$60",
+        "b": "$45",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$117",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$45",
+        "b": "$46",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$118",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$46",
+        "b": "$47",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$119",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$47",
+        "b": "$48",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$12",
+      "class": "nfet",
+      "nets": {
+        "s": "vss",
+        "g": "$7",
+        "d": "$7",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 4.0,
+        "w_um": 1.0,
+        "as_um2": 0.9,
+        "ad_um2": 0.9,
+        "ps_um": 3.8,
+        "pd_um": 3.8
+      }
+    },
+    {
+      "name": "$120",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$48",
+        "b": "$49",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$121",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$49",
+        "b": "$50",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$122",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$50",
+        "b": "$51",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$123",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$51",
+        "b": "$52",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$124",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$52",
+        "b": "$53",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$125",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$53",
+        "b": "$54",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$126",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$54",
+        "b": "$55",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$127",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$55",
+        "b": "$56",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$128",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$56",
+        "b": "$57",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$129",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$57",
+        "b": "$58",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$13",
+      "class": "nfet",
+      "nets": {
+        "s": "$11",
+        "g": "$8",
+        "d": "$12",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 16.0,
+        "w_um": 10.0,
+        "as_um2": 9.0,
+        "ad_um2": 9.0,
+        "ps_um": 21.8,
+        "pd_um": 21.8
+      }
+    },
+    {
+      "name": "$130",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$58",
+        "b": "$59",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$131",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$59",
+        "b": "$60",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$132",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "vref",
+        "b": "$61",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$133",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$61",
+        "b": "$62",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$134",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$62",
+        "b": "$63",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$135",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$63",
+        "b": "$64",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$136",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$64",
+        "b": "$65",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$137",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$65",
+        "b": "$66",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$138",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$66",
+        "b": "$67",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$139",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$67",
+        "b": "$68",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$14",
+      "class": "nfet",
+      "nets": {
+        "s": "$11",
+        "g": "$8",
+        "d": "$12",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 16.0,
+        "w_um": 10.0,
+        "as_um2": 9.0,
+        "ad_um2": 9.0,
+        "ps_um": 21.8,
+        "pd_um": 21.8
+      }
+    },
+    {
+      "name": "$140",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$68",
+        "b": "$69",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$141",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$69",
+        "b": "$70",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$142",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$70",
+        "b": "$71",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$143",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$71",
+        "b": "$72",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$144",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$72",
+        "b": "$73",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$145",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$73",
+        "b": "$74",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$146",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$74",
+        "b": "$75",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$147",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$75",
+        "b": "$76",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$148",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$76",
+        "b": "$77",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$149",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$77",
+        "b": "$78",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$15",
+      "class": "nfet",
+      "nets": {
+        "s": "$9",
+        "g": "$8",
+        "d": "$10",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 16.0,
+        "w_um": 10.0,
+        "as_um2": 9.0,
+        "ad_um2": 9.0,
+        "ps_um": 21.8,
+        "pd_um": 21.8
+      }
+    },
+    {
+      "name": "$150",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$78",
+        "b": "$79",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$151",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$79",
+        "b": "$80",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$152",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$80",
+        "b": "$81",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$153",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$81",
+        "b": "$82",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$154",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$82",
+        "b": "$83",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$155",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$83",
+        "b": "$84",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$156",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$84",
+        "b": "$85",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$157",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$85",
+        "b": "$86",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$158",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$86",
+        "b": "$87",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$159",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$87",
+        "b": "$88",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$16",
+      "class": "nfet",
+      "nets": {
+        "s": "vss",
+        "g": "vss",
+        "d": "vss",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 16.0,
+        "w_um": 2.0,
+        "as_um2": 1.8,
+        "ad_um2": 1.8,
+        "ps_um": 5.8,
+        "pd_um": 5.8
+      }
+    },
+    {
+      "name": "$160",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$88",
+        "b": "$89",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$161",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$89",
+        "b": "$90",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$162",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$90",
+        "b": "$91",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$163",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$91",
+        "b": "$60",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 485.1,
+        "l_um": 2.772,
+        "w_um": 2.0,
+        "area_um2": 5.544,
+        "perimeter_um": 9.544
+      }
+    },
+    {
+      "name": "$164",
+      "class": "ppolyf_u_1k",
+      "nets": {
+        "a": "$5",
+        "b": "vdd",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 1999980.5,
+        "l_um": 3999.961,
+        "w_um": 2.0,
+        "area_um2": 7999.922,
+        "perimeter_um": 8003.922
+      }
+    },
+    {
+      "name": "$17",
+      "class": "nfet",
+      "nets": {
+        "s": "vss",
+        "g": "vss",
+        "d": "vss",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 6.0,
+        "w_um": 2.0,
+        "as_um2": 1.8,
+        "ad_um2": 1.8,
+        "ps_um": 5.8,
+        "pd_um": 5.8
+      }
+    },
+    {
+      "name": "$18",
+      "class": "nfet",
+      "nets": {
+        "s": "$13",
+        "g": "$20",
+        "d": "$9",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 6.0,
+        "w_um": 25.0,
+        "as_um2": 22.5,
+        "ad_um2": 22.5,
+        "ps_um": 51.8,
+        "pd_um": 51.8
+      }
+    },
+    {
+      "name": "$19",
+      "class": "nfet",
+      "nets": {
+        "s": "$13",
+        "g": "$18",
+        "d": "$11",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 6.0,
+        "w_um": 25.0,
+        "as_um2": 22.5,
+        "ad_um2": 22.5,
+        "ps_um": 51.8,
+        "pd_um": 51.8
+      }
+    },
+    {
+      "name": "$2",
+      "class": "nfet",
+      "nets": {
+        "s": "vss",
+        "g": "$3",
+        "d": "$4",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 2.0,
+        "w_um": 5.0,
+        "as_um2": 4.5,
+        "ad_um2": 4.5,
+        "ps_um": 11.8,
+        "pd_um": 11.8
+      }
+    },
+    {
+      "name": "$20",
+      "class": "nfet",
+      "nets": {
+        "s": "$13",
+        "g": "$18",
+        "d": "$11",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 6.0,
+        "w_um": 25.0,
+        "as_um2": 22.5,
+        "ad_um2": 22.5,
+        "ps_um": 51.8,
+        "pd_um": 51.8
+      }
+    },
+    {
+      "name": "$21",
+      "class": "nfet",
+      "nets": {
+        "s": "$13",
+        "g": "$20",
+        "d": "$9",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 6.0,
+        "w_um": 25.0,
+        "as_um2": 22.5,
+        "ad_um2": 22.5,
+        "ps_um": 51.8,
+        "pd_um": 51.8
+      }
+    },
+    {
+      "name": "$22",
+      "class": "nfet",
+      "nets": {
+        "s": "$13",
+        "g": "$20",
+        "d": "$9",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 6.0,
+        "w_um": 25.0,
+        "as_um2": 22.5,
+        "ad_um2": 22.5,
+        "ps_um": 51.8,
+        "pd_um": 51.8
+      }
+    },
+    {
+      "name": "$23",
+      "class": "nfet",
+      "nets": {
+        "s": "$13",
+        "g": "$18",
+        "d": "$11",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 6.0,
+        "w_um": 25.0,
+        "as_um2": 22.5,
+        "ad_um2": 22.5,
+        "ps_um": 51.8,
+        "pd_um": 51.8
+      }
+    },
+    {
+      "name": "$24",
+      "class": "nfet",
+      "nets": {
+        "s": "$13",
+        "g": "$18",
+        "d": "$11",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 6.0,
+        "w_um": 25.0,
+        "as_um2": 22.5,
+        "ad_um2": 22.5,
+        "ps_um": 51.8,
+        "pd_um": 51.8
+      }
+    },
+    {
+      "name": "$25",
+      "class": "nfet",
+      "nets": {
+        "s": "$13",
+        "g": "$20",
+        "d": "$9",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 6.0,
+        "w_um": 25.0,
+        "as_um2": 22.5,
+        "ad_um2": 22.5,
+        "ps_um": 51.8,
+        "pd_um": 51.8
+      }
+    },
+    {
+      "name": "$26",
+      "class": "nfet",
+      "nets": {
+        "s": "$13",
+        "g": "$20",
+        "d": "$9",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 6.0,
+        "w_um": 25.0,
+        "as_um2": 22.5,
+        "ad_um2": 22.5,
+        "ps_um": 51.8,
+        "pd_um": 51.8
+      }
+    },
+    {
+      "name": "$27",
+      "class": "nfet",
+      "nets": {
+        "s": "$13",
+        "g": "$18",
+        "d": "$11",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 6.0,
+        "w_um": 25.0,
+        "as_um2": 22.5,
+        "ad_um2": 22.5,
+        "ps_um": 51.8,
+        "pd_um": 51.8
+      }
+    },
+    {
+      "name": "$28",
+      "class": "nfet",
+      "nets": {
+        "s": "$13",
+        "g": "$18",
+        "d": "$11",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 6.0,
+        "w_um": 25.0,
+        "as_um2": 22.5,
+        "ad_um2": 22.5,
+        "ps_um": 51.8,
+        "pd_um": 51.8
+      }
+    },
+    {
+      "name": "$29",
+      "class": "nfet",
+      "nets": {
+        "s": "$13",
+        "g": "$20",
+        "d": "$9",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 6.0,
+        "w_um": 25.0,
+        "as_um2": 22.5,
+        "ad_um2": 22.5,
+        "ps_um": 51.8,
+        "pd_um": 51.8
+      }
+    },
+    {
+      "name": "$3",
+      "class": "nfet",
+      "nets": {
+        "s": "vss",
+        "g": "$3",
+        "d": "$5",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 2.0,
+        "w_um": 10.0,
+        "as_um2": 9.0,
+        "ad_um2": 9.0,
+        "ps_um": 21.8,
+        "pd_um": 21.8
+      }
+    },
+    {
+      "name": "$30",
+      "class": "nfet",
+      "nets": {
+        "s": "$13",
+        "g": "$20",
+        "d": "$9",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 6.0,
+        "w_um": 25.0,
+        "as_um2": 22.5,
+        "ad_um2": 22.5,
+        "ps_um": 51.8,
+        "pd_um": 51.8
+      }
+    },
+    {
+      "name": "$31",
+      "class": "nfet",
+      "nets": {
+        "s": "$13",
+        "g": "$18",
+        "d": "$11",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 6.0,
+        "w_um": 25.0,
+        "as_um2": 22.5,
+        "ad_um2": 22.5,
+        "ps_um": 51.8,
+        "pd_um": 51.8
+      }
+    },
+    {
+      "name": "$32",
+      "class": "nfet",
+      "nets": {
+        "s": "$13",
+        "g": "$18",
+        "d": "$11",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 6.0,
+        "w_um": 25.0,
+        "as_um2": 22.5,
+        "ad_um2": 22.5,
+        "ps_um": 51.8,
+        "pd_um": 51.8
+      }
+    },
+    {
+      "name": "$33",
+      "class": "nfet",
+      "nets": {
+        "s": "$13",
+        "g": "$20",
+        "d": "$9",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 6.0,
+        "w_um": 25.0,
+        "as_um2": 22.5,
+        "ad_um2": 22.5,
+        "ps_um": 51.8,
+        "pd_um": 51.8
+      }
+    },
+    {
+      "name": "$34",
+      "class": "nfet",
+      "nets": {
+        "s": "$13",
+        "g": "$20",
+        "d": "$9",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 6.0,
+        "w_um": 25.0,
+        "as_um2": 22.5,
+        "ad_um2": 22.5,
+        "ps_um": 51.8,
+        "pd_um": 51.8
+      }
+    },
+    {
+      "name": "$35",
+      "class": "nfet",
+      "nets": {
+        "s": "$13",
+        "g": "$18",
+        "d": "$11",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 6.0,
+        "w_um": 25.0,
+        "as_um2": 22.5,
+        "ad_um2": 22.5,
+        "ps_um": 51.8,
+        "pd_um": 51.8
+      }
+    },
+    {
+      "name": "$36",
+      "class": "nfet",
+      "nets": {
+        "s": "$13",
+        "g": "$18",
+        "d": "$11",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 6.0,
+        "w_um": 25.0,
+        "as_um2": 22.5,
+        "ad_um2": 22.5,
+        "ps_um": 51.8,
+        "pd_um": 51.8
+      }
+    },
+    {
+      "name": "$37",
+      "class": "nfet",
+      "nets": {
+        "s": "$13",
+        "g": "$20",
+        "d": "$9",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 6.0,
+        "w_um": 25.0,
+        "as_um2": 22.5,
+        "ad_um2": 22.5,
+        "ps_um": 51.8,
+        "pd_um": 51.8
+      }
+    },
+    {
+      "name": "$38",
+      "class": "nfet",
+      "nets": {
+        "s": "$13",
+        "g": "$20",
+        "d": "$9",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 6.0,
+        "w_um": 25.0,
+        "as_um2": 22.5,
+        "ad_um2": 22.5,
+        "ps_um": 51.8,
+        "pd_um": 51.8
+      }
+    },
+    {
+      "name": "$39",
+      "class": "nfet",
+      "nets": {
+        "s": "$13",
+        "g": "$18",
+        "d": "$11",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 6.0,
+        "w_um": 25.0,
+        "as_um2": 22.5,
+        "ad_um2": 22.5,
+        "ps_um": 51.8,
+        "pd_um": 51.8
+      }
+    },
+    {
+      "name": "$4",
+      "class": "nfet",
+      "nets": {
+        "s": "vss",
+        "g": "$3",
+        "d": "$5",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 2.0,
+        "w_um": 10.0,
+        "as_um2": 9.0,
+        "ad_um2": 9.0,
+        "ps_um": 21.8,
+        "pd_um": 21.8
+      }
+    },
+    {
+      "name": "$40",
+      "class": "nfet",
+      "nets": {
+        "s": "$13",
+        "g": "$18",
+        "d": "$11",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 6.0,
+        "w_um": 25.0,
+        "as_um2": 22.5,
+        "ad_um2": 22.5,
+        "ps_um": 51.8,
+        "pd_um": 51.8
+      }
+    },
+    {
+      "name": "$41",
+      "class": "nfet",
+      "nets": {
+        "s": "$13",
+        "g": "$20",
+        "d": "$9",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 6.0,
+        "w_um": 25.0,
+        "as_um2": 22.5,
+        "ad_um2": 22.5,
+        "ps_um": 51.8,
+        "pd_um": 51.8
+      }
+    },
+    {
+      "name": "$42",
+      "class": "nfet",
+      "nets": {
+        "s": "vss",
+        "g": "vss",
+        "d": "vss",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 6.0,
+        "w_um": 2.0,
+        "as_um2": 1.8,
+        "ad_um2": 1.8,
+        "ps_um": 5.8,
+        "pd_um": 5.8
+      }
+    },
+    {
+      "name": "$43",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "vdd",
+        "d": "vdd",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 16.0,
+        "w_um": 2.0,
+        "as_um2": 1.8,
+        "ad_um2": 1.8,
+        "ps_um": 5.8,
+        "pd_um": 5.8
+      }
+    },
+    {
+      "name": "$44",
+      "class": "pfet",
+      "nets": {
+        "s": "$14",
+        "g": "$6",
+        "d": "$10",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 16.0,
+        "w_um": 20.0,
+        "as_um2": 18.0,
+        "ad_um2": 18.0,
+        "ps_um": 41.8,
+        "pd_um": 41.8
+      }
+    },
+    {
+      "name": "$45",
+      "class": "pfet",
+      "nets": {
+        "s": "$15",
+        "g": "$6",
+        "d": "$12",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 16.0,
+        "w_um": 20.0,
+        "as_um2": 18.0,
+        "ad_um2": 18.0,
+        "ps_um": 41.8,
+        "pd_um": 41.8
+      }
+    },
+    {
+      "name": "$46",
+      "class": "pfet",
+      "nets": {
+        "s": "$15",
+        "g": "$6",
+        "d": "$12",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 16.0,
+        "w_um": 20.0,
+        "as_um2": 18.0,
+        "ad_um2": 18.0,
+        "ps_um": 41.8,
+        "pd_um": 41.8
+      }
+    },
+    {
+      "name": "$47",
+      "class": "pfet",
+      "nets": {
+        "s": "$14",
+        "g": "$6",
+        "d": "$10",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 16.0,
+        "w_um": 20.0,
+        "as_um2": 18.0,
+        "ad_um2": 18.0,
+        "ps_um": 41.8,
+        "pd_um": 41.8
+      }
+    },
+    {
+      "name": "$48",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "vdd",
+        "d": "vdd",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 16.0,
+        "w_um": 2.0,
+        "as_um2": 1.8,
+        "ad_um2": 1.8,
+        "ps_um": 5.8,
+        "pd_um": 5.8
+      }
+    },
+    {
+      "name": "$49",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "vdd",
+        "d": "vdd",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 26.4,
+        "w_um": 2.0,
+        "as_um2": 1.8,
+        "ad_um2": 1.8,
+        "ps_um": 5.8,
+        "pd_um": 5.8
+      }
+    },
+    {
+      "name": "$5",
+      "class": "nfet",
+      "nets": {
+        "s": "vss",
+        "g": "$5",
+        "d": "$12",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 2.0,
+        "w_um": 2.0,
+        "as_um2": 1.8,
+        "ad_um2": 1.8,
+        "ps_um": 5.8,
+        "pd_um": 5.8
+      }
+    },
+    {
+      "name": "$50",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "$10",
+        "d": "$14",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 26.4,
+        "w_um": 16.5,
+        "as_um2": 14.85,
+        "ad_um2": 14.85,
+        "ps_um": 34.8,
+        "pd_um": 34.8
+      }
+    },
+    {
+      "name": "$51",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "$10",
+        "d": "$15",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 26.4,
+        "w_um": 16.5,
+        "as_um2": 14.85,
+        "ad_um2": 14.85,
+        "ps_um": 34.8,
+        "pd_um": 34.8
+      }
+    },
+    {
+      "name": "$52",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "$10",
+        "d": "$15",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 26.4,
+        "w_um": 16.5,
+        "as_um2": 14.85,
+        "ad_um2": 14.85,
+        "ps_um": 34.8,
+        "pd_um": 34.8
+      }
+    },
+    {
+      "name": "$53",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "$10",
+        "d": "$14",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 26.4,
+        "w_um": 16.5,
+        "as_um2": 14.85,
+        "ad_um2": 14.85,
+        "ps_um": 34.8,
+        "pd_um": 34.8
+      }
+    },
+    {
+      "name": "$54",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "vdd",
+        "d": "vdd",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 26.4,
+        "w_um": 2.0,
+        "as_um2": 1.8,
+        "ad_um2": 1.8,
+        "ps_um": 5.8,
+        "pd_um": 5.8
+      }
+    },
+    {
+      "name": "$55",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "$4",
+        "d": "$4",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 12.0,
+        "w_um": 4.0,
+        "as_um2": 3.6,
+        "ad_um2": 3.6,
+        "ps_um": 9.8,
+        "pd_um": 9.8
+      }
+    },
+    {
+      "name": "$56",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "vdd",
+        "d": "vdd",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 8.5,
+        "w_um": 2.0,
+        "as_um2": 1.8,
+        "ad_um2": 1.8,
+        "ps_um": 5.8,
+        "pd_um": 5.8
+      }
+    },
+    {
+      "name": "$57",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "$12",
+        "d": "$16",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 8.5,
+        "w_um": 10.625,
+        "as_um2": 9.5625,
+        "ad_um2": 9.5625,
+        "ps_um": 23.05,
+        "pd_um": 23.05
+      }
+    },
+    {
+      "name": "$58",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "$6",
+        "d": "$6",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 50.0,
+        "w_um": 1.0,
+        "as_um2": 0.9,
+        "ad_um2": 0.9,
+        "ps_um": 3.8,
+        "pd_um": 3.8
+      }
+    },
+    {
+      "name": "$59",
+      "class": "pfet",
+      "nets": {
+        "s": "$16",
+        "g": "$4",
+        "d": "$3",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 8.5,
+        "w_um": 10.625,
+        "as_um2": 9.5625,
+        "ad_um2": 9.5625,
+        "ps_um": 23.05,
+        "pd_um": 23.05
+      }
+    },
+    {
+      "name": "$6",
+      "class": "nfet",
+      "nets": {
+        "s": "vss",
+        "g": "$5",
+        "d": "$4",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 2.0,
+        "w_um": 2.0,
+        "as_um2": 1.8,
+        "ad_um2": 1.8,
+        "ps_um": 5.8,
+        "pd_um": 5.8
+      }
+    },
+    {
+      "name": "$60",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "vdd",
+        "d": "vdd",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 8.5,
+        "w_um": 2.0,
+        "as_um2": 1.8,
+        "ad_um2": 1.8,
+        "ps_um": 5.8,
+        "pd_um": 5.8
+      }
+    },
+    {
+      "name": "$61",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "$6",
+        "d": "$8",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 50.0,
+        "w_um": 5.0,
+        "as_um2": 4.5,
+        "ad_um2": 4.5,
+        "ps_um": 11.8,
+        "pd_um": 11.8
+      }
+    },
+    {
+      "name": "$62",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "vdd",
+        "d": "vdd",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 8.5,
+        "w_um": 2.0,
+        "as_um2": 1.8,
+        "ad_um2": 1.8,
+        "ps_um": 5.8,
+        "pd_um": 5.8
+      }
+    },
+    {
+      "name": "$63",
+      "class": "pfet",
+      "nets": {
+        "s": "$17",
+        "g": "$4",
+        "d": "$18",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 8.5,
+        "w_um": 21.25,
+        "as_um2": 19.125,
+        "ad_um2": 19.125,
+        "ps_um": 44.3,
+        "pd_um": 44.3
+      }
+    },
+    {
+      "name": "$64",
+      "class": "pfet",
+      "nets": {
+        "s": "$19",
+        "g": "$4",
+        "d": "$20",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 8.5,
+        "w_um": 21.25,
+        "as_um2": 19.125,
+        "ad_um2": 19.125,
+        "ps_um": 44.3,
+        "pd_um": 44.3
+      }
+    },
+    {
+      "name": "$65",
+      "class": "pfet",
+      "nets": {
+        "s": "$21",
+        "g": "$4",
+        "d": "vref",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 8.5,
+        "w_um": 21.25,
+        "as_um2": 19.125,
+        "ad_um2": 19.125,
+        "ps_um": 44.3,
+        "pd_um": 44.3
+      }
+    },
+    {
+      "name": "$66",
+      "class": "pfet",
+      "nets": {
+        "s": "$21",
+        "g": "$4",
+        "d": "vref",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 8.5,
+        "w_um": 21.25,
+        "as_um2": 19.125,
+        "ad_um2": 19.125,
+        "ps_um": 44.3,
+        "pd_um": 44.3
+      }
+    },
+    {
+      "name": "$67",
+      "class": "pfet",
+      "nets": {
+        "s": "$19",
+        "g": "$4",
+        "d": "$20",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 8.5,
+        "w_um": 21.25,
+        "as_um2": 19.125,
+        "ad_um2": 19.125,
+        "ps_um": 44.3,
+        "pd_um": 44.3
+      }
+    },
+    {
+      "name": "$68",
+      "class": "pfet",
+      "nets": {
+        "s": "$17",
+        "g": "$4",
+        "d": "$18",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 8.5,
+        "w_um": 21.25,
+        "as_um2": 19.125,
+        "ad_um2": 19.125,
+        "ps_um": 44.3,
+        "pd_um": 44.3
+      }
+    },
+    {
+      "name": "$69",
+      "class": "pfet",
+      "nets": {
+        "s": "$17",
+        "g": "$4",
+        "d": "$18",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 8.5,
+        "w_um": 21.25,
+        "as_um2": 19.125,
+        "ad_um2": 19.125,
+        "ps_um": 44.3,
+        "pd_um": 44.3
+      }
+    },
+    {
+      "name": "$7",
+      "class": "nfet",
+      "nets": {
+        "s": "vss",
+        "g": "$3",
+        "d": "$13",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 4.0,
+        "w_um": 10.0,
+        "as_um2": 9.0,
+        "ad_um2": 9.0,
+        "ps_um": 21.8,
+        "pd_um": 21.8
+      }
+    },
+    {
+      "name": "$70",
+      "class": "pfet",
+      "nets": {
+        "s": "$19",
+        "g": "$4",
+        "d": "$20",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 8.5,
+        "w_um": 21.25,
+        "as_um2": 19.125,
+        "ad_um2": 19.125,
+        "ps_um": 44.3,
+        "pd_um": 44.3
+      }
+    },
+    {
+      "name": "$71",
+      "class": "pfet",
+      "nets": {
+        "s": "$21",
+        "g": "$4",
+        "d": "vref",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 8.5,
+        "w_um": 21.25,
+        "as_um2": 19.125,
+        "ad_um2": 19.125,
+        "ps_um": 44.3,
+        "pd_um": 44.3
+      }
+    },
+    {
+      "name": "$72",
+      "class": "pfet",
+      "nets": {
+        "s": "$21",
+        "g": "$4",
+        "d": "vref",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 8.5,
+        "w_um": 21.25,
+        "as_um2": 19.125,
+        "ad_um2": 19.125,
+        "ps_um": 44.3,
+        "pd_um": 44.3
+      }
+    },
+    {
+      "name": "$73",
+      "class": "pfet",
+      "nets": {
+        "s": "$19",
+        "g": "$4",
+        "d": "$20",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 8.5,
+        "w_um": 21.25,
+        "as_um2": 19.125,
+        "ad_um2": 19.125,
+        "ps_um": 44.3,
+        "pd_um": 44.3
+      }
+    },
+    {
+      "name": "$74",
+      "class": "pfet",
+      "nets": {
+        "s": "$17",
+        "g": "$4",
+        "d": "$18",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 8.5,
+        "w_um": 21.25,
+        "as_um2": 19.125,
+        "ad_um2": 19.125,
+        "ps_um": 44.3,
+        "pd_um": 44.3
+      }
+    },
+    {
+      "name": "$75",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "vdd",
+        "d": "vdd",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 8.5,
+        "w_um": 2.0,
+        "as_um2": 1.8,
+        "ad_um2": 1.8,
+        "ps_um": 5.8,
+        "pd_um": 5.8
+      }
+    },
+    {
+      "name": "$76",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "vdd",
+        "d": "vdd",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 8.5,
+        "w_um": 2.0,
+        "as_um2": 1.8,
+        "ad_um2": 1.8,
+        "ps_um": 5.8,
+        "pd_um": 5.8
+      }
+    },
+    {
+      "name": "$77",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "$12",
+        "d": "$17",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 8.5,
+        "w_um": 21.25,
+        "as_um2": 19.125,
+        "ad_um2": 19.125,
+        "ps_um": 44.3,
+        "pd_um": 44.3
+      }
+    },
+    {
+      "name": "$78",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "$12",
+        "d": "$19",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 8.5,
+        "w_um": 21.25,
+        "as_um2": 19.125,
+        "ad_um2": 19.125,
+        "ps_um": 44.3,
+        "pd_um": 44.3
+      }
+    },
+    {
+      "name": "$79",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "$12",
+        "d": "$21",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 8.5,
+        "w_um": 21.25,
+        "as_um2": 19.125,
+        "ad_um2": 19.125,
+        "ps_um": 44.3,
+        "pd_um": 44.3
+      }
+    },
+    {
+      "name": "$8",
+      "class": "nfet",
+      "nets": {
+        "s": "vss",
+        "g": "vss",
+        "d": "vss",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 16.0,
+        "w_um": 2.0,
+        "as_um2": 1.8,
+        "ad_um2": 1.8,
+        "ps_um": 5.8,
+        "pd_um": 5.8
+      }
+    },
+    {
+      "name": "$80",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "$12",
+        "d": "$21",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 8.5,
+        "w_um": 21.25,
+        "as_um2": 19.125,
+        "ad_um2": 19.125,
+        "ps_um": 44.3,
+        "pd_um": 44.3
+      }
+    },
+    {
+      "name": "$81",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "$12",
+        "d": "$19",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 8.5,
+        "w_um": 21.25,
+        "as_um2": 19.125,
+        "ad_um2": 19.125,
+        "ps_um": 44.3,
+        "pd_um": 44.3
+      }
+    },
+    {
+      "name": "$82",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "$12",
+        "d": "$17",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 8.5,
+        "w_um": 21.25,
+        "as_um2": 19.125,
+        "ad_um2": 19.125,
+        "ps_um": 44.3,
+        "pd_um": 44.3
+      }
+    },
+    {
+      "name": "$83",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "$12",
+        "d": "$17",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 8.5,
+        "w_um": 21.25,
+        "as_um2": 19.125,
+        "ad_um2": 19.125,
+        "ps_um": 44.3,
+        "pd_um": 44.3
+      }
+    },
+    {
+      "name": "$84",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "$12",
+        "d": "$19",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 8.5,
+        "w_um": 21.25,
+        "as_um2": 19.125,
+        "ad_um2": 19.125,
+        "ps_um": 44.3,
+        "pd_um": 44.3
+      }
+    },
+    {
+      "name": "$85",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "$12",
+        "d": "$21",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 8.5,
+        "w_um": 21.25,
+        "as_um2": 19.125,
+        "ad_um2": 19.125,
+        "ps_um": 44.3,
+        "pd_um": 44.3
+      }
+    },
+    {
+      "name": "$86",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "$12",
+        "d": "$21",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 8.5,
+        "w_um": 21.25,
+        "as_um2": 19.125,
+        "ad_um2": 19.125,
+        "ps_um": 44.3,
+        "pd_um": 44.3
+      }
+    },
+    {
+      "name": "$87",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "$12",
+        "d": "$19",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 8.5,
+        "w_um": 21.25,
+        "as_um2": 19.125,
+        "ad_um2": 19.125,
+        "ps_um": 44.3,
+        "pd_um": 44.3
+      }
+    },
+    {
+      "name": "$88",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "$12",
+        "d": "$17",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 8.5,
+        "w_um": 21.25,
+        "as_um2": 19.125,
+        "ad_um2": 19.125,
+        "ps_um": 44.3,
+        "pd_um": 44.3
+      }
+    },
+    {
+      "name": "$89",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "vdd",
+        "d": "vdd",
+        "b": "$33"
+      },
+      "params": {
+        "l_um": 8.5,
+        "w_um": 2.0,
+        "as_um2": 1.8,
+        "ad_um2": 1.8,
+        "ps_um": 5.8,
+        "pd_um": 5.8
+      }
+    },
+    {
+      "name": "$9",
+      "class": "nfet",
+      "nets": {
+        "s": "vss",
+        "g": "$3",
+        "d": "$6",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 16.0,
+        "w_um": 2.0,
+        "as_um2": 1.8,
+        "ad_um2": 1.8,
+        "ps_um": 5.8,
+        "pd_um": 5.8
+      }
+    },
+    {
+      "name": "$90",
+      "class": "bjt",
+      "nets": {
+        "c": "vsubs",
+        "b": "$23",
+        "e": "vss"
+      },
+      "params": {}
+    },
+    {
+      "name": "$91",
+      "class": "bjt",
+      "nets": {
+        "c": "vsubs",
+        "b": "$24",
+        "e": "$25"
+      },
+      "params": {}
+    },
+    {
+      "name": "$92",
+      "class": "bjt",
+      "nets": {
+        "c": "vsubs",
+        "b": "$26",
+        "e": "$27"
+      },
+      "params": {}
+    },
+    {
+      "name": "$93",
+      "class": "bjt",
+      "nets": {
+        "c": "vsubs",
+        "b": "$28",
+        "e": "$27"
+      },
+      "params": {}
+    },
+    {
+      "name": "$94",
+      "class": "bjt",
+      "nets": {
+        "c": "vsubs",
+        "b": "$29",
+        "e": "$18"
+      },
+      "params": {}
+    },
+    {
+      "name": "$95",
+      "class": "bjt",
+      "nets": {
+        "c": "vsubs",
+        "b": "$30",
+        "e": "$27"
+      },
+      "params": {}
+    },
+    {
+      "name": "$96",
+      "class": "bjt",
+      "nets": {
+        "c": "vsubs",
+        "b": "$31",
+        "e": "$27"
+      },
+      "params": {}
+    },
+    {
+      "name": "$97",
+      "class": "bjt",
+      "nets": {
+        "c": "vsubs",
+        "b": "$32",
+        "e": "vss"
+      },
+      "params": {}
+    },
+    {
+      "name": "$98",
+      "class": "cap_mim_2f0_m4m5_noshield",
+      "nets": {
+        "a": "vdd",
+        "b": "$12"
+      },
+      "params": {
+        "c_f": 6.93635376e-12,
+        "area_um2": 3457.44,
+        "perimeter_um": 235.2
+      }
+    },
+    {
+      "name": "$99",
+      "class": "ppolyf_u",
+      "nets": {
+        "a": "$27",
+        "b": "$20",
+        "w": "vsubs"
+      },
+      "params": {
+        "r_ohm": 6359.5,
+        "l_um": 36.34,
+        "w_um": 2.0,
+        "area_um2": 72.68,
+        "perimeter_um": 76.68
+      }
+    }
+  ],
+  "nets": [
+    {
+      "name": "$10",
+      "pin": false,
+      "device_count": 8
+    },
+    {
+      "name": "$11",
+      "pin": false,
+      "device_count": 14
+    },
+    {
+      "name": "$12",
+      "pin": false,
+      "device_count": 19
+    },
+    {
+      "name": "$13",
+      "pin": false,
+      "device_count": 25
+    },
+    {
+      "name": "$14",
+      "pin": false,
+      "device_count": 4
+    },
+    {
+      "name": "$15",
+      "pin": false,
+      "device_count": 4
+    },
+    {
+      "name": "$16",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$17",
+      "pin": false,
+      "device_count": 8
+    },
+    {
+      "name": "$18",
+      "pin": false,
+      "device_count": 17
+    },
+    {
+      "name": "$19",
+      "pin": false,
+      "device_count": 8
+    },
+    {
+      "name": "$20",
+      "pin": false,
+      "device_count": 17
+    },
+    {
+      "name": "$21",
+      "pin": false,
+      "device_count": 8
+    },
+    {
+      "name": "$23",
+      "pin": false,
+      "device_count": 1
+    },
+    {
+      "name": "$24",
+      "pin": false,
+      "device_count": 1
+    },
+    {
+      "name": "$25",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$26",
+      "pin": false,
+      "device_count": 1
+    },
+    {
+      "name": "$27",
+      "pin": false,
+      "device_count": 5
+    },
+    {
+      "name": "$28",
+      "pin": false,
+      "device_count": 1
+    },
+    {
+      "name": "$29",
+      "pin": false,
+      "device_count": 1
+    },
+    {
+      "name": "$3",
+      "pin": false,
+      "device_count": 8
+    },
+    {
+      "name": "$30",
+      "pin": false,
+      "device_count": 1
+    },
+    {
+      "name": "$31",
+      "pin": false,
+      "device_count": 1
+    },
+    {
+      "name": "$32",
+      "pin": false,
+      "device_count": 1
+    },
+    {
+      "name": "$33",
+      "pin": false,
+      "device_count": 47
+    },
+    {
+      "name": "$34",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$35",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$36",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$37",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$38",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$39",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$4",
+      "pin": false,
+      "device_count": 17
+    },
+    {
+      "name": "$40",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$41",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$42",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$43",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$44",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$45",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$46",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$47",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$48",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$49",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$5",
+      "pin": false,
+      "device_count": 5
+    },
+    {
+      "name": "$50",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$51",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$52",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$53",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$54",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$55",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$56",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$57",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$58",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$59",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$6",
+      "pin": false,
+      "device_count": 8
+    },
+    {
+      "name": "$60",
+      "pin": false,
+      "device_count": 12
+    },
+    {
+      "name": "$61",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$62",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$63",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$64",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$65",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$66",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$67",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$68",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$69",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$7",
+      "pin": false,
+      "device_count": 3
+    },
+    {
+      "name": "$70",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$71",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$72",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$73",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$74",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$75",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$76",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$77",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$78",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$79",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$8",
+      "pin": false,
+      "device_count": 7
+    },
+    {
+      "name": "$80",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$81",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$82",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$83",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$84",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$85",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$86",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$87",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$88",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$89",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$9",
+      "pin": false,
+      "device_count": 14
+    },
+    {
+      "name": "$90",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$91",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "vdd",
+      "pin": true,
+      "device_count": 52
+    },
+    {
+      "name": "vref",
+      "pin": true,
+      "device_count": 5
+    },
+    {
+      "name": "vss",
+      "pin": true,
+      "device_count": 23
+    },
+    {
+      "name": "vsubs",
+      "pin": true,
+      "device_count": 116
+    }
+  ],
+  "warnings": [
+    "228 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+ separate points (the resistor-body signature) and carry no resistor-marker layer at all; this deck may not model the device class drawn here, and its terminals have been absorbed into ordinary interconnect as an unintended short -- see docs/cli/extract.md's 'Known limitation: unmodelled device geometry'.",
+    "47 PMOS devices tie their body to an anonymous net with no DC bias path -- 'gf180mcu' has no distinct well-tie/tap layer for this PMOS body, so it is left floating rather than tied to a real supply rail; resimulating this netlist directly will not reproduce the schematic-level PMOS body bias -- see unbiased_pmos_body_nets[] for the full list. See docs/cli/extract.md's 'Parasitic (RC) extraction' section.",
+    "8 nets connect to exactly one device terminal -- source/drain/body/resistor-equivalent, not a gate -- and are not a declared pin; this can be a legitimate single-terminal tie (e.g. an intentionally unterminated dummy's diffusion tie), but confirm these nets have no other intended connectivity -- see single_terminal_nets[] for the full list."
+  ],
+  "black_box_regions": [],
+  "abstracted_cells": [],
+  "unmodelled_poly": [
+    {
+      "bbox_um": {
+        "left": -0.2,
+        "bottom": -0.8,
+        "right": 0.2,
+        "top": 331.05
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 0.44,
+        "bottom": -0.8,
+        "right": 0.84,
+        "top": 331.05
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 1.08,
+        "bottom": -0.8,
+        "right": 1.48,
+        "top": 331.05
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 1.72,
+        "bottom": -0.8,
+        "right": 2.12,
+        "top": 331.05
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 2.36,
+        "bottom": -0.8,
+        "right": 2.76,
+        "top": 331.05
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 3.0,
+        "bottom": -0.8,
+        "right": 3.4,
+        "top": 331.05
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 3.64,
+        "bottom": -0.8,
+        "right": 4.04,
+        "top": 331.05
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 4.28,
+        "bottom": -0.8,
+        "right": 4.68,
+        "top": 331.05
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 4.92,
+        "bottom": -0.8,
+        "right": 5.32,
+        "top": 331.05
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 6.2,
+        "bottom": -0.8,
+        "right": 6.6,
+        "top": 331.05
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 6.84,
+        "bottom": -0.8,
+        "right": 7.24,
+        "top": 331.05
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 7.48,
+        "bottom": -0.8,
+        "right": 7.88,
+        "top": 331.05
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 8.12,
+        "bottom": -0.8,
+        "right": 8.52,
+        "top": 331.05
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 8.76,
+        "bottom": -0.8,
+        "right": 9.16,
+        "top": 331.05
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 9.4,
+        "bottom": -0.8,
+        "right": 9.8,
+        "top": 331.05
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 10.04,
+        "bottom": -0.8,
+        "right": 10.44,
+        "top": 331.05
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 10.68,
+        "bottom": -0.8,
+        "right": 11.08,
+        "top": 331.05
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 11.96,
+        "bottom": -0.8,
+        "right": 12.36,
+        "top": 331.05
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 12.6,
+        "bottom": -0.8,
+        "right": 13.0,
+        "top": 331.05
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 13.24,
+        "bottom": -0.8,
+        "right": 13.64,
+        "top": 331.05
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 13.88,
+        "bottom": -0.8,
+        "right": 14.28,
+        "top": 331.05
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 14.52,
+        "bottom": -0.8,
+        "right": 14.92,
+        "top": 331.05
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 15.16,
+        "bottom": -0.8,
+        "right": 15.56,
+        "top": 331.05
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 16.93,
+        "bottom": 328.76,
+        "right": 17.31,
+        "top": 330.03
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 17.11,
+        "bottom": 279.388,
+        "right": 17.49,
+        "top": 280.658
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 17.16,
+        "bottom": 75.863,
+        "right": 17.54,
+        "top": 87.193
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 17.16,
+        "bottom": 98.523,
+        "right": 17.54,
+        "top": 102.993
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 17.16,
+        "bottom": 106.323,
+        "right": 17.54,
+        "top": 118.793
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 17.16,
+        "bottom": 122.123,
+        "right": 17.54,
+        "top": 149.593
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 17.16,
+        "bottom": 152.923,
+        "right": 17.54,
+        "top": 175.393
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 17.16,
+        "bottom": 178.723,
+        "right": 17.54,
+        "top": 196.413
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 17.16,
+        "bottom": 201.743,
+        "right": 17.54,
+        "top": 205.933
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 17.16,
+        "bottom": 209.263,
+        "right": 17.54,
+        "top": 221.718
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 17.16,
+        "bottom": 225.048,
+        "right": 17.54,
+        "top": 250.048
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 17.16,
+        "bottom": 253.378,
+        "right": 17.54,
+        "top": 276.458
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 17.31,
+        "bottom": 296.588,
+        "right": 17.69,
+        "top": 299.778
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 17.71,
+        "bottom": 70.123,
+        "right": 18.09,
+        "top": 71.393
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 17.71,
+        "bottom": 309.868,
+        "right": 18.09,
+        "top": 317.91
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 18.93,
+        "bottom": 328.76,
+        "right": 19.31,
+        "top": 330.67
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 20.06,
+        "bottom": 75.863,
+        "right": 20.44,
+        "top": 84.633
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 21.46,
+        "bottom": 78.363,
+        "right": 21.84,
+        "top": 87.193
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 22.06,
+        "bottom": 98.523,
+        "right": 22.44,
+        "top": 99.793
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 23.46,
+        "bottom": 90.523,
+        "right": 23.84,
+        "top": 102.993
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 24.01,
+        "bottom": 296.588,
+        "right": 24.39,
+        "top": 299.778
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 24.06,
+        "bottom": 122.123,
+        "right": 24.44,
+        "top": 149.593
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 24.36,
+        "bottom": 78.363,
+        "right": 24.74,
+        "top": 86.553
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 24.61,
+        "bottom": 309.868,
+        "right": 24.99,
+        "top": 318.55
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 25.46,
+        "bottom": 145.123,
+        "right": 25.84,
+        "top": 147.673
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 25.76,
+        "bottom": 83.363,
+        "right": 26.14,
+        "top": 87.193
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 26.56,
+        "bottom": 209.263,
+        "right": 26.94,
+        "top": 221.718
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 26.56,
+        "bottom": 225.048,
+        "right": 26.94,
+        "top": 250.048
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 26.56,
+        "bottom": 253.378,
+        "right": 26.94,
+        "top": 276.458
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 27.11,
+        "bottom": 316.64,
+        "right": 27.49,
+        "top": 319.19
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 27.96,
+        "bottom": 217.888,
+        "right": 28.34,
+        "top": 221.718
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 27.96,
+        "bottom": 244.298,
+        "right": 28.34,
+        "top": 248.128
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 27.96,
+        "bottom": 272.628,
+        "right": 28.34,
+        "top": 276.458
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 28.66,
+        "bottom": 83.363,
+        "right": 29.04,
+        "top": 85.913
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 30.06,
+        "bottom": 83.363,
+        "right": 30.44,
+        "top": 87.193
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 30.06,
+        "bottom": 201.743,
+        "right": 30.44,
+        "top": 204.013
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 31.46,
+        "bottom": 198.743,
+        "right": 31.84,
+        "top": 205.933
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 32.36,
+        "bottom": 145.123,
+        "right": 32.74,
+        "top": 148.953
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 32.41,
+        "bottom": 296.588,
+        "right": 32.79,
+        "top": 299.778
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 32.96,
+        "bottom": 83.363,
+        "right": 33.34,
+        "top": 85.913
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 33.76,
+        "bottom": 145.123,
+        "right": 34.14,
+        "top": 147.673
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 34.06,
+        "bottom": 106.323,
+        "right": 34.44,
+        "top": 118.793
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 34.06,
+        "bottom": 152.923,
+        "right": 34.44,
+        "top": 175.393
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 34.36,
+        "bottom": 75.363,
+        "right": 34.74,
+        "top": 87.193
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 35.46,
+        "bottom": 114.323,
+        "right": 35.84,
+        "top": 116.873
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 35.46,
+        "bottom": 170.923,
+        "right": 35.84,
+        "top": 173.473
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 37.26,
+        "bottom": 75.363,
+        "right": 37.64,
+        "top": 85.273
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 37.36,
+        "bottom": 217.888,
+        "right": 37.74,
+        "top": 219.798
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 37.36,
+        "bottom": 244.298,
+        "right": 37.74,
+        "top": 249.408
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 37.36,
+        "bottom": 272.628,
+        "right": 37.74,
+        "top": 275.818
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 38.66,
+        "bottom": 75.363,
+        "right": 39.04,
+        "top": 87.193
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 38.76,
+        "bottom": 217.888,
+        "right": 39.14,
+        "top": 219.798
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 38.76,
+        "bottom": 244.298,
+        "right": 39.14,
+        "top": 246.848
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 38.76,
+        "bottom": 272.628,
+        "right": 39.14,
+        "top": 276.458
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 39.11,
+        "bottom": 296.588,
+        "right": 39.49,
+        "top": 297.858
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 40.36,
+        "bottom": 90.523,
+        "right": 40.74,
+        "top": 101.073
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 40.66,
+        "bottom": 145.123,
+        "right": 41.04,
+        "top": 147.033
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 41.56,
+        "bottom": 75.363,
+        "right": 41.94,
+        "top": 86.553
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 41.76,
+        "bottom": 89.523,
+        "right": 42.14,
+        "top": 102.353
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 42.06,
+        "bottom": 145.123,
+        "right": 42.44,
+        "top": 147.673
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 42.91,
+        "bottom": 74.963,
+        "right": 43.29,
+        "top": 87.193
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 44.46,
+        "bottom": 178.723,
+        "right": 44.84,
+        "top": 196.413
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 45.86,
+        "bottom": 193.223,
+        "right": 46.24,
+        "top": 196.413
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 46.66,
+        "bottom": 89.523,
+        "right": 47.04,
+        "top": 101.713
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 47.51,
+        "bottom": 296.588,
+        "right": 47.89,
+        "top": 299.778
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 48.06,
+        "bottom": 89.523,
+        "right": 48.44,
+        "top": 102.993
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 48.16,
+        "bottom": 217.888,
+        "right": 48.54,
+        "top": 221.078
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 48.16,
+        "bottom": 244.298,
+        "right": 48.54,
+        "top": 247.488
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 48.16,
+        "bottom": 272.628,
+        "right": 48.54,
+        "top": 274.538
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 48.96,
+        "bottom": 145.123,
+        "right": 49.34,
+        "top": 147.033
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 49.56,
+        "bottom": 209.263,
+        "right": 49.94,
+        "top": 221.718
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 49.56,
+        "bottom": 244.298,
+        "right": 49.94,
+        "top": 245.568
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 49.56,
+        "bottom": 272.628,
+        "right": 49.94,
+        "top": 276.458
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 50.36,
+        "bottom": 145.123,
+        "right": 50.74,
+        "top": 147.673
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 52.36,
+        "bottom": 114.323,
+        "right": 52.74,
+        "top": 118.153
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 52.36,
+        "bottom": 170.923,
+        "right": 52.74,
+        "top": 174.753
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 52.96,
+        "bottom": 89.523,
+        "right": 53.34,
+        "top": 102.353
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 53.76,
+        "bottom": 114.323,
+        "right": 54.14,
+        "top": 115.593
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 53.76,
+        "bottom": 170.923,
+        "right": 54.14,
+        "top": 172.193
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 54.21,
+        "bottom": 296.588,
+        "right": 54.59,
+        "top": 299.138
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 54.31,
+        "bottom": 90.123,
+        "right": 54.69,
+        "top": 102.993
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 57.26,
+        "bottom": 145.123,
+        "right": 57.64,
+        "top": 148.953
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 58.66,
+        "bottom": 145.123,
+        "right": 59.04,
+        "top": 147.673
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 58.96,
+        "bottom": 209.263,
+        "right": 59.34,
+        "top": 221.718
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 58.96,
+        "bottom": 244.298,
+        "right": 59.34,
+        "top": 246.208
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 58.96,
+        "bottom": 272.628,
+        "right": 59.34,
+        "top": 273.898
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 60.36,
+        "bottom": 244.298,
+        "right": 60.74,
+        "top": 245.568
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 60.36,
+        "bottom": 272.628,
+        "right": 60.74,
+        "top": 276.458
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 62.61,
+        "bottom": 296.588,
+        "right": 62.99,
+        "top": 299.778
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 65.56,
+        "bottom": 145.123,
+        "right": 65.94,
+        "top": 148.953
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 66.96,
+        "bottom": 145.123,
+        "right": 67.34,
+        "top": 147.673
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 69.31,
+        "bottom": 296.588,
+        "right": 69.69,
+        "top": 299.138
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 69.76,
+        "bottom": 244.298,
+        "right": 70.14,
+        "top": 246.208
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 69.76,
+        "bottom": 272.628,
+        "right": 70.14,
+        "top": 273.898
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 70.66,
+        "bottom": 114.323,
+        "right": 71.04,
+        "top": 116.233
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 70.66,
+        "bottom": 170.923,
+        "right": 71.04,
+        "top": 172.833
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 71.16,
+        "bottom": 244.298,
+        "right": 71.54,
+        "top": 246.848
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 71.16,
+        "bottom": 272.628,
+        "right": 71.54,
+        "top": 276.458
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 72.06,
+        "bottom": 114.323,
+        "right": 72.44,
+        "top": 115.593
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 72.06,
+        "bottom": 170.923,
+        "right": 72.44,
+        "top": 172.193
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 73.16,
+        "bottom": 193.223,
+        "right": 73.54,
+        "top": 195.773
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 73.86,
+        "bottom": 145.123,
+        "right": 74.24,
+        "top": 147.033
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 74.56,
+        "bottom": 193.223,
+        "right": 74.94,
+        "top": 196.413
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 75.26,
+        "bottom": 145.123,
+        "right": 75.64,
+        "top": 147.673
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 77.71,
+        "bottom": 296.588,
+        "right": 78.09,
+        "top": 299.778
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 80.56,
+        "bottom": 244.298,
+        "right": 80.94,
+        "top": 247.488
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 80.56,
+        "bottom": 272.628,
+        "right": 80.94,
+        "top": 274.538
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 81.96,
+        "bottom": 244.298,
+        "right": 82.34,
+        "top": 248.128
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 81.96,
+        "bottom": 272.628,
+        "right": 82.34,
+        "top": 276.458
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 82.16,
+        "bottom": 145.123,
+        "right": 82.54,
+        "top": 147.033
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 82.36,
+        "bottom": 198.743,
+        "right": 82.74,
+        "top": 204.653
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 83.56,
+        "bottom": 145.123,
+        "right": 83.94,
+        "top": 147.673
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 83.76,
+        "bottom": 202.743,
+        "right": 84.14,
+        "top": 205.933
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 84.41,
+        "bottom": 296.588,
+        "right": 84.79,
+        "top": 298.498
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 88.96,
+        "bottom": 114.323,
+        "right": 89.34,
+        "top": 116.233
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 88.96,
+        "bottom": 170.923,
+        "right": 89.34,
+        "top": 172.833
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 89.21,
+        "bottom": 316.64,
+        "right": 89.59,
+        "top": 319.83
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 90.36,
+        "bottom": 114.323,
+        "right": 90.74,
+        "top": 116.873
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 90.36,
+        "bottom": 170.923,
+        "right": 90.74,
+        "top": 173.473
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 90.46,
+        "bottom": 145.123,
+        "right": 90.84,
+        "top": 148.953
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 91.36,
+        "bottom": 244.298,
+        "right": 91.74,
+        "top": 249.408
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 91.36,
+        "bottom": 272.628,
+        "right": 91.74,
+        "top": 275.818
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 91.86,
+        "bottom": 145.123,
+        "right": 92.24,
+        "top": 147.673
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 92.76,
+        "bottom": 244.298,
+        "right": 93.14,
+        "top": 248.128
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 92.76,
+        "bottom": 272.628,
+        "right": 93.14,
+        "top": 276.458
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 92.81,
+        "bottom": 296.588,
+        "right": 93.19,
+        "top": 299.778
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 98.76,
+        "bottom": 145.123,
+        "right": 99.14,
+        "top": 148.953
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 99.51,
+        "bottom": 296.588,
+        "right": 99.89,
+        "top": 299.138
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 100.16,
+        "bottom": 145.123,
+        "right": 100.54,
+        "top": 147.673
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 101.86,
+        "bottom": 193.223,
+        "right": 102.24,
+        "top": 194.493
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 102.16,
+        "bottom": 244.298,
+        "right": 102.54,
+        "top": 249.408
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 102.16,
+        "bottom": 272.628,
+        "right": 102.54,
+        "top": 275.818
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 103.26,
+        "bottom": 193.223,
+        "right": 103.64,
+        "top": 196.413
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 103.56,
+        "bottom": 244.298,
+        "right": 103.94,
+        "top": 246.848
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 103.56,
+        "bottom": 272.628,
+        "right": 103.94,
+        "top": 276.458
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 107.06,
+        "bottom": 145.123,
+        "right": 107.44,
+        "top": 147.033
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 107.26,
+        "bottom": 114.323,
+        "right": 107.64,
+        "top": 118.153
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 107.26,
+        "bottom": 170.923,
+        "right": 107.64,
+        "top": 174.753
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 107.91,
+        "bottom": 296.588,
+        "right": 108.29,
+        "top": 299.778
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 108.46,
+        "bottom": 145.123,
+        "right": 108.84,
+        "top": 147.673
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 108.66,
+        "bottom": 106.323,
+        "right": 109.04,
+        "top": 118.793
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 108.66,
+        "bottom": 152.923,
+        "right": 109.04,
+        "top": 175.393
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 112.96,
+        "bottom": 244.298,
+        "right": 113.34,
+        "top": 247.488
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 112.96,
+        "bottom": 272.628,
+        "right": 113.34,
+        "top": 274.538
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 114.36,
+        "bottom": 244.298,
+        "right": 114.74,
+        "top": 245.568
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 114.36,
+        "bottom": 272.628,
+        "right": 114.74,
+        "top": 276.458
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 114.61,
+        "bottom": 296.588,
+        "right": 114.99,
+        "top": 299.138
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 115.36,
+        "bottom": 145.123,
+        "right": 115.74,
+        "top": 147.033
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 116.76,
+        "bottom": 145.123,
+        "right": 117.14,
+        "top": 147.673
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 123.01,
+        "bottom": 296.588,
+        "right": 123.39,
+        "top": 299.778
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 123.66,
+        "bottom": 145.123,
+        "right": 124.04,
+        "top": 148.953
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 123.76,
+        "bottom": 244.298,
+        "right": 124.14,
+        "top": 246.208
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 123.76,
+        "bottom": 272.628,
+        "right": 124.14,
+        "top": 273.898
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 125.06,
+        "bottom": 145.123,
+        "right": 125.44,
+        "top": 147.673
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 125.16,
+        "bottom": 244.298,
+        "right": 125.54,
+        "top": 245.568
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 125.16,
+        "bottom": 272.628,
+        "right": 125.54,
+        "top": 276.458
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 125.56,
+        "bottom": 106.323,
+        "right": 125.94,
+        "top": 118.793
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 125.56,
+        "bottom": 152.923,
+        "right": 125.94,
+        "top": 175.393
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 129.71,
+        "bottom": 296.588,
+        "right": 130.09,
+        "top": 299.778
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 130.56,
+        "bottom": 193.223,
+        "right": 130.94,
+        "top": 194.493
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 131.96,
+        "bottom": 145.123,
+        "right": 132.34,
+        "top": 148.953
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 131.96,
+        "bottom": 193.223,
+        "right": 132.34,
+        "top": 196.413
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 133.36,
+        "bottom": 145.123,
+        "right": 133.74,
+        "top": 147.673
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 134.56,
+        "bottom": 244.298,
+        "right": 134.94,
+        "top": 246.208
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 134.56,
+        "bottom": 272.628,
+        "right": 134.94,
+        "top": 273.898
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 134.66,
+        "bottom": 202.743,
+        "right": 135.04,
+        "top": 205.293
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 135.96,
+        "bottom": 244.298,
+        "right": 136.34,
+        "top": 246.848
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 135.96,
+        "bottom": 272.628,
+        "right": 136.34,
+        "top": 276.458
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 136.01,
+        "bottom": 199.343,
+        "right": 136.39,
+        "top": 205.933
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 140.26,
+        "bottom": 145.123,
+        "right": 140.64,
+        "top": 147.033
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 141.66,
+        "bottom": 145.123,
+        "right": 142.04,
+        "top": 147.673
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 145.36,
+        "bottom": 244.298,
+        "right": 145.74,
+        "top": 247.488
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 145.36,
+        "bottom": 272.628,
+        "right": 145.74,
+        "top": 274.538
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 146.76,
+        "bottom": 244.298,
+        "right": 147.14,
+        "top": 248.128
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 146.76,
+        "bottom": 272.628,
+        "right": 147.14,
+        "top": 276.458
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 148.56,
+        "bottom": 145.123,
+        "right": 148.94,
+        "top": 147.033
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 149.96,
+        "bottom": 145.123,
+        "right": 150.34,
+        "top": 147.673
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 156.16,
+        "bottom": 244.298,
+        "right": 156.54,
+        "top": 249.408
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 156.16,
+        "bottom": 272.628,
+        "right": 156.54,
+        "top": 275.818
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 156.86,
+        "bottom": 145.123,
+        "right": 157.24,
+        "top": 148.953
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 157.56,
+        "bottom": 225.048,
+        "right": 157.94,
+        "top": 250.048
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 157.56,
+        "bottom": 253.378,
+        "right": 157.94,
+        "top": 276.458
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 158.26,
+        "bottom": 145.123,
+        "right": 158.64,
+        "top": 147.673
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 159.26,
+        "bottom": 193.223,
+        "right": 159.64,
+        "top": 195.773
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 160.66,
+        "bottom": 178.723,
+        "right": 161.04,
+        "top": 196.413
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 165.16,
+        "bottom": 145.123,
+        "right": 165.54,
+        "top": 148.953
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 166.56,
+        "bottom": 145.123,
+        "right": 166.94,
+        "top": 147.673
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 166.96,
+        "bottom": 225.048,
+        "right": 167.34,
+        "top": 250.048
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 166.96,
+        "bottom": 253.378,
+        "right": 167.34,
+        "top": 276.458
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 173.46,
+        "bottom": 145.123,
+        "right": 173.84,
+        "top": 147.033
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 174.86,
+        "bottom": 145.123,
+        "right": 175.24,
+        "top": 147.673
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 181.76,
+        "bottom": 145.123,
+        "right": 182.14,
+        "top": 147.033
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 183.16,
+        "bottom": 145.123,
+        "right": 183.54,
+        "top": 147.673
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 187.96,
+        "bottom": 178.723,
+        "right": 188.34,
+        "top": 196.413
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 190.06,
+        "bottom": 145.123,
+        "right": 190.44,
+        "top": 148.953
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 191.46,
+        "bottom": 145.123,
+        "right": 191.84,
+        "top": 147.673
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 198.36,
+        "bottom": 145.123,
+        "right": 198.74,
+        "top": 148.953
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 199.76,
+        "bottom": 145.123,
+        "right": 200.14,
+        "top": 147.673
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 206.66,
+        "bottom": 145.123,
+        "right": 207.04,
+        "top": 147.033
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 208.06,
+        "bottom": 145.123,
+        "right": 208.44,
+        "top": 147.673
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 214.96,
+        "bottom": 145.123,
+        "right": 215.34,
+        "top": 147.033
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 216.36,
+        "bottom": 145.123,
+        "right": 216.74,
+        "top": 147.673
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 223.26,
+        "bottom": 145.123,
+        "right": 223.64,
+        "top": 148.953
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 224.66,
+        "bottom": 122.123,
+        "right": 225.04,
+        "top": 149.593
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 231.56,
+        "bottom": 122.123,
+        "right": 231.94,
+        "top": 149.593
+      },
+      "reason": "unmarked"
+    }
+  ],
+  "merged_net_labels": [],
+  "voltage_domain_warnings": [],
+  "unbiased_pmos_body_nets": [
+    {
+      "device": "$43",
+      "net": "$33"
+    },
+    {
+      "device": "$44",
+      "net": "$33"
+    },
+    {
+      "device": "$45",
+      "net": "$33"
+    },
+    {
+      "device": "$46",
+      "net": "$33"
+    },
+    {
+      "device": "$47",
+      "net": "$33"
+    },
+    {
+      "device": "$48",
+      "net": "$33"
+    },
+    {
+      "device": "$49",
+      "net": "$33"
+    },
+    {
+      "device": "$50",
+      "net": "$33"
+    },
+    {
+      "device": "$51",
+      "net": "$33"
+    },
+    {
+      "device": "$52",
+      "net": "$33"
+    },
+    {
+      "device": "$53",
+      "net": "$33"
+    },
+    {
+      "device": "$54",
+      "net": "$33"
+    },
+    {
+      "device": "$55",
+      "net": "$33"
+    },
+    {
+      "device": "$56",
+      "net": "$33"
+    },
+    {
+      "device": "$57",
+      "net": "$33"
+    },
+    {
+      "device": "$58",
+      "net": "$33"
+    },
+    {
+      "device": "$59",
+      "net": "$33"
+    },
+    {
+      "device": "$60",
+      "net": "$33"
+    },
+    {
+      "device": "$61",
+      "net": "$33"
+    },
+    {
+      "device": "$62",
+      "net": "$33"
+    },
+    {
+      "device": "$63",
+      "net": "$33"
+    },
+    {
+      "device": "$64",
+      "net": "$33"
+    },
+    {
+      "device": "$65",
+      "net": "$33"
+    },
+    {
+      "device": "$66",
+      "net": "$33"
+    },
+    {
+      "device": "$67",
+      "net": "$33"
+    },
+    {
+      "device": "$68",
+      "net": "$33"
+    },
+    {
+      "device": "$69",
+      "net": "$33"
+    },
+    {
+      "device": "$70",
+      "net": "$33"
+    },
+    {
+      "device": "$71",
+      "net": "$33"
+    },
+    {
+      "device": "$72",
+      "net": "$33"
+    },
+    {
+      "device": "$73",
+      "net": "$33"
+    },
+    {
+      "device": "$74",
+      "net": "$33"
+    },
+    {
+      "device": "$75",
+      "net": "$33"
+    },
+    {
+      "device": "$76",
+      "net": "$33"
+    },
+    {
+      "device": "$77",
+      "net": "$33"
+    },
+    {
+      "device": "$78",
+      "net": "$33"
+    },
+    {
+      "device": "$79",
+      "net": "$33"
+    },
+    {
+      "device": "$80",
+      "net": "$33"
+    },
+    {
+      "device": "$81",
+      "net": "$33"
+    },
+    {
+      "device": "$82",
+      "net": "$33"
+    },
+    {
+      "device": "$83",
+      "net": "$33"
+    },
+    {
+      "device": "$84",
+      "net": "$33"
+    },
+    {
+      "device": "$85",
+      "net": "$33"
+    },
+    {
+      "device": "$86",
+      "net": "$33"
+    },
+    {
+      "device": "$87",
+      "net": "$33"
+    },
+    {
+      "device": "$88",
+      "net": "$33"
+    },
+    {
+      "device": "$89",
+      "net": "$33"
+    }
+  ],
+  "single_terminal_nets": [
+    {
+      "net": "$23",
+      "device": "$90",
+      "terminal": "b",
+      "terminal_kind": "b"
+    },
+    {
+      "net": "$24",
+      "device": "$91",
+      "terminal": "b",
+      "terminal_kind": "b"
+    },
+    {
+      "net": "$26",
+      "device": "$92",
+      "terminal": "b",
+      "terminal_kind": "b"
+    },
+    {
+      "net": "$28",
+      "device": "$93",
+      "terminal": "b",
+      "terminal_kind": "b"
+    },
+    {
+      "net": "$29",
+      "device": "$94",
+      "terminal": "b",
+      "terminal_kind": "b"
+    },
+    {
+      "net": "$30",
+      "device": "$95",
+      "terminal": "b",
+      "terminal_kind": "b"
+    },
+    {
+      "net": "$31",
+      "device": "$96",
+      "terminal": "b",
+      "terminal_kind": "b"
+    },
+    {
+      "net": "$32",
+      "device": "$97",
+      "terminal": "b",
+      "terminal_kind": "b"
+    }
+  ],
+  "dead_metal": [],
+  "matched_device_groups": [],
+  "pdk": null,
+  "provenance": {
+    "klt_version": "0.2.0",
+    "klayout_version": "0.30.10",
+    "pdk": null,
+    "deck": {
+      "name": "gf180mcu",
+      "content_hash": "sha256:e2726af899d1837fe8c9a99688483f145b23c92ded07323f54d627d06bdb2bbf"
+    },
+    "input": {
+      "content_hash": "sha256:8fb3c48899d7160acf9b87cb19280e56e4f6d3a1dcbbcf8ec4b89cc6b2505016"
+    }
+  },
+  "parasitics": null,
+  "spef_path": null
+}
