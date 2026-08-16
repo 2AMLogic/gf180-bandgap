@@ -31,10 +31,7 @@ Usage:
 from __future__ import annotations
 
 import math
-import re
-import subprocess
 import sys
-import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -69,55 +66,29 @@ BIASES_A = [1e-6, 5e-6, 10e-6, 20e-6]
 # --------------------------------------------------------------------------
 # Deck composition / ngspice execution -- this experiment sweeps a DC table
 # (not the single-scalar `let m_<name>` convention sim/harness/runner.py's
-# compose_deck() targets) so it composes its own minimal shim instead of
-# going through compose_deck(). PDK model paths still come from
-# sim/harness/pdk.py -- nothing here re-resolves the PDK on its own.
+# compose_deck() targets) so it runs a minimal per-corner shim instead of
+# going through compose_deck(). Composing and running that shim is
+# sim/harness/report.py's run_device_corner(), shared with the other four
+# device experiments; what stays here is only this experiment's `.control`
+# body. PDK model paths still come from sim/harness/pdk.py -- nothing here
+# re-resolves the PDK on its own.
 # --------------------------------------------------------------------------
 
 
 def _run_corner(deck: Path, pdk: harness_pdk.Pdk, section: str, temp_c: float) -> str:
     """Run `deck` through ngspice at one (model section, temperature) point."""
-    with tempfile.TemporaryDirectory(prefix="device-mos-vth-") as tmp:
-        work = Path(tmp)
-        local_deck = work / deck.name
-        (work / "corner.spice").write_text(
-            harness_report.corner_shim(
-                pdk, section, temp_c, script_name="run_mos_vth.py"
-            ),
-            encoding="utf-8",
-        )
-        (work / "control.spice").write_text(
-            ".control\n"
-            "set width  = 512\n"
-            "set height = 100000\n"
-            "dc Vctrl -8 -3 0.05\n"
-            "print v(gn1) v(gn4) v(gp1) v(gp4)\n"
-            "quit\n"
-            ".endc\n",
-            encoding="utf-8",
-        )
-        local_deck.write_text(
-            '.include "corner.spice"\n'
-            + deck.read_text(encoding="utf-8")
-            + '\n.include "control.spice"\n.end\n',
-            encoding="utf-8",
-        )
-        proc = subprocess.run(
-            ["ngspice", "-b", deck.name],
-            cwd=work,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-    log = proc.stdout + proc.stderr
-    if proc.returncode != 0:
-        raise RuntimeError(
-            f"ngspice exited {proc.returncode} for {deck.name} "
-            f"[{section} @ {temp_c} C]\n{log}"
-        )
-    if re.search(r"^\s*(Error|ERROR|fatal)", log, re.MULTILINE):
-        raise RuntimeError(f"ngspice reported an error for {deck.name}:\n{log}")
-    return log
+    return harness_report.run_device_corner(
+        deck,
+        pdk,
+        section,
+        temp_c,
+        "set width  = 512\n"
+        "set height = 100000\n"
+        "dc Vctrl -8 -3 0.05\n"
+        "print v(gn1) v(gn4) v(gp1) v(gp4)\n",
+        tmp_prefix="device-mos-vth-",
+        script_name="run_mos_vth.py",
+    )
 
 
 # --------------------------------------------------------------------------

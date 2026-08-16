@@ -31,10 +31,7 @@ Usage:
 from __future__ import annotations
 
 import math
-import re
-import subprocess
 import sys
-import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -75,56 +72,30 @@ PAIR_BIAS_A = 10e-6
 # --------------------------------------------------------------------------
 # Deck composition / ngspice execution -- this experiment sweeps a DC table
 # (not the single-scalar `let m_<name>` convention sim/harness/runner.py's
-# compose_deck() targets) so it composes its own minimal shim instead of
-# going through compose_deck(). PDK model paths still come from
-# sim/harness/pdk.py -- nothing here re-resolves the PDK on its own.
+# compose_deck() targets) so it runs a minimal per-corner shim instead of
+# going through compose_deck(). Composing and running that shim is
+# sim/harness/report.py's run_device_corner(), shared with the other four
+# device experiments; what stays here is only this experiment's `.control`
+# body. PDK model paths still come from sim/harness/pdk.py -- nothing here
+# re-resolves the PDK on its own.
 # --------------------------------------------------------------------------
 
 
 def _run_corner(deck: Path, pdk: harness_pdk.Pdk, section: str, temp_c: float) -> str:
     """Run `deck` through ngspice at one (BJT corner, temperature) point."""
-    with tempfile.TemporaryDirectory(prefix="device-pnp-vbe-") as tmp:
-        work = Path(tmp)
-        local_deck = work / deck.name
-        (work / "corner.spice").write_text(
-            harness_report.corner_shim(
-                pdk, section, temp_c, script_name="run_pnp_vbe.py"
-            ),
-            encoding="utf-8",
-        )
-        (work / "control.spice").write_text(
-            ".control\n"
-            "set width  = 512\n"
-            "set height = 100000\n"
-            "dc Vctrl -12 -3 0.1\n"
-            "print v(e5x5) v(e10x10) v(e5x042) v(e10x042) "
-            "i(vb5x5) i(vb10x10) i(vb5x042) i(vb10x042)\n"
-            "quit\n"
-            ".endc\n",
-            encoding="utf-8",
-        )
-        local_deck.write_text(
-            '.include "corner.spice"\n'
-            + deck.read_text(encoding="utf-8")
-            + '\n.include "control.spice"\n.end\n',
-            encoding="utf-8",
-        )
-        proc = subprocess.run(
-            ["ngspice", "-b", deck.name],
-            cwd=work,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-    log = proc.stdout + proc.stderr
-    if proc.returncode != 0:
-        raise RuntimeError(
-            f"ngspice exited {proc.returncode} for {deck.name} "
-            f"[{section} @ {temp_c} C]\n{log}"
-        )
-    if re.search(r"^\s*(Error|ERROR|fatal)", log, re.MULTILINE):
-        raise RuntimeError(f"ngspice reported an error for {deck.name}:\n{log}")
-    return log
+    return harness_report.run_device_corner(
+        deck,
+        pdk,
+        section,
+        temp_c,
+        "set width  = 512\n"
+        "set height = 100000\n"
+        "dc Vctrl -12 -3 0.1\n"
+        "print v(e5x5) v(e10x10) v(e5x042) v(e10x042) "
+        "i(vb5x5) i(vb10x10) i(vb5x042) i(vb10x042)\n",
+        tmp_prefix="device-pnp-vbe-",
+        script_name="run_pnp_vbe.py",
+    )
 
 
 def _linfit(xs: list[float], ys: list[float]) -> tuple[float, float]:

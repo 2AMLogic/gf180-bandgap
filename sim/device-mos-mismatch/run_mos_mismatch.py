@@ -31,10 +31,7 @@ Usage:
 from __future__ import annotations
 
 import math
-import re
-import subprocess
 import sys
-import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -81,70 +78,44 @@ PAIRS = {
 # Deck composition / ngspice execution -- this experiment runs a `dowhile`
 # Monte Carlo loop (N=300 `reset` + `op` samples per point), not the
 # single-scalar `let m_<name>` convention sim/harness/runner.py's
-# compose_deck() targets, so it composes its own minimal shim instead of
-# going through compose_deck(). PDK model paths still come from
-# sim/harness/pdk.py -- nothing here re-resolves the PDK on its own.
+# compose_deck() targets, so it runs a minimal per-corner shim instead of
+# going through compose_deck(). Composing and running that shim is
+# sim/harness/report.py's run_device_corner(), shared with the other four
+# device experiments; what stays here is only this experiment's `.control`
+# body. PDK model paths still come from sim/harness/pdk.py -- nothing here
+# re-resolves the PDK on its own.
 # --------------------------------------------------------------------------
 
 
 def _run_corner(deck: Path, pdk: harness_pdk.Pdk, section: str, temp_c: float) -> str:
     """Run `deck` through ngspice's N_SAMPLES-sample Monte Carlo loop."""
-    with tempfile.TemporaryDirectory(prefix="device-mos-mismatch-") as tmp:
-        work = Path(tmp)
-        local_deck = work / deck.name
-        (work / "corner.spice").write_text(
-            harness_report.corner_shim(
-                pdk, section, temp_c, script_name="run_mos_mismatch.py"
-            ),
-            encoding="utf-8",
-        )
-        (work / "control.spice").write_text(
-            ".control\n"
-            f"setseed {SEED}\n"
-            "set width  = 512\n"
-            "set height = 100000\n"
-            f"let mc_runs = {N_SAMPLES}\n"
-            "let run = 0\n"
-            "dowhile run < mc_runs\n"
-            "  reset\n"
-            "  op\n"
-            "  let dn1 = v(gn1a) - v(gn1b)\n"
-            "  let dn4 = v(gn4a) - v(gn4b)\n"
-            "  let dp1 = v(gp1a) - v(gp1b)\n"
-            "  let dp4 = v(gp4a) - v(gp4b)\n"
-            "  let en1 = v(hn1a) - v(hn1b)\n"
-            "  let en4 = v(hn4a) - v(hn4b)\n"
-            "  let ep1 = v(hp1a) - v(hp1b)\n"
-            "  let ep4 = v(hp4a) - v(hp4b)\n"
-            "  print dn1 dn4 dp1 dp4 en1 en4 ep1 ep4\n"
-            "  let run = run + 1\n"
-            "end\n"
-            "quit\n"
-            ".endc\n",
-            encoding="utf-8",
-        )
-        local_deck.write_text(
-            '.include "corner.spice"\n'
-            + deck.read_text(encoding="utf-8")
-            + '\n.include "control.spice"\n.end\n',
-            encoding="utf-8",
-        )
-        proc = subprocess.run(
-            ["ngspice", "-b", deck.name],
-            cwd=work,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-    log = proc.stdout + proc.stderr
-    if proc.returncode != 0:
-        raise RuntimeError(
-            f"ngspice exited {proc.returncode} for {deck.name} "
-            f"[{section} @ {temp_c} C]\n{log}"
-        )
-    if re.search(r"^\s*(Error|ERROR|fatal)", log, re.MULTILINE):
-        raise RuntimeError(f"ngspice reported an error for {deck.name}:\n{log}")
-    return log
+    return harness_report.run_device_corner(
+        deck,
+        pdk,
+        section,
+        temp_c,
+        f"setseed {SEED}\n"
+        "set width  = 512\n"
+        "set height = 100000\n"
+        f"let mc_runs = {N_SAMPLES}\n"
+        "let run = 0\n"
+        "dowhile run < mc_runs\n"
+        "  reset\n"
+        "  op\n"
+        "  let dn1 = v(gn1a) - v(gn1b)\n"
+        "  let dn4 = v(gn4a) - v(gn4b)\n"
+        "  let dp1 = v(gp1a) - v(gp1b)\n"
+        "  let dp4 = v(gp4a) - v(gp4b)\n"
+        "  let en1 = v(hn1a) - v(hn1b)\n"
+        "  let en4 = v(hn4a) - v(hn4b)\n"
+        "  let ep1 = v(hp1a) - v(hp1b)\n"
+        "  let ep4 = v(hp4a) - v(hp4b)\n"
+        "  print dn1 dn4 dp1 dp4 en1 en4 ep1 ep4\n"
+        "  let run = run + 1\n"
+        "end\n",
+        tmp_prefix="device-mos-mismatch-",
+        script_name="run_mos_mismatch.py",
+    )
 
 
 # --------------------------------------------------------------------------
