@@ -57,9 +57,10 @@ mismatch is 52.7 mV against a 48 mV window, with all of the overflow on the
 low edge because #96's TC-null leaves `Vref` centred 7.5 mV low.
 **Section 5c** derives the two-lever fix (constant-`W/L` area on the
 amplifier's input pair and the core mirror, plus an `R1` re-centring paid for
-out of temperature-coefficient margin), the stability wall that bounds how
-much area the amplifier may take, and the measured result: **PASS, 81/81,
-worst margin +0.84 mV**.
+out of temperature-coefficient margin), the re-measured stability wall that
+ultimately bounds how much area the amplifier may take (further out than an
+earlier revision claimed — see that section's correction note), and the
+measured result: **PASS, 81/81, worst margin +0.84 mV**.
 
 | Line | post-#61/#96 | **#147** | Ratified target |
 |---|---|---|---|
@@ -310,13 +311,18 @@ sigma_Vos_random = sqrt(0.1637^2 + 0.1123^2) = 0.1985 mV
 => amplifier line at Vref = 0.5955 * 16.13 = 9.60 mV   (was 13.06 mV)
 ```
 
-`M3`/`M4` were **deliberately left at 20 µm/16 µm**. Their gate node `nd1`
-carries the mirror pole `gm3/(Cgs3+Cgs4)`, and Section 5c shows by
-measurement that area there is bought straight out of the servo loop's
-stability margin: 1.27× the mirror-load area already takes this design's own
-phase-margin criterion from 83.7° to 4.2°. The input pair is bounded the
-same way at `300 µm/6 µm`. Both bounds are measured on
-`sim/amp-loop-stability/`, not assumed.
+`M3`/`M4` were **left at 20 µm/16 µm** — a conservative choice, not a
+stability limit at that size. Their gate node `nd1` does carry the mirror
+pole `gm3/(Cgs3+Cgs4)`, so area there is ultimately bought out of the servo
+loop's stability margin, but Section 5c's re-measured sweep puts that wall
+**between 2.25× and 3.06× the mirror-load area** (1.27× reads 154.48° and
+2.25× reads 126.99°, both comfortably passing the ≥45° criterion), and finds
+no bound on the input pair anywhere near `300 µm/6 µm`. An earlier revision
+of this section claimed a collapse from 83.7° to 4.2° at 1.27×; those figures
+did not reproduce and are struck — see the correction note in Section 5c.
+`M3`/`M4` is left unchanged here because the input-pair step alone already
+carries the combined verdict, so the remaining headroom is real, measured,
+and simply not spent by this issue.
 
 **Not credited: an `nf`-driven matching bonus.** The gf180mcu
 `nfet_03v3`/`pfet_03v3` local-mismatch variance is scaled by a `par`
@@ -1432,30 +1438,72 @@ The deterministic 20.43 mV is not a lever: it is `bjt_ss`/`bjt_ff` and
 `ΔVBE` ratio, and hence the PTAT term, is skew-invariant by construction),
 so no in-scope sizing moves it. That leaves mismatch area and `R1`.
 
-**Lever 1: area, and the stability wall it runs into.** The mismatch RSS is
-Section 2.7a's: the amplifier's own random offset was the largest term
+**Lever 1: area, and where the stability wall actually is.** The mismatch RSS
+is Section 2.7a's: the amplifier's own random offset was the largest term
 (13.06 of 16.26 mV), the core mirror second (8.62 mV). Both are pure
-Pelgrom-area terms at constant `W/L`. The obvious move — scale both amplifier
-pairs hard — **does not survive this design's own stability criteria**, and
-that is a measured result, not a caution:
+Pelgrom-area terms at constant `W/L`.
 
-| sizing (all else equal) | `pm_deg` worst of 81 | `gm_crit_db` worst | verdict |
+> **Correction (PR #150 review).** An earlier revision of this section
+> presented a sizing table asserting that `pm_deg` collapses to 4.2° at
+> 1.27× mirror-load area, 3.6° at 2.25×, and that the input pair fails at
+> `350 µm/7 µm` (21.3°). **None of those figures reproduce**, and they are
+> struck rather than restated. They were quoted from `--no-write`
+> exploration runs that were never committed as evidence — exactly the
+> failure mode CLAUDE.md's "no claim without a testbench" exists to
+> prevent. The table below replaces them with a fresh sweep.
+
+The wall is real but sits roughly 2.5× further out in area than the struck
+numbers claimed. Re-measured on `sim/amp-loop-stability/` (81 PVT points per
+row, `--no-write` with a `--dut` override, `M3/M4` stepped at constant
+`W/L = 1.25` and `nf = 2`, everything else at the sizing adopted below).
+Methodology was validated first by re-running the *unmodified* DUT on the
+same harness, which reproduces committed record
+[`20260816-145936-1ca1c95`](../sim/amp-loop-stability/records/20260816-145936-1ca1c95.md)
+exactly (`pm_deg` 160.93–172.44°, `gm_crit_db` −999), so every row below is
+apples-to-apples against it:
+
+| `M3/M4` sizing (M1/M2 at the adopted 300/6) | area | `pm_deg` worst of 81 | `gm_crit_db` worst | verdict |
+|---|---|---|---|---|
+| **20/16 (adopted, unchanged)** | **320 µm² (1.00×)** | **160.93°** | **−999 (no crossing)** | **PASS** |
+| 22.5/18 | 405 µm² (1.27×) | 154.48° | −999 | PASS |
+| 30/24 | 720 µm² (2.25×) | 126.99° | −999 | PASS |
+| 35/28 | 980 µm² (3.06×) | 38.65° | −999 | **FAIL** |
+| 40/32 | 1280 µm² (4.00×) | 1.95° | −12.85 dB | **FAIL** |
+| 50/40 | 2000 µm² (6.25×) | 18.92° | −2.79 dB | **FAIL** |
+| 60/48 | 2880 µm² (9.00×) | 43.11° | +2.50 dB | **FAIL** |
+
+The mirror load is still the sensitive axis — its gate node `nd1` carries the
+mirror pole `gm3/(Cgs3+Cgs4)`, and enough area there does break both criteria
+— but the boundary lies **between 2.25× and 3.06× area**, not at 1.27×.
+
+The input pair is **not** bounded anywhere near its adopted size, contrary to
+the struck claim:
+
+| `M1/M2` sizing (M3/M4 at 20/16) | `pm_deg` worst of 81 | `gm_crit_db` worst | verdict |
 |---|---|---|---|
-| `origin/main` (M1/M2 200/4, M3/M4 20/16) | 97.3° | −999 (no crossing) | PASS |
-| M1/M2 **300/6**, M3/M4 20/16 | 83.7° | −999 | PASS |
-| M1/M2 350/7, M3/M4 20/16 | 21.3° | −999 | **FAIL** |
-| M1/M2 200/4, M3/M4 22.5/18 | 4.2° | −17.8 dB | **FAIL** |
-| M1/M2 200/4, M3/M4 30/24 | 3.6° | −16.1 dB | **FAIL** |
-| M1/M2 350/7, M3/M4 30/24 | 5.7° | (crossings appear) | **FAIL** |
+| 200/4 (`origin/main`, committed record [`20260802-034232-5066d85`](../sim/amp-loop-stability/records/20260802-034232-5066d85.md)) | 97.35° | −999 | PASS |
+| **300/6 (adopted)** | **160.93°** | **−999** | **PASS** |
+| 350/7 | 158.31° | −999 | PASS |
+| 400/8 | 157.19° | −999 | PASS |
 
-(`sim/amp-loop-stability/`, 81 PVT points each, `--no-write` exploration
-runs.) The mirror load is the sensitive one: its gate node `nd1` carries the
-mirror pole `gm3/(Cgs3+Cgs4)`, and 1.27× the area there is already enough.
-**It is not a compensation problem** — `CC` was scanned at 60/80/100/120/150
-µm square and moved `pm_deg` by less than 0.001°, because criterion #1 is
-evaluated at the `|T|` notch rather than at a `CC`-set crossover. So the
-amplifier contributes **only** the input pair, and only as far as
-`300 µm/6 µm`.
+and `350/7` *together with* `M3/M4 30/24` also passes, at 127.94°.
+
+**It is not a compensation problem** — this part of the original section does
+reproduce: `CC` scanned at 60/80/100/120/150 µm square moves `pm_deg` by less
+than 0.001° (all five runs read 160.93–172.44° to five significant figures),
+because criterion #1 is evaluated at the `|T|` notch rather than at a
+`CC`-set crossover.
+
+**What this means for the sizing adopted here.** `M3/M4` is left at 20/16 and
+the input pair stops at `300 µm/6 µm` **not** because the next step fails,
+but because the input-pair step alone already carries the combined untrimmed
+verdict to 81/81 (below), and spending the remaining mirror-load headroom
+would require re-running the mismatch MC and the whole combined verdict.
+That is deliberately out of scope for this change, so the sizing here is
+conservative rather than maximal — there is measured, unclaimed
+mismatch-reduction headroom on `M3/M4` of at least 2.25× area (a further
+≈1.5× reduction in its Pelgrom σ), and the honest statement is that this
+issue did not spend it. Filed as follow-up rather than left implicit.
 
 The core mirror has the opposite property: its gates sit on `fb`, which *is*
 the amplifier's output node, so area there moves the dominant pole down and
@@ -1489,7 +1537,8 @@ relaxation of either.
 
 ```
 bandgap_amp   M1/M2    200u/4u   -> 300u/6u    (nf 8 -> 12)   800  -> 1800   um^2
-bandgap_amp   M3/M4    20u/16u   -- unchanged (stability, above)
+bandgap_amp   M3/M4    20u/16u   -- unchanged (conservative; >=2.25x area
+                                    headroom measured, not spent here)
 bandgap_core  M1-M3,
               MC1-MC3  60u/6u    -> 85u/8.5u                  360  -> 722.5  um^2
 bandgap_core  M4/MC4   7.5u/6u   -> 10.625u/8.5u  (W/L = 1.25 held, 1/8 leg)

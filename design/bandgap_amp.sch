@@ -84,20 +84,34 @@ v {xschem version=3.4.7 file_version=1.2
 * mismatch half is the only term that can give, and the amplifier's own
 * random offset was 74% of its variance.
 *
-* WHY THE MIRROR LOAD WAS NOT SCALED WITH IT -- measured, not assumed.
-* M3/M4's gate node `nd1` carries the mirror pole gm3/(Cgs3+Cgs4), and the
-* servo loop sits close enough to it that area on M3/M4 is bought directly
-* out of stability margin. sim/amp-loop-stability/ (81 corners, --no-write
-* exploration runs) reads, at otherwise identical sizing:
-*   M3/M4 20u/16u   (unchanged) : pm_deg worst  83.7 deg, gm_crit -999  PASS
-*   M3/M4 22.5u/18u (1.27x area): pm_deg worst   4.2 deg, gm_crit -17.8  FAIL
-*   M3/M4 30u/24u   (2.25x area): pm_deg worst   3.6 deg, gm_crit -16.1  FAIL
-* and it is not a compensation problem -- CC was scanned 60u..150u square
-* and moved pm_deg by less than 0.001 deg, because the criterion is
-* evaluated at the |T| notch, not at a CC-set crossover. The input pair is
-* likewise bounded: 300u/6u passes at 83.7 deg, 350u/7u fails at 21.3 deg.
-* The final sizing is therefore the largest constant-W/L area step that
-* keeps both stability criteria, on this design's own bench.
+* WHY THE MIRROR LOAD WAS NOT SCALED WITH IT -- a deliberately conservative
+* choice, NOT a stability wall at this size. An earlier draft of this
+* comment asserted, as "measured", that M3/M4 collapses to ~4 deg of phase
+* margin at only 1.27x area and that the input pair fails at 350u/7u.
+* THOSE FIGURES DID NOT REPRODUCE and have been struck. Re-measured on
+* sim/amp-loop-stability/ (81 PVT corners each, --no-write --dut override,
+* M3/M4 at constant W/L = 1.25 and nf=2, everything else at the sizing
+* adopted here); the same harness reproduces the committed baseline record
+* 20260816-145936-1ca1c95 exactly, so these are apples-to-apples:
+*   M3/M4 20u/16u   (1.00x, adopted): pm_deg worst 160.93, gm_crit  -999  PASS
+*   M3/M4 22.5u/18u (1.27x area)    : pm_deg worst 154.48, gm_crit  -999  PASS
+*   M3/M4 30u/24u   (2.25x area)    : pm_deg worst 126.99, gm_crit  -999  PASS
+*   M3/M4 35u/28u   (3.06x area)    : pm_deg worst  38.65, gm_crit  -999  FAIL
+*   M3/M4 40u/32u   (4.00x area)    : pm_deg worst   1.95, gm_crit -12.85  FAIL
+* The direction is real -- `nd1` does carry the mirror pole gm3/(Cgs3+Cgs4),
+* and enough area there does break both criteria -- but the wall sits
+* between 2.25x and 3.06x area, not at 1.27x. The input pair is not bounded
+* near its adopted size either: 350u/7u reads 158.31 deg and 400u/8u reads
+* 157.19 deg, both PASS, as does 350u/7u together with M3/M4 30u/24u
+* (127.94 deg). Compensation is genuinely not the lever (this part does
+* reproduce): CC scanned 60u/80u/100u/120u/150u square moves pm_deg by less
+* than 0.001 deg, because the criterion is evaluated at the |T| notch, not
+* at a CC-set crossover.
+* So M3/M4 is left unchanged here because this issue's target -- the
+* combined untrimmed-accuracy verdict -- is already met by the input pair
+* alone, and spending the remaining mirror-load headroom would mean
+* re-running the mismatch MC and the combined verdict; that is follow-up
+* work, not part of this change. The headroom is real and unclaimed.
 * See design/bandgap_error_budget.md Sec 5c.
 *
 * --------------------------------------------------- why the explicit cap
