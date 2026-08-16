@@ -358,26 +358,6 @@ def log_header(
     )
 
 
-def _write_record(records_dir: Path, record: str, body: str) -> Path:
-    """Write `records/<record-id>.md`, refusing to overwrite (append-only).
-
-    Local rather than `harness.report.write_record`: that one takes the
-    structured `Testbench`/`PvtPoint`-grid record dict `report.build_record()`
-    produces and renders it itself, whereas this bench's own `build_record()`
-    returns a fully rendered Markdown body shaped around Monte Carlo *groups*
-    (see `GROUPS`), not a PVT corner grid. Same append-only guard either way.
-    """
-    records_dir.mkdir(parents=True, exist_ok=True)
-    path = records_dir / f"{record}.md"
-    if path.exists():
-        raise RuntimeError(
-            f"refusing to overwrite existing record {path} -- sim/ is append-only; "
-            "a re-run must mint a new record ID"
-        )
-    path.write_text(body, encoding="utf-8")
-    return path
-
-
 # ---------------------------------------------------------------------------
 # Extraction -- ngspice `print` output parsing and the small stats helpers it
 # feeds. Not sourced from sim/harness (which has no equivalent -- its own
@@ -939,7 +919,7 @@ def main() -> int:
         raise RuntimeError(f"refusing to overwrite existing snapshot {snap_path}")
     snap_path.write_text(dut_mm, encoding="utf-8")
 
-    path = _write_record(
+    path = harness_report.device_write_record(
         HERE / "records",
         record,
         build_record(record, stamp, pdk, ngspice, dut_path, injected, results),
