@@ -7,14 +7,16 @@ netlist snapshot, and writes one append-only summary record under `records/`
 per the evidence format in `sim/README.md`.
 
 This experiment is driven directly against `sim/harness`'s library modules
-(`pdk.py`, `runner.py`, `report.py`, `corners.py`) rather than the retired
-`sim/tools/devchar.py` (issue #117): PDK discovery, ngspice-version detection,
-git provenance / record-id minting and the two-terminal device-testbench
-corner-id naming (`sim/README.md`'s `nosupply` grammar) are all harness
-functions now. What stays local is genuinely specific to this experiment --
-composing/running the per-corner DC-sweep deck, parsing the resulting table,
-and the VBE(I,T) / dVBE / ideality-factor / beta extraction -- none of which
-the current `tb.json` single-grid contract expresses (it targets one scalar
+(`pdk.py`, `runner.py`, `report.py`, `corners.py`, `dctable.py`) rather than
+the retired `sim/tools/devchar.py` (issue #117): PDK discovery,
+ngspice-version detection, git provenance / record-id minting, the
+two-terminal device-testbench corner-id naming (`sim/README.md`'s `nosupply`
+grammar), and parsing/interpolating a DC-sweep `print` table (`harness.dctable`,
+shared with `sim/device-mos-vth/` -- issue #154) are all harness functions
+now. What stays local is genuinely specific to this experiment --
+composing/running the per-corner DC-sweep deck and the VBE(I,T) / dVBE /
+ideality-factor / beta extraction -- none of which the current `tb.json`
+single-grid contract expresses (it targets one scalar
 `op` measurement per PVT point, not a DC sweep interpolated at several
 current criteria). `testbench/tb.json` still documents this experiment for
 harness discovery (`sim/run_corners.py --list`) and supports a secondary,
@@ -40,6 +42,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
 
 from harness import corners as harness_corners  # noqa: E402
+from harness import dctable as harness_dctable  # noqa: E402
 from harness import pdk as harness_pdk  # noqa: E402
 from harness import report as harness_report  # noqa: E402
 from harness.runner import ngspice_version  # noqa: E402
@@ -124,58 +127,6 @@ def _run_corner(deck: Path, pdk: harness_pdk.Pdk, section: str, temp_c: float) -
     return log
 
 
-def _parse_dc_table(log: str) -> tuple[list[str], list[list[float]]]:
-    """Parse the tabular output of `print v1 v2 ...` after a `dc` analysis.
-
-    Returns (column names excluding the Index column, rows). The leading
-    `v-sweep` column is kept as the first data column.
-    """
-    lines = log.splitlines()
-    header_idx = None
-    for i, line in enumerate(lines):
-        if line.strip().startswith("Index"):
-            header_idx = i
-            break
-    if header_idx is None:
-        raise ValueError("no DC table header ('Index ...') found in ngspice log")
-    columns = lines[header_idx].split()[1:]
-    rows: list[list[float]] = []
-    for line in lines[header_idx + 1 :]:
-        parts = line.split()
-        if not parts or not parts[0].isdigit():
-            continue
-        try:
-            values = [float(p) for p in parts[1:]]
-        except ValueError:
-            continue
-        if len(values) == len(columns):
-            rows.append(values)
-    if not rows:
-        raise ValueError("DC table header found but no data rows parsed")
-    return columns, rows
-
-
-def _column(columns: list[str], rows: list[list[float]], name: str) -> list[float]:
-    idx = columns.index(name)
-    return [row[idx] for row in rows]
-
-
-def _interp_at(xs: list[float], ys: list[float], x: float) -> float:
-    """Linear interpolation of y(x) on a monotonically increasing xs."""
-    if x <= xs[0]:
-        return ys[0]
-    if x >= xs[-1]:
-        return ys[-1]
-    for i in range(1, len(xs)):
-        if xs[i] >= x:
-            x0, x1 = xs[i - 1], xs[i]
-            y0, y1 = ys[i - 1], ys[i]
-            if x1 == x0:
-                return y0
-            return y0 + (y1 - y0) * (x - x0) / (x1 - x0)
-    return ys[-1]
-
-
 def _linfit(xs: list[float], ys: list[float]) -> tuple[float, float]:
     """Ordinary least-squares fit; returns (slope, intercept)."""
     n = len(xs)
@@ -209,22 +160,24 @@ def _thermal_voltage(temp_c: float) -> float:
 
 
 def extract(log: str, temp_c: float) -> dict:
-    columns, rows = _parse_dc_table(log)
-    logi = _column(columns, rows, "v-sweep")
+    columns, rows = harness_dctable.parse_dc_table(log)
+    logi = harness_dctable.column(columns, rows, "v-sweep")
     vt = _thermal_voltage(temp_c)
 
     out: dict = {"vbe": {}, "beta": {}, "ideality": {}, "window": {}}
     for key, (_model, vcol, icol, _area) in DEVICES.items():
-        vbe = _column(columns, rows, vcol)
-        ib = _column(columns, rows, icol)
+        vbe = harness_dctable.column(columns, rows, vcol)
+        ib = harness_dctable.column(columns, rows, icol)
 
         out["vbe"][key] = {
-            bias: _interp_at(logi, vbe, math.log10(bias)) for bias in BIASES_A
+            bias: harness_dctable.interp_at(logi, vbe, math.log10(bias))
+            for bias in BIASES_A
         }
 
         beta = [(10.0**x - b) / b if b > 0 else float("nan") for x, b in zip(logi, ib)]
         out["beta"][key] = {
-            bias: _interp_at(logi, beta, math.log10(bias)) for bias in BIASES_A
+            bias: harness_dctable.interp_at(logi, beta, math.log10(bias))
+            for bias in BIASES_A
         }
 
         # Local ideality factor from the slope of VBE vs ln(I), midpoint-sampled.
@@ -236,7 +189,7 @@ def extract(log: str, temp_c: float) -> dict:
             n_local.append(dv / (vt * dx))
             mid_logi.append(0.5 * (logi[i] + logi[i + 1]))
         out["ideality"][key] = {
-            bias: _interp_at(mid_logi, n_local, math.log10(bias))
+            bias: harness_dctable.interp_at(mid_logi, n_local, math.log10(bias))
             for bias in BIASES_A
         }
         out["window"][key] = usable_window(mid_logi, n_local)

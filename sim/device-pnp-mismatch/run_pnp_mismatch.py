@@ -7,15 +7,16 @@ logs, freezes the netlist snapshot, and writes one append-only summary
 record under `records/` per `sim/README.md`.
 
 This experiment is driven directly against `sim/harness`'s library modules
-(`pdk.py`, `runner.py`, `report.py`, `corners.py`) rather than the retired
-`sim/tools/devchar.py` (issue #117): PDK discovery, ngspice-version detection,
-git provenance / record-id minting and the two-terminal device-testbench
-corner-id naming (`sim/README.md`'s `nosupply` grammar) are all harness
-functions now. What stays local is genuinely specific to this experiment --
-composing/running the per-point Monte Carlo deck (a `dowhile` / `reset` loop,
-not a single PVT point), parsing the repeated `print` samples, and the
-mean/sigma analysis -- none of which the current `tb.json` single-grid
-contract expresses. `testbench/tb.json` still documents this experiment for
+(`pdk.py`, `runner.py`, `report.py`, `corners.py`, `stats.py`) rather than the
+retired `sim/tools/devchar.py` (issue #117): PDK discovery, ngspice-version
+detection, git provenance / record-id minting, the two-terminal
+device-testbench corner-id naming (`sim/README.md`'s `nosupply` grammar), and
+parsing/summarising a Monte Carlo `op` series (`harness.stats`, shared with
+the other Monte Carlo benches -- issue #154) are all harness functions now.
+What stays local is genuinely specific to this experiment -- composing/running
+the per-point Monte Carlo deck (a `dowhile` / `reset` loop, not a single PVT
+point) -- none of which the current `tb.json` single-grid contract expresses.
+`testbench/tb.json` still documents this experiment for
 harness discovery (`sim/run_corners.py --list`) and supports a secondary,
 representative generic-CLI run
 (`python3 sim/run_corners.py device-pnp-mismatch`) that reports one
@@ -43,6 +44,7 @@ sys.path.insert(0, str(HERE.parent))
 from harness import corners as harness_corners  # noqa: E402
 from harness import pdk as harness_pdk  # noqa: E402
 from harness import report as harness_report  # noqa: E402
+from harness import stats as harness_stats  # noqa: E402
 from harness.runner import ngspice_version  # noqa: E402
 
 SECTION = "bjt_typical"
@@ -144,53 +146,13 @@ def _run_corner(deck: Path, pdk: harness_pdk.Pdk, section: str, temp_c: float) -
     return log
 
 
-_OP_LINE = re.compile(r"^([a-zA-Z_][\w()\-.,+@#]*)\s*=\s*([-+0-9.eE]+)\s*$")
-
-
-def _parse_op_series(log: str) -> list[dict[str, float]]:
-    """Parse repeated `op`+`print` blocks (the Monte Carlo loop) into samples.
-
-    A new sample starts whenever a name that has already been seen repeats.
-    """
-    samples: list[dict[str, float]] = []
-    current: dict[str, float] = {}
-    for line in log.splitlines():
-        match = _OP_LINE.match(line.strip())
-        if not match:
-            continue
-        name = match.group(1).lower()
-        try:
-            value = float(match.group(2))
-        except ValueError:
-            continue
-        if name in current:
-            samples.append(current)
-            current = {}
-        current[name] = value
-    if current:
-        samples.append(current)
-    return samples
-
-
-def _stdev(values: list[float]) -> float:
-    n = len(values)
-    if n < 2:
-        return 0.0
-    mean = sum(values) / n
-    return math.sqrt(sum((v - mean) ** 2 for v in values) / (n - 1))
-
-
-def _mean(values: list[float]) -> float:
-    return sum(values) / len(values)
-
-
 # --------------------------------------------------------------------------
 # Device-specific analysis
 # --------------------------------------------------------------------------
 
 
 def extract(log: str) -> dict[str, dict[str, float]]:
-    samples = _parse_op_series(log)
+    samples = harness_stats.parse_op_series(log)
     if len(samples) != N_SAMPLES:
         raise RuntimeError(
             f"expected {N_SAMPLES} Monte Carlo samples in the log, parsed "
@@ -199,8 +161,8 @@ def extract(log: str) -> dict[str, dict[str, float]]:
     out: dict[str, dict[str, float]] = {}
     for key in PAIRS:
         values = [s[key] for s in samples]
-        mean = _mean(values)
-        sigma = _stdev(values)
+        mean = harness_stats.mean(values)
+        sigma = harness_stats.stdev(values)
         if sigma <= SIGMA_FLOOR_V:
             raise RuntimeError(
                 f"pair {key!r}: sigma={sigma * 1e3:.6f} mV is at or below the "
