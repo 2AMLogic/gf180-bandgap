@@ -62,6 +62,44 @@ v {xschem version=3.4.7 file_version=1.2
 * correcting nf here is what makes the simulated junction capacitance
 * match the drawn geometry -- see sim/ records re-run under #65.
 *
+* ------------------ INPUT-PAIR CONSTANT-W/L AREA SCALE-UP (issue #147)
+* M1/M2  200u/4u -> 300u/6u  (nf 8 -> 12, 25 um/finger held; 800 -> 1800 um^2)
+* M3/M4  20u/16u -- UNCHANGED, deliberately; see the stability note below.
+*
+* M1/M2 keep their W/L EXACTLY (50): at the same shared Vgs,
+* Id = 1/2 * k * (W/L) * Vov^2, so Vov -- and therefore gm, every saturation
+* margin, the DC loop gain and the PSRR -- are unchanged BY CONSTRUCTION,
+* not by luck. This is the same invariance argument #55 used to resize
+* bandgap_core's mirror. Only the gate AREA moves, and with it the Pelgrom
+* local-mismatch sigma: sigma(dVgs) = A_pair*sqrt(2)/sqrt(W*L) improves 1.5x
+* (0.2455 -> 0.1637 mV), so sigma(Vos) 0.270 -> 0.198 mV and the amplifier's
+* line in the untrimmed error budget 13.06 -> 9.60 mV (3 sigma, at vref).
+*
+* Why: the combined untrimmed-accuracy verdict (mismatch MC grafted onto
+* the process corners, sim/suite/combined.py) failed 42/81 corners even
+* though every individual bench passed -- the deterministic corner spread
+* (20.4 mV) plus the grafted 3-sigma mismatch spread (2 x 16.13 mV) is
+* 52.7 mV against a 48 mV ratified window. The corner spread is BJT/resistor
+* process skew on VEB(Q3) and is not reducible at this topology, so the
+* mismatch half is the only term that can give, and the amplifier's own
+* random offset was 74% of its variance.
+*
+* WHY THE MIRROR LOAD WAS NOT SCALED WITH IT -- measured, not assumed.
+* M3/M4's gate node `nd1` carries the mirror pole gm3/(Cgs3+Cgs4), and the
+* servo loop sits close enough to it that area on M3/M4 is bought directly
+* out of stability margin. sim/amp-loop-stability/ (81 corners, --no-write
+* exploration runs) reads, at otherwise identical sizing:
+*   M3/M4 20u/16u   (unchanged) : pm_deg worst  83.7 deg, gm_crit -999  PASS
+*   M3/M4 22.5u/18u (1.27x area): pm_deg worst   4.2 deg, gm_crit -17.8  FAIL
+*   M3/M4 30u/24u   (2.25x area): pm_deg worst   3.6 deg, gm_crit -16.1  FAIL
+* and it is not a compensation problem -- CC was scanned 60u..150u square
+* and moved pm_deg by less than 0.001 deg, because the criterion is
+* evaluated at the |T| notch, not at a CC-set crossover. The input pair is
+* likewise bounded: 300u/6u passes at 83.7 deg, 350u/7u fails at 21.3 deg.
+* The final sizing is therefore the largest constant-W/L area step that
+* keeps both stability criteria, on this design's own bench.
+* See design/bandgap_error_budget.md Sec 5c.
+*
 * --------------------------------------------------- why the explicit cap
 * Cascoding buys ~50 dB of extra DC loop gain, which #10's compensation
 * (none -- the loop was held together by a parasitic Cgd feedthrough zero)
@@ -158,7 +196,7 @@ N 270 -70 270 -50 {}
 C {lab_pin.sym} 270 -50 0 0 {name=l23 lab=n2}
 N 270 -100 290 -100 {}
 C {lab_pin.sym} 290 -100 0 0 {name=l24 lab=vss}
-C {symbols/nfet_03v3.sym} 0 50 0 0 {name=M1 model=nfet_03v3 W=200u L=4u nf=8 m=1}
+C {symbols/nfet_03v3.sym} 0 50 0 0 {name=M1 model=nfet_03v3 W=300u L=6u nf=12 m=1}
 N 20 20 20 0 {}
 C {lab_pin.sym} 20 0 0 0 {name=l25 lab=n1}
 N -20 50 -40 50 {}
@@ -167,7 +205,7 @@ N 20 80 20 100 {}
 C {lab_pin.sym} 20 100 0 0 {name=l27 lab=tail}
 N 20 50 40 50 {}
 C {lab_pin.sym} 40 50 0 0 {name=l28 lab=vss}
-C {symbols/nfet_03v3.sym} 250 50 0 0 {name=M2 model=nfet_03v3 W=200u L=4u nf=8 m=1}
+C {symbols/nfet_03v3.sym} 250 50 0 0 {name=M2 model=nfet_03v3 W=300u L=6u nf=12 m=1}
 N 270 20 270 0 {}
 C {lab_pin.sym} 270 0 0 0 {name=l29 lab=n2}
 N 230 50 210 50 {}

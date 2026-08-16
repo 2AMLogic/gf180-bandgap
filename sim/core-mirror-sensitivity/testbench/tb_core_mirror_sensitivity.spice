@@ -75,30 +75,30 @@
 * using the same node names (vdd, sns1, sns2, 0=vss, fb, vref, ibias, casc)
 * bandgap_top.spice ties it to, so it wires up identically either way.
 
-XM1 d1 fbm1 vdd vdd pfet_03v3 L=6u W=60u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
+XM1 d1 fbm1 vdd vdd pfet_03v3 L=8.5u W=85u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
 vos_m_sns1 fbm1 fb dc 0
-XMC1 sns1 casc d1 vdd pfet_03v3 L=6u W=60u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
+XMC1 sns1 casc d1 vdd pfet_03v3 L=8.5u W=85u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
 XQ1 0 0 sns1 pnp_05p00x05p00 m=1
-XM2 d2 fbm2 vdd vdd pfet_03v3 L=6u W=60u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
+XM2 d2 fbm2 vdd vdd pfet_03v3 L=8.5u W=85u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
-XMC2 sns2 casc d2 vdd pfet_03v3 L=6u W=60u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
+XMC2 sns2 casc d2 vdd pfet_03v3 L=8.5u W=85u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
 vos_m_servo fbm2 fb dc 0
 XR2 e2 sns2 0 ppolyf_u r_width=2u r_length=36.341871u m=1
 XQ2 0 0 e2 pnp_10p00x10p00 m=1
-XM3 d3 fbm3 vdd vdd pfet_03v3 L=6u W=60u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
+XM3 d3 fbm3 vdd vdd pfet_03v3 L=8.5u W=85u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
-XMC3 vref cascmc3 d3 vdd pfet_03v3 L=6u W=60u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
+XMC3 vref cascmc3 d3 vdd pfet_03v3 L=8.5u W=85u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
 vos_m_vref fbm3 fb dc 0
 vos_mc_vref cascmc3 casc dc 0
 XR1 e3 tn0 0 ppolyf_u r_width=2u r_length=460.701871u m=1
 XQ3 0 0 e3 pnp_05p00x05p00 m=1
-XM4 d4 fbm4 vdd vdd pfet_03v3 L=6u W=7.5u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
+XM4 d4 fbm4 vdd vdd pfet_03v3 L=8.5u W=10.625u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
-XMC4 ibias casc d4 vdd pfet_03v3 L=6u W=7.5u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
+XMC4 ibias casc d4 vdd pfet_03v3 L=8.5u W=10.625u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
 vos_m_ibias fbm4 fb dc 0
 XM5 ibias ibias 0 0 nfet_03v3 L=2u W=2.5u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
