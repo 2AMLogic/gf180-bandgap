@@ -1,4 +1,4 @@
-** sch_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-96/design/bandgap_top.sch
+** sch_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-151/design/bandgap_top.sch
 **.subckt bandgap_top vdd vss vref
 
 *.iopin vdd
@@ -10,8 +10,8 @@ Xx3 vdd vss fb casc ibias bandgap_startup
 **.ends
 
 * expanding   symbol:  bandgap_core.sym # of pins=8
-** sym_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-96/design/bandgap_core.sym
-** sch_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-96/design/bandgap_core.sch
+** sym_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-151/design/bandgap_core.sym
+** sch_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-151/design/bandgap_core.sch
 .subckt bandgap_core vdd sns1 sns2 vss fb vref ibias casc
 
 
@@ -55,8 +55,8 @@ XXTRIM tn0 vref vss bandgap_trim
 
 
 * expanding   symbol:  bandgap_amp.sym # of pins=6
-** sym_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-96/design/bandgap_amp.sym
-** sch_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-96/design/bandgap_amp.sch
+** sym_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-151/design/bandgap_amp.sym
+** sch_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-151/design/bandgap_amp.sch
 .subckt bandgap_amp in_p in_n vss out vdd tail_bias
 
 
@@ -66,9 +66,9 @@ XXTRIM tn0 vref vss bandgap_trim
 *.iopin in_n
 *.iopin out
 *.iopin tail_bias
-XM3 a3 nd1 vdd vdd pfet_03v3 L=16u W=20u nf=2 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
+XM3 a3 nd1 vdd vdd pfet_03v3 L=26.4u W=33u nf=2 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
-XM4 a4 nd1 vdd vdd pfet_03v3 L=16u W=20u nf=2 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
+XM4 a4 nd1 vdd vdd pfet_03v3 L=26.4u W=33u nf=2 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
 XMC3 nd1 pbias a3 vdd pfet_03v3 L=16u W=40u nf=2 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
@@ -99,8 +99,8 @@ XCC vdd out cap_mim_2f0_m4m5_noshield c_width=60u c_length=60u m=1
 
 
 * expanding   symbol:  bandgap_startup.sym # of pins=5
-** sym_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-96/design/bandgap_startup.sym
-** sch_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-96/design/bandgap_startup.sch
+** sym_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-151/design/bandgap_startup.sym
+** sch_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-151/design/bandgap_startup.sch
 .subckt bandgap_startup vdd vss fb casc ibias
 
 
@@ -120,8 +120,8 @@ XMKCASC casc det vss vss nfet_03v3 L=2u W=2u nf=1 ad='int((nf+1)/2) * W/nf * 0.1
 
 
 * expanding   symbol:  bandgap_trim.sym # of pins=3
-** sym_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-96/design/bandgap_trim.sym
-** sch_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-96/design/bandgap_trim.sch
+** sym_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-151/design/bandgap_trim.sym
+** sch_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-151/design/bandgap_trim.sch
 .subckt bandgap_trim bot top sub
 
 

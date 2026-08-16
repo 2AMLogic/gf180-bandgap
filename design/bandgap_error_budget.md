@@ -1,4 +1,4 @@
-# Offset/mismatch budget: error amplifier and core mirror (issues #10, #42, #55, #61, #96, #147)
+# Offset/mismatch budget: error amplifier and core mirror (issues #10, #42, #55, #61, #96, #147, #151)
 
 This document allocates the ratified untrimmed output-accuracy target
 (`README.md` "Target specification": **1.20 V ±2 % untrimmed, 3σ, mismatch
@@ -78,6 +78,27 @@ largest single bite any issue had taken out of it without closing it, and
 **#61 closes it** by co-scaling `R1`/`R2`/the trim network by `k = 2` rather
 than by any further mirror change — Section 5 states the full history and the
 closed-form reason why *mirror sizing* could not have closed it on its own.
+
+**#151 spends part of the headroom #147 left unclaimed.** #147's combined
+verdict passed at only +0.836 mV worst margin, and its own sweep found the
+amplifier mirror-load area was not actually stability-bound until well past
+the sizing it adopted (Section 5c). #151 brackets that wall more tightly and
+resizes `M3`/`M4` to `33 µm/26.4 µm` (2.72× the #147 area, constant `W/L`) —
+comfortably clear of the wall, not hugging it (Section 5d):
+
+| Line | post-#147 | **#151** | Ratified target |
+|---|---|---|---|
+| Combined untrimmed-accuracy verdict | PASS, 81/81, +0.836 mV worst margin | **PASS, 81/81, +2.194 mV worst margin** | every corner inside 1.176–1.224 V |
+| Untrimmed accuracy, measured 3σ (`mm_all`, −40/27/125 °C) | 11.85 / 12.03 / 12.54 mV | **10.64 / 10.83 / 11.28 mV** | ≤ 24.0 mV |
+| Untrimmed accuracy, allocated RSS (random) | 12.19 mV | **11.42 mV** | ≤ 24.0 mV |
+| Loop phase margin / Nyquist margin, worst of 81 | 160.9° / no crossing | **105.0° / no crossing** | ≥45° / <0 dB |
+| `dVref/dVos` (amp-offset sensitivity, invariance check) | 16.05–16.14 V/V | **16.05–16.14 V/V (unchanged)** | envelope |
+
+No other spec-line row moves: `M3`/`M4` is the only device geometry #151
+touches, and it holds `W/L` exactly, so `Vov`, every branch current, PSRR,
+`Iq` and every other bench that does not depend on mismatch or the loop's own
+stability margin is unaffected by construction (Section 2.2) — confirmed by
+re-running `amp-offset-sensitivity` rather than assumed.
 
 ## 1. What is and is not in scope here
 
@@ -311,7 +332,7 @@ sigma_Vos_random = sqrt(0.1637^2 + 0.1123^2) = 0.1985 mV
 => amplifier line at Vref = 0.5955 * 16.13 = 9.60 mV   (was 13.06 mV)
 ```
 
-`M3`/`M4` were **left at 20 µm/16 µm** — a conservative choice, not a
+`M3`/`M4` were **left at 20 µm/16 µm** by #147 — a conservative choice, not a
 stability limit at that size. Their gate node `nd1` does carry the mirror
 pole `gm3/(Cgs3+Cgs4)`, so area there is ultimately bought out of the servo
 loop's stability margin, but Section 5c's re-measured sweep puts that wall
@@ -320,9 +341,31 @@ loop's stability margin, but Section 5c's re-measured sweep puts that wall
 no bound on the input pair anywhere near `300 µm/6 µm`. An earlier revision
 of this section claimed a collapse from 83.7° to 4.2° at 1.27×; those figures
 did not reproduce and are struck — see the correction note in Section 5c.
-`M3`/`M4` is left unchanged here because the input-pair step alone already
-carries the combined verdict, so the remaining headroom is real, measured,
-and simply not spent by this issue.
+`M3`/`M4` was left unchanged by #147 because the input-pair step alone already
+carried the combined verdict, so the remaining headroom was real, measured,
+and simply not spent by that issue.
+
+**Update (#151) — mirror load 320 µm² → 871.2 µm², input pair unchanged.**
+`M3`/`M4` go `20 µm/16 µm` → `33 µm/26.4 µm` (constant `W/L = 1.25`, `nf = 2`
+held), claiming part of the headroom the paragraph above left unspent. Bracketed
+tighter against the same `sim/amp-loop-stability/` bench (Section 5d): the wall
+sits between ≈2.9× and 3.06× area, so `33 µm/26.4 µm` (2.72×) is adopted —
+comfortably clear of it (`pm_deg` worst 105.03°, more than 2× the ≥45°
+criterion) without hugging either the 2.25× floor or the fail boundary:
+
+```
+sigma_M3M4 = 5.02 * sqrt(2) / sqrt(871.2) = 0.2405 mV   (was 0.3969 mV)
+sigma_M3M4_referred = 0.2405 * 0.2829 = 0.0681 mV        (was 0.1123 mV)
+sigma_M1M2 = 0.1637 mV                                   (unchanged, #147)
+sigma_Vos_random = sqrt(0.1637^2 + 0.0681^2) = 0.1773 mV
+3-sigma_Vos_random = 0.5319 mV
+=> amplifier line at Vref = 0.5319 * 16.13 = 8.58 mV   (was 9.60 mV)
+```
+
+The input pair was checked and left at #147's `300 µm/6 µm` — Section 5c/5d's
+own sweep shows it, too, is not bounded near its adopted size, but growing it
+further is not this issue's named target and was left as unclaimed headroom
+for a future pass rather than spent here (see Section 5d).
 
 **Not credited: an `nf`-driven matching bonus.** The gf180mcu
 `nfet_03v3`/`pfet_03v3` local-mismatch variance is scaled by a `par`
@@ -747,6 +790,29 @@ core-mirror line moved because the core mirror changed.
 
 The amplifier's own random offset is again the largest single term (13.06 of
 15.19 mV RSS) — deliberately, per Section 2.6a's stopping criterion.
+
+### 2.7b Budget table after #151 (mirror-load headroom claimed)
+
+| Line | pre-#151 (`#147`) | **#151** | Source |
+|---|---|---|---|
+| Amplifier offset, random | 9.60 mV | **8.58 mV** | Section 2.2 — mirror load 320 → 871.2 µm² at constant `W/L`, input pair unchanged |
+| Core mirror, random (`M1`–`M4`) | 6.06 mV | 6.06 mV | Section 2.6a — unchanged, `bandgap_core` not touched |
+| Core cascode, random (`MC1`–`MC4`) | < 0.02 mV | < 0.02 mV | Section 2.6a — unchanged |
+| Resistor mismatch (R1, R2, trim ladder) | 3.92 mV | 3.92 mV | Section 2.5 — unchanged |
+| PNP mismatch (Q1/Q2 pair) | 2.06 mV | 2.06 mV | Section 2.6 — unchanged |
+| **RSS of random terms** | **12.19 mV** | **11.42 mV** | |
+| Amplifier offset, systematic (reserve) | +2.00 mV | +2.00 mV | Section 2.3 — unchanged placeholder pending #16 |
+| **Total** | **14.19 mV** | **13.42 mV** | |
+| **Measured** (`mm_all` 3σ, −40/27/125 °C) | 11.85 / 12.03 / 12.54 mV | **10.64 / 10.83 / 11.28 mV** | `sim/mc-untrimmed/` records [`20260816-142716-1ca1c95`](../sim/mc-untrimmed/records/20260816-142716-1ca1c95.md) → [`20260816-183305-0acc856`](../sim/mc-untrimmed/records/20260816-183305-0acc856.md) |
+| **Ratified untrimmed target (3σ)** | 24.0 mV | 24.0 mV | `README.md`, DR-0003 |
+
+Only the amplifier-offset row moves: the mirror-load resize is the only
+device geometry #151 touches, so every other line is numerically unchanged
+from Section 2.7a by construction, not by omission. The allocation's random
+RSS (11.42 mV) lands 1.2 % under the measured all-on 3σ at 125 °C
+(11.28 mV) and 7.3 % over it at −40 °C (10.64 mV) — the same few-percent
+agreement Sections 2.7/2.7a's allocations achieved. See Section 5d for the
+combined-verdict margin this issue was chasing and the full re-run evidence.
 
 ### 2.8 Circuit-level Monte Carlo cross-check
 
@@ -1623,6 +1689,134 @@ of risk:
 re-defined, and the one row whose *margin* was deliberately spent
 (temperature coefficient, 29.79 → 46.41 ppm/°C) is reported at its ratified
 threshold, at every corner, with the trade curve that produced it.
+
+### 5d. #151: claiming the M3/M4 mismatch-reduction headroom
+
+**What was still open.** #147's combined verdict (Section 5c) passed at
+every one of 81 corners but by only **+0.836 mV** worst margin — 3.5 % of the
+24 mV half-window — and its own sweep found the amplifier mirror-load area
+was not actually stability-bound at the sizing it adopted: the wall sat
+somewhere **between 2.25× and 3.06×** mirror-load area, and #147 spent none
+of it (a deliberate scope decision, restated in Section 2.2, tracked as this
+issue). Given the thin margin and Section 2.7a's finding that the
+amplifier's own random offset is the single largest budget line, this was
+the highest-leverage axis left unspent.
+
+**Bracketing the wall more tightly.** Same bench and method as Section 5c
+(`sim/amp-loop-stability/`, 81 PVT corners per row, `--no-write --dut`
+override during exploration, `M3/M4` at constant `W/L = 1.25` and `nf = 2`,
+`M1/M2` held at #147's `300 µm/6 µm`), with finer steps between #147's last
+passing point and its first failing one:
+
+| `M3/M4` sizing | area | `pm_deg` worst of 81 | `gm_crit_db` worst | verdict |
+|---|---|---|---|---|
+| 30/24 (#147's own bracket) | 720 µm² (2.25×) | 126.99° | −999 | PASS |
+| 32/25.6 | 819.2 µm² (2.56×) | 109.87° | −999 | PASS |
+| **33/26.4 (adopted)** | **871.2 µm² (2.72×)** | **105.03°** | **−999** | **PASS** |
+| 34/27.2 | 924.8 µm² (2.89×) | 73.20° | −999 | PASS (steep knee starts) |
+| 34.5/27.6 | 952.2 µm² (2.98×) | 61.58° | −999 | PASS (thin) |
+| 35/28 (#147's own bracket) | 980 µm² (3.06×) | 38.65° | −999 | **FAIL** |
+
+The cliff is steep: `pm_deg` drops from 73° to 38.65° FAIL across a further
+0.17× of area (34/27.2 → 35/28), so a sizing right at the edge of the last
+passing point would not be "real margin" in any practical sense — a few
+percent of area or model uncertainty could flip it. `33 µm/26.4 µm` (2.72×)
+is adopted instead: it clears the ≥45° criterion by more than 2× (60° of
+absolute margin) while still claiming materially more than the ≥2.25× floor
+#147's own sweep had already established as safe, and it sits a full step
+away from where the knee visibly starts (34/27.2).
+
+**The input pair.** Re-checked against the same criterion, not moved:
+Section 5c's own sweep already found `M1/M2` unbounded near `300 µm/6 µm`
+(`350/7` reads 158.31°, `400/8` reads 157.19°). This issue does not spend
+that headroom — its title and scope are the mirror load specifically — but
+it is real, measured, and left for a future pass rather than silently
+assumed away.
+
+**Effect on the mismatch budget (Section 2.2, Section 2.7b).**
+
+```
+sigma_M3M4_referred = 0.1123 -> 0.0681 mV
+sigma_Vos_random     = 0.1985 -> 0.1773 mV   (3-sigma 0.5955 -> 0.5319 mV)
+amplifier line at Vref = 9.60 -> 8.58 mV     (3 sigma)
+```
+
+**Result, measured — the three benches this resize can affect, plus the
+combined verdict, re-run against the resized DUT. `M3/M4` is the only device
+geometry this issue touches, so every deterministic (non-mismatch,
+non-loop-stability) bench is unaffected by construction (Section 2.2's
+constant-`W/L` invariance argument) — `amp-offset-sensitivity` is re-run
+below specifically to confirm that by measurement, not just assert it.**
+
+| Bench / verdict | Before #151 | **After #151** | Gate | Verdict |
+|---|---|---|---|---|
+| **Combined untrimmed accuracy** (`sim/suite/combined.py`) | **PASS, 81/81, +0.836 mV worst margin** | **PASS, 81/81, +2.194 mV worst margin** (report [`20260816-184409-0acc856`](../sim/suite/combined/20260816-184409-0acc856.md)) | 3σ interval inside 1.176–1.224 V at every corner | **PASS** |
+| `sim/mc-untrimmed/` `mm_all` 3σ, −40/27/125 °C (record [`20260816-183305-0acc856`](../sim/mc-untrimmed/records/20260816-183305-0acc856.md)) | 11.85 / 12.03 / 12.54 mV | **10.64 / 10.83 / 11.28 mV** | ≤ 24.0 mV | PASS |
+| `sim/mc-untrimmed/` `mm_fetbjt` 3σ (MOS+BJT only) | 10.90 / 10.94 / 11.21 mV | **9.70 / 9.74 / 9.91 mV** | — | — |
+| `sim/mc-untrimmed/` `mm_res` 3σ (resistors only) | 2.20 / 2.87 / 3.84 mV | 2.20 / 2.87 / 3.84 mV | — | unchanged, as expected (no resistor geometry moved) |
+| `sim/amp-loop-stability/` `pm_deg` / `gm_crit_db` (record [`20260816-183145-0acc856`](../sim/amp-loop-stability/records/20260816-183145-0acc856.md)) | 160.9–172.4° / −999 | **105.0–176.5° / −999** | ≥45° / <0 dB | PASS 81/81 |
+| `sim/amp-offset-sensitivity/` `dvref_dvos` (record [`20260816-183233-0acc856`](../sim/amp-offset-sensitivity/records/20260816-183233-0acc856.md)) | 16.05–16.14 V/V | **16.05–16.14 V/V (unchanged)** | envelope | PASS — confirms the constant-`W/L` invariance argument by measurement |
+| `sim/output-voltage-tc/` `vref`, `tc_ppm` | 1.18958–1.21000 V, 12.80–46.41 ppm/°C | **unchanged** — not re-run; deterministic, `M3/M4` at constant `W/L` cannot move it (Section 2.2) | 1.176–1.224 V / ≤50 ppm/°C | not re-run, unaffected by construction |
+| `sim/amp-psrr/`, `sim/psrr-dc/`, `sim/iq/`, `sim/startup/`, `sim/core-mirror-sensitivity/` | — | **not re-run** — `gm3`, every branch current and every saturation margin are unchanged by construction at constant `W/L` (Section 2.2); spot-checked with an unrecorded `--no-write` `amp-psrr` run (`psrr_worst_db` 77.05–98.27 dB, matching #147's committed 77.09 dB to within run-to-run noise) as a sanity check only, not committed as evidence | > 60 dB / < 50 µA / < 1 ms / ≥ 0 | not re-run, unaffected by construction |
+
+**Why `output-voltage-tc` and the PSRR/`Iq`/startup/core-mirror benches are
+not re-run.** Every one of them depends only on the deterministic operating
+point (`Vov`, branch currents, `gm` ratios) or on devices this issue does not
+touch (`bandgap_core`). `M3/M4`'s resize holds `W/L` exactly, so by the same
+construction argument Sections 2.2 and 5c already established for `M1/M2`,
+none of those quantities move. `amp-offset-sensitivity` is the one exception
+re-run here rather than merely asserted, because it is cheap (81 points,
+under 20 s) and it is this section's own evidence that the invariance
+argument holds for *this* resize, not just a re-statement of #147's.
+
+**The margin that remains, stated plainly.** The binding corner is still
+`bjt_ff`/125 °C/3.63 V, and the combined interval now clears the window by
+**+2.194 mV** — 9.1 % of the 24 mV half-window, up from #147's 3.5 %. This is
+a real, more comfortable pass at every one of the 81 corners, not a
+razor's-edge one, though it is still worth reading against the mismatch
+leg's own ≈±4 % sampling uncertainty at N=300 (≈±0.5 mV).
+
+**Drawn-area cost**, against `layout/floorplan.md` §8's schematic-derived
+floor (§8's own note: this table is only partially re-synced — see the note
+added there by this issue):
+
+| item | before (#147) | after (#151) | delta |
+|---|---|---|---|
+| amp mirror load (2 devices) | 640 µm² | 1742.4 µm² | +1102.4 µm² |
+
+That is 2.2 % of the ratified 0.05 mm² area row, on top of #147's own
++4266 µm² (8.5 %) — **5368.4 µm² (10.7 %) cumulative** across #147+#151. As
+in Section 5c, this is a layout claim, not a simulation claim; re-costing it
+against real geometry belongs to the layout follow-up (`layout/floorplan.md`
+§11.1), but it is stated here so the trade is visible: this issue buys
+≈1.9 mV of `mm_all` 3σ reduction (at 125 °C) with 1102.4 µm² of gate area —
+a similar mV-per-µm² rate to #147's own trade.
+
+**A more serious, pre-existing finding surfaced while doing this
+cross-check, filed as
+[#156](https://github.com/2AMLogic/gf180-bandgap/issues/156) rather than
+fixed here.** `layout/bandgap_top/generate.py` + `area_report.py` (real
+GDS-vs-target tooling that already exists) regenerate to **58.5 % over** the
+ratified 0.05 mm² target against `origin/main`'s post-#147 netlist — before
+this issue's own change — because the committed `bandgap_top.gds` predates
+#55/#61/#96/#147 and was never re-checked against any of their resizes.
+This issue's own resize moves that to **61.6 % over**, a further ~3
+percentage points on a budget that was already broken; #151 is not the
+cause of the overage and reverting it would not fix it. See
+`layout/floorplan.md` §8/§11.1 for the full finding.
+
+**What is left, if more margin is wanted.** Unchanged from Section 5c's
+ranking, with one addition: the input pair (`M1/M2`) still has measured,
+unspent headroom near its adopted size (Section 5c/above) and was
+deliberately not spent by this issue either, being outside its named scope.
+#87 remains the single largest remaining lever if it resolves as Option A —
+this bench must be re-run when it does, same as Section 5c states.
+
+**No spec relaxation.** Every threshold used above is the ratified one:
+1.176–1.224 V, ≤50 ppm/°C, ≤24.0 mV 3σ, ≥45°/<0 dB (this design's own
+stability criteria). Nothing was re-defined, and no other issue's margin was
+spent to buy this one — `M3/M4` is the only device geometry this issue
+touches.
 
 ## 6. Summary of acceptance criteria
 
