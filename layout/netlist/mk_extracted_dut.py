@@ -46,7 +46,6 @@ import hashlib
 import json
 import math
 import re
-import subprocess
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -156,13 +155,6 @@ class Aliaser:
 
     def __call__(self, net: str) -> str:
         return self.alias.get(net, net)
-
-
-def _git(*args: str) -> str:
-    out = subprocess.run(
-        ["git", *args], cwd=REPO_ROOT, capture_output=True, text=True, check=False
-    )
-    return out.stdout.strip()
 
 
 def _sanitize(name: str) -> str:
