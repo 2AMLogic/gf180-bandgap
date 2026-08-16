@@ -355,13 +355,19 @@ reduction from the cascode, but not to zero).
 
 ## 6. Amplifier input pair and mirror load
 
-Per `design/bandgap_amp.sch` and `design/bandgap_error_budget.md` §2.1
-(#10's **final**, offset-budgeted sizing — no longer provisional):
+**Note (issue #151): this section's device table was #16-era (#10's 5T OTA
+topology) and had not been re-synced through #42's telescopic-cascode
+rebuild or #147's resize — only the row this issue itself touches (M3/M4)
+is corrected here; the rest of §8's floor carries the same staleness and is
+flagged there rather than fully re-derived by this change (§11.1 owns the
+eventual full resync against real geometry).** Current sizing, read directly
+from `design/bandgap_amp.sch`:
 
-| Device | Type | Final size | Matching group |
+| Device | Type | Current size | Matching group |
 |---|---|---|---|
-| M1, M2 (input pair) | `nfet_03v3` | W=100 µm, L=4 µm, `nf=2` | Group A — highest priority |
-| M3, M4 (mirror load) | `pfet_03v3` | W=40 µm, L=4 µm | Group B |
+| M1, M2 (input pair) | `nfet_03v3` | W=300 µm, L=6 µm, `nf=12` (#147) | Group A — highest priority |
+| M3, M4 (mirror load) | `pfet_03v3` | W=33 µm, L=26.4 µm, `nf=2` (**#151**, was W=20 µm/L=16 µm after #147) | Group B |
+| MC1–MC4 (cascodes) | `nfet_03v3` / `pfet_03v3` | W=20 µm / W=40 µm, L=16 µm, `nf=2` (#42, unchanged by #151) | Group B (paired with M1/M2 or M3/M4 respectively) |
 | M5 (tail) | `nfet_03v3` | W=10 µm, L=4 µm | not matched (single instance, mirrors `bandgap_core.ibias`) |
 
 **Layout technique**: M1 and M2 are laid out as an interdigitated,
@@ -447,26 +453,66 @@ schematic-derived floor**, not a GDS-verified area — the authoritative
 figure is the layout-implementation issue's job once real geometry
 exists (named as the open item in §11.1).
 
+**Line-item currency note (issue #151):** every row below except "Amp:
+M3/M4" is this document's original #16-era estimate and predates #42's
+telescopic-cascode amp rebuild and #55/#61/#96/#147's core/amp resizes —
+`design/bandgap_error_budget.md` §5c/§5d already flags this table as stale
+for that reason. Only the M3/M4 row is corrected here, to the geometry issue
+#151 actually draws; a full resync against every device's current schematic
+size remains owned by the layout-implementation follow-up (§11.1). The
+subtotal below uses the corrected M3/M4 figure (so it is not simply the sum
+of #16-era numbers), but every other row still carries #16-era, not current,
+device sizes.
+
 | Line item | Basis | Drawn body area (µm²) |
 |---|---|---|
 | PNP array (Q1×1 + Q3×1 + Q2×4 unit devices, §4.1) | 6 × 25 µm² (drawn emitter, `pnp_05p00x05p00`) | 150 |
 | Resistor array — R1 | 230.180 µm × 2 µm (§3.1) | 460.36 |
 | Resistor array — R2 | 18 µm × 2 µm (§3.1) | 36 |
 | Trim ladder (63 unit segments, §3.2/3.3) | 63 × (1.215 µm × 2 µm) | 153.09 |
-| Amp: M1/M2 (input pair) | 2 × (100 µm × 4 µm) | 800 |
-| Amp: M3/M4 (mirror load) | 2 × (40 µm × 4 µm) | 320 |
+| Amp: M1/M2 (input pair) — #16-era, stale (§6: current is 300 µm/6 µm, `nf=12`, per #147) | 2 × (100 µm × 4 µm) | 800 |
+| **Amp: M3/M4 (mirror load) — current as of #151** | 2 × (33 µm × 26.4 µm) | **1742.4** |
 | Amp: M5 (tail) | 10 µm × 4 µm | 40 |
-| Core mirror+cascode: M1–M4, MC1–MC4 | 8 × (20 µm × 2 µm) | 320 |
+| Core mirror+cascode: M1–M4, MC1–MC4 — #16-era, stale (current is 85 µm/8.5 µm per #147) | 8 × (20 µm × 2 µm) | 320 |
 | Core: MCB | 4 µm × 12 µm | 48 |
 | Core: MNB | 5 µm × 2 µm | 10 |
 | Core: Mn5 | 20 µm × 2 µm | 40 |
 | Startup: XMSENSE | 20 µm × 2 µm | 40 |
 | Startup: XRPU (2 MΩ bleeder, §7) | 2 µm × 4000 µm | 8000 |
 | Startup: XMKFB, XMKCASC | 2 × (2 µm × 2 µm) | 8 |
-| **Subtotal (drawn active/body area only)** | | **10,425.45** |
-| **≈ mm²** | | **≈ 0.0104 mm²** |
+| **Subtotal (drawn active/body area only, M3/M4 current, all else #16-era)** | | **11,847.85** |
+| **≈ mm²** | | **≈ 0.0118 mm²** |
 | **Ratified target** | | **0.05 mm²** |
-| **Fraction of target consumed by this floor alone** | | **≈ 21 %** |
+| **Fraction of target consumed by this floor alone** | | **≈ 23.7 %** |
+
+Delta from this issue's own resize: M3/M4 body area 320 → 1742.4 µm²
+(+1422.4 µm² against the #16-era 320 µm² baseline in this table — see
+`design/bandgap_error_budget.md` §5d for the delta against the more relevant
+pre-#151/post-#147 baseline of 640 µm², which is +1102.4 µm²).
+
+**Cross-check against `layout/bandgap_top/area_report.py` (issue #151)** — a
+tool that already exists and computes drawn device body area live from
+`design/netlist/bandgap_top.spice` (not a hand tally): run before and after
+this issue's resize, it reports the amp group's body area moving
+10,140.00 → 11,242.40 µm² (**+1,102.40 µm²**), independently confirming the
+`design/bandgap_error_budget.md` §5d delta above to the last decimal place.
+
+**Named risk found while doing this cross-check — filed as
+[#156](https://github.com/2AMLogic/gf180-bandgap/issues/156), not fixed here
+(out of this issue's scope):** the tool's *other* number — `drawn GDS area`
+read back from the checked-in `layout/bandgap_top/bandgap_top.gds` —
+reports only **2.4 % headroom** against the ratified 0.05 mm² target, but
+that GDS file's last commit predates #55/#61/#96/#147/#151 (git history:
+`ba091ea`, before any of those device resizes landed), so the 2.4 % figure
+is stale. **Regenerating the GDS from the current netlist (exploratory
+only — not committed by this issue) finds the real area budget already
+broken before #151's own change**: `origin/main`'s post-#147 netlist
+regenerates to **58.5 % over** the ratified target (79,258.92 µm² vs.
+50,000 µm²), and this issue's resize moves that to **61.6 % over**
+(80,813.72 µm²) — a further ~3 percentage points on an already-broken
+budget, not the cause of it. §11.1 already names "GDS-verified area
+re-check" as owned by a future layout-implementation issue; #156 makes that
+concrete rather than leaving it an abstract future step.
 
 **Reading this table**: the drawn-body-area floor is comfortably under
 the ratified 0.05 mm² ceiling — even a generous 4× overhead multiplier
@@ -592,6 +638,23 @@ DRC/LVS bring-up), that issue should re-run the §8 comparison against
 actual GDS area rather than this estimate, and treat this document's
 "≈21 % of target, ≥4× headroom" figure as a floorplan-stage sanity check
 only, not a final answer.
+
+**Update (issue #151): this is not a "once real layout exists" future
+step — real (drawn) layout and a live comparison tool already exist
+(`layout/bandgap_top/generate.py`, `layout/bandgap_top/area_report.py`), and
+both predate several device resizes.** §8's cross-check note above found the
+committed `layout/bandgap_top/bandgap_top.gds` reports the GDS area check at
+only 2.4 % headroom against the ratified target, but that GDS was last
+regenerated before #55/#61/#96/#147/#151, and a re-run against the current
+netlist finds the real area budget already **58.5–61.6 % over** target, not
+under it — filed as
+[#156](https://github.com/2AMLogic/gf180-bandgap/issues/156) rather than
+left implicit. Re-running `generate.py` and the DRC/LVS flow against the
+current netlist, committing the regenerated `bandgap_top.gds` as the new
+baseline, and then either closing the real area gap or escalating the area
+row through a `spec/` decision record is #156's concrete scope — it is
+overdue, not merely future work, and is left to that follow-up rather than
+done by this (circuit-sizing) issue.
 
 ### 11.2 Amp systematic-offset placeholder (owner: post-layout extraction, tracked by #10's own escalation)
 

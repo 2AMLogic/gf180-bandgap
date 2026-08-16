@@ -64,7 +64,8 @@ v {xschem version=3.4.7 file_version=1.2
 *
 * ------------------ INPUT-PAIR CONSTANT-W/L AREA SCALE-UP (issue #147)
 * M1/M2  200u/4u -> 300u/6u  (nf 8 -> 12, 25 um/finger held; 800 -> 1800 um^2)
-* M3/M4  20u/16u -- UNCHANGED, deliberately; see the stability note below.
+* M3/M4  20u/16u -> 33u/26.4u -- see issue #151 below; #147 itself left this
+*        pair unchanged.
 *
 * M1/M2 keep their W/L EXACTLY (50): at the same shared Vgs,
 * Id = 1/2 * k * (W/L) * Vov^2, so Vov -- and therefore gm, every saturation
@@ -84,36 +85,59 @@ v {xschem version=3.4.7 file_version=1.2
 * mismatch half is the only term that can give, and the amplifier's own
 * random offset was 74% of its variance.
 *
-* WHY THE MIRROR LOAD WAS NOT SCALED WITH IT -- a deliberately conservative
-* choice, NOT a stability wall at this size. An earlier draft of this
-* comment asserted, as "measured", that M3/M4 collapses to ~4 deg of phase
-* margin at only 1.27x area and that the input pair fails at 350u/7u.
-* THOSE FIGURES DID NOT REPRODUCE and have been struck. Re-measured on
-* sim/amp-loop-stability/ (81 PVT corners each, --no-write --dut override,
-* M3/M4 at constant W/L = 1.25 and nf=2, everything else at the sizing
-* adopted here); the same harness reproduces the committed baseline record
-* 20260816-145936-1ca1c95 exactly, so these are apples-to-apples:
-*   M3/M4 20u/16u   (1.00x, adopted): pm_deg worst 160.93, gm_crit  -999  PASS
-*   M3/M4 22.5u/18u (1.27x area)    : pm_deg worst 154.48, gm_crit  -999  PASS
-*   M3/M4 30u/24u   (2.25x area)    : pm_deg worst 126.99, gm_crit  -999  PASS
-*   M3/M4 35u/28u   (3.06x area)    : pm_deg worst  38.65, gm_crit  -999  FAIL
-*   M3/M4 40u/32u   (4.00x area)    : pm_deg worst   1.95, gm_crit -12.85  FAIL
+* #147 LEFT THE MIRROR LOAD UNCHANGED -- a deliberately conservative choice,
+* NOT a stability wall at that size. An earlier draft of #147's own comment
+* asserted, as "measured", that M3/M4 collapses to ~4 deg of phase margin at
+* only 1.27x area and that the input pair fails at 350u/7u. THOSE FIGURES
+* DID NOT REPRODUCE and were struck. Re-measured on sim/amp-loop-stability/
+* (81 PVT corners each, --no-write --dut override, M3/M4 at constant
+* W/L = 1.25 and nf=2, everything else at #147's adopted sizing); the same
+* harness reproduces the committed baseline record 20260816-145936-1ca1c95
+* exactly, so these are apples-to-apples:
+*   M3/M4 20u/16u   (1.00x, #147's choice): pm_deg worst 160.93, gm_crit  -999  PASS
+*   M3/M4 22.5u/18u (1.27x area)          : pm_deg worst 154.48, gm_crit  -999  PASS
+*   M3/M4 30u/24u   (2.25x area)          : pm_deg worst 126.99, gm_crit  -999  PASS
+*   M3/M4 35u/28u   (3.06x area)          : pm_deg worst  38.65, gm_crit  -999  FAIL
+*   M3/M4 40u/32u   (4.00x area)          : pm_deg worst   1.95, gm_crit -12.85  FAIL
 * The direction is real -- `nd1` does carry the mirror pole gm3/(Cgs3+Cgs4),
 * and enough area there does break both criteria -- but the wall sits
 * between 2.25x and 3.06x area, not at 1.27x. The input pair is not bounded
-* near its adopted size either: 350u/7u reads 158.31 deg and 400u/8u reads
+* near #147's adopted size either: 350u/7u reads 158.31 deg and 400u/8u reads
 * 157.19 deg, both PASS, as does 350u/7u together with M3/M4 30u/24u
 * (127.94 deg). Compensation is genuinely not the lever (this part does
 * reproduce): CC scanned 60u/80u/100u/120u/150u square moves pm_deg by less
 * than 0.001 deg, because the criterion is evaluated at the |T| notch, not
-* at a CC-set crossover.
-* So M3/M4 is left unchanged here because this issue's target -- the
-* combined untrimmed-accuracy verdict -- is already met by the input pair
-* alone, and spending the remaining mirror-load headroom would mean
-* re-running the mismatch MC and the combined verdict; that is follow-up
-* work, not part of this change. The headroom is real and unclaimed --
-* tracked as issue #151.
-* See design/bandgap_error_budget.md Sec 5c.
+* at a CC-set crossover. #147 left M3/M4 unchanged because the input-pair
+* step alone already carried its target (the combined verdict); the
+* remaining headroom was tracked, unspent, as issue #151.
+*
+* MIRROR LOAD RESIZED (issue #151): #147's own combined-verdict pass was
+* thin (+0.836 mV worst margin, sim/suite/combined.py at PR #147's head),
+* and the >=2.25x area headroom above was real and unclaimed. Bracketed
+* tighter than #147's table, same bench/method (81 PVT corners each,
+* --no-write --dut override, M3/M4 at constant W/L=1.25/nf=2, M1/M2 held at
+* #147's 300u/6u):
+*   M3/M4 30u/24u    (2.25x): pm_deg worst 126.99, gm_crit -999  PASS
+*   M3/M4 32u/25.6u  (2.56x): pm_deg worst 109.87, gm_crit -999  PASS
+*   M3/M4 33u/26.4u  (2.72x, ADOPTED): pm_deg worst 105.03, gm_crit -999  PASS
+*   M3/M4 34u/27.2u  (2.89x): pm_deg worst  73.20, gm_crit -999  PASS (steep knee starts)
+*   M3/M4 34.5u/27.6u(2.98x): pm_deg worst  61.58, gm_crit -999  PASS (thin)
+*   M3/M4 35u/28u    (3.06x): pm_deg worst  38.65, gm_crit -999  FAIL
+* The cliff is steep between ~2.9x and 3.06x (pm_deg 73 -> 61.6 -> 38.65 FAIL
+* across a 0.17x area span), so 33u/26.4u (2.72x) is adopted rather than a
+* point nearer the wall: it clears the >=45 deg criterion by more than 2x
+* (105.03 deg, i.e. 60 deg of margin) while still claiming materially more
+* than the >=2.25x floor #147 quoted. The input pair (M1/M2) was checked and
+* left at #147's 300u/6u -- growing it further is real, measured headroom
+* too (per #147's own table) but is not this issue's named target and was
+* left for a future pass rather than spent here.
+* Measured effect on the mismatch budget (design/bandgap_error_budget.md
+* Sec 2.2): sigma_M3M4_referred 0.1123 -> 0.0681 mV, sigma_Vos_random
+* 0.1985 -> 0.1773 mV, amplifier line at Vref 9.60 -> 8.58 mV (3 sigma).
+* Combined untrimmed-accuracy verdict worst margin: +0.836 mV -> +2.194 mV
+* (sim/suite/combined.py; still bjt_ff_125c_3.63v). See
+* design/bandgap_error_budget.md Sec 5d for the full derivation and the
+* re-run evidence.
 *
 * --------------------------------------------------- why the explicit cap
 * Cascoding buys ~50 dB of extra DC loop gain, which #10's compensation
@@ -157,7 +181,7 @@ K {}
 V {}
 S {}
 E {}
-C {symbols/pfet_03v3.sym} 0 -400 0 0 {name=M3 model=pfet_03v3 W=20u L=16u nf=2 m=1}
+C {symbols/pfet_03v3.sym} 0 -400 0 0 {name=M3 model=pfet_03v3 W=33u L=26.4u nf=2 m=1}
 N 20 -430 20 -450 {}
 C {lab_pin.sym} 20 -450 0 0 {name=l1 lab=vdd}
 N -20 -400 -40 -400 {}
@@ -166,7 +190,7 @@ N 20 -370 20 -350 {}
 C {lab_pin.sym} 20 -350 0 0 {name=l3 lab=a3}
 N 20 -400 40 -400 {}
 C {lab_pin.sym} 40 -400 0 0 {name=l4 lab=vdd}
-C {symbols/pfet_03v3.sym} 250 -400 0 0 {name=M4 model=pfet_03v3 W=20u L=16u nf=2 m=1}
+C {symbols/pfet_03v3.sym} 250 -400 0 0 {name=M4 model=pfet_03v3 W=33u L=26.4u nf=2 m=1}
 N 270 -430 270 -450 {}
 C {lab_pin.sym} 270 -450 0 0 {name=l5 lab=vdd}
 N 230 -400 210 -400 {}
