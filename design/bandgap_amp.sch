@@ -62,6 +62,59 @@ v {xschem version=3.4.7 file_version=1.2
 * correcting nf here is what makes the simulated junction capacitance
 * match the drawn geometry -- see sim/ records re-run under #65.
 *
+* ------------------ INPUT-PAIR CONSTANT-W/L AREA SCALE-UP (issue #147)
+* M1/M2  200u/4u -> 300u/6u  (nf 8 -> 12, 25 um/finger held; 800 -> 1800 um^2)
+* M3/M4  20u/16u -- UNCHANGED, deliberately; see the stability note below.
+*
+* M1/M2 keep their W/L EXACTLY (50): at the same shared Vgs,
+* Id = 1/2 * k * (W/L) * Vov^2, so Vov -- and therefore gm, every saturation
+* margin, the DC loop gain and the PSRR -- are unchanged BY CONSTRUCTION,
+* not by luck. This is the same invariance argument #55 used to resize
+* bandgap_core's mirror. Only the gate AREA moves, and with it the Pelgrom
+* local-mismatch sigma: sigma(dVgs) = A_pair*sqrt(2)/sqrt(W*L) improves 1.5x
+* (0.2455 -> 0.1637 mV), so sigma(Vos) 0.270 -> 0.198 mV and the amplifier's
+* line in the untrimmed error budget 13.06 -> 9.60 mV (3 sigma, at vref).
+*
+* Why: the combined untrimmed-accuracy verdict (mismatch MC grafted onto
+* the process corners, sim/suite/combined.py) failed 42/81 corners even
+* though every individual bench passed -- the deterministic corner spread
+* (20.4 mV) plus the grafted 3-sigma mismatch spread (2 x 16.13 mV) is
+* 52.7 mV against a 48 mV ratified window. The corner spread is BJT/resistor
+* process skew on VEB(Q3) and is not reducible at this topology, so the
+* mismatch half is the only term that can give, and the amplifier's own
+* random offset was 74% of its variance.
+*
+* WHY THE MIRROR LOAD WAS NOT SCALED WITH IT -- a deliberately conservative
+* choice, NOT a stability wall at this size. An earlier draft of this
+* comment asserted, as "measured", that M3/M4 collapses to ~4 deg of phase
+* margin at only 1.27x area and that the input pair fails at 350u/7u.
+* THOSE FIGURES DID NOT REPRODUCE and have been struck. Re-measured on
+* sim/amp-loop-stability/ (81 PVT corners each, --no-write --dut override,
+* M3/M4 at constant W/L = 1.25 and nf=2, everything else at the sizing
+* adopted here); the same harness reproduces the committed baseline record
+* 20260816-145936-1ca1c95 exactly, so these are apples-to-apples:
+*   M3/M4 20u/16u   (1.00x, adopted): pm_deg worst 160.93, gm_crit  -999  PASS
+*   M3/M4 22.5u/18u (1.27x area)    : pm_deg worst 154.48, gm_crit  -999  PASS
+*   M3/M4 30u/24u   (2.25x area)    : pm_deg worst 126.99, gm_crit  -999  PASS
+*   M3/M4 35u/28u   (3.06x area)    : pm_deg worst  38.65, gm_crit  -999  FAIL
+*   M3/M4 40u/32u   (4.00x area)    : pm_deg worst   1.95, gm_crit -12.85  FAIL
+* The direction is real -- `nd1` does carry the mirror pole gm3/(Cgs3+Cgs4),
+* and enough area there does break both criteria -- but the wall sits
+* between 2.25x and 3.06x area, not at 1.27x. The input pair is not bounded
+* near its adopted size either: 350u/7u reads 158.31 deg and 400u/8u reads
+* 157.19 deg, both PASS, as does 350u/7u together with M3/M4 30u/24u
+* (127.94 deg). Compensation is genuinely not the lever (this part does
+* reproduce): CC scanned 60u/80u/100u/120u/150u square moves pm_deg by less
+* than 0.001 deg, because the criterion is evaluated at the |T| notch, not
+* at a CC-set crossover.
+* So M3/M4 is left unchanged here because this issue's target -- the
+* combined untrimmed-accuracy verdict -- is already met by the input pair
+* alone, and spending the remaining mirror-load headroom would mean
+* re-running the mismatch MC and the combined verdict; that is follow-up
+* work, not part of this change. The headroom is real and unclaimed --
+* tracked as issue #151.
+* See design/bandgap_error_budget.md Sec 5c.
+*
 * --------------------------------------------------- why the explicit cap
 * Cascoding buys ~50 dB of extra DC loop gain, which #10's compensation
 * (none -- the loop was held together by a parasitic Cgd feedthrough zero)
@@ -158,7 +211,7 @@ N 270 -70 270 -50 {}
 C {lab_pin.sym} 270 -50 0 0 {name=l23 lab=n2}
 N 270 -100 290 -100 {}
 C {lab_pin.sym} 290 -100 0 0 {name=l24 lab=vss}
-C {symbols/nfet_03v3.sym} 0 50 0 0 {name=M1 model=nfet_03v3 W=200u L=4u nf=8 m=1}
+C {symbols/nfet_03v3.sym} 0 50 0 0 {name=M1 model=nfet_03v3 W=300u L=6u nf=12 m=1}
 N 20 20 20 0 {}
 C {lab_pin.sym} 20 0 0 0 {name=l25 lab=n1}
 N -20 50 -40 50 {}
@@ -167,7 +220,7 @@ N 20 80 20 100 {}
 C {lab_pin.sym} 20 100 0 0 {name=l27 lab=tail}
 N 20 50 40 50 {}
 C {lab_pin.sym} 40 50 0 0 {name=l28 lab=vss}
-C {symbols/nfet_03v3.sym} 250 50 0 0 {name=M2 model=nfet_03v3 W=200u L=4u nf=8 m=1}
+C {symbols/nfet_03v3.sym} 250 50 0 0 {name=M2 model=nfet_03v3 W=300u L=6u nf=12 m=1}
 N 270 20 270 0 {}
 C {lab_pin.sym} 270 0 0 0 {name=l29 lab=n2}
 N 230 50 210 50 {}

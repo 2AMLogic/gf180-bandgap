@@ -1,4 +1,4 @@
-# Offset/mismatch budget: error amplifier and core mirror (issues #10, #42, #55, #61, #96)
+# Offset/mismatch budget: error amplifier and core mirror (issues #10, #42, #55, #61, #96, #147)
 
 This document allocates the ratified untrimmed output-accuracy target
 (`README.md` "Target specification": **1.20 V ±2 % untrimmed, 3σ, mismatch
@@ -46,6 +46,31 @@ core-mirror line included at the sizing each of them shipped (both left it at
 40 µm²). Read that way, the earlier revisions of this document were not
 "closing" — they were omitting a term, which Section 2.8's Monte Carlo
 cross-check said so at the time and now says quantitatively.
+
+**#147 closes the last one that did not: the *combined* untrimmed-accuracy
+verdict.** Every per-bench row passed as of #96, but the ratified
+Output-reference row is judged on both legs together (mismatch MC grafted
+onto the process corners, `sim/suite/combined.py`), and that verdict read
+**FAIL, 42 of 81 corners**. It is an error-budget problem, not a single bad
+leg: 20.43 mV of deterministic corner spread plus 2 × 16.13 mV of grafted
+mismatch is 52.7 mV against a 48 mV window, with all of the overflow on the
+low edge because #96's TC-null leaves `Vref` centred 7.5 mV low.
+**Section 5c** derives the two-lever fix (constant-`W/L` area on the
+amplifier's input pair and the core mirror, plus an `R1` re-centring paid for
+out of temperature-coefficient margin), the re-measured stability wall that
+ultimately bounds how much area the amplifier may take (further out than an
+earlier revision claimed — see that section's correction note), and the
+measured result: **PASS, 81/81, worst margin +0.84 mV**.
+
+| Line | post-#61/#96 | **#147** | Ratified target |
+|---|---|---|---|
+| Combined untrimmed-accuracy verdict | FAIL, 42/81 corners | **PASS, 81/81** | every corner inside 1.176–1.224 V |
+| Untrimmed accuracy, measured 3σ (`mm_all`, −40/27/125 °C) | 15.56 / 15.70 / 16.13 mV | **11.85 / 12.03 / 12.54 mV** | ≤ 24.0 mV |
+| Untrimmed accuracy, allocated RSS (random) | 16.26 mV | **12.19 mV** | ≤ 24.0 mV |
+| Temperature coefficient, worst of 81 | 29.84 ppm/°C | **46.41 ppm/°C** (margin deliberately spent, Section 5c) | ≤ 50 ppm/°C |
+| Loop phase margin / Nyquist margin | 97.3° / no crossing | **160.9° / no crossing** | ≥45° / <0 dB |
+| PSRR, worst of 81 | 74.22 dB | **77.61 dB** | > 60 dB |
+| Quiescent current, `ff`/125 °C/3.63 V | 34.01 µA | **34.02 µA** | < 50 µA |
 
 **Every ratified row this document is responsible for now passes.** Quiescent
 current failed before #42, #42 made it ~3 µA worse, #55's core resize took the
@@ -272,6 +297,33 @@ sigma_Vos_random = sqrt(0.2455^2 + 0.1123^2) = 0.2700 mV
 3-sigma_Vos_random = 0.8099 mV      (#10: 1.559 mV)
 ```
 
+**Update (#147) — input pair 800 µm² → 1800 µm², mirror load unchanged.**
+`M1`/`M2` go `200 µm/4 µm` → `300 µm/6 µm` (`nf` 8 → 12, 25 µm/finger held),
+i.e. `W/L = 50` exactly preserved, so `Vov`, `gm`, `gm3/gm1` and every
+saturation margin are unchanged by construction and only the Pelgrom area
+term moves:
+
+```
+sigma_M1M2 = 4.91 * sqrt(2) / sqrt(1800) = 0.1637 mV   (was 0.2455 mV)
+sigma_M3M4_referred                       = 0.1123 mV   (unchanged)
+sigma_Vos_random = sqrt(0.1637^2 + 0.1123^2) = 0.1985 mV
+3-sigma_Vos_random = 0.5955 mV
+=> amplifier line at Vref = 0.5955 * 16.13 = 9.60 mV   (was 13.06 mV)
+```
+
+`M3`/`M4` were **left at 20 µm/16 µm** — a conservative choice, not a
+stability limit at that size. Their gate node `nd1` does carry the mirror
+pole `gm3/(Cgs3+Cgs4)`, so area there is ultimately bought out of the servo
+loop's stability margin, but Section 5c's re-measured sweep puts that wall
+**between 2.25× and 3.06× the mirror-load area** (1.27× reads 154.48° and
+2.25× reads 126.99°, both comfortably passing the ≥45° criterion), and finds
+no bound on the input pair anywhere near `300 µm/6 µm`. An earlier revision
+of this section claimed a collapse from 83.7° to 4.2° at 1.27×; those figures
+did not reproduce and are struck — see the correction note in Section 5c.
+`M3`/`M4` is left unchanged here because the input-pair step alone already
+carries the combined verdict, so the remaining headroom is real, measured,
+and simply not spent by this issue.
+
 **Not credited: an `nf`-driven matching bonus.** The gf180mcu
 `nfet_03v3`/`pfet_03v3` local-mismatch variance is scaled by a `par`
 argument that is independent of `nf` (always 1 regardless of finger count).
@@ -490,8 +542,40 @@ sizing it tracked to 3 %.
 |---|---|---|---|---|
 | W=20 µm, L=2 µm (#8's, provisional) | 40 µm² | 0.794 mV | 19.07 mV | **20.89 mV** |
 | W=40 µm, L=4 µm | 160 µm² | 0.397 mV | 9.53 mV | 10.44 mV |
-| **W=60 µm, L=6 µm (#55, adopted)** | **360 µm²** | **0.265 mV** | **6.36 mV** | **6.96 mV** |
-| W=85 µm, L=8.5 µm | 722 µm² | 0.187 mV | 4.49 mV | 4.92 mV |
+| W=60 µm, L=6 µm (#55) | 360 µm² | 0.265 mV | 6.36 mV | 6.96 mV |
+| **W=85 µm, L=8.5 µm (#147, adopted)** | **722.5 µm²** | **0.187 mV** | **4.49 mV** | **4.92 mV** |
+
+> **The two right-hand columns are stated at #55's `8.007` coefficient and
+> are stale as of #61 — see the correction immediately below.** The
+> geometry column is not: `σ(δ)` is a pure Pelgrom-area quantity.
+
+**Coefficient correction (#147): `8.007` is a pre-#61 number.** The RSS
+coefficient above was measured at #55's design current. #61 then halved that
+current (`R1`/`R2` co-scale, `k = 2`), and `g ≡ gm/I` at the mirror devices'
+fixed `W/L` rises as the current falls — the same `gm/Id` effect #61's own
+Section 5a flagged and did not re-derive. Re-measured on
+`sim/core-mirror-sensitivity/` against the **current** design current, at
+both the pre- and post-#147 mirror geometry (81 points each):
+
+| coefficient | #55-era (`8.007` basis) | post-#61, 360 µm² (`origin/main`) | post-#61, **722.5 µm² (#147)** |
+|---|---|---|---|
+| `∂Vref/∂δ1` (`M1`, servoed) | −2.875 | −3.885 | **−3.870** |
+| `∂Vref/∂δ2` (`M2`, servoed) | +6.522 | +8.843 | **+8.808** |
+| `∂Vref/∂δ3` (`M3`, output leg) | −3.647 | −4.958 | **−4.939** |
+| `∂Vref/∂δ4` (`M4`, bias leg) | −7.6e−5 | −2.1e−4 | **−1.4e−4** |
+| **RSS** | **8.007** | **10.857** | **10.816** |
+
+Two things this settles. First, the coefficient is a property of the
+*current*, not of the geometry: it is unchanged (0.4 %) across a 2× area
+step, which is exactly what the constant-`W/L` resize is supposed to
+guarantee and is measured here rather than asserted. Second, the correct
+core-mirror line at #61's current is **8.62 mV** at 360 µm²
+(`5.02/√360 × 10.857`, 3σ), not 6.36 mV — and **6.06 mV** at #147's
+722.5 µm². The 2.56 mV that resize buys is what makes Section 5c's budget
+close; #55's own stopping rule ("stop where the mirror is no longer the
+largest term") was evaluated against an amplifier line that #147 has since
+halved, which is precisely the condition under which the next notch becomes
+worth buying.
 
 **The 19.07 mV row is why this section exists.** Section 2.8's #42 run
 subtracted the amplifier budget out of the measured Monte Carlo in
@@ -604,6 +688,14 @@ Three things this table settles that were previously open:
 
 ### 2.7 Budget table (RSS, untrimmed, 3σ)
 
+> **Read the `#55` column with Section 2.6a's coefficient correction in
+> hand.** It is stated at the `8.007` core-mirror coefficient, which #61's
+> current halving invalidated; at #61's own current the same 360 µm² mirror
+> is **8.62 mV**, not 6.36 mV, and the RSS is **16.26 mV**, not 15.19 mV —
+> which is the number that agrees with the Monte Carlo actually measured
+> after #61 (15.56/15.70/16.13 mV, Section 2.8). The `#147` column below is
+> stated at the re-measured coefficient throughout.
+
 | Line | 3σ contribution to Vref (#10) | 3σ contribution to Vref (#42) | 3σ contribution to Vref (**#55**) | Source |
 |---|---|---|---|---|
 | Amplifier offset, random (M1/M2 + M3/M4-referred) | 25.06 mV | **13.06 mV** | 13.06 mV | Sections 2.2, 2.4 — analytic scaling of record `20260731-031718-8fb0ea6`, sensitivity from record `20260801-073817-a7fd16a` |
@@ -616,6 +708,28 @@ Three things this table settles that were previously open:
 | **Total (RSS random + systematic reserve)** | 33.80 mV | 25.53 mV | **17.19 mV** | |
 | **Ratified untrimmed target (3σ)** | 24.0 mV (±2 % of 1.20 V) | 24.0 mV | 24.0 mV | `README.md`, DR-0003 |
 | **Margin** | −41 % (over) | −6 % (over) | **+40 % (72 % of budget used)** | |
+
+### 2.7a Budget table after #147 (re-measured coefficients)
+
+| Line | post-#61, pre-#147 | **#147** | Source |
+|---|---|---|---|
+| Amplifier offset, random | 13.06 mV | **9.60 mV** | Section 2.2 — input pair 800 → 1800 µm² at constant `W/L` |
+| Core mirror, random (`M1`–`M4`) | 8.62 mV | **6.06 mV** | Section 2.6a — 360 → 722.5 µm² at constant `W/L`, coefficient re-measured (10.86 → 10.82, i.e. unchanged) |
+| Core cascode, random (`MC1`–`MC4`) | < 0.06 mV | **< 0.02 mV** | Section 2.6a — `∂Vref/∂δ(MC3)` re-measured at −0.0475 V/V worst corner |
+| Resistor mismatch (R1, R2, trim ladder) | 3.92 mV | 3.92 mV | Section 2.5 — **assumed** coefficient, unchanged (no resistor geometry moved) |
+| PNP mismatch (Q1/Q2 pair) | 2.06 mV | 2.06 mV | Section 2.6 — unchanged |
+| **RSS of random terms** | **16.26 mV** | **12.19 mV** | |
+| Amplifier offset, systematic (reserve) | +2.00 mV | +2.00 mV | Section 2.3 — unchanged placeholder pending #16 |
+| **Total** | **18.26 mV** | **14.19 mV** | |
+| **Measured** (`mm_all` 3σ, −40/27/125 °C) | 15.56 / 15.70 / 16.13 mV | **11.85 / 12.03 / 12.54 mV** | `sim/mc-untrimmed/` records [`20260807-204001-1c8f58d`](../sim/mc-untrimmed/records/20260807-204001-1c8f58d.md) → [`20260816-142716-1ca1c95`](../sim/mc-untrimmed/records/20260816-142716-1ca1c95.md) |
+| **Ratified untrimmed target (3σ)** | 24.0 mV | 24.0 mV | `README.md`, DR-0003 |
+
+The allocation's random RSS (12.19 mV) lands 2.9 % under the measured
+all-on 3σ at 125 °C (12.54 mV) and 2.8 % over it at −40 °C — the same
+few-percent agreement the #55 row achieved, across another 1.29× change in
+the quantity being predicted. **No line above was loosened**: the two that
+moved are the two whose devices moved, the resistor and PNP lines are
+numerically unchanged, and the systematic reserve is untouched.
 
 **This allocation closes, and unlike the previous two revisions of this
 table it is complete.** The #10 and #42 columns are those issues' own
@@ -976,6 +1090,14 @@ mismatch-MC **mean** (as distinct from the corner leg) remains the one item
 still open, unchanged by #96 and out of its scope (Section 5b's own closing
 note).
 
+**Update (#147).** The untrimmed *mean* — the one item the paragraph below
+leaves open, and the paragraph below is left as written for history — is now
+closed too, together with the combined verdict it was blocking. **Section 5c**
+is that work; read it in place of the "not this document's" framing here,
+which #147 supersedes: re-centring the mean turned out to be exactly this
+document's problem, because it can only be paid for out of another ratified
+row's margin.
+
 **Untrimmed accuracy: the mismatch *spread* closes; the untrimmed *mean*
 does not, and is not this document's.** Section 2.7's allocation now covers
 every device group in the block and closes at 17.19 mV against 24.0 mV, and
@@ -1273,6 +1395,234 @@ Section 5's affine argument shows `R1` cannot move), and none is in this
 issue's required regression list. Their embedded `R1` remaining stale is a
 pre-existing gap in those testbenches' maintenance, not one this issue
 introduces or was scoped to close.
+
+### 5c. #147: the combined untrimmed-accuracy verdict, and what it takes to close it
+
+**What was still open.** Sections 5a/5b closed every *per-bench* row. The
+ratified Output-reference row is not a per-bench row: DR-0003 states it as
+"1.20 V ±2 % untrimmed (3σ, **mismatch MC N≥300 + process corners**)", and
+#97's `sim/suite/combined.py` is what evaluates the two legs together —
+grafting `sim/mc-untrimmed/`'s measured mismatch distribution onto each of
+`sim/output-voltage-tc/`'s 81 deterministic corners and requiring the whole
+3σ interval to fit inside 1.176–1.224 V at every one. Against the
+post-#96 design that verdict read **FAIL, 42 of 81 corners**
+(`sim/suite/summaries/20260815-020700-40321ca.md`), with every individual
+spec-line bench passing 6/6.
+
+**Why both legs can pass and their sum still fail — the arithmetic.**
+
+```
+deterministic corner spread   1.20185 - 1.18142  = 20.43 mV
+grafted mismatch spread       2 x 16.13          = 32.26 mV
+                                                 ----------
+total                                              52.69 mV
+ratified window               1.224 - 1.176      = 48.00 mV
+                                                   -------
+                                                    -4.69 mV
+```
+
+and **all** of the overflow is on the low edge, because #96 put `R1` at the
+TC-null, and at the TC-null this PNP's extrapolated bandgap puts `Vref` at
+**1.1925 V** — 7.5 mV below the ratified window's 1.200 V centre. So the row
+needs *both* of:
+
+1. **less mismatch spread** — at least `(48 − 20.43)/2 = 13.79 mV` of 3σ is
+   the ceiling before *any* centring can work, against 16.13 mV measured; and
+2. **a re-centring**, which only `R1` can provide, and which is inherently
+   PTAT-shaped (Section 5b: `Vref(T)` is affine in `R1`, and everything `R1`
+   adds is `I(T)·ΔR1` — a PTAT term), so it is bought out of the temperature-
+   coefficient row's margin.
+
+The deterministic 20.43 mV is not a lever: it is `bjt_ss`/`bjt_ff` and
+`res_ss`/`res_ff` process skew acting on `VEB(Q3)` with a gain of 1 (the
+`ΔVBE` ratio, and hence the PTAT term, is skew-invariant by construction),
+so no in-scope sizing moves it. That leaves mismatch area and `R1`.
+
+**Lever 1: area, and where the stability wall actually is.** The mismatch RSS
+is Section 2.7a's: the amplifier's own random offset was the largest term
+(13.06 of 16.26 mV), the core mirror second (8.62 mV). Both are pure
+Pelgrom-area terms at constant `W/L`.
+
+> **Correction (PR #150 review).** An earlier revision of this section
+> presented a sizing table asserting that `pm_deg` collapses to 4.2° at
+> 1.27× mirror-load area, 3.6° at 2.25×, and that the input pair fails at
+> `350 µm/7 µm` (21.3°). **None of those figures reproduce**, and they are
+> struck rather than restated. They were quoted from `--no-write`
+> exploration runs that were never committed as evidence — exactly the
+> failure mode CLAUDE.md's "no claim without a testbench" exists to
+> prevent. The table below replaces them with a fresh sweep.
+
+The wall is real but sits roughly 2.5× further out in area than the struck
+numbers claimed. Re-measured on `sim/amp-loop-stability/` (81 PVT points per
+row, `--no-write` with a `--dut` override, `M3/M4` stepped at constant
+`W/L = 1.25` and `nf = 2`, everything else at the sizing adopted below).
+Methodology was validated first by re-running the *unmodified* DUT on the
+same harness, which reproduces committed record
+[`20260816-145936-1ca1c95`](../sim/amp-loop-stability/records/20260816-145936-1ca1c95.md)
+exactly (`pm_deg` 160.93–172.44°, `gm_crit_db` −999), so every row below is
+apples-to-apples against it:
+
+| `M3/M4` sizing (M1/M2 at the adopted 300/6) | area | `pm_deg` worst of 81 | `gm_crit_db` worst | verdict |
+|---|---|---|---|---|
+| **20/16 (adopted, unchanged)** | **320 µm² (1.00×)** | **160.93°** | **−999 (no crossing)** | **PASS** |
+| 22.5/18 | 405 µm² (1.27×) | 154.48° | −999 | PASS |
+| 30/24 | 720 µm² (2.25×) | 126.99° | −999 | PASS |
+| 35/28 | 980 µm² (3.06×) | 38.65° | −999 | **FAIL** |
+| 40/32 | 1280 µm² (4.00×) | 1.95° | −12.85 dB | **FAIL** |
+| 50/40 | 2000 µm² (6.25×) | 18.92° | −2.79 dB | **FAIL** |
+| 60/48 | 2880 µm² (9.00×) | 43.11° | +2.50 dB | **FAIL** |
+
+The mirror load is still the sensitive axis — its gate node `nd1` carries the
+mirror pole `gm3/(Cgs3+Cgs4)`, and enough area there does break both criteria
+— but the boundary lies **between 2.25× and 3.06× area**, not at 1.27×.
+
+The input pair is **not** bounded anywhere near its adopted size, contrary to
+the struck claim:
+
+| `M1/M2` sizing (M3/M4 at 20/16) | `pm_deg` worst of 81 | `gm_crit_db` worst | verdict |
+|---|---|---|---|
+| 200/4 (`origin/main`, committed record [`20260802-034232-5066d85`](../sim/amp-loop-stability/records/20260802-034232-5066d85.md)) | 97.35° | −999 | PASS |
+| **300/6 (adopted)** | **160.93°** | **−999** | **PASS** |
+| 350/7 | 158.31° | −999 | PASS |
+| 400/8 | 157.19° | −999 | PASS |
+
+and `350/7` *together with* `M3/M4 30/24` also passes, at 127.94°.
+
+**It is not a compensation problem** — this part of the original section does
+reproduce: `CC` scanned at 60/80/100/120/150 µm square moves `pm_deg` by less
+than 0.001° (all five runs read 160.93–172.44° to five significant figures),
+because criterion #1 is evaluated at the `|T|` notch rather than at a
+`CC`-set crossover.
+
+**What this means for the sizing adopted here.** `M3/M4` is left at 20/16 and
+the input pair stops at `300 µm/6 µm` **not** because the next step fails,
+but because the input-pair step alone already carries the combined untrimmed
+verdict to 81/81 (below), and spending the remaining mirror-load headroom
+would require re-running the mismatch MC and the whole combined verdict.
+That is deliberately out of scope for this change, so the sizing here is
+conservative rather than maximal — there is measured, unclaimed
+mismatch-reduction headroom on `M3/M4` of at least 2.25× area (a further
+≈1.5× reduction in its Pelgrom σ), and the honest statement is that this
+issue did not spend it. Tracked as issue #151 rather than left implicit —
+worth having, since the combined verdict below passes at only +0.836 mV
+worst margin.
+
+The core mirror has the opposite property: its gates sit on `fb`, which *is*
+the amplifier's output node, so area there moves the dominant pole down and
+is stabilising — measured, with the final sizing in place: `pm_deg`
+**160.9–172.4°** (from 97.3–179.8° on `origin/main`) and `gm_crit_db` at the
+−999 sentinel at all 81 corners.
+
+**Lever 2: `R1`, and the TC it costs.** `Vref` is affine in `R1` at every
+temperature (Section 5b), so the trade is measurable exactly. Measured on
+`sim/output-voltage-tc/`'s own 9-corner/1-supply subset:
+
+| `R1` length | `Vref(tt, 27 °C)` | window low edge (`bjt_ff`/125 °C) | window high edge (`bjt_ss`/125 °C) | worst `tc_ppm` |
+|---|---|---|---|---|
+| 436.705296 µm (#96, TC-null) | 1.19249 V | 1.18142 V | 1.20185 V | 29.79 |
+| 442.0 µm | 1.19163 V* | 1.18789 V | 1.20829 V | 42.79 |
+| 443.2 µm | 1.19839 V | 1.18935 V | 1.20975 V | 45.89 |
+| **443.4 µm (adopted)** | **1.19857 V** | **1.18958 V** | **1.21000 V** | **46.41** |
+| 444.4 µm | — | 1.19081 V | 1.21121 V | 48.99 |
+
+(*the 442.0 µm row's 27 °C column is that run's grid minimum, not `tt`.)
+`Vref` moves +1.218 mV per µm of `R1` at 125 °C and `tc_ppm` +2.58 ppm/°C
+per µm, both linear over this range. The two window edges balance exactly at
+**443.57 µm**; **443.4 µm** is adopted a little short of it so the ratified
+≤50 ppm/°C row keeps ~7 % margin rather than ~6 %, at the cost of 0.2 mV of
+window margin on the low edge. **Both rows are still checked at their
+ratified thresholds and both still pass at all 81 corners** — this is a
+deliberate reallocation of margin between two ratified rows, not a
+relaxation of either.
+
+**Adopted sizing.**
+
+```
+bandgap_amp   M1/M2    200u/4u   -> 300u/6u    (nf 8 -> 12)   800  -> 1800   um^2
+bandgap_amp   M3/M4    20u/16u   -- unchanged (conservative; >=2.25x area
+                                    headroom measured, not spent here)
+bandgap_core  M1-M3,
+              MC1-MC3  60u/6u    -> 85u/8.5u                  360  -> 722.5  um^2
+bandgap_core  M4/MC4   7.5u/6u   -> 10.625u/8.5u  (W/L = 1.25 held, 1/8 leg)
+bandgap_core  R1       436.705296u -> 443.400000u  (78470.7 -> 79672.7 ohm)
+```
+
+Every geometry above holds its `W/L` exactly, so `Vov`, the branch currents,
+the `ibias` rail and every saturation margin are unchanged by construction —
+confirmed on `sim/core-mirror-sensitivity/` (81 points, paired against
+`origin/main` on the same bench): the four mirror sensitivity coefficients
+move by ≤0.4 % across the 2× area step and `margin_m1_mv` reads
++84.7 mV against the baseline's +84.0 mV.
+
+**Drawn-area cost**, against `layout/floorplan.md` §8's schematic-derived
+floor (itself stale — it still lists the pre-#42/#55 amplifier and core):
+
+| item | before | after | delta |
+|---|---|---|---|
+| amp input pair (2 devices) | 1600 µm² | 3600 µm² | +2000 µm² |
+| core mirror + cascode (6 devices) | 2160 µm² | 4335 µm² | +2175 µm² |
+| core `ibias` leg (2 devices) | 90 µm² | 180.6 µm² | +91 µm² |
+| **total** | | | **+4266 µm²** |
+
+That is 8.5 % of the ratified 0.05 mm² area row consumed as drawn body area.
+The row is a layout claim, not a simulation claim (`layout/floorplan.md` §8,
+§11.1), and re-costing it against real geometry belongs to the layout
+follow-up — but it is stated here so the trade is visible: this issue buys
+4.06 mV of 3σ mismatch with 4266 µm² of gate area.
+
+**Result, measured — every bench in the spec-line suite plus the two
+mismatch benches, re-run against the resized DUT.**
+
+| Bench / verdict | Before #147 | **After #147** | Gate | Verdict |
+|---|---|---|---|---|
+| **Combined untrimmed accuracy** (`sim/suite/combined.py`) | **FAIL, 42/81 corners** | **PASS, 81/81** (report [`20260816-145925-1ca1c95`](../sim/suite/combined/20260816-145925-1ca1c95.md), suite summary [`20260816-142719-1ca1c95`](../sim/suite/summaries/20260816-142719-1ca1c95.md)) | 3σ interval inside 1.176–1.224 V at every corner | **PASS** |
+| `sim/mc-untrimmed/` `mm_all` 3σ, −40/27/125 °C | 15.56 / 15.70 / 16.13 mV | **11.85 / 12.03 / 12.54 mV** | ≤ 24.0 mV | PASS |
+| `sim/mc-untrimmed/` `mm_fetbjt` 3σ (MOS+BJT only) | 14.32 / 14.35 / 14.57 mV | **10.90 / 10.94 / 11.21 mV** | — | — |
+| `sim/mc-untrimmed/` `mm_res` 3σ (resistors only) | 2.18 / 2.83 / 3.79 mV | 2.20 / 2.87 / 3.84 mV | — | unchanged, as expected (no resistor geometry moved) |
+| `sim/output-voltage-tc/` `vref` (record [`20260816-142720-1ca1c95`](../sim/output-voltage-tc/records/20260816-142720-1ca1c95.md)) | 1.18142–1.20185 V | **1.18958–1.21000 V** | 1.176–1.224 V | PASS 81/81 |
+| `sim/output-voltage-tc/` `tc_ppm` | 13.56–29.84 ppm/°C | **12.80–46.41 ppm/°C** | ≤ 50 ppm/°C | PASS 81/81 — the deliberate trade above |
+| `sim/amp-loop-stability/` `pm_deg` / `gm_crit_db` (record [`20260816-145936-1ca1c95`](../sim/amp-loop-stability/records/20260816-145936-1ca1c95.md)) | 97.3–179.8° / −999 | **160.9–172.4° / −999** | ≥45° / <0 dB | PASS 81/81 |
+| `sim/amp-psrr/` `psrr_worst_db` (record [`20260816-145949-1ca1c95`](../sim/amp-psrr/records/20260816-145949-1ca1c95.md)) | 73.81 dB (#61 record) | **77.09 dB** | > 60 dB | PASS 81/81 |
+| `sim/amp-offset-sensitivity/` `dvref_dvos` (record [`20260816-150001-1ca1c95`](../sim/amp-offset-sensitivity/records/20260816-150001-1ca1c95.md)) | 16.02–16.21 V/V | **16.05–16.14 V/V** | envelope | unchanged, as the constant-`W/L` argument requires |
+| `sim/core-mirror-sensitivity/` RSS coefficient (record [`20260816-150013-1ca1c95`](../sim/core-mirror-sensitivity/records/20260816-150013-1ca1c95.md)) | 10.857 (`origin/main`, re-measured) | **10.816** | envelope | unchanged (0.4 %) |
+| `sim/core-mirror-sensitivity/` `margin_m1_mv` (saturation headroom) | +84.0 mV (`origin/main`, same bench) | **+84.7 mV** | ≥ 0 | PASS 81/81, unchanged |
+| `sim/psrr-dc/` `psrr_1hz_db` (record [`20260816-145206-1ca1c95`](../sim/psrr-dc/records/20260816-145206-1ca1c95.md)) | 74.30 dB | **77.61 dB** | > 60 dB | PASS 81/81 |
+| `sim/line-regulation/` `linereg_mv_per_v` (record [`20260816-145228-1ca1c95`](../sim/line-regulation/records/20260816-145228-1ca1c95.md)) | 0.0399 mV/V | **0.0267 mV/V** | < 1 mV/V | PASS 27/27 |
+| `sim/iq/` `iq_ua`, `ff`/125 °C/3.63 V (record [`20260816-145740-1ca1c95`](../sim/iq/records/20260816-145740-1ca1c95.md)) | 34.0054 µA | **34.0193 µA** | < 50 µA | PASS 81/81, unchanged within noise |
+| `sim/startup/` `startup_time_s`, worst (record [`20260816-145754-1ca1c95`](../sim/startup/records/20260816-145754-1ca1c95.md)) | 43.97 µs | **46.71 µs** | < 1 ms | PASS 81/81 |
+
+**The margin that remains, stated plainly.** At the binding corners — both at
+125 °C, where the grafted 3σ is widest — the combined interval clears the
+window by **+0.84 mV on the low edge** (`bjt_ff`/125 °C/3.63 V) and
+**+1.66 mV on the high edge** (`bjt_ss`/125 °C). That is a real pass at every
+one of the 81 corners, and it is thin: 3.5 % and 6.9 % of the 24 mV
+half-window, against a mismatch leg whose own 3σ carries about ±4 %
+sampling uncertainty at N=300 (±0.5 mV). It should be read as "closed with
+little to spare", not "closed comfortably".
+
+**What is left, if more margin is wanted.** In rough order of value per unit
+of risk:
+
+1. **#87.** If it resolves as Option A (schematic adopts the drawn 4×
+   unit-PNP array), `ΔVBE` rises 8 %, `R1/R2` falls ~8 %, and *every*
+   mismatch term in Section 2.7a scales with it — the single largest
+   remaining reduction available, and it is already an open decision rather
+   than a new design idea. It also perturbs this verdict, so **this bench
+   must be re-run when #87 resolves either way**.
+2. **The resistor line (3.92 mV allocated, 3.84 mV measured at 125 °C)** is
+   dominated by `R2`'s small area (36.3 µm × 2 µm). Widening `R2` at
+   constant resistance is a pure Pelgrom win with no effect on any current —
+   but it moves resistor geometry, which the TC null is sensitive to, so it
+   needs its own `R1` re-null pass.
+3. **A curvature-corrected core** would raise the TC-null `Vref` itself and
+   remove the need to spend TC margin on centring at all. That is a topology
+   change (DR-0001 scope), not a sizing pass.
+
+**No spec relaxation.** Every threshold used above is the ratified one:
+1.176–1.224 V, ≤50 ppm/°C, ≤24.0 mV 3σ, >60 dB, <50 µA, <1 ms. Nothing was
+re-defined, and the one row whose *margin* was deliberately spent
+(temperature coefficient, 29.79 → 46.41 ppm/°C) is reported at its ratified
+threshold, at every corner, with the trade curve that produced it.
 
 ## 6. Summary of acceptance criteria
 

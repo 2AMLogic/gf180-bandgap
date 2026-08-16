@@ -208,6 +208,57 @@ v {xschem version=3.4.7 file_version=1.2
 * corner check, though NOT a claim about the mismatch-MC untrimmed *mean*
 * (sim/mc-untrimmed/, out of this issue's scope, same caveat #61 carried).
 *
+* MIRROR AREA DOUBLING + R1 RE-CENTRING (issue #147)
+*
+* M1/MC1, M2/MC2, M3/MC3   W=60u/L=6u (360 um^2) -> W=85u/L=8.5u (722.5 um^2)
+* M4/MC4 (ibias leg)       W=7.5u/L=6u           -> W=10.625u/L=8.5u
+* R1 (fixed, e3->tn0)      L=436.705296u         -> L=443.400000u
+*                          (78470.7 -> 79672.7 ohm measured; R1_total at the
+*                          default trim code 32 96360.8 -> 97562.8 ohm,
+*                          R1_total/R2 14.63021 -> 14.81259)
+*
+* The mirror resize is the same constant-W/L step #55 took, taken one more
+* notch: W/L is held at 10 (and at 1.25 on the deliberately-small ibias
+* leg), so Vov, every saturation margin and the branch currents are
+* unchanged by construction, and only the Pelgrom mismatch sigma moves --
+* 3-sigma contribution to vref 6.36 -> 4.49 mV, the second row of
+* design/bandgap_error_budget.md Sec 2.6a's own area table. #55 stopped at
+* 360 um^2 because past it "this design is amplifier-limited again"; #147
+* lowers the amplifier's line (design/bandgap_amp.sch), which is exactly
+* the condition that makes the next notch worth buying.
+*
+* #96 (above) put R1 at the Chebyshev optimum of the TC objective, which
+* is by definition the point of BEST temperature coefficient -- and, being
+* the TC null, it is also the point where vref settles at whatever voltage
+* this PNP's extrapolated bandgap gives: 1.1925 V at tt/27 C, i.e. 7.5 mV
+* BELOW the ratified window's 1.200 V centre. That asymmetry is what makes
+* the combined untrimmed-accuracy verdict (mismatch MC grafted onto the
+* process corners) fail 42/81 corners with every individual bench passing:
+* the deterministic corner spread is 20.4 mV and the grafted mismatch
+* spread is 2 x 16.13 mV, 52.7 mV against a 48 mV window, and ALL of the
+* overflow is on the low edge.
+*
+* Raising vref means deliberately over-compensating the PTAT term, because
+* R1 is the only lever and everything R1 adds is PTAT-shaped: +6.695 um of
+* R1 buys +5.9 mV at 27 C (+7.9 mV at 125 C, +4.5 mV at -40 C) and costs
+* temperature coefficient -- worst-corner tc_ppm 29.79 -> 46.4 ppm/degC
+* (bjt_ss), still inside the ratified <=50 ppm/degC with 7% margin. This is
+* a deliberate, measured trade of TC margin for accuracy-window margin, NOT
+* a spec relaxation: both ratified rows are still checked at their ratified
+* thresholds and both still pass, at every one of the 81 PVT points.
+*
+* The value is a joint optimum, not a re-null: with the amplifier's
+* mismatch line reduced (design/bandgap_amp.sch, #147), the feasible R1
+* interval is bounded BELOW by the low window edge (vref_min - 3 sigma >=
+* 1.176 V) and ABOVE by both the high edge and the 50 ppm/degC TC bound.
+* The two window edges balance exactly at L = 443.57 um; 443.4 um is chosen
+* a little short of that so the TC row keeps ~7% margin instead of ~6%, at
+* the cost of 0.2 mV of window margin on the low edge -- a deliberate split
+* between the two ratified rows this lever trades against, both of which
+* are still checked at their ratified thresholds.
+* Derivation and the full measured trade: design/bandgap_error_budget.md
+* Sec 5c.
+*
 * MIRROR/CASCODE SIZING (issue #55) -- previously provisional (drawn
 * W=20u/L=2u, "identical to the amp's pre-#42 device, never budgeted",
 * design/bandgap_operating_point.md Sec 4.3). #42 closed the amplifier's own
@@ -268,10 +319,10 @@ K {}
 V {}
 S {}
 E {}
-C {symbols/pfet_03v3.sym} 0 300 0 0 {name=M1 model=pfet_03v3 W=60u L=6u nf=4 m=1}
+C {symbols/pfet_03v3.sym} 0 300 0 0 {name=M1 model=pfet_03v3 W=85u L=8.5u nf=4 m=1}
 N 20 330 20 350 {}
 C {lab_pin.sym} 20 350 0 0 {name=l1 lab=d1}
-C {symbols/pfet_03v3.sym} 0 600 0 0 {name=MC1 model=pfet_03v3 W=60u L=6u nf=4 m=1}
+C {symbols/pfet_03v3.sym} 0 600 0 0 {name=MC1 model=pfet_03v3 W=85u L=8.5u nf=4 m=1}
 N 20 570 20 550 {}
 C {lab_pin.sym} 20 550 0 0 {name=lc1a lab=d1}
 N -20 600 -40 600 {}
@@ -293,10 +344,10 @@ N -20 0 -40 0 {}
 C {lab_pin.sym} -40 0 0 0 {name=l6 lab=vss}
 N 20 -30 20 -50 {}
 C {lab_pin.sym} 20 -50 0 0 {name=l7 lab=sns1}
-C {symbols/pfet_03v3.sym} 300 300 0 0 {name=M2 model=pfet_03v3 W=60u L=6u nf=4 m=1}
+C {symbols/pfet_03v3.sym} 300 300 0 0 {name=M2 model=pfet_03v3 W=85u L=8.5u nf=4 m=1}
 N 320 330 320 350 {}
 C {lab_pin.sym} 320 350 0 0 {name=l8 lab=d2}
-C {symbols/pfet_03v3.sym} 300 600 0 0 {name=MC2 model=pfet_03v3 W=60u L=6u nf=4 m=1}
+C {symbols/pfet_03v3.sym} 300 600 0 0 {name=MC2 model=pfet_03v3 W=85u L=8.5u nf=4 m=1}
 N 320 570 320 550 {}
 C {lab_pin.sym} 320 550 0 0 {name=lc2a lab=d2}
 N 280 600 260 600 {}
@@ -325,10 +376,10 @@ N 280 -60 260 -60 {}
 C {lab_pin.sym} 260 -60 0 0 {name=l16 lab=vss}
 N 320 -90 320 -110 {}
 C {lab_pin.sym} 320 -110 0 0 {name=l17 lab=e2}
-C {symbols/pfet_03v3.sym} 600 300 0 0 {name=M3 model=pfet_03v3 W=60u L=6u nf=4 m=1}
+C {symbols/pfet_03v3.sym} 600 300 0 0 {name=M3 model=pfet_03v3 W=85u L=8.5u nf=4 m=1}
 N 620 330 620 350 {}
 C {lab_pin.sym} 620 350 0 0 {name=l18 lab=d3}
-C {symbols/pfet_03v3.sym} 600 600 0 0 {name=MC3 model=pfet_03v3 W=60u L=6u nf=4 m=1}
+C {symbols/pfet_03v3.sym} 600 600 0 0 {name=MC3 model=pfet_03v3 W=85u L=8.5u nf=4 m=1}
 N 620 570 620 550 {}
 C {lab_pin.sym} 620 550 0 0 {name=lc3a lab=d3}
 N 580 600 560 600 {}
@@ -343,7 +394,7 @@ N 620 270 620 250 {}
 C {lab_pin.sym} 620 250 0 0 {name=l20 lab=vdd}
 N 620 300 640 300 {}
 C {lab_pin.sym} 640 300 0 0 {name=l21 lab=vdd}
-C {symbols/ppolyf_u.sym} 600 90 0 0 {name=R1 model=ppolyf_u W=2u L=436.705296u m=1}
+C {symbols/ppolyf_u.sym} 600 90 0 0 {name=R1 model=ppolyf_u W=2u L=443.400000u m=1}
 N 600 60 600 40 {}
 C {lab_pin.sym} 600 40 0 0 {name=l22 lab=tn0}
 N 600 120 600 140 {}
@@ -357,10 +408,10 @@ N 580 -60 560 -60 {}
 C {lab_pin.sym} 560 -60 0 0 {name=l26 lab=vss}
 N 620 -90 620 -110 {}
 C {lab_pin.sym} 620 -110 0 0 {name=l27 lab=e3}
-C {symbols/pfet_03v3.sym} 900 300 0 0 {name=M4 model=pfet_03v3 W=7.5u L=6u nf=1 m=1}
+C {symbols/pfet_03v3.sym} 900 300 0 0 {name=M4 model=pfet_03v3 W=10.625u L=8.5u nf=1 m=1}
 N 920 330 920 350 {}
 C {lab_pin.sym} 920 350 0 0 {name=l28 lab=d4}
-C {symbols/pfet_03v3.sym} 900 600 0 0 {name=MC4 model=pfet_03v3 W=7.5u L=6u nf=1 m=1}
+C {symbols/pfet_03v3.sym} 900 600 0 0 {name=MC4 model=pfet_03v3 W=10.625u L=8.5u nf=1 m=1}
 N 920 570 920 550 {}
 C {lab_pin.sym} 920 550 0 0 {name=lc4a lab=d4}
 N 880 600 860 600 {}

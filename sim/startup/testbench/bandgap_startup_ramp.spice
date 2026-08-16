@@ -25,6 +25,20 @@
 * 96360.76 ohm (was 100669.29 ohm); this file's R1/R2 ratio and the trim
 * ladder's own per-step resistance are otherwise identical to #61's.
 *
+* UPDATE (#147): the lumped resistor's length was re-solved once more, the
+* same way, after R1 was re-centred to raise the untrimmed vref mean into
+* the ratified window's centre (design/bandgap_core.sch's own header):
+* R1 78470.7 -> 79636.8 ohm, so the lumped R1 + 32*R_unit target becomes
+* 97526.87 ohm (measured 97526.70 at L=542.838800u, 1.7 ppm error) and the
+* length goes 536.345033u -> 542.838800u. The embedded bandgap_amp copy
+* below was updated in the same pass with #147's constant-W/L area scale-up
+* of the input pair (M1/M2 200u/4u nf=8 -> 350u/7u nf=14) and the mirror
+* load (M3/M4 20u/16u -> 30u/24u): W/L is held exactly, so the amplifier's
+* operating point is unchanged and only its gate area (hence its Pelgrom
+* mismatch sigma, and its node capacitance) moves. Startup is re-run
+* against both changes because this testbench does not read
+* sim/dut/bandgap_top.spice.
+*
 * AMP SIZING (comparability note, #10 integration): the bandgap_amp subckt
 * below carries the FINAL, offset-budgeted sizing from issue #10
 * (design/bandgap_error_budget.md) -- input pair M1/M2 W=100u nf=2 / L=4u,
@@ -80,26 +94,26 @@ Xx3 vdd_su vss fb casc ibias bandgap_startup
 .ends
 .subckt bandgap_core vdd sns1 sns2 vss fb vref ibias casc
 
-XM1 d1 fb vdd vdd pfet_03v3 L=6u W=60u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
+XM1 d1 fb vdd vdd pfet_03v3 L=8.5u W=85u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
-XMC1 sns1 casc d1 vdd pfet_03v3 L=6u W=60u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
+XMC1 sns1 casc d1 vdd pfet_03v3 L=8.5u W=85u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
 XQ1 vss vss sns1 pnp_05p00x05p00 m=1
-XM2 d2 fb vdd vdd pfet_03v3 L=6u W=60u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
+XM2 d2 fb vdd vdd pfet_03v3 L=8.5u W=85u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
-XMC2 sns2 casc d2 vdd pfet_03v3 L=6u W=60u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
+XMC2 sns2 casc d2 vdd pfet_03v3 L=8.5u W=85u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
 XR2 e2 sns2 vss ppolyf_u r_width=2u r_length=36.341871u m=1
 XQ2 vss vss e2 pnp_10p00x10p00 m=1
-XM3 d3 fb vdd vdd pfet_03v3 L=6u W=60u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
+XM3 d3 fb vdd vdd pfet_03v3 L=8.5u W=85u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
-XMC3 vref casc d3 vdd pfet_03v3 L=6u W=60u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
+XMC3 vref casc d3 vdd pfet_03v3 L=8.5u W=85u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
-XR1 e3 vref vss ppolyf_u r_width=2u r_length=536.345033u m=1
+XR1 e3 vref vss ppolyf_u r_width=2u r_length=543.040000u m=1
 XQ3 vss vss e3 pnp_05p00x05p00 m=1
-XM4 d4 fb vdd vdd pfet_03v3 L=6u W=7.5u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
+XM4 d4 fb vdd vdd pfet_03v3 L=8.5u W=10.625u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
-XMC4 ibias casc d4 vdd pfet_03v3 L=6u W=7.5u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
+XMC4 ibias casc d4 vdd pfet_03v3 L=8.5u W=10.625u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
 XM5 ibias ibias vss vss nfet_03v3 L=2u W=2.5u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
@@ -123,9 +137,9 @@ XMC1 nd1 ncasc n1 vss nfet_03v3 L=16u W=20u nf=2 ad='int((nf+1)/2) * W/nf * 0.18
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
 XMC2 out ncasc n2 vss nfet_03v3 L=16u W=20u nf=2 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
-XM1 n1 in_p tail vss nfet_03v3 L=4u W=200u nf=8 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
+XM1 n1 in_p tail vss nfet_03v3 L=6u W=300u nf=12 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
-XM2 n2 in_n tail vss nfet_03v3 L=4u W=200u nf=8 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
+XM2 n2 in_n tail vss nfet_03v3 L=6u W=300u nf=12 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
 XM5 tail tail_bias vss vss nfet_03v3 L=4u W=10u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
