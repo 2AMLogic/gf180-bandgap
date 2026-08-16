@@ -111,7 +111,8 @@ v {xschem version=3.4.7 file_version=1.2
 * combined untrimmed-accuracy verdict -- is already met by the input pair
 * alone, and spending the remaining mirror-load headroom would mean
 * re-running the mismatch MC and the combined verdict; that is follow-up
-* work, not part of this change. The headroom is real and unclaimed.
+* work, not part of this change. The headroom is real and unclaimed --
+* tracked as issue #151.
 * See design/bandgap_error_budget.md Sec 5c.
 *
 * --------------------------------------------------- why the explicit cap

@@ -1503,7 +1503,9 @@ That is deliberately out of scope for this change, so the sizing here is
 conservative rather than maximal — there is measured, unclaimed
 mismatch-reduction headroom on `M3/M4` of at least 2.25× area (a further
 ≈1.5× reduction in its Pelgrom σ), and the honest statement is that this
-issue did not spend it. Filed as follow-up rather than left implicit.
+issue did not spend it. Tracked as issue #151 rather than left implicit —
+worth having, since the combined verdict below passes at only +0.836 mV
+worst margin.
 
 The core mirror has the opposite property: its gates sit on `fb`, which *is*
 the amplifier's output node, so area there moves the dominant pole down and
