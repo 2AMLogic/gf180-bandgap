@@ -96,6 +96,7 @@ sys.path.insert(0, str(HERE.parent))
 from harness import corners as harness_corners  # noqa: E402
 from harness import pdk as harness_pdk  # noqa: E402
 from harness import report as harness_report  # noqa: E402
+from harness import stats as harness_stats  # noqa: E402
 from harness.runner import ngspice_version  # noqa: E402
 
 # ---------------------------------------------------------------------------
@@ -360,55 +361,16 @@ def log_header(
 
 # ---------------------------------------------------------------------------
 # Extraction -- ngspice `print` output parsing and the small stats helpers it
-# feeds. Not sourced from sim/harness (which has no equivalent -- its own
-# `runner.parse_measurements()` targets a single `let m_<name>` scalar per
-# corner, not a repeated Monte Carlo `op` series), so this is a local copy of
-# the same logic the retired `sim/tools/devchar.py` used to provide, kept
-# device/experiment-specific here per this experiment's actual output shape.
+# feeds. `sim/harness/stats.py` provides both: this experiment's repeated
+# Monte Carlo `op` series is the same output shape the device-level mismatch
+# benches parse (`sim/device-mos-mismatch/`, `sim/device-pnp-mismatch/`), not
+# the single-scalar `let m_<name>` convention `runner.parse_measurements()`
+# targets.
 # ---------------------------------------------------------------------------
-
-_OP_LINE = re.compile(r"^([a-zA-Z_][\w()\-.,+@#]*)\s*=\s*([-+0-9.eE]+)\s*$")
-
-
-def _parse_op_series(log: str) -> list[dict[str, float]]:
-    """Parse repeated `op`+`print` blocks (the Monte Carlo loop) into samples.
-
-    A new sample starts whenever a name that has already been seen repeats.
-    """
-    samples: list[dict[str, float]] = []
-    current: dict[str, float] = {}
-    for line in log.splitlines():
-        match = _OP_LINE.match(line.strip())
-        if not match:
-            continue
-        name = match.group(1).lower()
-        try:
-            value = float(match.group(2))
-        except ValueError:
-            continue
-        if name in current:
-            samples.append(current)
-            current = {}
-        current[name] = value
-    if current:
-        samples.append(current)
-    return samples
-
-
-def _mean(values: list[float]) -> float:
-    return sum(values) / len(values)
-
-
-def _stdev(values: list[float]) -> float:
-    n = len(values)
-    if n < 2:
-        return 0.0
-    mean_v = _mean(values)
-    return math.sqrt(sum((v - mean_v) ** 2 for v in values) / (n - 1))
 
 
 def extract(log: str) -> dict:
-    samples = _parse_op_series(log)
+    samples = harness_stats.parse_op_series(log)
     if len(samples) != N_SAMPLES:
         raise RuntimeError(
             f"expected {N_SAMPLES} Monte Carlo samples in the log, parsed "
@@ -419,11 +381,11 @@ def extract(log: str) -> dict:
     degenerate = [i for i, cur in enumerate(isup) if abs(cur) < DEGENERATE_ISUP_THRESHOLD_A]
     return {
         "n": len(samples),
-        "mean": _mean(vref),
-        "sigma": _stdev(vref),
+        "mean": harness_stats.mean(vref),
+        "sigma": harness_stats.stdev(vref),
         "min": min(vref),
         "max": max(vref),
-        "isup_mean": _mean(isup),
+        "isup_mean": harness_stats.mean(isup),
         "degenerate_count": len(degenerate),
         "degenerate_indices": degenerate,
     }

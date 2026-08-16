@@ -127,6 +127,14 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 SIM_DIR = REPO_ROOT / "sim"
 REPORT_DIR = SIM_DIR / "suite" / "combined"
 
+# Every known caller of this module (`sim/run_combined_accuracy.py`,
+# `sim/tests/test_combined.py`, `sim/suite/cli.py` via `sim/run_suite.py`)
+# inserts SIM_DIR onto sys.path before importing `suite.combined`, so this
+# module-level import of a sibling `sim/harness/` package is safe here (see
+# issue #154).
+sys.path.insert(0, str(SIM_DIR))
+from harness import stats as harness_stats  # noqa: E402  (needs sys.path)
+
 #: The ratified +/-2% untrimmed window, from README.md's Output-reference row.
 WINDOW_LO_V = 1.176
 WINDOW_HI_V = 1.224
@@ -175,9 +183,9 @@ def parse_mc_samples(text: str) -> list[dict[str, float]]:
     """Split one Monte Carlo log's repeated ``op``/``print`` blocks into samples.
 
     A new sample starts whenever a name that has already been seen repeats --
-    the same rule the Monte Carlo benches' own ``_parse_op_series`` uses (see
-    ``sim/mc-untrimmed/run_mc_untrimmed.py``), kept local so the suite stays a
-    self-contained reader of raw logs.
+    the same rule ``sim/harness/stats.py``'s ``parse_op_series`` uses (shared
+    by the Monte Carlo benches, e.g. ``sim/mc-untrimmed/run_mc_untrimmed.py``),
+    kept local so the suite stays a self-contained reader of raw logs.
     """
     samples: list[dict[str, float]] = []
     current: dict[str, float] = {}
@@ -199,17 +207,10 @@ def parse_mc_samples(text: str) -> list[dict[str, float]]:
     return samples
 
 
-def _mean(values: list[float]) -> float:
-    return sum(values) / len(values)
-
-
-def _stdev(values: list[float]) -> float:
-    """Sample standard deviation (N-1), the MC record's stated convention."""
-    n = len(values)
-    if n < 2:
-        return 0.0
-    mean = _mean(values)
-    return math.sqrt(sum((v - mean) ** 2 for v in values) / (n - 1))
+#: The MC record's stated convention (sample stdev, N-1) -- shared with the
+#: Monte Carlo run scripts via `sim/harness/stats.py` (issue #154).
+_mean = harness_stats.mean
+_stdev = harness_stats.stdev
 
 
 @dataclass(frozen=True)
