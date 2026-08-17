@@ -1,0 +1,10 @@
+* extracted by klt extract --deck gf180mcu
+
+* cell m2m3_stack_probe
+* pin vsubs
+.SUBCKT m2m3_stack_probe vsubs
+* device instance $1 r0 *1 1,10 ppolyf_u
+R$1 \$1 \$2 vsubs 3570 ppolyf_u
+* device instance $2 r0 *1 31,10 ppolyf_u
+R$2 \$2 \$1 vsubs 3570 ppolyf_u
+.ENDS m2m3_stack_probe

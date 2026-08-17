@@ -212,6 +212,20 @@ scheme — is named in that record and filed as
 [#160](https://github.com/2AMLogic/gf180-bandgap/issues/160), not attempted
 here.
 
+**Update (#160): that fix is now designed and quantified — it recovers about
+half the gap.** `layout/routing/multi-metal-routing-study.md` decomposes this
+block's drawn area (reproducibly, via `layout/bandgap_top/routing_budget.py`,
+whose "as drawn" model equals the 80,813.72 µm² measured above to the
+0.01 µm²) and estimates a Metal2/Metal3 over-the-cell re-route at
+**65,896 µm², 2.60× body area** — a real 18.5 % recovery, against the
+**1.97×** the ratified target needs. Even an unbuildable zero-cost-routing
+bound lands at 2.47×: the remainder is not routing at all but row-stripe
+whitespace (the rows fill only 55.6 % of the full-width stripe box they sit
+in, because every row is stacked at the widest row's 215.30 µm). Closing the
+target needs the re-route **and** a 2-D floorplan re-pack to ≥73.3 % row
+packing. Nothing here is implemented, so this file's Headline verdict is
+unchanged.
+
 (Separately, and unrelated to this finding: regenerating the GDS surfaced a
 `klt`-version drift affecting DRC/LVS — see
 [#159](https://github.com/2AMLogic/gf180-bandgap/issues/159) and

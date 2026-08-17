@@ -152,6 +152,19 @@ operator ratification**, per the same process DR-0003 itself went through
   the *original* 0.05 mm² target over time; this record's proposed
   0.085 mm² is treated as an interim ceiling, not a
   claim that 0.05 mm² is permanently unreachable.
+  - **Update (#160, 2026-08-17 — informational; this record's proposed
+    number is unchanged):** that rewrite is now designed and costed in
+    [`layout/routing/multi-metal-routing-study.md`](../../layout/routing/multi-metal-routing-study.md).
+    Metal2/Metal3 over-the-cell rails estimate at **65,896 µm² (2.60× body
+    area)** against the **1.97×** a revert to 0.05 mm² would require, so the
+    rewrite **partially** closes the gap: enough that a *successor* record
+    could narrow this interim ceiling to ≈0.070 mm² **once the rework is
+    implemented and measured**, not enough to revert to 0.05 mm². The
+    remainder is row-stripe floorplan whitespace rather than routing (an
+    unbuildable zero-cost-routing bound still lands at 2.47×), so full
+    closure additionally needs a 2-D floorplan re-pack. Until any of that is
+    implemented, the measurement is still 80,813.72 µm² and this record's
+    proposed 0.085 mm² interim ceiling stands as written.
 - If a future device resize grows body area further, this record's proposed
   0.085 mm² can go stale the same way the original 0.05 mm² did — any such
   growth should re-run `area_report.py` against the (by-then-ratified or

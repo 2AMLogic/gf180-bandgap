@@ -99,6 +99,9 @@ python3 layout/lvs/run_lvs.py layout/bandgap_top/bandgap_top.gds --engine both
 
 # 5. Area budget
 uv run --with klayout python3 layout/bandgap_top/area_report.py
+
+# 6. Where that area goes, and what multi-metal routing would recover (#160)
+uv run --with klayout python3 layout/bandgap_top/routing_budget.py
 ```
 
 Expected results (as committed):
@@ -108,6 +111,7 @@ Expected results (as committed):
 | `matching_report.py` | all tier-1/2/3 checks pass, exit 0 |
 | `run_drc.py` | `status: clean`, `violation_count: 0` (`20260803-054725-8d21bf1.drc.json` — first clean verdict since klayout-tools#318 stopped false-negativing `mim.enclosing.fusetop.1`; see #88) |
 | `run_lvs.py` | `status: match`, 156/156 devices, 92/92 nets (`20260803-054735-8d21bf1.lvs.json`; reproduced unchanged by `20260804-143026-c876a0f.lvs.json` and `20260804-151012-fefb292.lvs.json`) |
+| `routing_budget.py` | decomposition reconstructs the drawn bbox (238.80 × 337.45 µm) and the modelled "as drawn" area equals `area_report.py`'s measured 80,813.72 µm²; multi-metal estimate 65,896.39 µm² / 2.60× (see [`routing/multi-metal-routing-study.md`](routing/multi-metal-routing-study.md)) |
 | `run_lvs.py --engine both` | klayout `match`, 14 mismatches; netgen `match`, 2 mismatches — **both engines agree** (`20260804-151012-fefb292.lvs-netgen.json`) — see "The netgen cross-check" below |
 | `area_report.py` | 80,813.72 µm² vs. 50,000 µm² target — **FAIL, 61.6 % over budget** (issue #156; see `layout/bandgap_top/AREA.md` Finding 5 and `spec/decision-records/0005-area-target-overrun.md`) |
 
@@ -255,7 +259,20 @@ which is what lets the one exception below exist at all.
 
 That is a correct single-metal discipline, but it is not how this block would
 be routed with a real multi-metal stack, and it costs significant area —
-quantified in [`bandgap_top/AREA.md`](bandgap_top/AREA.md).
+quantified in [`bandgap_top/AREA.md`](bandgap_top/AREA.md), and decomposed
+term by term (16.90 µm of block width for the corridor, 56.42 µm of block
+height for the stacked rails) by
+[`bandgap_top/routing_budget.py`](bandgap_top/routing_budget.py).
+
+**What a multi-metal re-route would actually recover** is designed and
+estimated in
+[`routing/multi-metal-routing-study.md`](routing/multi-metal-routing-study.md)
+(#160): Metal2 vertical spines + Metal3 over-the-cell row rails would take
+the drawn block from 80,813.72 µm² to ≈65,896 µm² (3.19× → 2.60× device body
+area) — a real 18.5 % recovery that still does not reach the ≤1.97× the
+ratified 0.05 mm² target needs, because the rest of the gap is row-stripe
+whitespace, not routing. The study is not implemented; this section still
+describes what `generate.py` draws today.
 
 **Corrected claim (was stale, gf180-bandgap#82):** the separate **DRC**
 deck was never Metal1-only, and is even less so today — since
@@ -858,3 +875,39 @@ git diff --stat layout/drc/fixtures/trivial_poly_res/trivial_poly_res.gds   # em
 python3 layout/drc/run_drc.py layout/drc/fixtures/trivial_poly_res/trivial_poly_res.gds
 # -> status: violations, violation_count: 1, rule_counts: {"poly2.width.1": 1}
 ```
+
+## The `m2m3_stack_probe` routing fixture (#160)
+
+The second fixture is the evidence behind
+[`routing/multi-metal-routing-study.md`](routing/multi-metal-routing-study.md):
+two `ppolyf_u` resistors wired into a **series loop** using nothing but the
+routing stack that study proposes — Metal1 → Via1 → Metal2 (vertical, drawn
+over the resistors' own poly bodies) → Via2 → Metal3 (horizontal) and back
+down — with the two nets' tracks run side by side at the proposed 0.72 µm
+pitch. Unlike `trivial_poly_res` it seeds **no** violation: its job is to
+show that the proposed sizing is clean *and* that the stack conducts.
+
+```bash
+# Regenerate the fixture and confirm it matches the committed GDS
+uv run --with klayout python3 layout/drc/fixtures/m2m3_stack_probe/generate.py
+git diff --stat layout/drc/fixtures/m2m3_stack_probe/m2m3_stack_probe.gds   # empty
+
+# DRC: the proposed Metal2/Metal3/Via1/Via2 sizing against the current deck
+python3 layout/drc/run_drc.py layout/drc/fixtures/m2m3_stack_probe/m2m3_stack_probe.gds
+# -> status: clean, violation_count: 0
+#    (coverage.layers_checked includes 35/0, 36/0, 38/0, 42/0)
+
+# Extraction: does the stack conduct, and do adjacent tracks stay distinct?
+klt extract layout/drc/fixtures/m2m3_stack_probe/m2m3_stack_probe.gds \
+    --deck gf180mcu --top m2m3_stack_probe --format json
+# -> device_count: 2 (ppolyf_u), net_count: 3 == 2 routed nets + vsubs
+#    4 nets would mean the Metal2/Metal3 stack is invisible to extraction;
+#    1 would mean the two adjacent tracks were read as shorted.
+
+# Both checks, as tests (each skips if its tool is absent)
+uv run --with klayout python3 -m unittest \
+    layout.drc.fixtures.m2m3_stack_probe.test_m2m3_stack_probe -v
+```
+
+Committed reports: `layout/drc/reports/m2m3_stack_probe/` (DRC) and
+`layout/lvs/reports/m2m3_stack_probe/` (extraction).
