@@ -42,6 +42,9 @@ import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO_ROOT / "sim"))
+
+from harness.paths import _repo_relative  # noqa: E402  (needs sys.path)
 
 #: Directives a DUT fragment may not carry -- see ``harness.testbench``.
 DROP_DIRECTIVES = (".end", ".temp", ".lib", ".global", ".option", ".options")
@@ -145,13 +148,6 @@ def header(source: Path, sha256: str, subckts: list[str]) -> str:
             "",
         ]
     )
-
-
-def _repo_relative(path: Path) -> str:
-    try:
-        return str(path.resolve().relative_to(REPO_ROOT))
-    except ValueError:
-        return str(path)
 
 
 def subckt_names(fragment: str) -> list[str]:
