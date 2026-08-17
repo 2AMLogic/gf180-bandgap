@@ -11,21 +11,24 @@ uv run --with klayout python3 layout/bandgap_top/area_report.py
 
 | Quantity | Value |
 |---|---|
-| Drawn GDS bounding box (incl. guard ring) | **239.20 × 337.85 µm** |
-| Drawn GDS area | **80,813.72 µm² (0.08081 mm²)** |
+| Drawn GDS bounding box (incl. guard ring) | **222.10 × 281.43 µm** |
+| Drawn GDS area | **62,505.60 µm² (0.06251 mm²)** |
 | Ratified target (`README.md` "Target specification", issue #1/#35) | 50,000 µm² (0.05 mm²) |
-| Margin | **FAIL — 30,813.72 µm² (61.6 %) OVER budget** |
+| Margin | **FAIL — 12,505.60 µm² (25.0 %) OVER budget** |
 | Device body area, current netlist | 25,327.78 µm² |
-| Realised overhead multiplier | **3.19× body area** |
+| Realised overhead multiplier | **2.47× body area** |
 | `floorplan.md` §8 body-area estimate | 10,425.45 µm² |
 | Current netlist vs. that estimate | **2.43×** |
 
-Verdict: **over the ratified budget** — see Finding 5. Four findings below
-are flagged rather than smoothed over, per CLAUDE.md's no-spec-relaxation
-rule; the headline numbers above are current as of issue #156 (regenerated
-2026-08-16), superseding the "inside the ratified budget, but only just"
-verdict this file previously carried (48,938.26 µm², PASS at 2.1 % headroom,
-last regenerated at `ba091ea`/#105 — stale since #96/#147/#151).
+Verdict: **still over the ratified budget, by less than half of what it
+was** — see Findings 5 and 6. Five findings below are flagged rather than
+smoothed over, per CLAUDE.md's no-spec-relaxation rule; the headline numbers
+above are current as of issue #166 (the Metal2/Metal3 routing rewrite,
+2026-08-17), superseding the 80,813.72 µm² / 3.19× / 61.6 %-over verdict
+Finding 5 recorded at #156, which in turn superseded the "inside the
+ratified budget, but only just" verdict this file carried before that
+(48,938.26 µm², PASS at 2.1 % headroom, last regenerated at `ba091ea`/#105 —
+stale since #96/#147/#151).
 
 ## Finding 1 — `floorplan.md` §8's body-area estimate is 1.92× stale
 
@@ -230,6 +233,80 @@ unchanged.
 `klt`-version drift affecting DRC/LVS — see
 [#159](https://github.com/2AMLogic/gf180-bandgap/issues/159) and
 `layout/README.md`'s "Table currency note.")
+
+## Finding 6 — the Metal2/Metal3 re-route beat its own estimate by 5.1 %; the block is still 25 % over (issue #166)
+
+Finding 5 named the fix and [#160](https://github.com/2AMLogic/gf180-bandgap/issues/160)
+costed it: replace the Metal1/Poly2 corridor-and-rail scheme with Metal2
+vertical spines plus Metal3 over-the-cell row rails, estimated at
+**65,896.39 µm² / 2.60×**.
+[#166](https://github.com/2AMLogic/gf180-bandgap/issues/166) implemented it.
+This is the estimate-vs-measurement record CLAUDE.md's "verification is the
+product" asks for — the estimate is *not* retro-fitted to the measurement;
+both numbers are printed side by side by
+`layout/bandgap_top/routing_budget.py` and pinned by
+`test_routing_budget.py::RealisedRecoveryTests`.
+
+| | drawn area | multiplier | vs. ratified 50,000 µm² |
+|---|---|---|---|
+| Before (Finding 5, #156) — Metal1 + Poly2 | 80,813.72 µm² | 3.19× | +30,813.72 (FAIL) |
+| Study §5's **estimate** for the re-route (#160) | 65,896.39 µm² | 2.60× | +15,896.39 (FAIL) |
+| **Measured, as drawn** (#166) | **62,505.60 µm²** | **2.47×** | **+12,505.60 (FAIL)** |
+
+**Recovered: 18,308.12 µm² (22.7 %)** — against the study's estimated
+14,917.33 µm² (18.5 %). The realised block came in **3,390.79 µm² (5.1 %)
+under** the estimate, and the whole difference is the two conservatisms the
+study explicitly declared rather than any modelling error:
+
+- **the 1.0 µm-per-row "landing band" (15.00 µm of block height)** — study
+  §5 budgeted a band above each row for the Metal1 → Via1 → Metal2 hop off a
+  gate stub, and bracketed it (1.5 µm → 0) rather than tuning it because it
+  was the one modelled judgement in the estimate. In the drawn result it is
+  **zero**: `route_rows` places each row's Metal3 rails *inside* the row's
+  own device-content height, and `draw_mos`'s new local Contact + Metal1 gate
+  pad sits inside the gate poly's existing `POLY_EXT` tip, so nothing has to
+  grow above the row at all. Drawn height **281.43 µm** vs. the estimate's
+  296.43 µm — exactly 15.00 µm, the whole band. (Both on the estimate's own
+  basis, i.e. including the guard ring's 0.40 µm/axis Pplus marker overhang;
+  `build()`'s own bbox is 221.70 × 281.03 µm.)
+- **the 0.20 µm left margin (the old `vss` spine's own half-width)** — study
+  §5 kept it "conservatively" while noting it disappears too. It did. Drawn
+  width **222.10 µm** vs. the estimate's 222.30 µm.
+
+Both terms are now *checked*, not asserted: `routing_budget.py`'s
+decomposition has **no corridor term and no rail-band term left**, and
+`check_identity` requires it to reconstruct `build()`'s bounding box to the
+nanometre, so a regression that quietly reintroduced either would fail
+loudly (`test_routing_costs_the_block_no_area_in_either_axis`).
+
+**What did not change, and why the verdict is still FAIL.** The rewrite
+touched routing only. Every remaining term is floorplan: the 215.30 µm
+device field (still the width of the single widest row, `AMPPAIR`), the
+258.83 µm of stacked device content, 15.40 µm of inter-row gaps and the
+6.40 µm guard ring. The rows still fill only **55.6 %** of the full-width
+stripe box they sit in — 26,236 µm² of whitespace beside the narrow rows,
+*larger than the entire routing recovery*. Closing the remaining 12,505.60
+µm² needs the 2-D floorplan re-pack (study §6/§8): `routing_budget.py` now
+computes that it takes row packing of **0.698**, up from today's 0.556. That
+re-pack is a `plan.py` change with its own matching/gradient implications and
+is filed separately; it is deliberately *not* attempted here.
+
+**Verification.** The drawn block is DRC-clean and LVS-match against the
+same `klt` that enforces the rules this scheme depends on — including
+`via1.width.1`/`via2.width.1`, whose 0.26 µm minimum was the
+[#159](https://github.com/2AMLogic/gf180-bandgap/issues/159) prerequisite for
+drawing new via geometry at all. See `layout/README.md`'s "Expected results"
+table for the committed report IDs.
+
+**DR-0005 is untouched by this finding.** `spec/decision-records/0005-area-target-overrun.md`
+proposes an interim `< 0.085 mm²` ceiling and `README.md`'s ratified Area row
+still says `< 0.05 mm²`; neither is edited here, and `RATIFIED_TARGET_UM2`
+still reports FAIL honestly. Study §7's own conclusion holds — a realised
+62,505.60 µm² would justify *narrowing* the interim ceiling (to ≈0.066 mm²
+on DR-0005's own ~5 % margin convention, tighter than the ≈0.070 mm² the
+study projected), but per `spec/decision-records/TEMPLATE.md` that is a
+**successor record**, not an edit to DR-0005, and it is out of scope for
+#166.
 
 ## Body area by group (current netlist)
 
