@@ -1,0 +1,33 @@
+layout: ../../../bandgap_top/bandgap_top.gds
+reference: ../../bandgap_top.ref.spice
+top: bandgap_top
+engine: klayout
+status: mismatch
+mismatches: 18
+  nets: layout=92  reference=92  matched=90
+  devices: layout=164  reference=164  matched=163
+  pins: layout=4  reference=4  matched=4
+
+category_counts:
+  device.body_unverified: 2
+  device.property: 2
+  topology: 14
+
+[warning] device.body_unverified  (layout)  42 NMOS device body terminal(s) were compared against the 'vsubs' deck-synthesized substrate net, not a real schematic net -- no drawn substrate-tap geometry resolved these device(s)' body terminal to a real net (see docs/cli/extract.md, "Coverage")
+[warning] device.body_unverified  (layout)  47 PMOS device body terminal(s) were compared against an anonymous, deck-synthesized well net, not a real schematic net -- this deck has no distinct well-tap layer (see docs/cli/extract.md, "Coverage")
+[error] device.property  (both)  matched device parameter 'a' differs
+[error] device.property  (both)  matched device parameter 'p' differs
+[error] topology  (both)  nets were paired despite a name/identity conflict
+[warning] topology  (both)  both sides pair a net that touches exactly one device terminal and carries no declared pin -- there is no DC path through this node on either side, so this is a real connectivity finding (e.g. an undriven MOS gate), not a routine ambiguous-pairing/hints.same_nets nit; see klt extract's single_terminal_nets[] for the layout-side terminal detail
+[warning] topology  (both)  both sides pair a net that touches exactly one device terminal and carries no declared pin -- there is no DC path through this node on either side, so this is a real connectivity finding (e.g. an undriven MOS gate), not a routine ambiguous-pairing/hints.same_nets nit; see klt extract's single_terminal_nets[] for the layout-side terminal detail
+[warning] topology  (both)  both sides pair a net that touches exactly one device terminal and carries no declared pin -- there is no DC path through this node on either side, so this is a real connectivity finding (e.g. an undriven MOS gate), not a routine ambiguous-pairing/hints.same_nets nit; see klt extract's single_terminal_nets[] for the layout-side terminal detail
+[warning] topology  (both)  both sides pair a net that touches exactly one device terminal and carries no declared pin -- there is no DC path through this node on either side, so this is a real connectivity finding (e.g. an undriven MOS gate), not a routine ambiguous-pairing/hints.same_nets nit; see klt extract's single_terminal_nets[] for the layout-side terminal detail
+[warning] topology  (both)  both sides pair a net that touches exactly one device terminal and carries no declared pin -- there is no DC path through this node on either side, so this is a real connectivity finding (e.g. an undriven MOS gate), not a routine ambiguous-pairing/hints.same_nets nit; see klt extract's single_terminal_nets[] for the layout-side terminal detail
+[warning] topology  (both)  both sides pair a net that touches exactly one device terminal and carries no declared pin -- there is no DC path through this node on either side, so this is a real connectivity finding (e.g. an undriven MOS gate), not a routine ambiguous-pairing/hints.same_nets nit; see klt extract's single_terminal_nets[] for the layout-side terminal detail
+[warning] topology  (both)  nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)
+[warning] topology  (both)  nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)
+[warning] topology  (both)  nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)
+[warning] topology  (both)  nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)
+[warning] topology  (both)  nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)
+[warning] topology  (both)  nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)
+[error] topology  (both)  nets were paired despite a name/identity conflict

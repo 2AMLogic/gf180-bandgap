@@ -497,22 +497,26 @@ this issue's resize, it reports the amp group's body area moving
 10,140.00 → 11,242.40 µm² (**+1,102.40 µm²**), independently confirming the
 `design/bandgap_error_budget.md` §5d delta above to the last decimal place.
 
-**Named risk found while doing this cross-check — filed as
-[#156](https://github.com/2AMLogic/gf180-bandgap/issues/156), not fixed here
-(out of this issue's scope):** the tool's *other* number — `drawn GDS area`
-read back from the checked-in `layout/bandgap_top/bandgap_top.gds` —
-reports only **2.4 % headroom** against the ratified 0.05 mm² target, but
-that GDS file's last commit predates #55/#61/#96/#147/#151 (git history:
-`ba091ea`, before any of those device resizes landed), so the 2.4 % figure
-is stale. **Regenerating the GDS from the current netlist (exploratory
-only — not committed by this issue) finds the real area budget already
-broken before #151's own change**: `origin/main`'s post-#147 netlist
-regenerates to **58.5 % over** the ratified target (79,258.92 µm² vs.
-50,000 µm²), and this issue's resize moves that to **61.6 % over**
-(80,813.72 µm²) — a further ~3 percentage points on an already-broken
-budget, not the cause of it. §11.1 already names "GDS-verified area
-re-check" as owned by a future layout-implementation issue; #156 makes that
-concrete rather than leaving it an abstract future step.
+**Update (issue #156 — resolved, GDS-verified verdict, not a floorplan-stage
+estimate any more):** the tool's *other* number — `drawn GDS area` read back
+from the checked-in `layout/bandgap_top/bandgap_top.gds` — used to report
+only **2.4 % headroom** against the ratified 0.05 mm² target, but that GDS
+file's last commit (`ba091ea`, before #55/#61/#96/#147/#151's device
+resizes) predated all of those resizes, so the 2.4 % figure was stale.
+**#156 regenerated `bandgap_top.gds` from the current netlist and committed
+it as the current baseline; the real, GDS-verified area budget is broken:
+80,813.72 µm² drawn vs. the ratified 50,000 µm² target — 61.6 % OVER
+budget** (up from a bracketing measurement taken mid-investigation, before
+`#151`'s own change, of 58.5 % over on the post-`#147` netlist —
+`#151` adds a further ~3 percentage points on an already-broken budget, not
+the cause of it). This is no longer an open risk to track down — it is the
+measured verdict; see `spec/decision-records/0005-area-target-overrun.md`
+for the analysis (routing overhead is *not* the problem — at 3.19× drawn
+area over drawn body area it beats this section's own "generous" 4×
+assumption; drawn body area itself grew 2.43× past this section's estimate,
+driven by already-ratified accuracy/stability work) and the proposed
+resolution (an interim revised target, **pending operator ratification** —
+not silently applied by that record alone, per CLAUDE.md).
 
 **Reading this table**: the drawn-body-area floor is comfortably under
 the ratified 0.05 mm² ceiling — even a generous 4× overhead multiplier
@@ -628,33 +632,52 @@ owner") and the general "no spec relaxation" rule: the area comparison in
 that front today. Two items are named explicitly as **not yet closed** by
 this document, so they are not silently assumed away:
 
-### 11.1 GDS-verified area re-check (owner: future layout-implementation issue)
+### 11.1 GDS-verified area re-check (closed by issue #156; §8's original "once real layout exists" framing is stale)
 
-§8's area tally is a schematic-geometry floor with no contact/dummy/
-guard-ring/routing overhead included, and no characterized real cell
-pitch for the PNP devices. Once real layout exists (the future
-layout-implementation issue this floorplan feeds, downstream of #15's
-DRC/LVS bring-up), that issue should re-run the §8 comparison against
-actual GDS area rather than this estimate, and treat this document's
-"≈21 % of target, ≥4× headroom" figure as a floorplan-stage sanity check
-only, not a final answer.
+§8's original area tally was a schematic-geometry floor with no
+contact/dummy/guard-ring/routing overhead included, and no characterized
+real cell pitch for the PNP devices — this section originally deferred the
+real, GDS-verified comparison to "the future layout-implementation issue
+this floorplan feeds."
 
-**Update (issue #151): this is not a "once real layout exists" future
-step — real (drawn) layout and a live comparison tool already exist
+**That deferral is stale — the comparison is not future work; #156 ran it.**
+Real (drawn) layout and a live comparison tool have existed since #66/#151
 (`layout/bandgap_top/generate.py`, `layout/bandgap_top/area_report.py`), and
-both predate several device resizes.** §8's cross-check note above found the
-committed `layout/bandgap_top/bandgap_top.gds` reports the GDS area check at
-only 2.4 % headroom against the ratified target, but that GDS was last
-regenerated before #55/#61/#96/#147/#151, and a re-run against the current
-netlist finds the real area budget already **58.5–61.6 % over** target, not
-under it — filed as
-[#156](https://github.com/2AMLogic/gf180-bandgap/issues/156) rather than
-left implicit. Re-running `generate.py` and the DRC/LVS flow against the
-current netlist, committing the regenerated `bandgap_top.gds` as the new
-baseline, and then either closing the real area gap or escalating the area
-row through a `spec/` decision record is #156's concrete scope — it is
-overdue, not merely future work, and is left to that follow-up rather than
-done by this (circuit-sizing) issue.
+both had drifted out of sync with several device resizes by the time #156
+regenerated the GDS. **Issue #156's findings, now the current, committed
+state:**
+
+- `layout/bandgap_top/bandgap_top.gds` is regenerated from the current
+  `design/netlist/bandgap_top.spice` and committed as the baseline (no
+  `generate.py`/`plan.py` code changed — this is a pure data refresh against
+  already-ratified device sizing).
+- The GDS-verified verdict is **FAIL: 80,813.72 µm² drawn vs. the ratified
+  50,000 µm² (0.05 mm²) target, 61.6 % over budget** — not a floorplan-stage
+  estimate, a measurement (§8's cross-check note above has the full
+  `area_report.py` output).
+- The overrun is **not** a routing-inefficiency problem: the realised
+  overhead multiplier (3.19× drawn area over drawn device body area) is
+  *better* than this document's own "generous" 4× assumption. It is a
+  body-area problem — drawn device body area (25,327.78 µm²) has grown to
+  2.43× §8's original schematic-derived floor, from already-ratified,
+  measured accuracy/stability work (`#96`/`#147`/`#151`; see
+  `design/bandgap_error_budget.md` §5c/§5d). Reopening those resizes to
+  reclaim area would reopen closed electrical verdicts, which is out of
+  this section's scope and not proposed.
+- Per CLAUDE.md's no-silent-relaxation rule, the gap is **escalated, not
+  closed by editing the target**:
+  [`spec/decision-records/0005-area-target-overrun.md`](../spec/decision-records/0005-area-target-overrun.md)
+  proposes an interim revised Area row (`< 0.085 mm²`) with the full
+  feasibility analysis of a routing-only fix, but is filed `Status:
+  proposed`, **pending operator ratification** — `README.md`'s ratified
+  Area row and `area_report.py`'s `RATIFIED_TARGET_UM2` constant are
+  deliberately left unedited until that ratification lands, so the tool
+  keeps reporting `FAIL` honestly in the meantime.
+- A genuine routing-architecture fix (multi-level-metal routing, now
+  extraction-viable per klayout-tools#220, in place of the current
+  Metal1/Poly2-only corridor-and-rail scheme) is named in DR-0005 and filed
+  as [#160](https://github.com/2AMLogic/gf180-bandgap/issues/160), not
+  attempted speculatively inside #156.
 
 ### 11.2 Amp systematic-offset placeholder (owner: post-layout extraction, tracked by #10's own escalation)
 

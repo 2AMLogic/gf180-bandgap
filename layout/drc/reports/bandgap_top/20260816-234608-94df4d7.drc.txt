@@ -1,0 +1,56 @@
+file: layout/bandgap_top/bandgap_top.gds
+deck: gf180mcu
+dbu_um: 0.001
+status: violations
+violations: 42
+unchecked layers in stream: 8
+
+rule_counts:
+  metal1.enclosing.contact.1: 26
+  via1.width.1: 4
+  via2.width.1: 4
+  via3.width.1: 4
+  via4.width.1: 4
+
+metal1.enclosing.contact.1  bandgap_top  Metal1  (17000,321790)-(17240,321910)  minimum metal1 overlap of contact
+metal1.enclosing.contact.1  bandgap_top  Metal1  (17380,288668)-(17620,288838)  minimum metal1 overlap of contact
+metal1.enclosing.contact.1  bandgap_top  Metal1  (19000,327390)-(19240,327510)  minimum metal1 overlap of contact
+metal1.enclosing.contact.1  bandgap_top  Metal1  (20180,288668)-(20420,288838)  minimum metal1 overlap of contact
+metal1.enclosing.contact.1  bandgap_top  Metal1  (20180,289238)-(20420,289408)  minimum metal1 overlap of contact
+metal1.enclosing.contact.1  bandgap_top  Metal1  (32480,288668)-(32720,288838)  minimum metal1 overlap of contact
+metal1.enclosing.contact.1  bandgap_top  Metal1  (35280,288668)-(35520,288838)  minimum metal1 overlap of contact
+metal1.enclosing.contact.1  bandgap_top  Metal1  (35280,289238)-(35520,289408)  minimum metal1 overlap of contact
+metal1.enclosing.contact.1  bandgap_top  Metal1  (47580,288668)-(47820,288838)  minimum metal1 overlap of contact
+metal1.enclosing.contact.1  bandgap_top  Metal1  (50380,288668)-(50620,288838)  minimum metal1 overlap of contact
+metal1.enclosing.contact.1  bandgap_top  Metal1  (50380,289238)-(50620,289408)  minimum metal1 overlap of contact
+metal1.enclosing.contact.1  bandgap_top  Metal1  (62680,288668)-(62920,288838)  minimum metal1 overlap of contact
+metal1.enclosing.contact.1  bandgap_top  Metal1  (65480,288668)-(65720,288838)  minimum metal1 overlap of contact
+metal1.enclosing.contact.1  bandgap_top  Metal1  (65480,289238)-(65720,289408)  minimum metal1 overlap of contact
+metal1.enclosing.contact.1  bandgap_top  Metal1  (77780,288668)-(78020,288838)  minimum metal1 overlap of contact
+metal1.enclosing.contact.1  bandgap_top  Metal1  (80580,288668)-(80820,288838)  minimum metal1 overlap of contact
+metal1.enclosing.contact.1  bandgap_top  Metal1  (80580,289238)-(80820,289408)  minimum metal1 overlap of contact
+metal1.enclosing.contact.1  bandgap_top  Metal1  (92880,288668)-(93120,288838)  minimum metal1 overlap of contact
+metal1.enclosing.contact.1  bandgap_top  Metal1  (95680,288668)-(95920,288838)  minimum metal1 overlap of contact
+metal1.enclosing.contact.1  bandgap_top  Metal1  (95680,289238)-(95920,289408)  minimum metal1 overlap of contact
+metal1.enclosing.contact.1  bandgap_top  Metal1  (107980,288668)-(108220,288838)  minimum metal1 overlap of contact
+metal1.enclosing.contact.1  bandgap_top  Metal1  (110780,288668)-(111020,288838)  minimum metal1 overlap of contact
+metal1.enclosing.contact.1  bandgap_top  Metal1  (110780,289238)-(111020,289408)  minimum metal1 overlap of contact
+metal1.enclosing.contact.1  bandgap_top  Metal1  (123080,288668)-(123320,288838)  minimum metal1 overlap of contact
+metal1.enclosing.contact.1  bandgap_top  Metal1  (125880,288668)-(126120,288838)  minimum metal1 overlap of contact
+metal1.enclosing.contact.1  bandgap_top  Metal1  (125880,289238)-(126120,289408)  minimum metal1 overlap of contact
+via1.width.1  bandgap_top  Via1  (17080,175053)-(17320,175293)  minimum via1 size (approximates official min/max size rule)
+via1.width.1  bandgap_top  Via1  (17080,175053)-(17320,175293)  minimum via1 size (approximates official min/max size rule)
+via1.width.1  bandgap_top  Via1  (79780,172493)-(80020,172733)  minimum via1 size (approximates official min/max size rule)
+via1.width.1  bandgap_top  Via1  (79780,172493)-(80020,172733)  minimum via1 size (approximates official min/max size rule)
+via2.width.1  bandgap_top  Via2  (17080,175053)-(17320,175293)  minimum via2 size (approximates official min/max size rule)
+via2.width.1  bandgap_top  Via2  (17080,175053)-(17320,175293)  minimum via2 size (approximates official min/max size rule)
+via2.width.1  bandgap_top  Via2  (79780,172493)-(80020,172733)  minimum via2 size (approximates official min/max size rule)
+via2.width.1  bandgap_top  Via2  (79780,172493)-(80020,172733)  minimum via2 size (approximates official min/max size rule)
+via3.width.1  bandgap_top  Via3  (17080,175053)-(17320,175293)  minimum via3 size (approximates official min/max size rule)
+via3.width.1  bandgap_top  Via3  (17080,175053)-(17320,175293)  minimum via3 size (approximates official min/max size rule)
+via3.width.1  bandgap_top  Via3  (79780,172493)-(80020,172733)  minimum via3 size (approximates official min/max size rule)
+via3.width.1  bandgap_top  Via3  (79780,172493)-(80020,172733)  minimum via3 size (approximates official min/max size rule)
+via4.width.1  bandgap_top  Via4  (46780,172493)-(47020,172733)  minimum via4 size (approximates official min/max size rule)
+via4.width.1  bandgap_top  Via4  (46780,172493)-(47020,172733)  minimum via4 size (approximates official min/max size rule)
+via4.width.1  bandgap_top  Via4  (79780,172493)-(80020,172733)  minimum via4 size (approximates official min/max size rule)
+via4.width.1  bandgap_top  Via4  (79780,172493)-(80020,172733)  minimum via4 size (approximates official min/max size rule)

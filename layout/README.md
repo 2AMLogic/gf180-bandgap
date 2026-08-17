@@ -109,7 +109,23 @@ Expected results (as committed):
 | `run_drc.py` | `status: clean`, `violation_count: 0` (`20260803-054725-8d21bf1.drc.json` — first clean verdict since klayout-tools#318 stopped false-negativing `mim.enclosing.fusetop.1`; see #88) |
 | `run_lvs.py` | `status: match`, 156/156 devices, 92/92 nets (`20260803-054735-8d21bf1.lvs.json`; reproduced unchanged by `20260804-143026-c876a0f.lvs.json` and `20260804-151012-fefb292.lvs.json`) |
 | `run_lvs.py --engine both` | klayout `match`, 14 mismatches; netgen `match`, 2 mismatches — **both engines agree** (`20260804-151012-fefb292.lvs-netgen.json`) — see "The netgen cross-check" below |
-| `area_report.py` | 48,805.68 µm² vs. 50,000 µm² target — PASS, 2.4 % headroom |
+| `area_report.py` | 80,813.72 µm² vs. 50,000 µm² target — **FAIL, 61.6 % over budget** (issue #156; see `layout/bandgap_top/AREA.md` Finding 5 and `spec/decision-records/0005-area-target-overrun.md`) |
+
+**Table currency note (issue #156):** the `run_drc.py`/`run_lvs.py` rows
+above are the last DRC-clean/LVS-match reports captured against this GDS,
+but `klt` is installed unpinned from git head (no version pin — see
+"Requires `klt` on `PATH`" above), and #156 found (while regenerating
+`bandgap_top.gds` for the area row) that a `klt` installed today no longer
+reproduces either verdict against the *current* committed GDS: DRC reports
+42 violations (new `via1`–`via4` width-minimum rules plus
+`metal1.enclosing.contact.1`, none of which existed against the `klt`
+version the committed reports above were captured with), and LVS reports 18
+mismatches including 2 `error`-severity ones (a MiM-cap parameter
+diff and a `vdd`/`VDD` net-identity conflict). This reproduces identically
+against the *pre-#156* GDS too (same `klt`, same result), so it is a
+`klt`-version drift unrelated to #156's area regeneration or any drawn
+geometry change — tracked as [#159](https://github.com/2AMLogic/gf180-bandgap/issues/159)
+rather than fixed inside the area-budget issue's scope.
 
 `net_count` is 92, not 93, because gf180-bandgap#88 redrew the MiM cap's `fb`
 up-hop contact to land inside the recognised top plate — the top plate no

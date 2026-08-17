@@ -8,33 +8,41 @@
 * simplification.
 *
 * drawn trim code : 32
-* MOS devices     : 34 nfet + 47 pfet (14 of them edge dummies)
+* MOS devices     : 42 nfet + 47 pfet (14 of them edge dummies)
 * resistors       : 65 ppolyf_u + 1 ppolyf_u_1k
 * bipolars        : 8 bjt (1 per drawn PNP unit -- see the docstring's step 8)
 * capacitors      : 1 cap_mim_2f0_m4m5_noshield
 
 .SUBCKT bandgap_top vdd vss vref vsubs
 Camp_CC vdd fb 6.914880e-12 cap_mim_2f0_m4m5_noshield
-Mamp_M1_0 amp_n1 sns2 amp_tail vsubs nfet L=4U W=25U
-Mamp_M1_1 amp_n1 sns2 amp_tail vsubs nfet L=4U W=25U
-Mamp_M1_2 amp_n1 sns2 amp_tail vsubs nfet L=4U W=25U
-Mamp_M1_3 amp_n1 sns2 amp_tail vsubs nfet L=4U W=25U
-Mamp_M1_4 amp_n1 sns2 amp_tail vsubs nfet L=4U W=25U
-Mamp_M1_5 amp_n1 sns2 amp_tail vsubs nfet L=4U W=25U
-Mamp_M1_6 amp_n1 sns2 amp_tail vsubs nfet L=4U W=25U
-Mamp_M1_7 amp_n1 sns2 amp_tail vsubs nfet L=4U W=25U
-Mamp_M2_0 amp_n2 sns1 amp_tail vsubs nfet L=4U W=25U
-Mamp_M2_1 amp_n2 sns1 amp_tail vsubs nfet L=4U W=25U
-Mamp_M2_2 amp_n2 sns1 amp_tail vsubs nfet L=4U W=25U
-Mamp_M2_3 amp_n2 sns1 amp_tail vsubs nfet L=4U W=25U
-Mamp_M2_4 amp_n2 sns1 amp_tail vsubs nfet L=4U W=25U
-Mamp_M2_5 amp_n2 sns1 amp_tail vsubs nfet L=4U W=25U
-Mamp_M2_6 amp_n2 sns1 amp_tail vsubs nfet L=4U W=25U
-Mamp_M2_7 amp_n2 sns1 amp_tail vsubs nfet L=4U W=25U
-Mamp_M3_0 amp_a3 amp_nd1 vdd nwl pfet L=16U W=10U
-Mamp_M3_1 amp_a3 amp_nd1 vdd nwl pfet L=16U W=10U
-Mamp_M4_0 amp_a4 amp_nd1 vdd nwl pfet L=16U W=10U
-Mamp_M4_1 amp_a4 amp_nd1 vdd nwl pfet L=16U W=10U
+Mamp_M1_0 amp_n1 sns2 amp_tail vsubs nfet L=6U W=25U
+Mamp_M1_1 amp_n1 sns2 amp_tail vsubs nfet L=6U W=25U
+Mamp_M1_10 amp_n1 sns2 amp_tail vsubs nfet L=6U W=25U
+Mamp_M1_11 amp_n1 sns2 amp_tail vsubs nfet L=6U W=25U
+Mamp_M1_2 amp_n1 sns2 amp_tail vsubs nfet L=6U W=25U
+Mamp_M1_3 amp_n1 sns2 amp_tail vsubs nfet L=6U W=25U
+Mamp_M1_4 amp_n1 sns2 amp_tail vsubs nfet L=6U W=25U
+Mamp_M1_5 amp_n1 sns2 amp_tail vsubs nfet L=6U W=25U
+Mamp_M1_6 amp_n1 sns2 amp_tail vsubs nfet L=6U W=25U
+Mamp_M1_7 amp_n1 sns2 amp_tail vsubs nfet L=6U W=25U
+Mamp_M1_8 amp_n1 sns2 amp_tail vsubs nfet L=6U W=25U
+Mamp_M1_9 amp_n1 sns2 amp_tail vsubs nfet L=6U W=25U
+Mamp_M2_0 amp_n2 sns1 amp_tail vsubs nfet L=6U W=25U
+Mamp_M2_1 amp_n2 sns1 amp_tail vsubs nfet L=6U W=25U
+Mamp_M2_10 amp_n2 sns1 amp_tail vsubs nfet L=6U W=25U
+Mamp_M2_11 amp_n2 sns1 amp_tail vsubs nfet L=6U W=25U
+Mamp_M2_2 amp_n2 sns1 amp_tail vsubs nfet L=6U W=25U
+Mamp_M2_3 amp_n2 sns1 amp_tail vsubs nfet L=6U W=25U
+Mamp_M2_4 amp_n2 sns1 amp_tail vsubs nfet L=6U W=25U
+Mamp_M2_5 amp_n2 sns1 amp_tail vsubs nfet L=6U W=25U
+Mamp_M2_6 amp_n2 sns1 amp_tail vsubs nfet L=6U W=25U
+Mamp_M2_7 amp_n2 sns1 amp_tail vsubs nfet L=6U W=25U
+Mamp_M2_8 amp_n2 sns1 amp_tail vsubs nfet L=6U W=25U
+Mamp_M2_9 amp_n2 sns1 amp_tail vsubs nfet L=6U W=25U
+Mamp_M3_0 amp_a3 amp_nd1 vdd nwl pfet L=26.4U W=16.5U
+Mamp_M3_1 amp_a3 amp_nd1 vdd nwl pfet L=26.4U W=16.5U
+Mamp_M4_0 amp_a4 amp_nd1 vdd nwl pfet L=26.4U W=16.5U
+Mamp_M4_1 amp_a4 amp_nd1 vdd nwl pfet L=26.4U W=16.5U
 Mamp_M5_0 amp_tail ibias vss vsubs nfet L=4U W=10U
 Mamp_MB1_0 amp_ncasc amp_pbias vdd nwl pfet L=50U W=5U
 Mamp_MBD1_0 amp_ncasc amp_ncasc amp_nb1 vsubs nfet L=4U W=1U
@@ -49,49 +57,49 @@ Mamp_MC3_0 amp_nd1 amp_pbias amp_a3 nwl pfet L=16U W=20U
 Mamp_MC3_1 amp_nd1 amp_pbias amp_a3 nwl pfet L=16U W=20U
 Mamp_MC4_0 fb amp_pbias amp_a4 nwl pfet L=16U W=20U
 Mamp_MC4_1 fb amp_pbias amp_a4 nwl pfet L=16U W=20U
-Mcore_M1_0 core_d1 fb vdd nwl pfet L=6U W=15U
-Mcore_M1_1 core_d1 fb vdd nwl pfet L=6U W=15U
-Mcore_M1_2 core_d1 fb vdd nwl pfet L=6U W=15U
-Mcore_M1_3 core_d1 fb vdd nwl pfet L=6U W=15U
-Mcore_M2_0 core_d2 fb vdd nwl pfet L=6U W=15U
-Mcore_M2_1 core_d2 fb vdd nwl pfet L=6U W=15U
-Mcore_M2_2 core_d2 fb vdd nwl pfet L=6U W=15U
-Mcore_M2_3 core_d2 fb vdd nwl pfet L=6U W=15U
-Mcore_M3_0 core_d3 fb vdd nwl pfet L=6U W=15U
-Mcore_M3_1 core_d3 fb vdd nwl pfet L=6U W=15U
-Mcore_M3_2 core_d3 fb vdd nwl pfet L=6U W=15U
-Mcore_M3_3 core_d3 fb vdd nwl pfet L=6U W=15U
-Mcore_M4_0 core_d4 fb vdd nwl pfet L=6U W=7.5U
+Mcore_M1_0 core_d1 fb vdd nwl pfet L=8.5U W=21.25U
+Mcore_M1_1 core_d1 fb vdd nwl pfet L=8.5U W=21.25U
+Mcore_M1_2 core_d1 fb vdd nwl pfet L=8.5U W=21.25U
+Mcore_M1_3 core_d1 fb vdd nwl pfet L=8.5U W=21.25U
+Mcore_M2_0 core_d2 fb vdd nwl pfet L=8.5U W=21.25U
+Mcore_M2_1 core_d2 fb vdd nwl pfet L=8.5U W=21.25U
+Mcore_M2_2 core_d2 fb vdd nwl pfet L=8.5U W=21.25U
+Mcore_M2_3 core_d2 fb vdd nwl pfet L=8.5U W=21.25U
+Mcore_M3_0 core_d3 fb vdd nwl pfet L=8.5U W=21.25U
+Mcore_M3_1 core_d3 fb vdd nwl pfet L=8.5U W=21.25U
+Mcore_M3_2 core_d3 fb vdd nwl pfet L=8.5U W=21.25U
+Mcore_M3_3 core_d3 fb vdd nwl pfet L=8.5U W=21.25U
+Mcore_M4_0 core_d4 fb vdd nwl pfet L=8.5U W=10.625U
 Mcore_M5_0 ibias ibias vss vsubs nfet L=2U W=2.5U
-Mcore_MC1_0 sns1 casc core_d1 nwl pfet L=6U W=15U
-Mcore_MC1_1 sns1 casc core_d1 nwl pfet L=6U W=15U
-Mcore_MC1_2 sns1 casc core_d1 nwl pfet L=6U W=15U
-Mcore_MC1_3 sns1 casc core_d1 nwl pfet L=6U W=15U
-Mcore_MC2_0 sns2 casc core_d2 nwl pfet L=6U W=15U
-Mcore_MC2_1 sns2 casc core_d2 nwl pfet L=6U W=15U
-Mcore_MC2_2 sns2 casc core_d2 nwl pfet L=6U W=15U
-Mcore_MC2_3 sns2 casc core_d2 nwl pfet L=6U W=15U
-Mcore_MC3_0 vref casc core_d3 nwl pfet L=6U W=15U
-Mcore_MC3_1 vref casc core_d3 nwl pfet L=6U W=15U
-Mcore_MC3_2 vref casc core_d3 nwl pfet L=6U W=15U
-Mcore_MC3_3 vref casc core_d3 nwl pfet L=6U W=15U
-Mcore_MC4_0 ibias casc core_d4 nwl pfet L=6U W=7.5U
+Mcore_MC1_0 sns1 casc core_d1 nwl pfet L=8.5U W=21.25U
+Mcore_MC1_1 sns1 casc core_d1 nwl pfet L=8.5U W=21.25U
+Mcore_MC1_2 sns1 casc core_d1 nwl pfet L=8.5U W=21.25U
+Mcore_MC1_3 sns1 casc core_d1 nwl pfet L=8.5U W=21.25U
+Mcore_MC2_0 sns2 casc core_d2 nwl pfet L=8.5U W=21.25U
+Mcore_MC2_1 sns2 casc core_d2 nwl pfet L=8.5U W=21.25U
+Mcore_MC2_2 sns2 casc core_d2 nwl pfet L=8.5U W=21.25U
+Mcore_MC2_3 sns2 casc core_d2 nwl pfet L=8.5U W=21.25U
+Mcore_MC3_0 vref casc core_d3 nwl pfet L=8.5U W=21.25U
+Mcore_MC3_1 vref casc core_d3 nwl pfet L=8.5U W=21.25U
+Mcore_MC3_2 vref casc core_d3 nwl pfet L=8.5U W=21.25U
+Mcore_MC3_3 vref casc core_d3 nwl pfet L=8.5U W=21.25U
+Mcore_MC4_0 ibias casc core_d4 nwl pfet L=8.5U W=10.625U
 Mcore_MCB_0 casc casc vdd nwl pfet L=12U W=4U
 Mcore_MNB_0 casc ibias vss vsubs nfet L=2U W=5U
-Mdum_ampload_l vdd vdd vdd nwl pfet L=16U W=2U
-Mdum_ampload_r vdd vdd vdd nwl pfet L=16U W=2U
+Mdum_ampload_l vdd vdd vdd nwl pfet L=26.4U W=2U
+Mdum_ampload_r vdd vdd vdd nwl pfet L=26.4U W=2U
 Mdum_ampncasc_l vss vss vss vsubs nfet L=16U W=2U
 Mdum_ampncasc_r vss vss vss vsubs nfet L=16U W=2U
-Mdum_amppair_l vss vss vss vsubs nfet L=4U W=2U
-Mdum_amppair_r vss vss vss vsubs nfet L=4U W=2U
+Mdum_amppair_l vss vss vss vsubs nfet L=6U W=2U
+Mdum_amppair_r vss vss vss vsubs nfet L=6U W=2U
 Mdum_amppcasc_l vdd vdd vdd nwl pfet L=16U W=2U
 Mdum_amppcasc_r vdd vdd vdd nwl pfet L=16U W=2U
-Mdum_corecasc_l vdd vdd vdd nwl pfet L=6U W=2U
-Mdum_corecasc_r vdd vdd vdd nwl pfet L=6U W=2U
-Mdum_coreibias_l vdd vdd vdd nwl pfet L=6U W=2U
-Mdum_coreibias_r vdd vdd vdd nwl pfet L=6U W=2U
-Mdum_coremirror_l vdd vdd vdd nwl pfet L=6U W=2U
-Mdum_coremirror_r vdd vdd vdd nwl pfet L=6U W=2U
+Mdum_corecasc_l vdd vdd vdd nwl pfet L=8.5U W=2U
+Mdum_corecasc_r vdd vdd vdd nwl pfet L=8.5U W=2U
+Mdum_coreibias_l vdd vdd vdd nwl pfet L=8.5U W=2U
+Mdum_coreibias_r vdd vdd vdd nwl pfet L=8.5U W=2U
+Mdum_coremirror_l vdd vdd vdd nwl pfet L=8.5U W=2U
+Mdum_coremirror_r vdd vdd vdd nwl pfet L=8.5U W=2U
 Mstartup_MKCASC_0 casc startup_det vss vsubs nfet L=2U W=2U
 Mstartup_MKFB_0 fb startup_det vss vsubs nfet L=2U W=2U
 Mstartup_MSENSE_0 startup_det ibias vss vsubs nfet L=2U W=10U
@@ -104,7 +112,7 @@ Qcore_Q2_3 vsubs nw_core_Q2_3 core_e2 bjt AE=2.500000e-11 PE=2.000000e-05 AB=1.0
 Qcore_Q3 vsubs nw_core_Q3 core_e3 bjt AE=2.500000e-11 PE=2.000000e-05 AB=1.081600e-10 PB=4.160000e-05 AC=1.081600e-10 PC=4.160000e-05
 Qdum_pnp_l vsubs nw_dum_pnp_l vss bjt AE=2.500000e-11 PE=2.000000e-05 AB=1.081600e-10 PB=4.160000e-05 AC=1.081600e-10 PC=4.160000e-05
 Qdum_pnp_r vsubs nw_dum_pnp_r vss bjt AE=2.500000e-11 PE=2.000000e-05 AB=1.081600e-10 PB=4.160000e-05 AC=1.081600e-10 PC=4.160000e-05
-Rcore_R1 core_e3 core_tn0 vsubs 76423.200000 ppolyf_u
+Rcore_R1 core_e3 core_tn0 vsubs 77594.300000 ppolyf_u
 Rcore_R2 core_e2 sns2 vsubs 6359.500000 ppolyf_u
 Rcore_trim_RU0 core_tn0 core_tn0 vsubs 485.100000 ppolyf_u
 Rcore_trim_RU1 core_tn0 core_trim_u1_0 vsubs 485.100000 ppolyf_u
