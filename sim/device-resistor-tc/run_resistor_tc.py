@@ -28,9 +28,7 @@ Usage:
 from __future__ import annotations
 
 import re
-import subprocess
 import sys
-import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -75,10 +73,12 @@ HV_DUTS = {
 # Deck composition / ngspice execution -- this experiment measures 12 DUTs
 # per corner via raw `print` (not the single-scalar `let m_<name>` convention
 # sim/harness/runner.py's compose_deck() targets) and layers a well-bias
-# sub-sweep with an extra `.param` on top of the main grid, so it composes
-# its own minimal shim instead of going through compose_deck(). PDK model
-# paths still come from sim/harness/pdk.py -- nothing here re-resolves the
-# PDK on its own.
+# sub-sweep with an extra `.param` on top of the main grid, so it runs a
+# minimal per-corner shim instead of going through compose_deck(). Composing
+# and running that shim is sim/harness/report.py's run_device_corner(), shared
+# with the other four device experiments; what stays here is only this
+# experiment's `.control` body. PDK model paths still come from
+# sim/harness/pdk.py -- nothing here re-resolves the PDK on its own.
 # --------------------------------------------------------------------------
 
 
@@ -86,51 +86,23 @@ def _run_corner(
     deck: Path, pdk: harness_pdk.Pdk, section: str, temp_c: float, extra_shim: str = ""
 ) -> str:
     """Run `deck` through ngspice at one (model section, temperature) point."""
-    with tempfile.TemporaryDirectory(prefix="device-resistor-tc-") as tmp:
-        work = Path(tmp)
-        local_deck = work / deck.name
-        (work / "corner.spice").write_text(
-            harness_report.corner_shim(
-                pdk, section, temp_c, script_name="run_resistor_tc.py", extra=extra_shim
-            ),
-            encoding="utf-8",
-        )
-        (work / "control.spice").write_text(
-            ".control\n"
-            "op\n"
-            "print i(v_pu_w1) i(v_pu_w5)\n"
-            "print i(v_p1k_w1) i(v_p1k_w5)\n"
-            "print i(v_p2k_w1) i(v_p2k_w5)\n"
-            "print i(v_p3k_w1) i(v_p3k_w5)\n"
-            "print i(v_pp_w1) i(v_pp_w5)\n"
-            "print i(v_np_w1) i(v_np_w5)\n"
-            "print i(v_p1k_hv) i(v_p2k_hv) i(v_p3k_hv)\n"
-            "quit\n"
-            ".endc\n",
-            encoding="utf-8",
-        )
-        local_deck.write_text(
-            '.include "corner.spice"\n'
-            + deck.read_text(encoding="utf-8")
-            + '\n.include "control.spice"\n.end\n',
-            encoding="utf-8",
-        )
-        proc = subprocess.run(
-            ["ngspice", "-b", deck.name],
-            cwd=work,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-    log = proc.stdout + proc.stderr
-    if proc.returncode != 0:
-        raise RuntimeError(
-            f"ngspice exited {proc.returncode} for {deck.name} "
-            f"[{section} @ {temp_c} C]\n{log}"
-        )
-    if re.search(r"^\s*(Error|ERROR|fatal)", log, re.MULTILINE):
-        raise RuntimeError(f"ngspice reported an error for {deck.name}:\n{log}")
-    return log
+    return harness_report.run_device_corner(
+        deck,
+        pdk,
+        section,
+        temp_c,
+        "op\n"
+        "print i(v_pu_w1) i(v_pu_w5)\n"
+        "print i(v_p1k_w1) i(v_p1k_w5)\n"
+        "print i(v_p2k_w1) i(v_p2k_w5)\n"
+        "print i(v_p3k_w1) i(v_p3k_w5)\n"
+        "print i(v_pp_w1) i(v_pp_w5)\n"
+        "print i(v_np_w1) i(v_np_w5)\n"
+        "print i(v_p1k_hv) i(v_p2k_hv) i(v_p3k_hv)\n",
+        tmp_prefix="device-resistor-tc-",
+        script_name="run_resistor_tc.py",
+        extra_shim=extra_shim,
+    )
 
 
 _OP_LINE = re.compile(r"^([a-zA-Z_][\w()\-.,+@#]*)\s*=\s*([-+0-9.eE]+)\s*$")

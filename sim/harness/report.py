@@ -27,6 +27,7 @@ import shutil
 import socket
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 from . import HARNESS_VERSION
@@ -596,7 +597,7 @@ def write_record(record: dict, experiment_dir: Path) -> Path:
 
 
 # --------------------------------------------------------------------------
-# Device-level evidence plumbing
+# Device-level corner running and evidence plumbing
 #
 # The ``sim/device-*/run_*.py`` experiments do not go through the ``tb.json``
 # single-grid contract the functions above serve (they sweep DC tables, run
@@ -607,6 +608,15 @@ def write_record(record: dict, experiment_dir: Path) -> Path:
 # deck as this record's netlist snapshot. Those live here, next to
 # ``write_netlist_snapshot`` / ``write_record``, so the evidence layout
 # ``sim/README.md`` ratifies has exactly one implementation.
+#
+# ``corner_shim`` and ``run_device_corner`` complete that set: composing the
+# per-corner deck and handing it to ngspice was the last piece each of the five
+# scripts still carried its own copy of. Only the device-specific ``.control``
+# body ever differed, so it is the one argument the caller supplies. These live
+# here rather than in :mod:`harness.runner` because ``run_device_corner``
+# builds on ``corner_shim`` and ``report`` already imports ``runner`` (the
+# reverse edge would be a cycle); ``runner`` remains the home of the
+# ``compose_deck``/``run_point`` path these experiments deliberately bypass.
 #
 # The ``device_`` naming follows ``corners.device_corner_id``: it marks the
 # two-terminal, ``nosupply`` device-testbench flavour of the same convention.
@@ -667,6 +677,76 @@ def corner_shim(
         f'.lib "{pdk.model_lib}" {section}\n'
         f".temp {temp_c:g}\n" + (extra + "\n" if extra else "")
     )
+
+
+def run_device_corner(
+    deck: Path,
+    pdk: Pdk,
+    section: str,
+    temp_c: float,
+    control: str,
+    *,
+    tmp_prefix: str,
+    script_name: str,
+    extra_shim: str = "",
+) -> str:
+    """Run ``deck`` through ngspice at one (model section, temperature) point.
+
+    Composes, in a throwaway working directory, the three files every
+    ``sim/device-*/run_*.py`` corner point needs -- ``corner.spice`` (the
+    :func:`corner_shim` header), ``control.spice`` (this experiment's
+    analysis), and a local copy of ``deck`` that ``.include``s both -- then
+    invokes ngspice on it in batch mode and returns the raw log
+    (stdout + stderr), which is what the calling script parses and commits as
+    evidence.
+
+    ``control`` is the *body* of the ngspice ``.control`` block only: the
+    ``.control`` opener and the ``quit``/``.endc`` tail are identical in every
+    experiment, so they are supplied here. It must be newline-terminated.
+
+    ``extra_shim`` is passed through to :func:`corner_shim` for the one
+    experiment (``run_resistor_tc.py``'s well-bias sub-sweep) that needs an
+    extra ``.param`` line in the corner header.
+
+    Raises ``RuntimeError`` on a non-zero ngspice exit or on an error
+    diagnostic in the log -- a device characterization must never quietly
+    record a corner ngspice refused to solve.
+    """
+    with tempfile.TemporaryDirectory(prefix=tmp_prefix) as tmp:
+        work = Path(tmp)
+        local_deck = work / deck.name
+        (work / "corner.spice").write_text(
+            corner_shim(
+                pdk, section, temp_c, script_name=script_name, extra=extra_shim
+            ),
+            encoding="utf-8",
+        )
+        (work / "control.spice").write_text(
+            ".control\n" + control + "quit\n.endc\n",
+            encoding="utf-8",
+        )
+        local_deck.write_text(
+            '.include "corner.spice"\n'
+            + deck.read_text(encoding="utf-8")
+            + '\n.include "control.spice"\n.end\n',
+            encoding="utf-8",
+        )
+        proc = subprocess.run(
+            ["ngspice", "-b", deck.name],
+            cwd=work,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    log = proc.stdout + proc.stderr
+    if proc.returncode != 0:
+        raise RuntimeError(
+            f"ngspice exited {proc.returncode} for {deck.name} "
+            f"[{section} @ {temp_c} C]\n{log}"
+        )
+    if re.search(r"^\s*(Error|ERROR|fatal)", log, re.MULTILINE):
+        raise RuntimeError(f"ngspice reported an error for {deck.name}:\n{log}")
+    return log
 
 
 def write_device_corner_log(

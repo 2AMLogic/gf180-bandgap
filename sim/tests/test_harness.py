@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import datetime
 import json
+import os
+import stat
 import sys
 import tempfile
 import unittest
@@ -432,6 +434,129 @@ class DeviceWriteRecordTests(unittest.TestCase):
             self.assertEqual(
                 (records_dir / "20260729-153000-abc1234.md").read_text(), "keep\n"
             )
+
+
+#: The five ``sim/device-*/run_*.py`` experiments that share the device-level
+#: corner runner. Kept here so the delegation test below fails loudly if a
+#: sixth experiment appears (or one of these is renamed) without being wired
+#: through ``report.run_device_corner``.
+DEVICE_RUN_SCRIPTS = [
+    "device-resistor-tc/run_resistor_tc.py",
+    "device-pnp-vbe/run_pnp_vbe.py",
+    "device-pnp-mismatch/run_pnp_mismatch.py",
+    "device-mos-vth/run_mos_vth.py",
+    "device-mos-mismatch/run_mos_mismatch.py",
+]
+
+
+class RunDeviceCornerTests(unittest.TestCase):
+    """sim/device-*/run_*.py's shared per-corner ngspice runner.
+
+    Replaces the five near-identical private ``_run_corner`` copies formerly
+    duplicated across the device experiments (#158). ngspice itself is stubbed
+    by a script on ``PATH`` -- these tests assert what gets composed and how a
+    failed run is reported, not device physics.
+    """
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        self.pdk = fake_pdk(self.root / "gf180mcuD")
+        self.deck = self.root / "tb_thing.spice"
+        self.deck.write_text("* device testbench\nr1 a 0 1k\n", encoding="utf-8")
+
+    def stub_ngspice(self, body: str) -> None:
+        """Put a fake `ngspice` first on PATH for the duration of one test."""
+        bindir = self.root / "bin"
+        bindir.mkdir(exist_ok=True)
+        exe = bindir / "ngspice"
+        exe.write_text("#!/bin/sh\n" + body, encoding="utf-8")
+        exe.chmod(exe.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+        previous = os.environ.get("PATH", "")
+        os.environ["PATH"] = f"{bindir}{os.pathsep}{previous}"
+        self.addCleanup(os.environ.__setitem__, "PATH", previous)
+
+    def run_corner(self, **kwargs) -> str:
+        return report.run_device_corner(
+            self.deck,
+            self.pdk,
+            "res_typical",
+            27.0,
+            kwargs.pop("control", "op\nprint i(v1)\n"),
+            tmp_prefix=kwargs.pop("tmp_prefix", "device-test-"),
+            script_name=kwargs.pop("script_name", "run_thing.py"),
+            **kwargs,
+        )
+
+    def test_composes_shim_control_and_deck_then_returns_the_log(self):
+        # The stub echoes back exactly what the runner laid down next to it.
+        self.stub_ngspice('echo "ARGS: $*"\ncat corner.spice control.spice "$2"\n')
+        log = self.run_corner()
+
+        self.assertIn("ARGS: -b tb_thing.spice", log)
+        # corner.spice is corner_shim() verbatim -- same PDK includes and .temp
+        self.assertIn(
+            report.corner_shim(
+                self.pdk, "res_typical", 27.0, script_name="run_thing.py"
+            ),
+            log,
+        )
+        # control.spice frames the caller's body with .control/quit/.endc
+        self.assertIn(".control\nop\nprint i(v1)\nquit\n.endc\n", log)
+        # the local deck sandwiches the testbench between the two includes
+        self.assertIn(
+            '.include "corner.spice"\n* device testbench\nr1 a 0 1k\n'
+            '\n.include "control.spice"\n.end\n',
+            log,
+        )
+
+    def test_extra_shim_reaches_the_corner_header(self):
+        self.stub_ngspice("cat corner.spice\n")
+        log = self.run_corner(extra_shim=".param v_nwell = 2.97")
+        self.assertIn(".param v_nwell = 2.97\n", log)
+
+    def test_log_is_stdout_plus_stderr(self):
+        self.stub_ngspice('echo "on stdout"\necho "on stderr" >&2\n')
+        log = self.run_corner()
+        self.assertIn("on stdout", log)
+        self.assertIn("on stderr", log)
+
+    def test_nonzero_exit_raises_with_the_corner_in_the_message(self):
+        self.stub_ngspice('echo "some output"\nexit 3\n')
+        with self.assertRaises(RuntimeError) as caught:
+            self.run_corner()
+        message = str(caught.exception)
+        self.assertIn("ngspice exited 3", message)
+        self.assertIn("tb_thing.spice", message)
+        self.assertIn("res_typical @ 27.0 C", message)
+        self.assertIn("some output", message)
+
+    def test_error_diagnostic_raises_even_on_a_zero_exit(self):
+        # ngspice happily exits 0 on a deck it could not solve -- a device
+        # characterization must never quietly record that corner.
+        self.stub_ngspice('echo "Error: unknown subcircuit"\n')
+        with self.assertRaises(RuntimeError) as caught:
+            self.run_corner()
+        self.assertIn("reported an error", str(caught.exception))
+
+    def test_working_directory_is_disposable(self):
+        self.stub_ngspice("pwd\n")
+        log = self.run_corner(tmp_prefix="device-disposable-")
+        workdir = Path(log.strip().splitlines()[-1])
+        self.assertIn("device-disposable-", workdir.name)
+        self.assertFalse(workdir.exists(), "tempdir outlived the run")
+
+    def test_every_device_script_delegates_instead_of_re_implementing(self):
+        for rel in DEVICE_RUN_SCRIPTS:
+            path = SIM_DIR / rel
+            with self.subTest(script=rel):
+                source = path.read_text(encoding="utf-8")
+                self.assertIn("run_device_corner(", source)
+                # the boilerplate this helper replaced must not come back
+                self.assertNotIn("tempfile.TemporaryDirectory", source)
+                self.assertNotIn("subprocess.run", source)
+                self.assertNotIn('"ngspice", "-b"', source)
 
 
 class MatrixConformanceTests(unittest.TestCase):

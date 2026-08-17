@@ -284,6 +284,8 @@ the `<corner-name>_<temp>c_<volts>v` form a circuit-level bench gets. That
 naming, and the PDK/ngspice/record-identity plumbing underneath it, is
 factored into this package (`pdk.find_pdk`, `runner.ngspice_version`,
 `report.git_provenance` / `allocate_record_id`,
+`report.corner_shim` / `run_device_corner` — composing and running one
+per-corner deck, with only the `.control` body left to the experiment —
 `corners.device_corner_id`) rather than reimplemented per experiment
 (issue #117 — this consolidated a prior standalone `sim/tools/devchar.py`
 that duplicated the same plumbing).
