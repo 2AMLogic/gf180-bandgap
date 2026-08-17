@@ -272,8 +272,25 @@ def build_reference(trim_code: int) -> tuple[str, dict]:
     plate_top = net_of(cap.nets[1])
     plate_bot = net_of(cap.nets[0])
     use(plate_top, plate_bot)
-    farads = plan_mod.mim_plate_area_nm2(cap) / 1e6 * plan_mod.MIM_CAP_F_PER_UM2
-    lines.append(f"C{cap_name} {plate_bot} {plate_top} {farads:.6e} {CAP_CLASS}")
+    farads = plan_mod.mim_cap_farads(cap)
+    # klayout's native `DeviceExtractorCapacitor` (klt's `cap_mim_*` classes
+    # are built directly on it) also reports the recognised plate's own
+    # `a`/`p` geometric parameters. Leaving these unset left them default to
+    # 0.0 on this side, mismatching the layout's real extracted values on
+    # every run (#159). Written in SI base units (m^2/m), the same
+    # unit convention the AE/PE/AB/PB bipolar parameters above already use --
+    # `NetlistSpiceReader` reads bare numeric literals as SI and this report
+    # layer's own um^2/um display conversion (`* 1e12`/`* 1e6`) only lines up
+    # against the layout's real extracted value when the reference is stored
+    # in the same SI units, not pre-converted to um^2/um.
+    # `mim_plate_area_nm2`/`mim_plate_perimeter_nm` measure the same
+    # recognised top-plate rectangle `farads` above already uses.
+    a_m2 = plan_mod.mim_plate_area_nm2(cap) * 1e-18
+    p_m = plan_mod.mim_plate_perimeter_nm(cap) * 1e-9
+    lines.append(
+        f"C{cap_name} {plate_bot} {plate_top} {farads:.6e} {CAP_CLASS} "
+        f"a={a_m2:.6e} p={p_m:.6e}"
+    )
     counts[CAP_CLASS] += 1
 
     # Pins: the block's three real ports plus the one body net the deck

@@ -30,9 +30,11 @@ The separate **DRC** deck was never Metal1-only, and is even less so today:
 since klayout-tools#188 it also carries ``metal2``/``metal3``/``metal5``
 width|space, ``metaltop``.* and ``mim.space.1``/``mim.enclosing.fusetop.1``
 rules (see ``layout/README.md`` § "The gf180mcu DRC deck: coverage" for the
-full, current list). Only the **via** layers (``Via1``..``Via4``,
-35/0/38/0/40/0/41/0) are genuinely rule-free there — everything else drawn
-above Metal1, including ``Metal4``/``FuseTop``, is checked.
+full, current list). The **via** layers (``Via1``..``Via4``,
+35/0/38/0/40/0/41/0) were genuinely rule-free when this note was first
+written, but klt has since gained ``via1.width.1``..``via4.width.1``
+(#159) — everything drawn above Metal1, including ``Metal4``/``FuseTop``
+and the vias themselves, is checked today.
 
 * **Corridor spines** — one vertical ``Poly2`` spine per net, in a dedicated
   comp-free corridor down the left edge of the block.
@@ -206,16 +208,18 @@ GUARD_CLEAR = 1600  # block content -> guard ring inner edge
 # module docstring's "Routing style"). Sizes mirror CT/ENC_CT's proportions
 # (a square via with a symmetric metal enclosure). The gf180mcu **DRC** deck
 # does carry metal2/metal3/metal5.width|space and mim.space.1/
-# mim.enclosing.fusetop.1 rules (klayout-tools#188; see layout/README.md),
-# but no rule for a metal layer's enclosure of a via -- the via layers
-# themselves (35/0, 38/0, 40/0, 41/0) are rule-free -- so there is no deck
-# minimum to cite for *these* via sizes specifically; these are just
-# conservative, self-consistent
-# choices for a first, one-off use of the stack.
+# mim.enclosing.fusetop.1 rules (klayout-tools#188; see layout/README.md).
+# The via layers themselves (35/0, 38/0, 40/0, 41/0) were rule-free when this
+# stack was first drawn, but klt has since gained ``via1.width.1``..
+# ``via4.width.1`` (DRM ``Vn.1``: each via is a fixed 0.26 x 0.26um square) --
+# #159 found the drift once klt started enforcing it. ``VIA_W`` below is now
+# the exact DRM value (not a self-chosen conservative margin) so it matches
+# both halves of ``Vn.1`` even though ``width_check`` only enforces the min
+# half.
 # --------------------------------------------------------------------------- #
-VIA_W = 240  # via1..via4 width, matches CT's width
+VIA_W = 260  # via1..via4 width -- DRM Vn.1 fixed size, 0.26um
 VIA_ENC = 100  # metal enclosure of a via, matches ENC_CT
-VIA_PAD = VIA_W + 2 * VIA_ENC  # 440 nm square landing pad
+VIA_PAD = VIA_W + 2 * VIA_ENC  # 460 nm square landing pad
 FB_M5_WIRE_W = 700  # fb top-plate route: Metal5 wire width (>> VIA_W, margin)
 # MIMTM.2 ("min. MiM bottom-plate overlap of Via4", 0.4um) is not transcribed
 # into the gf180mcu DRC deck (see layout/README.md's "The gf180mcu DRC deck:
@@ -469,7 +473,13 @@ def draw_trim(b: Builder, item: TrimLadderItem, x0: int, y0: int) -> list[Termin
     top = row1_y + uw
     terminals: list[Terminal] = []
     for cx, net in ((tn0_x, item.nets[0]), (upper_pads[-1][0], item.nets[1])):
-        b.box(L_METAL1, cx - BAR_W // 2, row0_y + uw // 2 if cx == tn0_x else row1_y + uw // 2, cx + BAR_W // 2, top + BAR_TOP)
+        # The bottom of this box must enclose the pad's own base contact
+        # (drawn by `draw_unit` at the same `cx`, centred on this same row's
+        # `cy`) the same way `bridge()` does elsewhere in this function --
+        # starting exactly at `cy` instead of `cy - BAR_W // 2` left that
+        # contact's bottom half uncovered (metal1.enclosing.contact.1, #159).
+        row_cy = (row0_y if cx == tn0_x else row1_y) + uw // 2
+        b.box(L_METAL1, cx - BAR_W // 2, row_cy - BAR_W // 2, cx + BAR_W // 2, top + BAR_TOP)
         b.contact(cx, top + STUB_CT + CT // 2)
         b.box(L_POLY2, cx - STUB_W // 2, top + STUB_BOT, cx + STUB_W // 2, top + STUB_CT + CT + ENC_CT)
         terminals.append(Terminal(net, cx, top + STUB_BOT))
@@ -524,7 +534,19 @@ def draw_pnp(b: Builder, item: PnpItem, x0: int, y0: int) -> list[Terminal]:
     b.contact_column(strap_x, cy - PNP_RING // 2, cy + PNP_RING // 2)
     base_strap_x = cx - base_outer // 2 + PNP_RING // 2
     b.contact_column(base_strap_x, cy - PNP_RING // 2, cy + PNP_RING // 2)
-    b.box(L_METAL1, strap_x - BAR_W // 2, cy - BAR_W // 2, base_strap_x + BAR_W // 2, cy + BAR_W // 2)
+    # The horizontal strap must enclose every contact `contact_column` placed
+    # above (metal1.enclosing.contact.1) -- the column spans the full ring
+    # height (`cy +/- PNP_RING // 2`), not just `BAR_W`, so the strap has to
+    # match that span rather than the narrower rail width used elsewhere
+    # (#159: a `BAR_W`-tall strap left the column's outer contacts partially
+    # uncovered once klt started checking this enclosure).
+    b.box(
+        L_METAL1,
+        strap_x - BAR_W // 2,
+        cy - PNP_RING // 2,
+        base_strap_x + BAR_W // 2,
+        cy + PNP_RING // 2,
+    )
     b.box(L_METAL1, strap_x - BAR_W // 2, cy, strap_x + BAR_W // 2, y0 + size + BAR_TOP)
 
     terminals: list[Terminal] = []
