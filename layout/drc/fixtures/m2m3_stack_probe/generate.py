@@ -72,8 +72,14 @@ and ``layout/lvs/reports/m2m3_stack_probe/``)::
 from __future__ import annotations
 
 import os
+import sys
+from pathlib import Path
 
 import klayout.db as kdb
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "common"))
+
+from klayout_builder import BuilderBase  # noqa: E402
 
 TOP_CELL = "m2m3_stack_probe"
 
@@ -141,19 +147,9 @@ NET_M_TRACK_Y = 10000  # Metal3 track for net M (crosses both poly bodies)
 NET_N_TRACK_Y = NET_M_TRACK_Y + TRACK_PITCH  # its neighbour, one pitch above
 
 
-class Builder:
+class Builder(BuilderBase):
     def __init__(self) -> None:
-        self.layout = kdb.Layout()
-        self.layout.dbu = 0.001
-        self.cell = self.layout.create_cell(TOP_CELL)
-        self._layers: dict[tuple[int, int], int] = {}
-        for pair, name in LAYER_NAMES.items():
-            index = self.layout.layer(*pair)
-            self.layout.set_info(index, kdb.LayerInfo(pair[0], pair[1], name))
-            self._layers[pair] = index
-
-    def box(self, layer: tuple[int, int], x0: int, y0: int, x1: int, y1: int) -> None:
-        self.cell.shapes(self._layers[layer]).insert(kdb.Box(x0, y0, x1, y1))
+        super().__init__(TOP_CELL, LAYER_NAMES)
 
     def square(self, layer: tuple[int, int], cx: int, cy: int, size: int) -> None:
         self.box(layer, cx - size // 2, cy - size // 2, cx + size // 2, cy + size // 2)

@@ -74,11 +74,14 @@ from __future__ import annotations
 import os
 import sys
 from dataclasses import dataclass
+from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "common"))
 
 import klayout.db as kdb  # noqa: E402
 
+from klayout_builder import BuilderBase  # noqa: E402
 import plan as plan_mod  # noqa: E402
 from plan import (  # noqa: E402
     MimCapItem,
@@ -229,19 +232,9 @@ class Terminal:
     stub_y0: int
 
 
-class Builder:
+class Builder(BuilderBase):
     def __init__(self) -> None:
-        self.layout = kdb.Layout()
-        self.layout.dbu = 0.001
-        self.cell = self.layout.create_cell(TOP_CELL)
-        self._layers: dict[tuple[int, int], int] = {}
-        for pair, name in LAYER_NAMES.items():
-            index = self.layout.layer(*pair)
-            self.layout.set_info(index, kdb.LayerInfo(pair[0], pair[1], name))
-            self._layers[pair] = index
-
-    def box(self, layer: tuple[int, int], x0: int, y0: int, x1: int, y1: int) -> None:
-        self.cell.shapes(self._layers[layer]).insert(kdb.Box(x0, y0, x1, y1))
+        super().__init__(TOP_CELL, LAYER_NAMES)
 
     def label(self, x: int, y: int, text: str) -> None:
         self.cell.shapes(self._layers[L_METAL1_LBL]).insert(
