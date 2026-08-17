@@ -76,7 +76,6 @@ from plan import (  # noqa: E402
     MosItem,
     PnpItem,
     ResItem,
-    Row,
     TapItem,
     TrimLadderItem,
     pnp_size,

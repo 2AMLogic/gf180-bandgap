@@ -1047,7 +1047,7 @@ def render(
     lines += _anchor_section(combined)
     lines += _corner_section(combined)
     lines += _sensitivity_section(combined)
-    lines += _methodology_section(combined)
+    lines += _methodology_section()
     return "\n".join(lines) + "\n"
 
 
@@ -1320,7 +1320,7 @@ def _sensitivity_section(combined: CombinedVerdict) -> list[str]:
     return lines
 
 
-def _methodology_section(combined: CombinedVerdict) -> list[str]:
+def _methodology_section() -> list[str]:
     return [
         "",
         "## Methodology (and its stated approximation)",
