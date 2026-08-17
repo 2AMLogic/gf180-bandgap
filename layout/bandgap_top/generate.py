@@ -19,52 +19,76 @@ Routing style, and why it looks like this
 
 ``klt``'s gf180mcu **extraction** deck used to model exactly **one** metal
 level (``Metal1``, 34/0) — no ``Metal2``..``Metal5``, so a block routed
-above Metal1 would have extracted as a pile of disconnected nets. That
-constraint is why this layout is routed entirely on ``Metal1`` plus
-``Poly2``, using poly as the crossunder layer, everywhere except the
-compensation cap's via stack (below). The extraction deck has since gained
-the full Metal1–Metal5 stack with vias (klayout-tools#220), which is what
-lets that one exception exist at all.
+above Metal1 would have extracted as a pile of disconnected nets. That used
+to be why this layout was routed entirely on ``Metal1`` plus ``Poly2``: a
+dedicated per-net ``Poly2`` corridor down the left edge of the block, one
+``Metal1`` rail per net stacked above each row, and a ``Poly2`` stub off
+every device terminal to reach its rail. The extraction deck has since
+gained the full Metal1–Metal5 stack with vias (klayout-tools#220), and
+gf180-bandgap#160/#166 replaced that scheme with the multi-level-metal
+routing described below.
 
 The separate **DRC** deck was never Metal1-only, and is even less so today:
 since klayout-tools#188 it also carries ``metal2``/``metal3``/``metal5``
 width|space, ``metaltop``.* and ``mim.space.1``/``mim.enclosing.fusetop.1``
 rules (see ``layout/README.md`` § "The gf180mcu DRC deck: coverage" for the
 full, current list). The **via** layers (``Via1``..``Via4``,
-35/0/38/0/40/0/41/0) were genuinely rule-free when this note was first
-written, but klt has since gained ``via1.width.1``..``via4.width.1``
-(#159) — everything drawn above Metal1, including ``Metal4``/``FuseTop``
-and the vias themselves, is checked today.
+35/0/38/0/40/0/41/0) carry ``via1.width.1``..``via4.width.1`` (#159) and
+``metalN.enclosing.viaN.1`` rules — everything drawn above Metal1, including
+``Metal4``/``FuseTop`` and the vias themselves, is checked.
 
-* **Corridor spines** — one vertical ``Poly2`` spine per net, in a dedicated
-  comp-free corridor down the left edge of the block.
-* **Row rails** — inside each row, one horizontal ``Metal1`` rail per net
-  used by that row, running from that net's spine out over the row's devices.
-* **Device stubs** — every device terminal rises out of the device on a short
-  ``Poly2`` stub to its net's rail. Poly and Metal1 cross freely (they only
-  connect through a drawn ``Contact``), so a stub can pass under any number
-  of rails belonging to other nets.
+**Metal2 vertical spines, Metal3 over-the-cell row rails** (study §3,
+gf180-bandgap#160/#166) — no reserved corridor:
 
-That is a correct single-metal routing discipline, but it is *not* how this
-block would be routed with a real multi-metal stack, and it costs
-significant area (see ``layout/bandgap_top/AREA.md``). The tool gap is filed
-generically against klayout-tools; see ``layout/README.md`` § "Friction
-filed".
+* ``Poly2`` (30/0) is device-local again: gate poly and resistor bodies
+  only, no routing. Every device terminal — MOS source/drain/gate,
+  resistor/PNP/tap free ends — ends on a small local ``Contact`` +
+  ``Metal1`` pad (:func:`draw_mos` widens the poly gate stub the same way
+  :func:`draw_res` already widened a resistor's free end, so a gate can be
+  reached by a contact like every other terminal).
+* ``Metal2`` (36/0) carries one vertical **spine** per routed net, chosen by
+  :func:`assign_spine_x` to sit *over* the device field — not beside it in a
+  dedicated corridor, which is what actually recovers the corridor's width
+  (study §5). A spine only needs to avoid **other nets'** Metal2 (other
+  spines, other terminals' risers, below) at the deck's `metal2.space.1`;
+  it costs nothing else, because Metal2 does not interact with the
+  ``COMP``/``Poly2``/``Metal1`` geometry it runs above (proven against a
+  real DRC/extraction run by the ``m2m3_stack_probe`` fixture, study §8).
+* ``Metal3`` (42/0) carries one horizontal **row rail** per net used in that
+  row, positioned *inside* the row's own device-content height (not stacked
+  above it) — :func:`route_rows` asserts this fits before drawing, the same
+  invariant ``routing_budget.py``'s ``track_fit`` check verifies against the
+  netlist. A rail spans from its net's spine x out to that row's own
+  terminals; where it crosses the spine, one ``Via2`` ties the two together.
+* Each terminal's own **Metal1 → Via1 → Metal2 → Via2 → Metal3** hop (drawn
+  by :func:`_riser`) is a short Metal2 "riser" climbing from the terminal's
+  local pad up (or down) to its net's row-rail height, landing directly on
+  the rail. It is the multi-metal counterpart of the old scheme's ``Poly2``
+  stub — Metal2 is immune to shorting a *different* net's Metal1 straps the
+  same way Poly2 was, so it can climb past them freely.
+* ``Metal4``/``Metal5`` stay MIM-cap-only (study §4: the deck has no
+  ``metal4.width``/``metal4.space`` rule at all, so routing on Metal4 would
+  put geometry outside DRC coverage).
 
-**How much it costs, and what replacing it would recover**, is decomposed
-term by term by ``layout/bandgap_top/routing_budget.py`` (the corridor is
-16.90 um of block width; the stacked rails are 56.42 um of block height) and
-written up in ``layout/routing/multi-metal-routing-study.md``
-(gf180-bandgap#160): Metal2 vertical spines plus Metal3 over-the-cell row
-rails estimate at 2.60x device body area against today's 3.19x. That study
-is a design + estimate only — nothing in this module implements it yet, so
-everything described above is still what gets drawn.
+**Why two passes.** :func:`assign_spine_x` needs every terminal's position
+before it can legalize spine x's against them, but terminal positions come
+from actually drawing each row's items. ``build()`` therefore runs
+:func:`place_rows` twice: once against a :class:`NullBuilder` (all drawing
+calls are no-ops) purely to discover terminal positions, then for real once
+spines are assigned. Item placement never depends on the routing scheme, so
+both passes place every item identically.
 
-**One exception**: the compensation MIM capacitor's ``Metal4``/``FuseTop``
-plates (drawn by ``_mim_cap``) are wired down to the Metal1 ``vdd``/``fb``
-rails above through a real ``Via1``..``Via4`` stack (#77) — this block's only
-use of ``Metal2``..``Metal5``. See ``_mim_cap``'s own docstring for why that
-via stack has to be shaped the way it is.
+**How much this recovers, and how the estimate compares with what's
+actually drawn**, is written up in
+``layout/routing/multi-metal-routing-study.md`` (gf180-bandgap#160) and
+``layout/bandgap_top/AREA.md``.
+
+**One more consumer of the stack**: the compensation MIM capacitor's
+``Metal4``/``FuseTop`` plates (drawn by ``_mim_cap``) are wired to the
+``vdd``/``fb`` row rails above through a ``Via1``..``Via4`` stack (#77) —
+now landing directly on the AMPPCASC row's own Metal3 rails (a shorter
+stack than before Metal1 rails moved to Metal3). See ``_mim_cap``'s own
+docstring for why that via stack has to be shaped the way it is.
 
 Matching plan, device folding and the netlist reduction the extraction deck
 implies all live in the two modules this one builds on:
@@ -185,40 +209,44 @@ LAYER_NAMES = {
 CT_PITCH = 500  # contact.space.1 min 250 -> 260 space here
 SD_COL = 900  # source/drain column width
 POLY_EXT = 400  # gate poly2 extension past COMP
-STUB_W = 380  # poly2 stub width (>= CT + 2*70)
+STUB_W = 380  # poly2 stub width (>= CT + 2*70), used for every device's local
+# contact-widening pad (MOS gate, resistor/PNP/trim free ends)
 BAR_W = 400  # Metal1 bar/rail width, metal1.width.1 min 230
-STUB_BOT = 250  # poly2 stub bottom, above COMP top
-STUB_CT = 330  # stub<->bar contact bottom, above COMP top
-BAR_TOP = 700  # Metal1 SD bar top, above COMP top
-HEAD = 1300  # COMP top -> first rail centre
-TRACK_PITCH = 640  # rail pitch (400 wide + 240 space; metal1.space.1 min 230)
+BAR_TOP = 300  # Metal1 terminal-pad top, above the item's own edge -- just
+# enough for a Via1 landing (VIA1_LAND inset, below) with margin. Sized
+# small deliberately (study §3): the old single-metal scheme needed this
+# much larger (700nm) to leave room for a further Poly2 climb toward a
+# corridor rail; the Metal2/Metal3 scheme's riser (_riser) does that climbing
+# instead, so the local Metal1 pad no longer has to reach far -- reaching
+# less also keeps every terminal's local pad clear of the next row's own
+# terminals across ROW_GAP (gf180-bandgap#166).
 ISLAND_GAP = 500  # COMP-to-COMP between islands, comp.space.1 min 280
 ROW_GAP = 1100
-SPINE_W = 400
-SPINE_PITCH = 640  # 400 wide + 240 space; poly2.space.1 min 240
-FIELD_GAP = 900  # corridor -> device field
 NWELL_ENC = 600  # Nwell overlap of PMOS COMP, nwell.enclosing.comp.1 min 120
 NWELL_CLEAR = 2000  # Nwell edge -> unrelated COMP
 GUARD_W = 1600  # guard-ring COMP width
 GUARD_CLEAR = 1600  # block content -> guard ring inner edge
 
 # --------------------------------------------------------------------------- #
-# Compensation-cap via stack (#77). This is the layout's only user of
-# Metal2-Metal5/Via1-Via4 -- everywhere else routes on Metal1/Poly2 (see the
-# module docstring's "Routing style"). Sizes mirror CT/ENC_CT's proportions
-# (a square via with a symmetric metal enclosure). The gf180mcu **DRC** deck
-# does carry metal2/metal3/metal5.width|space and mim.space.1/
-# mim.enclosing.fusetop.1 rules (klayout-tools#188; see layout/README.md).
-# The via layers themselves (35/0, 38/0, 40/0, 41/0) were rule-free when this
-# stack was first drawn, but klt has since gained ``via1.width.1``..
-# ``via4.width.1`` (DRM ``Vn.1``: each via is a fixed 0.26 x 0.26um square) --
-# #159 found the drift once klt started enforcing it. ``VIA_W`` below is now
-# the exact DRM value (not a self-chosen conservative margin) so it matches
-# both halves of ``Vn.1`` even though ``width_check`` only enforces the min
-# half.
+# Compensation-cap via stack (#77) and the Metal2/Metal3 row-routing stack
+# (gf180-bandgap#160/#166) share the same via layers/sizes -- everywhere in
+# this block routes on Metal1..Metal3/Poly2 except the compensation cap's own
+# Metal4/Metal5 plates (see the module docstring's "Routing style"). Sizes
+# mirror CT/ENC_CT's proportions (a square via with a symmetric metal
+# enclosure). The gf180mcu **DRC** deck does carry metal2/metal3/metal5.
+# width|space and mim.space.1/mim.enclosing.fusetop.1 rules (klayout-tools#188;
+# see layout/README.md). The via layers themselves (35/0, 38/0, 40/0, 41/0)
+# were rule-free when the cap's stack was first drawn, but klt has since
+# gained ``via1.width.1``..``via4.width.1`` (DRM ``Vn.1``: each via is a
+# fixed 0.26 x 0.26um square) -- #159 found the drift once klt started
+# enforcing it. ``VIA_W`` below is now the exact DRM value (not a
+# self-chosen conservative margin) so it matches both halves of ``Vn.1``
+# even though ``width_check`` only enforces the min half.
 # --------------------------------------------------------------------------- #
 VIA_W = 260  # via1..via4 width -- DRM Vn.1 fixed size, 0.26um
-VIA_ENC = 100  # metal enclosure of a via, matches ENC_CT
+VIA_ENC = 100  # metal enclosure of a via, matches ENC_CT (used by _mim_cap's
+# own Metal4/Metal5 pads, which have room to spare beyond the row-routing
+# stack's tighter ROUTE_VIA_ENC below)
 VIA_PAD = VIA_W + 2 * VIA_ENC  # 460 nm square landing pad
 FB_M5_WIRE_W = 700  # fb top-plate route: Metal5 wire width (>> VIA_W, margin)
 # MIMTM.2 ("min. MiM bottom-plate overlap of Via4", 0.4um) is not transcribed
@@ -228,12 +256,40 @@ FB_M5_WIRE_W = 700  # fb top-plate route: Metal5 wire width (>> VIA_W, margin)
 MIM_VIA_OVERLAP_MIN = 400  # MIMTM.2 minimum, nm
 FB_DOWNHOP_CLEAR = 3000  # fb down-hop x, clear of the bottom plate (mim.space.1: 1.2um min Metal4-Metal4 spacing)
 
+# --------------------------------------------------------------------------- #
+# Metal2/Metal3 row routing (gf180-bandgap#160/#166, study §3/§4). Sizing
+# read out of the *installed* deck (klayout_tools/decks/gf180mcu.py, klt
+# 0.2.0): metal2.width.1/metal3.width.1 min 280nm, metal2.space.1/
+# metal3.space.1 min 280nm, metal2.enclosing.via1.1/metal3.enclosing.via2.1
+# min 10nm. Replaces the old Poly2-corridor-and-Metal1-rail scheme the
+# module docstring's "Routing style" used to describe.
+# --------------------------------------------------------------------------- #
+TRACK_W = 400  # metal2.width.1 / metal3.width.1 min 280 (1.43x margin)
+TRACK_SP = 320  # metal2.space.1 / metal3.space.1 min 280 (1.14x margin)
+TRACK_PITCH = TRACK_W + TRACK_SP  # 720nm net-to-net pitch (Metal2 spines and
+# Metal3 row rails alike)
+ROUTE_VIA_ENC = 70  # metal2.enclosing.via1.1 / metal3.enclosing.via2.1 min 10
+ROUTE_VIA_PAD = VIA_W + 2 * ROUTE_VIA_ENC  # 400nm -- equals TRACK_W, so a via
+# landing on a routing track needs no extra widening beyond the track itself
+assert ROUTE_VIA_PAD == TRACK_W
+VIA1_LAND = 200  # inset from a terminal's own Metal1 pad edge where Via1
+# lands, so the via sits comfortably inside the pad rather than at its edge
+GUARD_TIE_LAND = 300  # how far below y=0 (row 0's own bottom edge) the guard
+# ring's vss tie strap reaches -- entirely inside the guard-clearance band,
+# never crossing a device row (see the module docstring's "Routing style")
+
 
 @dataclass
 class Terminal:
     net: str
     stub_x: int
-    stub_y0: int
+    #: Y of the terminal's own already-drawn local Metal1 pad, where
+    #: :func:`_riser` lands its Via1 -- *not* a routing-layer position (the
+    #: old scheme's ``stub_y0`` was the bottom of a Poly2 stub that itself
+    #: still had to reach the rail; this terminal's Metal1 geometry is
+    #: already device-local and complete, see the module docstring's
+    #: "Routing style").
+    anchor_y: int
 
 
 class Builder(BuilderBase):
@@ -257,6 +313,27 @@ class Builder(BuilderBase):
         for i in range(count):
             cy = start + i * CT_PITCH + CT // 2
             self.contact(cx, cy)
+
+
+class NullBuilder(Builder):
+    """A :class:`Builder` whose drawing calls are all no-ops.
+
+    ``build()`` runs the row-placement pass once against this class purely
+    to discover terminal positions (:func:`assign_spine_x` needs them before
+    it can legalize spine x's), then again for real against a genuine
+    :class:`Builder` once spines are known -- see the module docstring's
+    "Why two passes". Deliberately skips ``BuilderBase.__init__`` (no real
+    ``klayout.db`` layout is needed for a dry run).
+    """
+
+    def __init__(self) -> None:  # noqa: super-init-not-called -- see docstring
+        pass
+
+    def box(self, layer: tuple[int, int], x0: int, y0: int, x1: int, y1: int) -> None:
+        pass
+
+    def label(self, x: int, y: int, text: str) -> None:
+        pass
 
 
 # --------------------------------------------------------------------------- #
@@ -283,16 +360,26 @@ def draw_mos(b: Builder, item: MosItem, x0: int, y0: int) -> list[Terminal]:
 
     terminals: list[Terminal] = []
 
+    # Gate: a local Contact + Metal1 pad, same as every other terminal (study
+    # §3) -- the channel-length-wide gate poly is widened to STUB_W here so
+    # the contact has room (mirrors draw_res's free-end pad, below). The
+    # widened box's own top edge stays *at* the gate poly's natural tip
+    # (``gate_top``) rather than growing past it: a row's tallest item's
+    # gate poly already reaches to within ``ROW_GAP`` of the next row's own
+    # poly, so any extra height here risks poly2.space.1 against it.
     gcx = (gate_x0 + gate_x1) // 2
-    b.box(L_POLY2, gcx - STUB_W // 2, y1 + POLY_EXT - 100, gcx + STUB_W // 2, y1 + POLY_EXT + 100)
-    terminals.append(Terminal(item.nets["g"], gcx, y1 + POLY_EXT - 100))
+    gate_top = y1 + POLY_EXT
+    gcy = gate_top - 200
+    b.box(L_POLY2, gcx - STUB_W // 2, gcy - 200, gcx + STUB_W // 2, gate_top)
+    b.contact(gcx, gcy)
+    b.box(L_METAL1, gcx - BAR_W // 2, gcy - BAR_W // 2, gcx + BAR_W // 2, gcy + BAR_W // 2)
+    terminals.append(Terminal(item.nets["g"], gcx, gcy))
 
     for term, cx in (("s", x0 + SD_COL // 2), ("d", x1 - SD_COL // 2)):
         b.contact_column(cx, y0 + ENC_CT, y1 - ENC_CT)
-        b.box(L_METAL1, cx - BAR_W // 2, y0 - 80, cx + BAR_W // 2, y1 + BAR_TOP)
-        b.contact(cx, y1 + STUB_CT + CT // 2)
-        b.box(L_POLY2, cx - STUB_W // 2, y1 + STUB_BOT, cx + STUB_W // 2, y1 + STUB_CT + CT + ENC_CT)
-        terminals.append(Terminal(item.nets[term], cx, y1 + STUB_BOT))
+        top = y1 + BAR_TOP
+        b.box(L_METAL1, cx - BAR_W // 2, y0 - 80, cx + BAR_W // 2, top)
+        terminals.append(Terminal(item.nets[term], cx, top - VIA1_LAND))
 
     return terminals
 
@@ -372,16 +459,8 @@ def draw_res(b: Builder, item: ResItem, x0: int, y0: int) -> list[Terminal]:
         b.box(L_POLY2, cx - item.width_nm // 2, pad_y0, cx + item.width_nm // 2, pad_y1)
         cy = (pad_y0 + pad_y1) // 2
         b.contact(cx, cy)
-        b.box(L_METAL1, cx - BAR_W // 2, cy - CT // 2 - 80, cx + BAR_W // 2, y0 + leg + BAR_TOP)
-        b.contact(cx, y0 + leg + STUB_CT + CT // 2)
-        b.box(
-            L_POLY2,
-            cx - STUB_W // 2,
-            y0 + leg + STUB_BOT,
-            cx + STUB_W // 2,
-            y0 + leg + STUB_CT + CT + ENC_CT,
-        )
-        terminals.append(Terminal(net, cx, y0 + leg + STUB_BOT))
+        b.box(L_METAL1, cx - BAR_W // 2, cy - BAR_W // 2, cx + BAR_W // 2, cy + BAR_W // 2)
+        terminals.append(Terminal(net, cx, cy))
     return terminals
 
 
@@ -479,10 +558,9 @@ def draw_trim(b: Builder, item: TrimLadderItem, x0: int, y0: int) -> list[Termin
         # starting exactly at `cy` instead of `cy - BAR_W // 2` left that
         # contact's bottom half uncovered (metal1.enclosing.contact.1, #159).
         row_cy = (row0_y if cx == tn0_x else row1_y) + uw // 2
-        b.box(L_METAL1, cx - BAR_W // 2, row_cy - BAR_W // 2, cx + BAR_W // 2, top + BAR_TOP)
-        b.contact(cx, top + STUB_CT + CT // 2)
-        b.box(L_POLY2, cx - STUB_W // 2, top + STUB_BOT, cx + STUB_W // 2, top + STUB_CT + CT + ENC_CT)
-        terminals.append(Terminal(net, cx, top + STUB_BOT))
+        bar_top = top + BAR_TOP
+        b.box(L_METAL1, cx - BAR_W // 2, row_cy - BAR_W // 2, cx + BAR_W // 2, bar_top)
+        terminals.append(Terminal(net, cx, bar_top - VIA1_LAND))
     return terminals
 
 
@@ -549,17 +627,11 @@ def draw_pnp(b: Builder, item: PnpItem, x0: int, y0: int) -> list[Terminal]:
     )
     b.box(L_METAL1, strap_x - BAR_W // 2, cy, strap_x + BAR_W // 2, y0 + size + BAR_TOP)
 
-    terminals: list[Terminal] = []
-    for tx, net in ((cx, item.emitter_net), (strap_x, item.base_net)):
-        b.contact(tx, y0 + size + STUB_CT + CT // 2)
-        b.box(
-            L_POLY2,
-            tx - STUB_W // 2,
-            y0 + size + STUB_BOT,
-            tx + STUB_W // 2,
-            y0 + size + STUB_CT + CT + ENC_CT,
-        )
-        terminals.append(Terminal(net, tx, y0 + size + STUB_BOT))
+    bar_top = y0 + size + BAR_TOP
+    terminals: list[Terminal] = [
+        Terminal(item.emitter_net, cx, bar_top - VIA1_LAND),
+        Terminal(item.base_net, strap_x, bar_top - VIA1_LAND),
+    ]
     return terminals
 
 
@@ -579,10 +651,9 @@ def draw_tap(b: Builder, item: TapItem, x0: int, y0: int) -> list[Terminal]:
         x += CT_PITCH
     b.box(L_METAL1, x0, cy - BAR_W // 2, x1, cy + BAR_W // 2)
     cx = x0 + BAR_W
-    b.box(L_METAL1, cx - BAR_W // 2, cy, cx + BAR_W // 2, y1 + BAR_TOP)
-    b.contact(cx, y1 + STUB_CT + CT // 2)
-    b.box(L_POLY2, cx - STUB_W // 2, y1 + STUB_BOT, cx + STUB_W // 2, y1 + STUB_CT + CT + ENC_CT)
-    return [Terminal(item.net, cx, y1 + STUB_BOT)]
+    bar_top = y1 + BAR_TOP
+    b.box(L_METAL1, cx - BAR_W // 2, cy, cx + BAR_W // 2, bar_top)
+    return [Terminal(item.net, cx, bar_top - VIA1_LAND)]
 
 
 def item_size(item: object) -> tuple[int, int]:
@@ -620,20 +691,21 @@ def draw_item(b: Builder, item: object, x: int, y: int) -> list[Terminal]:
 # --------------------------------------------------------------------------- #
 
 
-def build() -> tuple[Builder, dict]:
-    flat, rows = plan_mod.load_plan()
-    nets = plan_mod.routed_nets(rows)
-    spine_x = {net: i * SPINE_PITCH for i, net in enumerate(nets)}
-    field_x0 = len(nets) * SPINE_PITCH + FIELD_GAP
-
-    b = Builder()
-
+def place_rows(b: Builder, rows: list[plan_mod.Row]) -> list[dict]:
+    """Place every row's items left to right, starting at the block's own
+    left edge (``x = 0`` -- no reserved routing corridor, see the module
+    docstring's "Routing style"), collecting each row's terminals and
+    geometry. Item placement never depends on the routing scheme, so this
+    can run once against a :class:`NullBuilder` to discover terminal
+    positions before spines are assigned, then again for real -- see
+    ``build()``.
+    """
     row_geometry: list[dict] = []
     y = 0
     for row in rows:
         sizes = [item_size(item) for item in row.items]
         row_h = max(h for _, h in sizes)
-        x = field_x0
+        x = 0
         terminals: list[Terminal] = []
         placements: list[tuple[object, int, int]] = []
         for item, (w, _h) in zip(row.items, sizes):
@@ -641,95 +713,239 @@ def build() -> tuple[Builder, dict]:
             placements.append((item, x, w))
             x += w + ISLAND_GAP
         row_right = x - ISLAND_GAP
-
-        # One rail per net used in this row, ordered so the net whose
-        # rightmost stub is furthest out takes the highest track (keeps rails
-        # short and makes the ordering deterministic).
-        by_net: dict[str, list[Terminal]] = {}
-        for terminal in terminals:
-            by_net.setdefault(terminal.net, []).append(terminal)
-        order = sorted(by_net, key=lambda n: (max(t.stub_x for t in by_net[n]), n))
-
-        track0 = y + row_h + HEAD
-        # Per-net rail geometry (height + horizontal extent), kept alongside
-        # `nets`/`right` below so a later step (the compensation-cap via
-        # stack, #77) can land vias directly on an *already-drawn* rail
-        # instead of re-deriving its position from scratch.
-        rail_geo: dict[str, tuple[int, int, int]] = {}
-        for track, net in enumerate(order):
-            ty = track0 + track * TRACK_PITCH
-            sx = spine_x[net]
-            right = max(t.stub_x for t in by_net[net])
-            b.box(L_METAL1, sx - BAR_W // 2, ty - BAR_W // 2, right + BAR_W // 2, ty + BAR_W // 2)
-            b.contact(sx, ty)
-            rail_geo[net] = (ty, sx, right)
-            for terminal in by_net[net]:
-                b.box(
-                    L_POLY2,
-                    terminal.stub_x - STUB_W // 2,
-                    terminal.stub_y0,
-                    terminal.stub_x + STUB_W // 2,
-                    ty + CT // 2 + ENC_CT,
-                )
-                b.contact(terminal.stub_x, ty)
-
-        top = track0 + (len(order) - 1) * TRACK_PITCH + BAR_W // 2
         row_geometry.append(
             {
                 "row": row,
                 "y0": y,
-                "content_top": y + row_h,
-                "top": top,
+                "row_h": row_h,
                 "right": row_right,
-                "nets": order,
+                "terminals": terminals,
                 "placements": placements,
-                "rail_geo": rail_geo,
             }
         )
-        y = top + ROW_GAP
+        y = y + row_h + ROW_GAP
+    return row_geometry
 
-    block_top = y - ROW_GAP
-    block_right = max(g["right"] for g in row_geometry)
 
-    # Corridor spines span the whole block.
+def assign_spine_x(
+    nets: list[str], row_geometry: list[dict]
+) -> tuple[dict[str, int], dict[str, tuple[int, int]]]:
+    """Choose each net's Metal2 spine x, positioned *over* the device field
+    instead of in a dedicated corridor (study §3) -- that repositioning is
+    what actually recovers the old corridor's block width (study §5), since
+    Metal2 does not interact with the ``COMP``/``Poly2``/``Metal1`` geometry
+    it runs above (the ``m2m3_stack_probe`` fixture proves this against a
+    real DRC/extraction run, study §8).
+
+    A greedy legalizer on the ``TRACK_PITCH`` grid: each net gets the
+    smallest slot that clashes with neither an already-placed spine (over
+    any row-height range the two spines' own row-usage shares) nor any
+    *other* net's terminal in any row this spine's own span crosses --
+    including rows the net itself does not use, since the spine still runs
+    through them on its way between the rows it does. Returns
+    ``(spine_x, spine_span)``; ``spine_span`` is each net's own
+    ``(y_lo, y_hi)`` row-usage range, reused by ``draw_spines``.
+    """
+    placed: list[tuple[int, int, int]] = []
+    spine_x: dict[str, int] = {}
+    spine_span: dict[str, tuple[int, int]] = {}
     for net in nets:
-        sx = spine_x[net]
-        b.box(L_POLY2, sx - SPINE_W // 2, -POLY_EXT - 400, sx + SPINE_W // 2, block_top + 400)
+        rows_used = [
+            i for i, g in enumerate(row_geometry) if any(t.net == net for t in g["terminals"])
+        ]
+        assert rows_used, f"{net}: routed net with no drawn terminal"
+        lo, hi = rows_used[0], rows_used[-1]
+        y_lo = row_geometry[lo]["y0"]
+        y_hi = row_geometry[hi]["y0"] + row_geometry[hi]["row_h"]
+        k = 0
+        while not _spine_slot_clear(k * TRACK_PITCH, y_lo, y_hi, net, row_geometry, lo, hi, placed):
+            k += 1
+        x = k * TRACK_PITCH
+        spine_x[net] = x
+        spine_span[net] = (y_lo, y_hi)
+        placed.append((x, y_lo, y_hi))
+    return spine_x, spine_span
+
+
+def _spine_slot_clear(
+    x: int,
+    y_lo: int,
+    y_hi: int,
+    net: str,
+    row_geometry: list[dict],
+    lo: int,
+    hi: int,
+    placed: list[tuple[int, int, int]],
+) -> bool:
+    for px, py_lo, py_hi in placed:
+        if y_lo <= py_hi and py_lo <= y_hi and abs(x - px) < TRACK_PITCH:
+            return False
+    for i in range(lo, hi + 1):
+        for t in row_geometry[i]["terminals"]:
+            d = abs(x - t.stub_x)
+            if d == 0:
+                # Exact alignment only merges safely when it is the *same*
+                # net's own terminal (its riser and this spine become one
+                # touching Metal2 shape); a different net sitting exactly
+                # here would be a dead short.
+                if t.net != net:
+                    return False
+                continue
+            # A near-miss is unsafe regardless of net: a same-net terminal
+            # that is close but *not* exactly aligned still draws a
+            # disconnected riser (it reaches the spine's net only through
+            # the row's own Metal3 rail, not by touching the spine
+            # directly), so it needs the same TRACK_PITCH clearance a
+            # different net's terminal would.
+            if d < TRACK_PITCH:
+                return False
+    return True
+
+
+def _riser(b: Builder, x: int, anchor_y: int, ty: int) -> None:
+    """One terminal's Metal1(existing) -> Via1 -> Metal2 -> Via2 -> Metal3
+    (rail) hop -- the multi-metal counterpart of the old scheme's Poly2
+    stub (module docstring's "Routing style"). The Metal2 riser climbs from
+    the terminal's own already-drawn local pad (``anchor_y``) up or down to
+    its net's row-rail height (``ty``), landing directly on the rail; Metal2
+    is immune to shorting a *different* net's Metal1 straps the way Poly2
+    was, so it can climb past them freely.
+    """
+    b.box(L_VIA1, x - VIA_W // 2, anchor_y - VIA_W // 2, x + VIA_W // 2, anchor_y + VIA_W // 2)
+    lo, hi = sorted((anchor_y, ty))
+    # The riser body must clear both vias' own enclosure at each end, not
+    # just stop exactly at their centres (metal2.enclosing.via1.1/via2.1).
+    end_margin = VIA_W // 2 + ROUTE_VIA_ENC
+    b.box(L_METAL2, x - ROUTE_VIA_PAD // 2, lo - end_margin, x + ROUTE_VIA_PAD // 2, hi + end_margin)
+    b.box(L_VIA2, x - VIA_W // 2, ty - VIA_W // 2, x + VIA_W // 2, ty + VIA_W // 2)
+
+
+def route_rows(b: Builder, row_geometry: list[dict], spine_x: dict[str, int]) -> None:
+    """Draw each row's Metal3 rails (inside that row's own device-content
+    height, over its own devices -- study §3) and every terminal's riser up
+    to its net's rail. Fills in each row's ``"rail_geo"``/``"nets"`` entries.
+    """
+    for g in row_geometry:
+        by_net: dict[str, list[Terminal]] = {}
+        for t in g["terminals"]:
+            by_net.setdefault(t.net, []).append(t)
+        # Deterministic, stable net ordering -- same tie-break the old
+        # per-row rail stack used (furthest-reaching net first).
+        order = sorted(by_net, key=lambda n: (max(t.stub_x for t in by_net[n]), n))
+        assert len(order) * TRACK_PITCH <= g["row_h"], (
+            f"{g['row'].name}: {len(order)} net rails need "
+            f"{len(order) * TRACK_PITCH / 1000:.2f} um at {TRACK_PITCH / 1000:.2f} um "
+            f"pitch, more than the row's own {g['row_h'] / 1000:.2f} um of device "
+            "content -- routing_budget.py's track_fit check should have caught this"
+        )
+        rail_geo: dict[str, tuple[int, int, int]] = {}
+        for i, net in enumerate(order):
+            sx = spine_x[net]
+            xs = [t.stub_x for t in by_net[net]] + [sx]
+            left, right = min(xs), max(xs)
+            ty = g["y0"] + TRACK_PITCH // 2 + i * TRACK_PITCH
+            b.box(L_METAL3, left - TRACK_W // 2, ty - TRACK_W // 2, right + TRACK_W // 2, ty + TRACK_W // 2)
+            # Spine -> rail hop, where the spine (drawn separately by
+            # draw_spines) crosses this row at its own x.
+            b.box(L_VIA2, sx - VIA_W // 2, ty - VIA_W // 2, sx + VIA_W // 2, ty + VIA_W // 2)
+            rail_geo[net] = (ty, left, right)
+            for t in by_net[net]:
+                _riser(b, t.stub_x, t.anchor_y, ty)
+        g["rail_geo"] = rail_geo
+        g["nets"] = order
+
+
+def draw_spines(
+    b: Builder,
+    spine_x: dict[str, int],
+    spine_span: dict[str, tuple[int, int]],
+    vss_extra_lo: int | None = None,
+) -> None:
+    """Draw each net's Metal2 spine over its own row-usage span.
+    ``vss_extra_lo``, if given, extends the ``vss`` spine's own bottom edge
+    down to meet the guard ring's tie (``build()``'s "Guard ring" step).
+    """
+    for net, sx in spine_x.items():
+        y_lo, y_hi = spine_span[net]
+        if net == "vss" and vss_extra_lo is not None:
+            y_lo = min(y_lo, vss_extra_lo)
+        b.box(L_METAL2, sx - TRACK_W // 2, y_lo, sx + TRACK_W // 2, y_hi)
+
+
+def build() -> tuple[Builder, dict]:
+    flat, rows = plan_mod.load_plan()
+    nets = plan_mod.routed_nets(rows)
+
+    # Pass 1 (dry run): discover terminal positions so spines can be
+    # legalized against them -- see the module docstring's "Why two passes".
+    dry_row_geometry = place_rows(NullBuilder(), rows)
+    spine_x, spine_span = assign_spine_x(nets, dry_row_geometry)
+
+    # Pass 2: draw for real, now that spine x's are known.
+    b = Builder()
+    row_geometry = place_rows(b, rows)
+    route_rows(b, row_geometry, spine_x)
+
+    block_top = row_geometry[-1]["y0"] + row_geometry[-1]["row_h"]
+    block_right = max(g["right"] for g in row_geometry)
+    for net, sx in spine_x.items():
+        assert sx + TRACK_W // 2 <= block_right, (
+            f"{net}: spine x {sx / 1000:.2f} um falls outside the device "
+            f"field ({block_right / 1000:.2f} um) -- assign_spine_x's "
+            "legalizer ran out of safe slots within the field"
+        )
 
     # One Nwell for the whole PMOS band (keeps the extracted PMOS body a
     # single net). The band is contiguous by construction -- see plan.py.
     pmos_rows = [g for g in row_geometry if g["row"].nwell]
     nwell_box = (
-        -SPINE_W // 2 - NWELL_ENC,
+        -NWELL_ENC,
         min(g["y0"] for g in pmos_rows) - POLY_EXT - NWELL_ENC,
         max(g["right"] for g in pmos_rows) + NWELL_ENC,
-        max(g["top"] for g in pmos_rows) + NWELL_ENC,
+        max(g["y0"] + g["row_h"] for g in pmos_rows) + NWELL_ENC,
     )
     b.box(L_NWELL, *nwell_box)
 
-    # Net labels on Metal1 (34/10). Only the block's own pins are labelled --
-    # `Netlist.make_top_level_pins()` promotes every *named* net to a pin, so
-    # labelling internal nets would invent pins the schematic does not have.
+    # Net labels on Metal1 (34/10) -- kept on Metal1 (not the Metal2/Metal3
+    # routing layers) because that is the layer `Netlist.make_top_level_pins()`
+    # promotes to a pin, so the label has to sit on a terminal's own local
+    # Metal1 pad (real conductor there) rather than at a rail/spine position.
+    # Only the block's own pins are labelled -- labelling internal nets would
+    # invent pins the schematic does not have.
     for net in ("vdd", "vss", "vref"):
-        sx = spine_x[net]
-        target = next(g for g in row_geometry if net in g["nets"])
-        ty = target["content_top"] + HEAD + target["nets"].index(net) * TRACK_PITCH
-        b.label(sx, ty, net)
+        target = next(t for g in row_geometry for t in g["terminals"] if t.net == net)
+        b.label(target.stub_x, target.anchor_y, net)
 
     # Guard ring: p+ COMP tied to vss, around the whole block (floorplan §9).
-    gx0 = -SPINE_W // 2 - GUARD_CLEAR - GUARD_W
+    gx0 = -GUARD_CLEAR - GUARD_W
     gy0 = -POLY_EXT - GUARD_CLEAR - GUARD_W
     gx1 = block_right + GUARD_CLEAR + GUARD_W
     gy1 = block_top + GUARD_CLEAR + GUARD_W
     _guard_ring(b, gx0, gy0, gx1, gy1)
 
-    # Tie the guard ring to vss with a Metal1 strap over the vss spine. vss
-    # is the first spine (x = 0), so a strap 200 nm either side of it touches
-    # every vss rail (each rail starts at its own spine) and nothing else --
-    # the next spine is 700 nm away, leaving 300 nm of Metal1 clearance. A
-    # *poly* strap would not work here: poly crossing the guard ring's COMP
-    # would extract as a spurious NMOS device.
-    b.box(L_METAL1, spine_x["vss"] - BAR_W // 2, gy0, spine_x["vss"] + BAR_W // 2, block_top)
+    # Tie the guard ring to vss: a *short* Metal1 strap from the ring up to
+    # just below y = 0 (row 0's own bottom edge), entirely inside the
+    # guard-clearance band -- never crossing a device row, unlike the old
+    # scheme's full-height strap (safe there only because the corridor it
+    # ran through was itself device-free; the vss spine now runs *over* the
+    # device field, so a strap sharing its x can no longer run the full
+    # height without risking a different net's Metal1). Via1 + a Metal2 pad
+    # there ties into the vss spine, whose own bottom edge is extended down
+    # to meet it (draw_spines' `vss_extra_lo`).
+    vss_sx = spine_x["vss"]
+    strap_top = -POLY_EXT - GUARD_TIE_LAND
+    b.box(L_METAL1, vss_sx - BAR_W // 2, gy0, vss_sx + BAR_W // 2, strap_top)
+    tie_y = strap_top - VIA1_LAND
+    b.box(L_VIA1, vss_sx - VIA_W // 2, tie_y - VIA_W // 2, vss_sx + VIA_W // 2, tie_y + VIA_W // 2)
+    b.box(
+        L_METAL2,
+        vss_sx - ROUTE_VIA_PAD // 2,
+        tie_y - ROUTE_VIA_PAD // 2,
+        vss_sx + ROUTE_VIA_PAD // 2,
+        tie_y + ROUTE_VIA_PAD // 2,
+    )
+
+    draw_spines(b, spine_x, spine_span, vss_extra_lo=tie_y - ROUTE_VIA_PAD)
 
     # Compensation MIM capacitor, stacked over the device field (Metal4 /
     # FuseTop / Metal5). `klt extract`'s gf180mcu deck now recognises this
@@ -740,7 +956,7 @@ def build() -> tuple[Builder, dict]:
         f"{cap.key}: expected (bottom=vdd, top=fb), got {cap.nets} -- "
         "_mim_cap's via stack targets those two nets specifically"
     )
-    cap_x = field_x0
+    cap_x = 0
     cap_y = next(g for g in row_geometry if g["row"].name == "AMPPAIR")["y0"]
     # AMPPCASC is the row the cap's footprint stacks over that also happens
     # to carry both `vdd` and `fb` rails (the amp PMOS cascode pair's body
@@ -749,16 +965,43 @@ def build() -> tuple[Builder, dict]:
     # already-drawn rail, rather than drawing a fresh one, is what the via
     # stack does.
     via_row = next(g for g in row_geometry if g["row"].name == "AMPPCASC")
-    vdd_ty, vdd_sx, vdd_right = via_row["rail_geo"]["vdd"]
-    fb_ty, fb_sx, fb_right = via_row["rail_geo"]["fb"]
-    _mim_cap(b, cap, cap_x, cap_y, vdd_ty, (vdd_sx, vdd_right), fb_ty, (fb_sx, fb_right))
+    vdd_ty, vdd_left, vdd_right = via_row["rail_geo"]["vdd"]
+    fb_ty, fb_left, fb_right = via_row["rail_geo"]["fb"]
+
+    # The AMPPCASC row's own vdd/fb rails are sized to reach that row's
+    # *own* terminals, which does not necessarily already cover the fixed x
+    # positions the cap's via stack needs (mim_cap_via_x, derived purely
+    # from the cap's own geometry) -- extend the rails to reach them, same
+    # layer, same net, so this merges into the existing rail rather than
+    # creating a second disconnected one.
+    mim_vdd_x, _mim_fb_up_x, mim_fb_down_x = mim_cap_via_x(cap, cap_x)
+    if mim_vdd_x < vdd_left:
+        b.box(L_METAL3, mim_vdd_x - TRACK_W // 2, vdd_ty - TRACK_W // 2, vdd_left + TRACK_W // 2, vdd_ty + TRACK_W // 2)
+        vdd_left = mim_vdd_x
+    elif mim_vdd_x > vdd_right:
+        b.box(L_METAL3, vdd_right - TRACK_W // 2, vdd_ty - TRACK_W // 2, mim_vdd_x + TRACK_W // 2, vdd_ty + TRACK_W // 2)
+        vdd_right = mim_vdd_x
+    if mim_fb_down_x > fb_right:
+        b.box(L_METAL3, fb_right - TRACK_W // 2, fb_ty - TRACK_W // 2, mim_fb_down_x + TRACK_W // 2, fb_ty + TRACK_W // 2)
+        fb_right = mim_fb_down_x
+    elif mim_fb_down_x < fb_left:
+        b.box(L_METAL3, mim_fb_down_x - TRACK_W // 2, fb_ty - TRACK_W // 2, fb_left + TRACK_W // 2, fb_ty + TRACK_W // 2)
+        fb_left = mim_fb_down_x
+
+    _mim_cap(b, cap, cap_x, cap_y, vdd_ty, (vdd_left, vdd_right), fb_ty, (fb_left, fb_right))
 
     stats = {
         "flat": flat,
         "rows": row_geometry,
         "nets": nets,
+        # Each routed net's Metal2 spine x and its (y_lo, y_hi) row-usage
+        # span, as chosen by assign_spine_x. Reported (not just drawn) so
+        # routing_budget.py can measure the spine bundle's real extent over
+        # the device field instead of re-deriving the legalizer's answer.
+        "spine_x": spine_x,
+        "spine_span": spine_span,
         "bbox": (gx0, gy0, gx1, gy1),
-        "core_bbox": (-SPINE_W // 2, -POLY_EXT, block_right, block_top),
+        "core_bbox": (0, -POLY_EXT, block_right, block_top),
         "cap": cap,
     }
     return b, stats
@@ -789,6 +1032,21 @@ def _guard_ring(b: Builder, x0: int, y0: int, x1: int, y1: int) -> None:
                 yy += CT_PITCH
 
 
+def mim_cap_via_x(cap: MimCapItem, x0: int) -> tuple[int, int, int]:
+    """The three x positions ``_mim_cap``'s via stacks land at, computed
+    from the cap's own geometry alone (``x0`` is its own left edge). Shared
+    with ``build()`` so it can pre-widen the AMPPCASC row's ``vdd``/``fb``
+    Metal3 rails to reach them (the rails' own natural extent, driven by
+    their row's terminals, does not necessarily already cover these) before
+    drawing the cap.
+    """
+    inset = MIM_PLATE_INSET
+    vdd_x = x0 + inset // 2
+    fb_up_x = x0 + cap.width_nm // 2
+    fb_down_x = x0 + cap.width_nm + FB_DOWNHOP_CLEAR
+    return vdd_x, fb_up_x, fb_down_x
+
+
 def _via_pad(b: Builder, metal_layer: tuple[int, int], via_layer: tuple[int, int], cx: int, cy: int) -> None:
     """One via-stack step: a ``VIA_PAD``-square landing pad on ``metal_layer``
     with a centred ``VIA_W``-square via on ``via_layer`` immediately beneath
@@ -813,7 +1071,7 @@ def _mim_cap(
     """Draw the compensation MIM cap, both plates wired for real (#77, #88).
 
     ``vdd_ty``/``fb_ty`` are the heights of the already-drawn ``vdd``/``fb``
-    Metal1 rails in the row the cap stacks over (``AMPPCASC`` -- see
+    Metal3 row rails in the row the cap stacks over (``AMPPCASC`` -- see
     ``build()``); ``vdd_span``/``fb_span`` are those rails' ``(left, right)``
     horizontal extents, used only to assert the chosen via x lands on drawn
     rail rather than past its end.
@@ -894,11 +1152,11 @@ def _mim_cap(
     """
     w, h = cap.width_nm, cap.height_nm
     inset = MIM_PLATE_INSET
+    vdd_x, fb_up_x, fb_down_x = mim_cap_via_x(cap, x0)
 
     # -- vdd (bottom plate) contact point: inside the Metal4 box's own
     # MIM_PLATE_INSET margin band, clear of the FuseTop top plate on top of
     # it.
-    vdd_x = x0 + inset // 2
     assert x0 <= vdd_x - VIA_PAD // 2 and vdd_x + VIA_PAD // 2 <= x0 + inset, (
         f"{cap.key}: vdd via pad does not fit inside the bottom plate's "
         "MIM_PLATE_INSET margin"
@@ -911,7 +1169,6 @@ def _mim_cap(
     # margin) and the Metal4 bottom plate beneath it (MIMTM.2's 0.4um
     # minimum overlap, honoured here with a much wider margin -- see the
     # asserts immediately below).
-    fb_up_x = x0 + w // 2
     assert x0 + inset + VIA_W // 2 <= fb_up_x <= x0 + w - inset - VIA_W // 2, (
         f"{cap.key}: fb up-hop via does not land inside the recognised FuseTop top plate"
     )
@@ -929,7 +1186,6 @@ def _mim_cap(
     # FB_DOWNHOP_CLEAR, which leaves mim.space.1's 1.2um Metal4-Metal4
     # minimum spacing comfortably satisfied between the bottom plate and the
     # standalone down-hop pad below.
-    fb_down_x = x0 + w + FB_DOWNHOP_CLEAR
     assert fb_down_x - VIA_PAD // 2 - (x0 + w) >= 1200, (
         f"{cap.key}: fb down-hop pad does not clear the bottom plate by mim.space.1's 1.2um minimum"
     )
@@ -951,10 +1207,10 @@ def _mim_cap(
     b.box(L_MIM_MK, x0 - 400, y0 - 400, x0 + w + 400, y0 + h + 400)
     b.box(L_CAP_MK, x0 - 400, y0 - 400, x0 + w + 400, y0 + h + 400)
 
-    # vdd: Metal1 (existing AMPPCASC rail) -> Via1 -> Metal2 -> Via2 ->
-    # Metal3 -> Via3 -> straight into the bottom plate drawn above.
-    _via_pad(b, L_METAL2, L_VIA1, vdd_x, vdd_ty)
-    _via_pad(b, L_METAL3, L_VIA2, vdd_x, vdd_ty)
+    # vdd: Metal3 (existing AMPPCASC rail, gf180-bandgap#166) -> Via3 ->
+    # straight into the bottom plate drawn above. Shorter than before the
+    # row-routing rewrite: the rail used to be Metal1, needing an extra
+    # Metal1 -> Via1 -> Metal2 -> Via2 hop to reach Metal3 first.
     b.box(L_VIA3, vdd_x - VIA_W // 2, vdd_ty - VIA_W // 2, vdd_x + VIA_W // 2, vdd_ty + VIA_W // 2)
 
     # fb up-hop: Via4 lands directly on the recognised FuseTop top plate,
@@ -976,8 +1232,9 @@ def _mim_cap(
     )
 
     # fb down-hop: Metal5 -> Via4 -> Metal4 (a standalone pad, spaced clear
-    # of the bottom plate) -> Via3 -> Metal3 -> Via2 -> Metal2 -> Via1 ->
-    # Metal1 (the existing AMPPCASC fb rail).
+    # of the bottom plate) -> Via3 -> Metal3 (the existing AMPPCASC fb rail,
+    # gf180-bandgap#166). Shorter than before the row-routing rewrite: the
+    # rail used to be Metal1, needing an extra Via2 -> Metal2 -> Via1 hop.
     b.box(L_VIA4, fb_down_x - VIA_W // 2, fb_ty - VIA_W // 2, fb_down_x + VIA_W // 2, fb_ty + VIA_W // 2)
     _via_pad(b, L_METAL4, L_VIA3, fb_down_x, fb_ty)
     _via_pad(b, L_METAL3, L_VIA2, fb_down_x, fb_ty)

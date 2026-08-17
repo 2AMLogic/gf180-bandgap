@@ -5,11 +5,28 @@
   headroom"), the follow-up
   [`spec/decision-records/0005-area-target-overrun.md`](../../spec/decision-records/0005-area-target-overrun.md)
   (DR-0005) named.
-- **Status**: design + estimate. **No routing code is changed by this
-  study** — `layout/bandgap_top/generate.py` still draws the Metal1/Poly2
-  corridor-and-rail scheme. The implementation is filed separately as
-  [#166](https://github.com/2AMLogic/gf180-bandgap/issues/166), on the
-  strength of the numbers below.
+- **Status**: design + estimate — **now implemented**, see the outcome note
+  immediately below. No routing code was changed *by this study*;
+  [#166](https://github.com/2AMLogic/gf180-bandgap/issues/166) was filed
+  separately on the strength of the numbers below, and did the rewrite.
+
+> **Outcome (#166, 2026-08-17).** `layout/bandgap_top/generate.py` now draws
+> the §3 scheme, so everything below describing the corridor-and-rail scheme
+> as current ("as drawn today", "S0", §2's decomposition) is a **historical
+> record of the pre-#166 block**, not a description of the repo today. The
+> realised block measures **62,505.60 µm² / 2.47×** — 5.1 % *better* than
+> S1's 65,896.39 µm² / 2.60× estimate, because the two conservatisms §5
+> declares (the 1.0 µm/row landing band and the 0.20 µm left margin) both
+> went to zero: the Metal3 rails ended up *inside* each row's own device
+> content. §6's finding is unaffected and now governs — the remaining gap is
+> row-stripe whitespace, needing the 2-D re-pack of §8, and the required row
+> packing is **0.698** against today's 0.556. Estimate-vs-measurement
+> write-up: `layout/bandgap_top/AREA.md` Finding 6.
+>
+> `routing_budget.py` was rebased onto the new block by the same issue, so it
+> no longer re-derives the S0/S1c/S2 rows below (that geometry is no longer
+> drawn); it carries S0 and S1 as named constants with provenance and
+> measures the drawn block against them.
 - **Reproduce every number here** with:
 
   ```bash

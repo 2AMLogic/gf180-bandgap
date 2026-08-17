@@ -110,7 +110,8 @@ python3 layout/lvs/run_lvs.py layout/bandgap_top/bandgap_top.gds --engine both
 # 5. Area budget
 uv run --with klayout python3 layout/bandgap_top/area_report.py
 
-# 6. Where that area goes, and what multi-metal routing would recover (#160)
+# 6. Where that area goes, and what the Metal2/Metal3 re-route recovered
+#    (#160 estimated it, #166 drew it)
 uv run --with klayout python3 layout/bandgap_top/routing_budget.py
 ```
 
@@ -119,11 +120,11 @@ Expected results (as committed):
 | Step | Result |
 |---|---|
 | `matching_report.py` | all tier-1/2/3 checks pass, exit 0 |
-| `run_drc.py` | `status: clean`, `violation_count: 0` (`20260817-011949-f5d9512.drc.json`; see "RESOLVED — klt-version drift..." below) |
-| `run_lvs.py` | `status: match`, 164/164 devices, 92/92 nets (`20260817-012215-f5d9512.lvs.json`; see "RESOLVED — klt-version drift..." below) |
-| `routing_budget.py` | decomposition reconstructs the drawn bbox (238.80 × 337.45 µm) and the modelled "as drawn" area equals `area_report.py`'s measured 80,813.72 µm²; multi-metal estimate 65,896.39 µm² / 2.60× (see [`routing/multi-metal-routing-study.md`](routing/multi-metal-routing-study.md)) |
+| `run_drc.py` | `status: clean`, `violation_count: 0` (`20260817-125327-972f6d5.drc.json`; see "RESOLVED — klt-version drift..." below) |
+| `run_lvs.py` | `status: match`, 164/164 devices, 92/92 nets (`20260817-125346-972f6d5.lvs.json`; see "RESOLVED — klt-version drift..." below) |
+| `routing_budget.py` | decomposition reconstructs the drawn bbox (221.70 × 281.03 µm) with **no corridor and no rail-band term left**, and the drawn `S1` area equals `area_report.py`'s measured 62,505.60 µm² / 2.47× — beating the study's 65,896.39 µm² / 2.60× estimate by 5.1 % (see [`routing/multi-metal-routing-study.md`](routing/multi-metal-routing-study.md) and `bandgap_top/AREA.md` Finding 6) |
 | `run_lvs.py --engine both` | klayout `match`, 14 mismatches; netgen `mismatch`, 2 `device.property` errors — **engines DISAGREE**, tracked as [#168](https://github.com/2AMLogic/gf180-bandgap/issues/168) (unrelated to #159; traced to #157's amp M3/M4 resize, not klt-version drift) |
-| `area_report.py` | 80,813.72 µm² vs. 50,000 µm² target — **FAIL, 61.6 % over budget** (issue #156; see `layout/bandgap_top/AREA.md` Finding 5 and `spec/decision-records/0005-area-target-overrun.md`) |
+| `area_report.py` | 62,505.60 µm² vs. 50,000 µm² target — **FAIL, 25.0 % over budget** (issue #166 recovered 22.7 % of #156's 80,813.72 µm²; the remainder is row-stripe floorplan whitespace, not routing — see `layout/bandgap_top/AREA.md` Findings 5–6 and `spec/decision-records/0005-area-target-overrun.md`) |
 
 **RESOLVED — klt-version drift silently invalidated the DRC-clean/LVS-match
 verdicts above, independent of any drawn-geometry change**
@@ -298,30 +299,45 @@ cannot both have it, and the `Q1`/`Q2` `dVBE` error reaches `vref` with
 `klt`'s gf180mcu **extraction** deck used to model exactly **one** metal
 level (`Metal1`, 34/0) — no `Metal2`..`Metal5`, so a block routed above
 Metal1 extracted as a pile of disconnected nets. That constraint is why this
-layout is routed entirely on `Metal1` plus `Poly2`, using poly as the
+layout *was* routed entirely on `Metal1` plus `Poly2`, using poly as the
 crossunder layer: per-net vertical Poly2 spines in a corridor down the left
 edge, one horizontal Metal1 rail per net per row, and short Poly2 stubs from
 each device terminal up to its rail. The extraction deck has since gained the
 full Metal1–Metal5 stack with vias
 ([`klayout-tools#220`](https://github.com/2AMLogic/klayout-tools/issues/220)),
-which is what lets the one exception below exist at all.
+and [#166](https://github.com/2AMLogic/gf180-bandgap/issues/166) has since
+replaced that scheme.
 
-That is a correct single-metal discipline, but it is not how this block would
-be routed with a real multi-metal stack, and it costs significant area —
-quantified in [`bandgap_top/AREA.md`](bandgap_top/AREA.md), and decomposed
-term by term (16.90 µm of block width for the corridor, 56.42 µm of block
-height for the stacked rails) by
-[`bandgap_top/routing_budget.py`](bandgap_top/routing_budget.py).
-
-**What a multi-metal re-route would actually recover** is designed and
-estimated in
+**What `generate.py` draws today** (designed and costed in
 [`routing/multi-metal-routing-study.md`](routing/multi-metal-routing-study.md)
-(#160): Metal2 vertical spines + Metal3 over-the-cell row rails would take
-the drawn block from 80,813.72 µm² to ≈65,896 µm² (3.19× → 2.60× device body
-area) — a real 18.5 % recovery that still does not reach the ≤1.97× the
-ratified 0.05 mm² target needs, because the rest of the gap is row-stripe
-whitespace, not routing. The study is not implemented; this section still
-describes what `generate.py` draws today.
+(#160) §3/§4, implemented by #166):
+
+- `Poly2` (30/0) is device-local — gate poly and resistor bodies only, no
+  routing and **no corridor**. Every device terminal, gates included, ends on
+  a local `Contact` + `Metal1` pad.
+- `Metal2` (36/0) carries one vertical **spine** per routed net, placed
+  *over* the device field rather than beside it — which is what recovers the
+  corridor's width.
+- `Metal3` (42/0) carries one horizontal **row rail** per net used in a row,
+  drawn *inside* that row's own device-content height rather than stacked
+  above it — which is what recovers the rail bands' height.
+- Each terminal hops `Metal1 → Via1 → Metal2 → Via2 → Metal3` on a short
+  riser. Tracks are 0.40 µm wide on a 0.72 µm pitch with 0.26 µm vias
+  (deck minima 0.28/0.28/0.26).
+- `Metal4`/`Metal5` stay MIM-cap-only: the deck has **no**
+  `metal4.width`/`metal4.space` rule at all, so routing there would put
+  geometry outside DRC coverage.
+
+**What it recovered, measured against its own estimate**: 80,813.72 µm² →
+**62,505.60 µm²** (3.19× → **2.47×** device body area), a 22.7 % recovery
+that beat the study's 65,896 µm² / 2.60× estimate by 5.1 %. It still does not
+reach the ≤1.97× the ratified 0.05 mm² target needs, because the rest of the
+gap is row-stripe whitespace, not routing — the rows fill only 55.6 % of the
+stripe box they sit in, and closing the target needs a 2-D floorplan re-pack
+to ≥0.698 row packing (study §6/§8, filed separately). Decomposed term by
+term — with no corridor term and no rail-band term left — by
+[`bandgap_top/routing_budget.py`](bandgap_top/routing_budget.py), and written
+up in [`bandgap_top/AREA.md`](bandgap_top/AREA.md) Finding 6.
 
 **Corrected claim (was stale, gf180-bandgap#82; the via clause corrected
 again by [#159](https://github.com/2AMLogic/gf180-bandgap/issues/159)):**
@@ -385,7 +401,8 @@ none is a design simplification, and nothing in the reference is hand-written.
   its `C`; **both** the MIM cap's bottom-plate connection to `vdd`
   (klayout-tools#329, gf180-bandgap#89) and its top-plate connection to `fb`
   (klayout-tools#364/PR #368, gf180-bandgap#88); and the full
-  Metal1/Poly2/Contact connectivity joining everything else — i.e. the drawn
+  Metal1/Via1/Metal2/Via2/Metal3/Poly2/Contact connectivity joining
+  everything else (multi-metal since gf180-bandgap#166) — i.e. the drawn
   topology of the amplifier, the core mirror/cascode, the PNP array, the
   resistor strip, the trim ladder with its drawn metal strap option, and the
   start-up kick path. A resistor drawn at the wrong length or fold count, a
@@ -884,9 +901,15 @@ specifics) on the public
   `make_reference.py` now emits one `bjt` card per drawn PNP unit, and the
   committed LVS evidence was regenerated against the current (post-#304)
   deck — see the resolved deck-pin finding above.
-- **gf180mcu extraction deck declares one metal level and no vias** — forces
-  single-metal routing on any block that wants to LVS, at a real area cost:
-  [`#220`](https://github.com/2AMLogic/klayout-tools/issues/220).
+- **gf180mcu extraction deck declares one metal level and no vias** — forced
+  single-metal routing on any block that wanted to LVS, at a real area cost:
+  [`#220`](https://github.com/2AMLogic/klayout-tools/issues/220) —
+  **resolved upstream** (the deck now carries the full Metal1–Metal5 stack
+  with vias). **This repo has taken it up**
+  ([#166](https://github.com/2AMLogic/gf180-bandgap/issues/166)): the block
+  is routed on Metal2/Metal3 today and the area cost that gap imposed is
+  measured and recovered — see "Routing style" above and
+  [`bandgap_top/AREA.md`](bandgap_top/AREA.md) Finding 6.
 - **`gf180mcu` deck coverage gap (well/tap, BJT-specific rules)** —
   [`#157`](https://github.com/2AMLogic/klayout-tools/issues/157), filed from
   the #15 DRC bring-up.
