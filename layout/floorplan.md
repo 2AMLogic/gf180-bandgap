@@ -678,6 +678,18 @@ state:**
   Metal1/Poly2-only corridor-and-rail scheme) is named in DR-0005 and filed
   as [#160](https://github.com/2AMLogic/gf180-bandgap/issues/160), not
   attempted speculatively inside #156.
+- **#160 has since designed and costed that fix** (not implemented it):
+  [`routing/multi-metal-routing-study.md`](routing/multi-metal-routing-study.md)
+  estimates Metal2/Metal3 over-the-cell rails at **65,896 µm² (2.60× body
+  area)** against the **1.97×** the ratified target needs — 48 % of the
+  required move. This also updates §8's own overhead framing: the "generous
+  4×" assumption was never the binding constraint, and neither is routing;
+  the dominant remaining term is the **row-stripe floorplan this document
+  specifies** (§1's bottom-to-top row order), whose rows fill only 55.6 % of
+  the full-width stripe box they occupy. Closing the ratified target needs
+  the re-route *plus* a 2-D re-pack of those rows to ≥73.3 % packing — a
+  floorplan change, i.e. an item for this document, not only for
+  `generate.py`.
 
 ### 11.2 Amp systematic-offset placeholder (owner: post-layout extraction, tracked by #10's own escalation)
 

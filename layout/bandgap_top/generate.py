@@ -49,6 +49,15 @@ significant area (see ``layout/bandgap_top/AREA.md``). The tool gap is filed
 generically against klayout-tools; see ``layout/README.md`` § "Friction
 filed".
 
+**How much it costs, and what replacing it would recover**, is decomposed
+term by term by ``layout/bandgap_top/routing_budget.py`` (the corridor is
+16.90 um of block width; the stacked rails are 56.42 um of block height) and
+written up in ``layout/routing/multi-metal-routing-study.md``
+(gf180-bandgap#160): Metal2 vertical spines plus Metal3 over-the-cell row
+rails estimate at 2.60x device body area against today's 3.19x. That study
+is a design + estimate only — nothing in this module implements it yet, so
+everything described above is still what gets drawn.
+
 **One exception**: the compensation MIM capacitor's ``Metal4``/``FuseTop``
 plates (drawn by ``_mim_cap``) are wired down to the Metal1 ``vdd``/``fb``
 rails above through a real ``Via1``..``Via4`` stack (#77) — this block's only
