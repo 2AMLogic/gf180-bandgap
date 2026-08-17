@@ -134,6 +134,7 @@ REPORT_DIR = SIM_DIR / "suite" / "combined"
 # issue #154).
 sys.path.insert(0, str(SIM_DIR))
 from harness import stats as harness_stats  # noqa: E402  (needs sys.path)
+from harness.paths import _repo_relative  # noqa: E402  (needs sys.path)
 
 #: The ratified +/-2% untrimmed window, from README.md's Output-reference row.
 WINDOW_LO_V = 1.176
@@ -286,13 +287,6 @@ class EvidenceRef:
     @property
     def origin(self) -> str:
         return "this run" if self.live else "committed evidence"
-
-
-def _repo_relative(path: Path) -> str:
-    try:
-        return str(path.resolve().relative_to(REPO_ROOT))
-    except ValueError:  # pragma: no cover - only outside a checkout
-        return str(path)
 
 
 def provenance_of_path(record: Path) -> str:

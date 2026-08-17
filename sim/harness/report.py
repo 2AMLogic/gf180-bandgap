@@ -36,6 +36,7 @@ from .corners import (
     DEFAULT_TEMPERATURES_C,
     PvtPoint,
 )
+from .fmt import _fmt
 from .pdk import Pdk
 from .runner import PointResult
 from .testbench import Testbench
@@ -357,17 +358,6 @@ def build_record(
         "summary": summary,
         "points": [r.as_dict() for r in results],
     }
-
-
-def _fmt(value) -> str:
-    """Human-readable scalar for the Markdown record."""
-    if value is None:
-        return "n/a"
-    if isinstance(value, float):
-        if value != 0 and (abs(value) < 1e-3 or abs(value) >= 1e5):
-            return f"{value:.6e}"
-        return f"{value:.6g}"
-    return str(value)
 
 
 class RecordExists(RuntimeError):

@@ -43,6 +43,7 @@ from .corners import (
     DEFAULT_SUPPLY_TOLERANCE,
     DEFAULT_TEMPERATURES_C,
 )
+from .paths import _repo_relative
 
 MANIFEST_NAME = "tb.json"
 
@@ -155,13 +156,6 @@ def _require(manifest: dict, key: str, path: Path):
     if key not in manifest:
         raise ValueError(f"{path}: missing required key {key!r}")
     return manifest[key]
-
-
-def _repo_relative(path: Path) -> str:
-    try:
-        return str(path.resolve().relative_to(REPO_ROOT))
-    except ValueError:
-        return str(path.resolve())
 
 
 def resolve_dut(value: str | Path, manifest_dir: Path) -> Path:

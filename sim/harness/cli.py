@@ -10,6 +10,7 @@ import time
 from pathlib import Path
 
 from . import HARNESS_VERSION, corners as corners_mod, report, runner, testbench as tb_mod
+from .fmt import _fmt
 from .pdk import PdkNotFound, find_pdk
 from .runner import NgspiceMissing
 
@@ -212,16 +213,6 @@ def cmd_print_env() -> int:
     print(f'export GF180_MODELS="{pdk.ngspice_dir}"')
     print(f'export XSCHEM_USER_LIBRARY_PATH="{library_path}"')
     return EXIT_OK
-
-
-def _fmt(value) -> str:
-    if value is None:
-        return "n/a"
-    if isinstance(value, float):
-        if value != 0 and (abs(value) < 1e-3 or abs(value) >= 1e5):
-            return f"{value:.6e}"
-        return f"{value:.6g}"
-    return str(value)
 
 
 def run(args: argparse.Namespace) -> int:

@@ -36,6 +36,13 @@ SIM_DIR = REPO_ROOT / "sim"
 RUN_CORNERS = SIM_DIR / "run_corners.py"
 SUMMARY_DIR = SIM_DIR / "suite" / "summaries"
 
+# Every known caller of this module inserts SIM_DIR onto sys.path before
+# importing suite.cli (see suite.combined's identical note, issue #154), so
+# this module-level import of a sibling sim/harness/ package is safe here.
+sys.path.insert(0, str(SIM_DIR))
+from harness.paths import _repo_relative  # noqa: E402  (needs sys.path)
+from harness.fmt import _fmt as _harness_fmt  # noqa: E402  (needs sys.path)
+
 EXIT_OK = 0
 EXIT_SPEC_FAIL = 1
 EXIT_RUN_ERROR = 2
@@ -70,14 +77,6 @@ class BenchRun:
 
 def _bench_manifest(slug: str) -> Path:
     return SIM_DIR / slug / "testbench" / "tb.json"
-
-
-def _repo_relative(path: str | Path) -> str:
-    """Repo-relative, so a committed summary reads the same on any machine."""
-    try:
-        return str(Path(path).resolve().relative_to(REPO_ROOT))
-    except ValueError:
-        return str(path)
 
 
 def _runner_status(returncode: int) -> str:
@@ -141,13 +140,9 @@ def run_bench(
 
 
 def _fmt(value) -> str:
-    if value is None:
-        return "n/a"
-    if isinstance(value, float):
-        if value != 0 and (abs(value) < 1e-3 or abs(value) >= 1e5):
-            return f"{value:.4e}"
-        return f"{value:.6g}"
-    return str(value)
+    """Like ``harness.fmt._fmt``, but ``.4e`` -- suite summaries are more
+    compact than per-record Markdown."""
+    return _harness_fmt(value, precision="4e")
 
 
 def _verdict_rows(benches: list[BenchRun]) -> list[str]:
