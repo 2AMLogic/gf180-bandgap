@@ -7,8 +7,9 @@
   (DR-0005) named.
 - **Status**: design + estimate. **No routing code is changed by this
   study** — `layout/bandgap_top/generate.py` still draws the Metal1/Poly2
-  corridor-and-rail scheme. The implementation is filed separately (see
-  §8), on the strength of the numbers below.
+  corridor-and-rail scheme. The implementation is filed separately as
+  [#166](https://github.com/2AMLogic/gf180-bandgap/issues/166), on the
+  strength of the numbers below.
 - **Reproduce every number here** with:
 
   ```bash
@@ -297,7 +298,7 @@ reports 42 DRC violations and 18 LVS mismatches against the *same* geometry
 this study and unaffected by it. (§4 notes that #159's `via*.width.1` half is
 a hard prerequisite for the implementation.)
 
-### Open questions for the implementation issue
+### Open questions for the implementation issue ([#166](https://github.com/2AMLogic/gf180-bandgap/issues/166))
 
 1. **Parasitics.** Metal2/Metal3 rails plus Via1/Via2 stacks add series
    resistance on the supply and bias rails that the current single-metal
