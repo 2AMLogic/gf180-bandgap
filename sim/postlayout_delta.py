@@ -25,7 +25,6 @@ from __future__ import annotations
 
 import argparse
 import re
-import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -33,6 +32,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "sim"))
 
+from harness import report as harness_report  # noqa: E402
 from suite import spec as spec_mod  # noqa: E402
 
 RECORD_ROW = re.compile(r"^\s*\|\s*`([^`]+)`\s*\|(.+)\|\s*$")
@@ -164,7 +164,10 @@ def render(pairs: dict[str, tuple[Record, Record]], extra: str) -> str:
         "same source `sim/run_suite.py` judges against."
     )
     out.append("")
-    out.append(f"- **git**: `{_git('rev-parse', 'HEAD')}` on `{_git('rev-parse', '--abbrev-ref', 'HEAD')}`")
+    out.append(
+        f"- **git**: `{harness_report._git('rev-parse', 'HEAD', cwd=REPO_ROOT)}` on "
+        f"`{harness_report._git('rev-parse', '--abbrev-ref', 'HEAD', cwd=REPO_ROOT)}`"
+    )
     out.append("")
 
     out.append("## Records paired")
@@ -241,12 +244,6 @@ def render(pairs: dict[str, tuple[Record, Record]], extra: str) -> str:
         out.append(Path(extra).read_text().rstrip())
         out.append("")
     return "\n".join(out) + "\n"
-
-
-def _git(*args: str) -> str:
-    return subprocess.run(
-        ["git", *args], cwd=REPO_ROOT, capture_output=True, text=True, check=False
-    ).stdout.strip()
 
 
 def main() -> int:
