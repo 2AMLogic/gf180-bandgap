@@ -9,7 +9,7 @@ LVS flows that verify it.
 (`bandgap_core` + `bandgap_amp` + `bandgap_startup` + trim ladder), generated
 from the committed schematic netlist and **LVS-matching** against its
 mechanically-derived reference netlist across all device classes `klt
-extract` recognises — 81 MOS, 65 `ppolyf_u` + 1 `ppolyf_u_1k` resistors, 8
+extract` recognises — 89 MOS, 65 `ppolyf_u` + 1 `ppolyf_u_1k` resistors, 8
 `bjt` and 1 MIM capacitor. **DRC is clean against the current deck**
 (`status: clean`, `violation_count: 0`) — the `fb` top-plate routing tab that
 used to draw `mim.enclosing.fusetop.1`
@@ -76,6 +76,16 @@ KLayout GUI/application binary or its `.drc`/`.lydrc` script runner**. Every
 command below ran to completion in a shell with no KLayout application
 installed, no `DISPLAY`, and no Qt.
 
+**No version pin — drift is expected, and has happened before ([#159](https://github.com/2AMLogic/gf180-bandgap/issues/159)).**
+`uv tool install`/`pip install` above always resolves to the git repo's
+current `HEAD`, so the exact rule set/extraction behaviour changes out from
+under this repo whenever `klayout-tools` merges upstream. The "Expected
+results" table below records the `klt` revision its DRC-clean/LVS-match
+verdicts were last verified against (`uv tool install`'s own
+`uv-receipt.toml`, or `klt --version` for the package version alone) — check
+that note before trusting the table unchanged, and re-run the reproduction
+commands (below) against your own installed `klt` if it is newer.
+
 ## Reproducing the whole flow
 
 From the repo root, in order:
@@ -109,27 +119,59 @@ Expected results (as committed):
 | Step | Result |
 |---|---|
 | `matching_report.py` | all tier-1/2/3 checks pass, exit 0 |
-| `run_drc.py` | `status: clean`, `violation_count: 0` (`20260803-054725-8d21bf1.drc.json` — first clean verdict since klayout-tools#318 stopped false-negativing `mim.enclosing.fusetop.1`; see #88) |
-| `run_lvs.py` | `status: match`, 156/156 devices, 92/92 nets (`20260803-054735-8d21bf1.lvs.json`; reproduced unchanged by `20260804-143026-c876a0f.lvs.json` and `20260804-151012-fefb292.lvs.json`) |
+| `run_drc.py` | `status: clean`, `violation_count: 0` (`20260817-011949-f5d9512.drc.json`; see "RESOLVED — klt-version drift..." below) |
+| `run_lvs.py` | `status: match`, 164/164 devices, 92/92 nets (`20260817-012215-f5d9512.lvs.json`; see "RESOLVED — klt-version drift..." below) |
 | `routing_budget.py` | decomposition reconstructs the drawn bbox (238.80 × 337.45 µm) and the modelled "as drawn" area equals `area_report.py`'s measured 80,813.72 µm²; multi-metal estimate 65,896.39 µm² / 2.60× (see [`routing/multi-metal-routing-study.md`](routing/multi-metal-routing-study.md)) |
-| `run_lvs.py --engine both` | klayout `match`, 14 mismatches; netgen `match`, 2 mismatches — **both engines agree** (`20260804-151012-fefb292.lvs-netgen.json`) — see "The netgen cross-check" below |
+| `run_lvs.py --engine both` | klayout `match`, 14 mismatches; netgen `mismatch`, 2 `device.property` errors — **engines DISAGREE**, tracked as [#168](https://github.com/2AMLogic/gf180-bandgap/issues/168) (unrelated to #159; traced to #157's amp M3/M4 resize, not klt-version drift) |
 | `area_report.py` | 80,813.72 µm² vs. 50,000 µm² target — **FAIL, 61.6 % over budget** (issue #156; see `layout/bandgap_top/AREA.md` Finding 5 and `spec/decision-records/0005-area-target-overrun.md`) |
 
-**Table currency note (issue #156):** the `run_drc.py`/`run_lvs.py` rows
-above are the last DRC-clean/LVS-match reports captured against this GDS,
-but `klt` is installed unpinned from git head (no version pin — see
-"Requires `klt` on `PATH`" above), and #156 found (while regenerating
-`bandgap_top.gds` for the area row) that a `klt` installed today no longer
-reproduces either verdict against the *current* committed GDS: DRC reports
-42 violations (new `via1`–`via4` width-minimum rules plus
-`metal1.enclosing.contact.1`, none of which existed against the `klt`
-version the committed reports above were captured with), and LVS reports 18
-mismatches including 2 `error`-severity ones (a MiM-cap parameter
-diff and a `vdd`/`VDD` net-identity conflict). This reproduces identically
-against the *pre-#156* GDS too (same `klt`, same result), so it is a
-`klt`-version drift unrelated to #156's area regeneration or any drawn
-geometry change — tracked as [#159](https://github.com/2AMLogic/gf180-bandgap/issues/159)
-rather than fixed inside the area-budget issue's scope.
+**RESOLVED — klt-version drift silently invalidated the DRC-clean/LVS-match
+verdicts above, independent of any drawn-geometry change**
+([#159](https://github.com/2AMLogic/gf180-bandgap/issues/159)). `klt` is
+installed unpinned from git head (no version pin — see "Requires `klt` on
+`PATH`" above); #156 found (while regenerating `bandgap_top.gds` for the
+area row) that a `klt` installed today no longer reproduced either verdict
+against the committed GDS, and #159 root-caused and fixed each finding
+rather than treating it as a `klt` regression to report upstream — none of
+it turned out to be a genuine `klt`/klayout-tools bug:
+
+- **DRC, 42 violations → 0.** `via1.width.1`..`via4.width.1` (16 violations)
+  are a genuine new upstream rule (DRM `Vn.1`, 0.26um min via size) the deck
+  gained after the committed reports above were captured — `generate.py`'s
+  `VIA_W` (240nm) no longer cleared it; bumped to 260nm, the DRM's own exact
+  value. `metal1.enclosing.contact.1` (26 violations) is not new-rule
+  drift but a real, pre-existing enclosure gap in this layout's own drawn
+  geometry that a newly-added rule simply started catching: the PNP unit's
+  base/collector-ring strap and the trim ladder's outer terminal nodes each
+  drew a `Metal1` strap shorter than the `contact_column`/pad contact it was
+  meant to enclose. Both fixed in `generate.py` (`draw_pnp`, `draw_trim`) by
+  sizing the strap to the full contact span, not a change to contact
+  placement.
+- **LVS, 18 mismatches (2 `error`) → 14 (0 `error`).** The two `error`
+  mismatches (`device.property` on the MiM cap, `topology` "name/identity
+  conflict" on `vdd`/`VDD` and `FB`/`$12`) all traced to one root cause, not
+  four independent ones: `layout/lvs/make_reference.py` never emitted the
+  MiM cap's `a`/`p` (area/perimeter) device parameters, and its capacitance
+  formula used the gf180mcu deck's rounded 2.0 fF/um² nominal density label
+  rather than the PDK's own more precise two-term law (`c_cox * A + c_capsw
+  * P`, klayout-tools#512) — close enough (~0.3%) that klayout's default `C`
+  tolerance absorbed it, but not exact, and exactness is what the
+  comparer's device-equivalence check needs. Fixing both (see
+  `plan.mim_plate_perimeter_nm`/`mim_cap_farads`) made the cap parameters
+  match exactly, and the `vdd`/`VDD` and `FB`/`$12` net-identity "conflicts"
+  — collateral fallout from the comparer's structural matching around that
+  one broken device pair, not a real `klt` case-sensitivity bug — cleared
+  as a side effect, with no separate net-naming fix needed. The remaining
+  14 mismatches are the same pre-existing warning-severity noise this
+  section already documents below (2 `device.body_unverified`, 12
+  structurally-resolved `topology`).
+
+**klt revision this table is valid against:** `klt 0.2.0`,
+`git+https://github.com/2AMLogic/klayout-tools@a482d3934bd644b763cf925f6344ac05f54a1623`
+(the exact `uv tool install` receipt, `uv-receipt.toml`, as of this table's
+capture — re-verify against a fresh `klt --version`/install receipt before
+trusting this table unchanged, since `klt` is installed unpinned from git
+head; see "Install `klt`" above).
 
 `net_count` is 92, not 93, because gf180-bandgap#88 redrew the MiM cap's `fb`
 up-hop contact to land inside the recognised top plate — the top plate no
@@ -163,7 +205,7 @@ updates carry no geometry) — only the reference-netlist derivation moved.
 `20260803-002521-dbcd5ab.lvs.json` remains committed as the "before" evidence
 of the regression this resolves.
 
-`run_lvs.py`'s 156 compared devices are 34 `nfet` + 47 `pfet` (81 MOS,
+`run_lvs.py`'s 164 compared devices are 42 `nfet` + 47 `pfet` (89 MOS,
 including the 14 edge dummies), 65 `ppolyf_u` + 1 `ppolyf_u_1k` resistors, 8
 `bjt` and 1 `cap_mim_2f0_m4m5_noshield`. That is up from the 81 MOS-only
 devices #62–#72 compared: the deck gained bipolar (klayout-tools#223),
@@ -175,7 +217,14 @@ taught `make_reference.py` to model all three classes (it briefly reported
 `mismatch` in between, purely from the reference being MOS-only), and
 [#78](https://github.com/2AMLogic/gf180-bandgap/issues/78) took up the deck's
 new `ppolyf_u_1k` entry so `startup.RPU` extracts as a real resistor instead
-of a short.
+of a short. The `nfet` count's own further bump, 34 → 42 (156 → 164 devices
+overall), is not part of any of that history and not part of #159 either: it
+traces to [#157](https://github.com/2AMLogic/gf180-bandgap/issues/157)'s
+resize of the amp's `M3`/`M4` mirror load (schematic-only, `nf=2` unchanged),
+which changes their drawn finger geometry — `generate.py`'s own device
+splitting, not a `klt` recognition change. Confirmed unrelated to klt-version
+drift specifically: the same 164/42 count is what a `klt` install at either
+the pre-#159 or post-#159 revision extracts from this GDS.
 
 Of the current 14 mismatches, all are `warning`-severity and not defects: two
 `device.body_unverified` entries are the deck's standing "no substrate/well
@@ -274,17 +323,19 @@ ratified 0.05 mm² target needs, because the rest of the gap is row-stripe
 whitespace, not routing. The study is not implemented; this section still
 describes what `generate.py` draws today.
 
-**Corrected claim (was stale, gf180-bandgap#82):** the separate **DRC**
-deck was never Metal1-only, and is even less so today — since
-[`klayout-tools#188`](https://github.com/2AMLogic/klayout-tools/issues/188)
+**Corrected claim (was stale, gf180-bandgap#82; the via clause corrected
+again by [#159](https://github.com/2AMLogic/gf180-bandgap/issues/159)):**
+the separate **DRC** deck was never Metal1-only, and is even less so today —
+since [`klayout-tools#188`](https://github.com/2AMLogic/klayout-tools/issues/188)
 it also carries `metal2`/`metal3`/`metal5`.width|space, `metaltop`.* and
-`mim.space.1`/`mim.enclosing.fusetop.1` rules; see "The gf180mcu DRC deck:
-coverage" below for the current, non-stale list. **Above Metal1** the only
-rule-free layers are the four vias (`Via1`..`Via4`, 35/0/38/0/40/0/41/0) —
-everything else drawn above Metal1, including `Metal4`/`FuseTop`, is
-checked. (Taken over the whole stream the rule-free set is larger — twelve
-layers, including the implant and device-marker layers; the coverage section
-below enumerates them from the report itself.)
+`mim.space.1`/`mim.enclosing.fusetop.1` rules, and it has since gained
+`via1.width.1`..`via4.width.1` too; see "The gf180mcu DRC deck: coverage"
+below for the current, non-stale list. **Above Metal1**, every layer this
+layout draws is checked — the vias (`Via1`..`Via4`, 35/0/38/0/40/0/41/0)
+were the one exception when this note was first written, but no longer are.
+(Taken over the whole stream the rule-free set is still larger — eight
+layers, all implant and device-marker layers; the coverage section below
+enumerates them from the report itself.)
 
 **One exception**: the compensation MIM capacitor's `Metal4`/`FuseTop` plates
 are wired down to the Metal1 `vdd`/`fb` rails through a real `Via1`..`Via4`
@@ -531,31 +582,38 @@ rules), no HV/5V-variant rules, and no tap-specific rule beyond the `Nwell`
 pair above.
 
 **What this run actually checked**, straight out of the committed report
-(`20260802-215251-59c294c.drc.json`, `coverage.*`) rather than from memory:
+(`20260817-011949-f5d9512.drc.json`, `coverage.*`) rather than from memory —
+refreshed by [#159](https://github.com/2AMLogic/gf180-bandgap/issues/159),
+which found the `via1.width.1`..`via4.width.1` rules described as "not yet
+transcribed" below **have since been added** upstream, closing exactly the
+via gap the previous version of this section called out:
 
-- `coverage.layers_checked` — `21/0, 22/0, 30/0, 33/0, 34/0, 36/0, 42/0,
-  46/0, 75/0, 81/0, 127/5`. So above Metal1, `Metal2`/`Metal3`/`Metal4`/
-  `FuseTop`/`Metal5` all carry rules and are checked.
-- `coverage.rules_skipped` — `metaltop.width.1` and `metaltop.space.1`. The
-  deck *carries* the `MetalTop` pair, but this layout draws nothing on 53/0,
-  so neither rule ran here: deck contents and this-run coverage are not the
-  same thing.
-- `coverage.layers_in_stream_without_rules` — **twelve** drawn layers have no
+- `coverage.layers_checked` — `21/0, 22/0, 30/0, 33/0, 34/0, 35/0, 36/0,
+  38/0, 40/0, 41/0, 42/0, 46/0, 75/0, 81/0, 127/5`. So above Metal1,
+  `Via1`..`Via4`/`Metal2`/`Metal3`/`Metal4`/`FuseTop`/`Metal5` all carry
+  rules and are checked — the vias are no longer the exception.
+- `coverage.rules_skipped` — `metaltop.width.1`, `metaltop.space.1` and
+  `pad.enclosing.metal5.1` (a new "9.1 Bond Pad" rule the deck now carries,
+  scoped to a passivation-opening layer, 37/0, this layout draws nothing
+  on). The deck *carries* all three, but this layout exercises none of
+  them: deck contents and this-run coverage are not the same thing.
+- `coverage.layers_in_stream_without_rules` — **eight** drawn layers have no
   rule at all: `31/0` (`Pplus`), `32/0` (`Nplus`), `34/10` (the `Metal1`
-  label layer), `35/0`/`38/0`/`40/0`/`41/0` (`Via1`..`Via4`), `49/0` (`SAB`),
-  `62/0` (`RESISTOR_MK`), `110/5` (`RES_MK`), `117/5` (`CAP_MK`) and `117/10`
-  (`MIM_MK`). Only four of the twelve are vias; the drawn **implant** and
-  **device-recognition marker** geometry is entirely unchecked — including
-  `CAP_MK`/`MIM_MK` (see "Findings and escalations"; before
+  label layer), `49/0` (`SAB`), `62/0` (`RESISTOR_MK`), `110/5` (`RES_MK`),
+  `117/5` (`CAP_MK`) and `117/10` (`MIM_MK`) — down from twelve now that the
+  four via layers carry rules. The drawn **implant** and
+  **device-recognition marker** geometry is still entirely unchecked —
+  including `CAP_MK`/`MIM_MK` (see "Findings and escalations"; before
   [#88](https://github.com/2AMLogic/gf180-bandgap/issues/88) these markers'
   clipping was also what let the now-removed `fb` top-plate routing tab
   stay outside the recognised plate — see that section's `#82`/`#88` entries
   for the history).
 
-So the accurate scoped statement is: *above* Metal1 the only rule-free layers
-are the four vias, but taken over the whole stream twelve layers are rule-free.
-Even a `clean` DRC verdict from this deck would therefore be a real but
-partial check. See "Friction filed".
+So the accurate scoped statement (updated by #159; the vias are no longer
+rule-free) is: *above* Metal1 every layer this layout draws now carries a
+rule, but taken over the whole stream eight layers are still rule-free. Even
+a `clean` DRC verdict from this deck would therefore be a real but partial
+check. See "Friction filed".
 
 **Historical note (superseded by klayout-tools#327 and gf180-bandgap#88,
 kept for context).** Until 2026-08-02, `mim.enclosing.fusetop.1`'s
@@ -857,6 +915,15 @@ specifics) on the public
   by [`PR #368`](https://github.com/2AMLogic/klayout-tools/pull/368);
   gf180-bandgap#88 redrew this layout's contact against it (see "Findings
   and escalations" above) and is the consumer that closed the loop on both.
+- **klt-version DRC/LVS drift investigated, no new tool defect found**
+  ([#159](https://github.com/2AMLogic/gf180-bandgap/issues/159)): all four
+  findings (two new-but-intentional DRM rules this repo needed to adapt to,
+  one real pre-existing layout enclosure gap, one stale reference-side
+  capacitance model) root-caused to this repo's own `generate.py`/
+  `make_reference.py`, not to `klt`/klayout-tools — a measured refutation
+  of the "genuine klt bug" hypothesis rather than a filing. See the
+  "Expected results" table's "RESOLVED — klt-version drift..." note above
+  for the full root-cause breakdown.
 
 ## The `trivial_poly_res` DRC fixture (#15)
 

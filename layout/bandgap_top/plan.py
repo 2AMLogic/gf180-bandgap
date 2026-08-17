@@ -346,10 +346,24 @@ PPOLYF_U_SHEET_RHO = 350.0
 #: bodies (``ResItem.high_rho``, e.g. ``startup.RPU``).
 PPOLYF_U_1K_SHEET_RHO = 1000.0
 
-#: Area capacitance ``klt``'s gf180mcu extraction deck models the MIM
-#: capacitor at, in farads per square micrometre (the PDK's default 2.0
-#: fF/um^2 density option; see that deck's ``CapacitorDevice`` entry).
-MIM_CAP_F_PER_UM2 = 2.0e-15
+#: Area/perimeter capacitance coefficients ``klt``'s gf180mcu extraction deck
+#: reports the MIM capacitor's ``C`` at (klayout-tools#512's two-term law,
+#: ``c_c0 = c_cox * A + c_capsw * P``, transcribed from the PDK's own
+#: ``sm141064.ngspice`` ``cap_mim_2f0fF`` simulation model card): the
+#: deck-nominal "2.0 fF/um^2" density label rounds two separate, more precise
+#: coefficients -- the area term (0.5% below the rounded nominal) and a
+#: previously-unmodelled perimeter/fringe term. Using a single rounded
+#: 2.0e-15 F/um^2 area-only figure here (as this reference used to) left the
+#: reference's own capacitance ~0.3% off the real extracted value for this
+#: cap's aspect ratio -- small enough that klayout-tools' NetlistComparer's
+#: default `C` tolerance absorbed it (no `run_lvs.py`-side mismatch), but
+#: large enough that its stricter, tolerance-free device-parameter-equality
+#: check flagged the device pair as "matched device parameters differ"
+#: anyway (#159). See that deck's ``CapacitorDevice`` entry
+#: (``area_cap_f_um2``/``perim_cap_f_um``) for the full derivation and
+#: provenance.
+MIM_CAP_AREA_F_PER_UM2 = 1.99e-15
+MIM_CAP_PERIM_F_PER_UM = 2.383e-16
 
 
 def res_geometry(item: ResItem) -> tuple[int, int, int]:
@@ -484,6 +498,25 @@ def pnp_base_perimeter_nm(item: PnpItem) -> int:
 def mim_plate_area_nm2(cap: MimCapItem) -> int:
     """Area of the recognised ``FuseTop`` top plate of the MIM capacitor."""
     return (cap.width_nm - 2 * MIM_PLATE_INSET) * (cap.height_nm - 2 * MIM_PLATE_INSET)
+
+
+def mim_plate_perimeter_nm(cap: MimCapItem) -> int:
+    """Perimeter of the recognised ``FuseTop`` top plate of the MIM
+    capacitor -- the same rectangle :func:`mim_plate_area_nm2` measures."""
+    return 2 * (
+        (cap.width_nm - 2 * MIM_PLATE_INSET) + (cap.height_nm - 2 * MIM_PLATE_INSET)
+    )
+
+
+def mim_cap_farads(cap: MimCapItem) -> float:
+    """Capacitance ``klt extract`` reports for the MIM capacitor, in farads --
+    the deck's own two-term area+perimeter law (see
+    ``MIM_CAP_AREA_F_PER_UM2``/``MIM_CAP_PERIM_F_PER_UM``) applied to the same
+    recognised plate rectangle :func:`mim_plate_area_nm2`/
+    :func:`mim_plate_perimeter_nm` measure."""
+    area_um2 = mim_plate_area_nm2(cap) / 1e6
+    perim_um = mim_plate_perimeter_nm(cap) / 1e3
+    return area_um2 * MIM_CAP_AREA_F_PER_UM2 + perim_um * MIM_CAP_PERIM_F_PER_UM
 
 
 # --------------------------------------------------------------------------- #

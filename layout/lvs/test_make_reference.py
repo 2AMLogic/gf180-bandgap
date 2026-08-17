@@ -152,7 +152,10 @@ class MimCapPlateNetTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.reference_text, cls.meta = make_reference.build_reference(plan.DRAWN_TRIM_CODE)
-        cap_line_re = re.compile(r"^C\S+\s+(\S+)\s+(\S+)\s+\S+\s+cap_mim_2f0_m4m5_noshield$", re.M)
+        cap_line_re = re.compile(
+            r"^C\S+\s+(\S+)\s+(\S+)\s+\S+\s+cap_mim_2f0_m4m5_noshield(?:\s+\S+)*$",
+            re.M,
+        )
         match = cap_line_re.search(cls.reference_text)
         if match is None:
             raise AssertionError(

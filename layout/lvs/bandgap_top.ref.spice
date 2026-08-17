@@ -14,7 +14,7 @@
 * capacitors      : 1 cap_mim_2f0_m4m5_noshield
 
 .SUBCKT bandgap_top vdd vss vref vsubs
-Camp_CC vdd fb 6.914880e-12 cap_mim_2f0_m4m5_noshield
+Camp_CC vdd fb 6.936354e-12 cap_mim_2f0_m4m5_noshield a=3.457440e-09 p=2.352000e-04
 Mamp_M1_0 amp_n1 sns2 amp_tail vsubs nfet L=6U W=25U
 Mamp_M1_1 amp_n1 sns2 amp_tail vsubs nfet L=6U W=25U
 Mamp_M1_10 amp_n1 sns2 amp_tail vsubs nfet L=6U W=25U
