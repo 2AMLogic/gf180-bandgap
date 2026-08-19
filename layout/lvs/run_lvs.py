@@ -35,6 +35,34 @@ a bug in the graph-matching step is not. The netgen engine also needs the
 why it is opt-in rather than always-on — a machine without it must still be
 able to run the default flow.
 
+**Known netgen-only false positive (gf180-bandgap#168):** every guarded
+matched-device row this layout draws (``plan.build_rows``) is bracketed by a
+pair of "off" dummy MOS devices whose source/drain/gate/body all tie to the
+*same* single net (the row's own supply rail) — by construction, so the
+dummy is unconditionally off (``plan.DUMMY_W_NM``). A dummy transistor with
+every terminal on one net carries **no distinguishing connectivity at all**,
+so any two dummies across *different* rows are graph-isomorphic to netgen's
+comparator regardless of their (correct, per-row) drawn ``L``. netgen folds
+such a group into one of its own "symmetries" (its report literally says
+``Netlists match with N symmetries``) and then picks one representative
+pairing per symmetry class for its ``device.property`` check — a pairing
+choice ``klt``'s own (independent, non-configurable-tolerance) device
+comparer does not have to make the same way, since it is not the arbiter of
+which one is "right": both members of the class are legitimately drawn at
+their own row's ``L``. Confirmed root cause for #168's original report
+(``amp.M3``/``amp.M4``'s ``L`` resize, #157): the AMPPCASC row's *correctly*
+16 µm dummy (``klt extract``'s ``pfet$43``, y=131.373 µm) versus the
+AMPLOAD row's reference-side name for its *correctly* 26.4 µm dummy
+(``PFETDUM_AMPLOAD_L``) — not a genuine sizing defect in either row, and not
+specific to multi-finger (``nf>1``) devices. Deterministic (same pairing
+every rerun), not flaky. Reproduce::
+
+    uv run --with klayout python3 layout/bandgap_top/generate.py
+    python3 layout/lvs/run_lvs.py layout/bandgap_top/bandgap_top.gds --engine both
+
+See ``layout/README.md``'s "Expected results" table for the current
+per-engine verdicts this is expected to produce.
+
 Usage (from the repo root)::
 
     python3 layout/lvs/run_lvs.py layout/bandgap_top/bandgap_top.gds

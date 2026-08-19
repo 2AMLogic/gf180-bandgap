@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "engine": "netgen",
+  "layout": "../../../bandgap_top/bandgap_top.gds",
+  "reference": "../../bandgap_top.ref.spice",
+  "top": "bandgap_top",
+  "parameter_tolerance": null,
+  "status": "mismatch",
+  "mismatch_count": 3,
+  "category_counts": {
+    "device.body_unverified": 2,
+    "device.property": 1
+  },
+  "counts": {
+    "nets": {
+      "layout": 92,
+      "reference": 92,
+      "matched": 0
+    },
+    "devices": {
+      "layout": 164,
+      "reference": 164,
+      "matched": 0
+    },
+    "pins": {
+      "layout": 4,
+      "reference": 4,
+      "matched": 0
+    }
+  },
+  "device_classes": [
+    "nfet",
+    "pfet",
+    "bjt",
+    "cap_mim_2f0_m4m5_noshield",
+    "resistor",
+    "diode_nd2ps_06v0",
+    "diode_pd2nw_06v0"
+  ],
+  "environment": {
+    "engine": "netgen",
+    "engine_version": "1.5.133",
+    "layout_sha256": "3e1af18ef32dd461172a9d9d00a62ade323725de9a0f90ded08161237dcc1ae0",
+    "reference_sha256": "eb9bab86fbec320c912a05ff1e527c1e0d2cd6350157ce373ed9196a7827d44f",
+    "extracted_netlist": null
+  },
+  "provenance": {
+    "klt_version": "0.2.0",
+    "klayout_version": "0.30.10",
+    "pdk": null,
+    "deck": {
+      "name": "gf180mcu",
+      "content_hash": "sha256:e2726af899d1837fe8c9a99688483f145b23c92ded07323f54d627d06bdb2bbf"
+    },
+    "input": null
+  },
+  "mismatches": [
+    {
+      "category": "device.body_unverified",
+      "severity": "warning",
+      "description": "42 NMOS device body terminal(s) were compared against the 'vsubs' deck-synthesized substrate net, not a real schematic net -- no drawn substrate-tap geometry resolved these device(s)' body terminal to a real net (see docs/cli/extract.md, \"Coverage\")",
+      "side": "layout",
+      "net": null,
+      "device": {
+        "layout": null,
+        "reference": null,
+        "class": "nfet"
+      },
+      "property": null,
+      "details": null
+    },
+    {
+      "category": "device.body_unverified",
+      "severity": "warning",
+      "description": "47 PMOS device body terminal(s) were compared against an anonymous, deck-synthesized well net, not a real schematic net -- this deck has no distinct well-tap layer (see docs/cli/extract.md, \"Coverage\")",
+      "side": "layout",
+      "net": null,
+      "device": {
+        "layout": null,
+        "reference": null,
+        "class": "pfet"
+      },
+      "property": null,
+      "details": null
+    },
+    {
+      "category": "device.property",
+      "severity": "error",
+      "description": "netgen reported property errors on one or more matched devices, but the per-parameter detail lines could not be parsed -- see the 'details.raw' field for netgen's own text",
+      "side": "both",
+      "net": null,
+      "device": null,
+      "property": null,
+      "details": {
+        "raw": "164 device instances.\n  Class: CAP_MIM_2F0_M4M5_NOSHIELD instances:   1\n  Class: BJT                   instances:   8\n  Class: PFET                  instances:  47\n  Class: VSUBS                 instances:  66\n  Class: NFET                  instances:  42\nCircuit contains 92 nets.\n\nCircuit was modified by parallel/series device merging.\nNew circuit summary:\n\nContents of circuit 1:  Circuit: 'bandgap_top'\nCircuit bandgap_top contains 45 device instances.\n  Class: cap_mim_2f0_m4m5_noshield instances:   1\n  Class: bjt                   instances:   8\n  Class: pfet                  instances:  16\n  Class: vsubs                 instances:   6\n  Class: nfet                  instances:  14\nCircuit contains 36 nets.\nContents of circuit 2:  Circuit: 'BANDGAP_TOP'\nCircuit BANDGAP_TOP contains 45 device instances.\n  Class: CAP_MIM_2F0_M4M5_NOSHIELD instances:   1\n  Class: BJT                   instances:   8\n  Class: PFET                  instances:  16\n  Class: VSUBS                 instances:   6\n  Class: NFET                  instances:  14\nCircuit contains 36 nets.\n\nCircuit 1 contains 45 devices, Circuit 2 contains 45 devices.\nCircuit 1 contains 36 nets,    Circuit 2 contains 36 nets.\n\nCombined 16 series devices.\nCombined 16 series devices.\nCombined 8 series devices.\nCombined 8 series devices.\nCombined 16 series devices.\nCombined 16 series devices.\nNo more changes can be made to series/parallel networks.\nCombined 8 series devices.\nCombined 8 series devices.\nNo more changes can be made to series/parallel networks.\nCircuits match with 4 symmetries.\nNetlists match with 4 symmetries.\nCircuits match correctly.\nThere were property errors.\npfet$43 vs. PFETDUM_AMPLOAD_L:\n L circuit1: 1.6e-05   circuit2: 2.64e-05   (delta=49.1%, cutoff=1%)\nNo more changes can be made to series/parallel networks.\nResult: Circuits match uniquely.\nProperty errors were found.\nThe following cells had property errors: bandgap_top\n\nLogging to file \"/tmp/klt-lvs-netgen-j38v5hh7/comp.out\" disabled\nLVS Done."
+      }
+    }
+  ],
+  "net_correspondence": []
+}

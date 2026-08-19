@@ -1,0 +1,17 @@
+layout: ../../../bandgap_top/bandgap_top.gds
+reference: ../../bandgap_top.ref.spice
+top: bandgap_top
+engine: netgen
+status: mismatch
+mismatches: 3
+  nets: layout=92  reference=92  matched=0
+  devices: layout=164  reference=164  matched=0
+  pins: layout=4  reference=4  matched=0
+
+category_counts:
+  device.body_unverified: 2
+  device.property: 1
+
+[warning] device.body_unverified  (layout)  42 NMOS device body terminal(s) were compared against the 'vsubs' deck-synthesized substrate net, not a real schematic net -- no drawn substrate-tap geometry resolved these device(s)' body terminal to a real net (see docs/cli/extract.md, "Coverage")
+[warning] device.body_unverified  (layout)  47 PMOS device body terminal(s) were compared against an anonymous, deck-synthesized well net, not a real schematic net -- this deck has no distinct well-tap layer (see docs/cli/extract.md, "Coverage")
+[error] device.property  (both)  netgen reported property errors on one or more matched devices, but the per-parameter detail lines could not be parsed -- see the 'details.raw' field for netgen's own text

@@ -123,8 +123,53 @@ Expected results (as committed):
 | `run_drc.py` | `status: clean`, `violation_count: 0` (`20260817-125327-972f6d5.drc.json`; see "RESOLVED — klt-version drift..." below) |
 | `run_lvs.py` | `status: match`, 164/164 devices, 92/92 nets (`20260817-125346-972f6d5.lvs.json`; see "RESOLVED — klt-version drift..." below) |
 | `routing_budget.py` | decomposition reconstructs the drawn bbox (221.70 × 281.03 µm) with **no corridor and no rail-band term left**, and the drawn `S1` area equals `area_report.py`'s measured 62,505.60 µm² / 2.47× — beating the study's 65,896.39 µm² / 2.60× estimate by 5.1 % (see [`routing/multi-metal-routing-study.md`](routing/multi-metal-routing-study.md) and `bandgap_top/AREA.md` Finding 6) |
-| `run_lvs.py --engine both` | klayout `match`, 14 mismatches; netgen `mismatch`, 2 `device.property` errors — **engines DISAGREE**, tracked as [#168](https://github.com/2AMLogic/gf180-bandgap/issues/168) (unrelated to #159; traced to #157's amp M3/M4 resize, not klt-version drift) |
+| `run_lvs.py --engine both` | klayout `match`, 14 mismatches; netgen `mismatch`, 1 `device.property` error (`20260819-070132-1e66285.lvs-netgen.json`) — **engines DISAGREE by design**: [#168](https://github.com/2AMLogic/gf180-bandgap/issues/168) root-caused this to a netgen-only device-pairing artifact on graph-symmetric dummy devices, not a layout defect (see below); the `klayout` engine's `match` verdict is this repo's acceptance gate (#159/#170) and is unaffected |
 | `area_report.py` | 62,505.60 µm² vs. 50,000 µm² target — **FAIL, 25.0 % over budget** (issue #166 recovered 22.7 % of #156's 80,813.72 µm²; the remainder is row-stripe floorplan whitespace, not routing — see `layout/bandgap_top/AREA.md` Findings 5–6 and `spec/decision-records/0005-area-target-overrun.md`) |
+
+**RESOLVED (documented, not a code change) — the `netgen` engine's
+`device.property` mismatch is a netgen-only device-pairing artifact, not a
+layout defect** ([#168](https://github.com/2AMLogic/gf180-bandgap/issues/168)).
+Every guarded matched-device row this layout draws (`plan.build_rows`) is
+bracketed by a pair of dummy MOS devices whose source/drain/gate/body all tie
+to the *same* single net — the row's own supply rail — so the dummy is
+unconditionally off (`plan.DUMMY_W_NM`). A transistor with every terminal on
+one net has **no distinguishing connectivity at all**, so two such dummies
+drawn in *different* rows, at different (both individually correct) `L`, are
+graph-isomorphic to netgen's comparator. netgen folds them into one of its
+own "symmetries" (`Netlists match with 4 symmetries` in its report) and picks
+one representative pairing per symmetry class for its `device.property`
+check — a pairing choice `klt`'s own comparer does not have to make the same
+way, and does not: the `klayout` engine's independent (non-configurable-
+tolerance) device-parameter check reports zero `device.property` mismatches
+on the same inputs (`20260819-070132-1e66285.lvs.json`).
+
+Confirmed root cause, not merely hypothesised: `klt extract`'s own per-device
+coordinates place the two `L=16 µm` dummy `pfet`s (`pfet$43`/`pfet$48`,
+netgen's `PFETDUM_AMPPCASC_L`-equivalent pair) at y=131.373 µm — the
+AMPPCASC row (`amp.MC3`/`amp.MC4`, `L=16u`, unchanged) — and the two
+`L=26.4 µm` dummy `pfet`s (`pfet$49`/`pfet$54`) at y=152.473 µm — the AMPLOAD
+row (`amp.M3`/`amp.M4`, `L=26.4u` since #157). **Both rows are independently,
+correctly drawn at their own row's `L`.** netgen's report
+(`20260819-070132-1e66285.lvs-netgen.json`, `details.raw`) instead compares
+the AMPPCASC row's dummy (`pfet$43`, correctly 16 µm) against the reference's
+name for the AMPLOAD row's dummy (`PFETDUM_AMPLOAD_L`, correctly 26.4 µm) —
+netgen's own arbitrary-but-deterministic pick from the symmetric group, not a
+sizing bug in either row. Reproduced deterministically across repeated runs
+(same pairing every time, not flaky) and **not** specific to multi-finger
+(`nf>1`) devices — the mechanism is purely about single-net dummy topology,
+independent of `nf`. `layout/lvs/run_lvs.py`'s module docstring carries the
+same finding for anyone reading the script directly.
+
+No change to `make_reference.py`/`run_lvs.py` was made or is warranted: there
+is no genuine mismatch to fix, and no way to change the *design* (the dummies
+are correctly, intentionally tied to their row's own rail) that would not
+simply move the same netgen symmetry-class ambiguity onto some other pair of
+rows sharing a dummy `L`. Reproduce:
+
+```bash
+uv run --with klayout python3 layout/bandgap_top/generate.py
+python3 layout/lvs/run_lvs.py layout/bandgap_top/bandgap_top.gds --engine both
+```
 
 **RESOLVED — klt-version drift silently invalidated the DRC-clean/LVS-match
 verdicts above, independent of any drawn-geometry change**
