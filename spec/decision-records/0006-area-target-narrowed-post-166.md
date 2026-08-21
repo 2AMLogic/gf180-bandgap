@@ -1,6 +1,6 @@
 # 0006: Area target narrowed post-#166 (ratification-via-PR)
 
-- **Status**: proposed — submitted for EE-key/market-key review via PR #<PR_NUMBER>
+- **Status**: proposed — submitted for EE-key/market-key review via PR #177
 - **Date**: 2026-08-21
 - **Decided by**: Builder (issue #156), submitted via the ratification-via-PR
   path (operator redirect, 2026-08-21) — pending EE-key + market-key review,
