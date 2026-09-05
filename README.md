@@ -124,6 +124,17 @@ for the index and the measurement conventions, and
 [`sim/dut/README.md`](sim/dut/README.md) for the swappable-DUT convention that
 lets the same benches re-run unedited against a post-layout extracted netlist.
 
+## Chipalooza
+
+This block is proposed as a catalog entry for Open Circuit Design's
+[Chipalooza](https://opencircuitdesign.com/chipalooza/) Challenge #5
+(GF180MCU, Wafer.Space) — see
+[`docs/chipalooza/challenge-5-proposal.md`](docs/chipalooza/challenge-5-proposal.md)
+for the brief-conformant proposal (block type, I/O mapped to the harness
+slot budget, spec table re-derived from `sim/`, and bench test plan),
+including an honest statement of which spec rows are unmet at the
+post-layout (extracted) level.
+
 ## Continuous integration
 
 Every PR and every push to `main` runs
