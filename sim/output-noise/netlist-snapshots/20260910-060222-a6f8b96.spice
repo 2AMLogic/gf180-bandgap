@@ -1,0 +1,305 @@
+* Frozen netlist snapshot for record 20260910-060222-a6f8b96
+* source     : sim/output-noise/testbench/tb_output_noise.spice
+* sha256     : dbeee2ca7e9f074f6cc765010f5e2e947c9774aa957e8ba55bcd9de7a6e14959
+* This is a verbatim copy taken at record time. Do not edit.
+* output-noise -- output-referred voltage noise of bandgap_top
+*
+* Netlist FRAGMENT for sim/harness (see sim/harness/README.md). The harness
+* supplies the models, corner .lib sections, .temp, the .control block and
+* .end. The DUT is .include-d from the manifest's "dut" key, so this
+* testbench re-runs unedited against a frozen or extracted netlist via
+* `--dut <path>` -- see sim/dut/README.md.
+*
+* Measurement convention (the part that is easy to get wrong):
+*
+*   - ngspice's `noise` analysis requires a source with a nonzero AC value
+*     to compute the transfer function it normalizes against -- without one
+*     it aborts outright ("ac input not found"), even though this bench
+*     does not care about the supply-to-output gain itself. vsup carries
+*     `ac 1` for exactly that reason, reusing the same node sim/psrr-dc/
+*     perturbs; the quantity actually measured here is the DUT's own
+*     internal noise sources referred to vref (onoise_spectrum/onoise_total),
+*     not a response to the supply ripple, so inoise_spectrum/inoise_total
+*     (referred to vsup) are computed but unused.
+*   - Two independent `noise` analyses run in the same deck, because the
+*     0.1-10 Hz integrated figure and the >=1 kHz spot-density figures need
+*     different frequency ranges from the same sweep shape (dec 20,
+*     starting at 0.1 Hz -- the same decade-indexed convention
+*     sim/psrr-dc/ uses for its AC sweep, so index N means the same
+*     frequency in both benches):
+*
+*       1. `noise v(vref) vsup dec 20 0.1 10` -- exactly the 0.1-10 Hz band
+*          amendment A6 (README.md) names. Its own plot pair is
+*          (`noise1`, `noise2`): `noise1.onoise_spectrum` is the per-Hz
+*          density across that band (41 points, reference-only, not
+*          measured individually); `noise2.onoise_total` is ngspice's
+*          integral of onoise_spectrum^2 over the whole swept range --
+*          i.e. a **mean-square** volts^2 quantity, not an RMS voltage.
+*          The record's integrated-noise column takes its square root and
+*          says so, exactly as this comment does.
+*       2. `noise v(vref) vsup dec 20 0.1 100k` -- a second, wider sweep
+*          (0.1 Hz .. 100 kHz) whose own plot pair is (`noise3`, `noise4`).
+*          Only `noise3.onoise_spectrum` is used, to read off the spot
+*          noise density A6 anticipates ("add a spot-noise point if a
+*          later wave feeds an ADC") at 1 kHz (index 80), 10 kHz
+*          (index 100) and 100 kHz (index 120) -- the same index arithmetic
+*          sim/psrr-dc/ uses for its own spot columns at the same
+*          frequencies, dec 20 from a 0.1 Hz start. `noise4` (that sweep's
+*          own integrated total, 0.1 Hz-100 kHz) is not read: it is not
+*          the A6 band and would double-count against noise2.
+*       3. Frequency-assertion measures (f_band_lo_hz, f_band_hi_hz,
+*          f_spot_1khz_hz, f_spot_10khz_hz, f_spot_100khz_hz) prove the
+*          indices above really do land on 0.1 Hz/10 Hz/1 kHz/10 kHz/
+*          100 kHz -- the same "state the frequency, do not imply it"
+*          discipline sim/psrr-dc/ applies to its own f_dc_hz/
+*          f_band_edge_hz measures.
+*       4. Spot density is reported in nV/sqrt(Hz): sqrt(onoise_spectrum)
+*          converts ngspice's V^2/Hz density to V/sqrt(Hz), then *1e9 for
+*          the nV scale the ratified amendment anticipates.
+*
+* Load condition: none. Like sim/psrr-dc/, this bench measures the
+* unloaded block -- the ratified row's load condition is open item A4
+* (README.md), to be fixed with the output stage (#10). When A4 closes,
+* add the load here and mint a new record set; do not reinterpret these
+* records as if they had carried a load.
+*
+* No pass/fail threshold exists for the integrated or spot figures: A6
+* leaves the numeric limit open pending this evidence (see README.md and
+* spec/decision-records/0003-target-spec-ratification.md). Only the
+* frequency-index assertions, the vref_op sanity window and the
+* min_spread_pct integrity check are gated -- see tb.json.
+
+vsup vdd 0 dc {vdd_val} ac 1
+Xdut vdd 0 vref bandgap_top
+
+* Convergence seeding for the operating point the noise analysis
+* linearizes around; identical to sim/psrr-dc/'s seeding -- see
+* design/bandgap_operating_point.md 4.2 and #11. vref_op is measured so a
+* corner that linearized around the degenerate state is visible in the
+* record instead of contributing a meaningless noise number.
+.ic v(xdut.fb)=1.0 v(xdut.sns1)=0.6 v(xdut.sns2)=0.6 v(vref)=1.2
++ v(xdut.ibias)=0.6 v(xdut.xx1.casc)=1.8
+
+* ---------------------------------------------------------------
+* DUT netlist included by this testbench (schematic)
+* source     : sim/dut/bandgap_top.spice
+* sha256     : faf74311f59401dd5bfa2f8c2f589149d015096d967842d9fb1ce4dacb65910d
+* ---------------------------------------------------------------
+
+* DUT netlist fragment -- GENERATED, do not edit by hand.
+*
+* source     : design/netlist/bandgap_top.spice
+* sha256     : fd24cfddb8644e539ad7e32c6c611743155425d88b9b05659f01d03251186c4b
+* regenerate : python3 sim/tools/mk_dut.py design/netlist/bandgap_top.spice <this file>
+*
+* Subcircuits defined here: bandgap_top, bandgap_core, bandgap_amp, bandgap_startup, bandgap_trim
+*
+* Included by the corner runner ahead of each testbench (tb.json's
+* "dut" key, or --dut). Holds subcircuit definitions only: no .end,
+* .control, .temp or .lib -- the harness owns those per PVT point.
+
+** sch_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-151/design/bandgap_top.sch
+.subckt bandgap_top vdd vss vref
+
+*.iopin vdd
+*.iopin vss
+*.iopin vref
+Xx1 vdd sns1 sns2 vss fb vref ibias casc bandgap_core
+Xx2 sns2 sns1 vss fb vdd ibias bandgap_amp
+Xx3 vdd vss fb casc ibias bandgap_startup
+.ends
+
+* expanding   symbol:  bandgap_core.sym # of pins=8
+** sym_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-151/design/bandgap_core.sym
+** sch_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-151/design/bandgap_core.sch
+.subckt bandgap_core vdd sns1 sns2 vss fb vref ibias casc
+
+
+*.iopin vdd
+*.iopin vss
+*.iopin fb
+*.iopin sns1
+*.iopin sns2
+*.iopin vref
+*.iopin ibias
+*.iopin casc
+XM1 d1 fb vdd vdd pfet_03v3 L=8.5u W=85u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC1 sns1 casc d1 vdd pfet_03v3 L=8.5u W=85u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XQ1 vss vss sns1 pnp_05p00x05p00 m=1
+XM2 d2 fb vdd vdd pfet_03v3 L=8.5u W=85u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC2 sns2 casc d2 vdd pfet_03v3 L=8.5u W=85u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XR2 e2 sns2 vss ppolyf_u r_width=2u r_length=36.341871u m=1
+XQ2 vss vss e2 pnp_10p00x10p00 m=1
+XM3 d3 fb vdd vdd pfet_03v3 L=8.5u W=85u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC3 vref casc d3 vdd pfet_03v3 L=8.5u W=85u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XR1 e3 tn0 vss ppolyf_u r_width=2u r_length=443.400000u m=1
+XQ3 vss vss e3 pnp_05p00x05p00 m=1
+XM4 d4 fb vdd vdd pfet_03v3 L=8.5u W=10.625u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC4 ibias casc d4 vdd pfet_03v3 L=8.5u W=10.625u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XM5 ibias ibias vss vss nfet_03v3 L=2u W=2.5u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMCB casc casc vdd vdd pfet_03v3 L=12u W=4u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMNB casc ibias vss vss nfet_03v3 L=2u W=5u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XXTRIM tn0 vref vss bandgap_trim
+.ends
+
+
+* expanding   symbol:  bandgap_amp.sym # of pins=6
+** sym_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-151/design/bandgap_amp.sym
+** sch_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-151/design/bandgap_amp.sch
+.subckt bandgap_amp in_p in_n vss out vdd tail_bias
+
+
+*.iopin vdd
+*.iopin vss
+*.iopin in_p
+*.iopin in_n
+*.iopin out
+*.iopin tail_bias
+XM3 a3 nd1 vdd vdd pfet_03v3 L=26.4u W=33u nf=2 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XM4 a4 nd1 vdd vdd pfet_03v3 L=26.4u W=33u nf=2 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC3 nd1 pbias a3 vdd pfet_03v3 L=16u W=40u nf=2 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC4 out pbias a4 vdd pfet_03v3 L=16u W=40u nf=2 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC1 nd1 ncasc n1 vss nfet_03v3 L=16u W=20u nf=2 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMC2 out ncasc n2 vss nfet_03v3 L=16u W=20u nf=2 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XM1 n1 in_p tail vss nfet_03v3 L=6u W=300u nf=12 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XM2 n2 in_n tail vss nfet_03v3 L=6u W=300u nf=12 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XM5 tail tail_bias vss vss nfet_03v3 L=4u W=10u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMBN2 pbias tail_bias vss vss nfet_03v3 L=16u W=2u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMBP1 pbias pbias vdd vdd pfet_03v3 L=50u W=1u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMB1 ncasc pbias vdd vdd pfet_03v3 L=50u W=5u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMBD1 ncasc ncasc nb1 vss nfet_03v3 L=4u W=1u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMBD2 nb1 nb1 vss vss nfet_03v3 L=4u W=1u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XCC vdd out cap_mim_2f0_m4m5_noshield c_width=60u c_length=60u m=1
+.ends
+
+
+* expanding   symbol:  bandgap_startup.sym # of pins=5
+** sym_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-151/design/bandgap_startup.sym
+** sch_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-151/design/bandgap_startup.sch
+.subckt bandgap_startup vdd vss fb casc ibias
+
+
+*.iopin vdd
+*.iopin vss
+*.iopin fb
+*.iopin casc
+*.iopin ibias
+XMSENSE det ibias vss vss nfet_03v3 L=2u W=20u nf=2 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XRPU det vdd vss ppolyf_u_1k r_width=2u r_length=4000u m=1
+XMKFB fb det vss vss nfet_03v3 L=2u W=2u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+XMKCASC casc det vss vss nfet_03v3 L=2u W=2u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
+.ends
+
+
+* expanding   symbol:  bandgap_trim.sym # of pins=3
+** sym_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-151/design/bandgap_trim.sym
+** sch_path: /Users/rwalters/GitHub/gf180-bandgap/.loom/worktrees/issue-151/design/bandgap_trim.sch
+.subckt bandgap_trim bot top sub
+
+
+*.iopin bot
+*.iopin top
+*.iopin sub
+**** begin user architecture code
+
+.param trim_code=32
+
+**** end user architecture code
+XRU0 bot tn1 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+RS0 tn1 bot {1e-3 + 1e12*(floor(trim_code/1)-2*floor(trim_code/2))} m=1
+XRU1 tn1 u1_0 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU2 u1_0 tn2 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+RS1 tn2 tn1 {1e-3 + 1e12*(floor(trim_code/2)-2*floor(trim_code/4))} m=1
+XRU3 tn2 u2_0 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU4 u2_0 u2_1 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU5 u2_1 u2_2 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU6 u2_2 tn3 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+RS2 tn3 tn2 {1e-3 + 1e12*(floor(trim_code/4)-2*floor(trim_code/8))} m=1
+XRU7 tn3 u3_0 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU8 u3_0 u3_1 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU9 u3_1 u3_2 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU10 u3_2 u3_3 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU11 u3_3 u3_4 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU12 u3_4 u3_5 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU13 u3_5 u3_6 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU14 u3_6 tn4 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+RS3 tn4 tn3 {1e-3 + 1e12*(floor(trim_code/8)-2*floor(trim_code/16))} m=1
+XRU15 tn4 u4_0 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU16 u4_0 u4_1 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU17 u4_1 u4_2 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU18 u4_2 u4_3 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU19 u4_3 u4_4 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU20 u4_4 u4_5 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU21 u4_5 u4_6 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU22 u4_6 u4_7 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU23 u4_7 u4_8 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU24 u4_8 u4_9 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU25 u4_9 u4_10 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU26 u4_10 u4_11 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU27 u4_11 u4_12 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU28 u4_12 u4_13 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU29 u4_13 u4_14 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU30 u4_14 tn5 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+RS4 tn5 tn4 {1e-3 + 1e12*(floor(trim_code/16)-2*floor(trim_code/32))} m=1
+XRU31 tn5 u5_0 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU32 u5_0 u5_1 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU33 u5_1 u5_2 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU34 u5_2 u5_3 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU35 u5_3 u5_4 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU36 u5_4 u5_5 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU37 u5_5 u5_6 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU38 u5_6 u5_7 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU39 u5_7 u5_8 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU40 u5_8 u5_9 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU41 u5_9 u5_10 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU42 u5_10 u5_11 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU43 u5_11 u5_12 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU44 u5_12 u5_13 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU45 u5_13 u5_14 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU46 u5_14 u5_15 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU47 u5_15 u5_16 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU48 u5_16 u5_17 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU49 u5_17 u5_18 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU50 u5_18 u5_19 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU51 u5_19 u5_20 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU52 u5_20 u5_21 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU53 u5_21 u5_22 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU54 u5_22 u5_23 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU55 u5_23 u5_24 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU56 u5_24 u5_25 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU57 u5_25 u5_26 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU58 u5_26 u5_27 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU59 u5_27 u5_28 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU60 u5_28 u5_29 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU61 u5_29 u5_30 sub ppolyf_u r_width=2u r_length=2.771871u m=1
+XRU62 u5_30 top sub ppolyf_u r_width=2u r_length=2.771871u m=1
+RS5 top tn5 {1e-3 + 1e12*(floor(trim_code/32)-2*floor(trim_code/64))} m=1
+.ends

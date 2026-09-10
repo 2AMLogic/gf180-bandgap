@@ -112,6 +112,11 @@ fields:
   schematic-vs-extracted delta against the schematic-level record. Mirrors
   the status/supersession language proposed for `spec/` decision records
   (see #6), so both conventions read as one house style.
+- **Notes** (optional, `## Notes` section, `--notes-file <path>`) — free-form
+  text for testbench-specific detail that does not fit the fixed fields
+  above, e.g. `sim/output-noise/`'s nominal-corner per-device
+  noise-contribution breakdown. Not part of the pass/fail verdict; a record
+  with no notes omits the section entirely.
 
 ## Append-only rule
 
