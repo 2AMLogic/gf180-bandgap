@@ -39,6 +39,22 @@ claim — trim (#14), area (#15/#16), and the open items A6/A7 — are listed in
 every summary it prints, because "simulation-complete" is only an honest
 phrase if what is missing is stated in the same breath.
 
+### Reference benches, not gated
+
+Not every bench under `sim/` feeds this suite's per-spec-line verdict. A
+bench can exist, run the full PVT matrix, and mint append-only records
+without a `SpecLine` in `sim/suite/spec.py` — that just means it is
+*reference evidence* for an open item, not a claim this suite gates on.
+`sim/output-noise/` is the current example: it measures 0.1–10 Hz integrated
+output noise and 1/10/100 kHz spot noise density (issue #188) precisely
+*because* amendment A6 (README.md) leaves the numeric threshold open — the
+bench produces the measurement the eventual narrowly-scoped decision record
+needs, but inventing a limit here would be exactly the judgment call
+`spec/decision-records/0003-target-spec-ratification.md` declined to make.
+`sim/suite/spec.py`'s `NOT_CLAIMED_HERE` list is how a reference bench like
+this stays visible in every summary without being mistaken for a passing (or
+failing) spec-line claim.
+
 ### The accuracy row takes two benches, not one
 
 The ratified Output-reference row is written as "1.20 V ±2% untrimmed

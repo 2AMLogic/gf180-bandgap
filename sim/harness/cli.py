@@ -149,6 +149,15 @@ def build_parser() -> argparse.ArgumentParser:
         "'subset_reason')",
     )
     parser.add_argument(
+        "--notes-file",
+        default="",
+        metavar="PATH",
+        help="path to free-form text appended to the record as an optional "
+        "'## Notes' section -- for testbench-specific detail that does not "
+        "fit the ratified fixed fields (e.g. a nominal-corner device-level "
+        "noise-contribution breakdown)",
+    )
+    parser.add_argument(
         "--no-write",
         action="store_true",
         help="run but do not record evidence (debugging only)",
@@ -312,6 +321,8 @@ def run(args: argparse.Namespace) -> int:
         return EXIT_ENVIRONMENT
     wall = time.monotonic() - wall_start
 
+    notes = Path(args.notes_file).read_text() if args.notes_file else ""
+
     record = report.build_record(
         tb=tb,
         pdk=pdk,
@@ -326,6 +337,7 @@ def run(args: argparse.Namespace) -> int:
         supersedes=args.supersedes,
         statistical_convention=args.statistical_convention,
         subset_reason=subset_reason,
+        notes=notes,
         git=git,
     )
 

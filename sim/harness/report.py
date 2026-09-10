@@ -302,6 +302,7 @@ def build_record(
     supersedes: str = "",
     statistical_convention: str = "",
     subset_reason: str = "",
+    notes: str = "",
     git: dict | None = None,
 ) -> dict:
     measure_names = list(tb.measure)
@@ -339,6 +340,7 @@ def build_record(
         "supersedes": supersedes,
         "statistical_convention": statistical_convention,
         "subset_reason": subset_reason,
+        "notes": notes,
         "matrix": matrix_conformance(tb, points),
         "testbench": tb.provenance(),
         "environment": environment(pdk, ngspice, repo_root, git),
@@ -561,6 +563,13 @@ def render_record(record: dict, experiment: str) -> str:
     ]
     for corner in record["grid"]["corners"]:
         lines.append(f"- `{corner['name']}`: {' '.join(corner['sections'])}")
+    if record.get("notes"):
+        lines += [
+            "",
+            "## Notes",
+            "",
+            record["notes"],
+        ]
     lines += [
         "",
         "---",

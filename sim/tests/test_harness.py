@@ -673,6 +673,33 @@ class RecordRenderingTests(unittest.TestCase):
         text = report.render_record(self.record, "smoke-bias")
         self.assertIn("Full PVT matrix per CLAUDE.md", text)
 
+    def test_no_notes_section_when_notes_is_empty(self):
+        """The ratified field list has no 'Notes' entry -- absence is silent."""
+        text = report.render_record(self.record, "smoke-bias")
+        self.assertNotIn("## Notes", text)
+
+    def test_an_optional_notes_section_is_appended_when_provided(self):
+        """A testbench-specific free-form addendum (e.g. a per-device noise
+        breakdown) renders as its own section, after the ratified fields."""
+        record = report.build_record(
+            tb=self.tb,
+            pdk=self.pdk,
+            points=self.points,
+            results=self.results,
+            ngspice="ngspice-46",
+            repo_root=SIM_DIR,
+            record_id="20260729-153000-1a7ef75",
+            started_utc="2026-07-29T15:30:00+00:00",
+            wall_seconds=9.5,
+            claim="spec/bandgap.md#example",
+            notes="Dominant contributor: the input pair (62% of onoise_spectrum).",
+        )
+        text = report.render_record(record, "smoke-bias")
+        self.assertIn("## Notes", text)
+        self.assertIn("Dominant contributor: the input pair", text)
+        # Comes after every ratified field, not interleaved with them.
+        self.assertGreater(text.index("## Notes"), text.index("**Supersedes**"))
+
     def test_environment_section_names_the_real_pdk_provenance(self):
         text = report.render_record(self.record, "smoke-bias")
         provenance = self.pdk.provenance()

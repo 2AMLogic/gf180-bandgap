@@ -1,0 +1,77 @@
+* output-noise -- output-referred voltage noise of bandgap_top
+*
+* Netlist FRAGMENT for sim/harness (see sim/harness/README.md). The harness
+* supplies the models, corner .lib sections, .temp, the .control block and
+* .end. The DUT is .include-d from the manifest's "dut" key, so this
+* testbench re-runs unedited against a frozen or extracted netlist via
+* `--dut <path>` -- see sim/dut/README.md.
+*
+* Measurement convention (the part that is easy to get wrong):
+*
+*   - ngspice's `noise` analysis requires a source with a nonzero AC value
+*     to compute the transfer function it normalizes against -- without one
+*     it aborts outright ("ac input not found"), even though this bench
+*     does not care about the supply-to-output gain itself. vsup carries
+*     `ac 1` for exactly that reason, reusing the same node sim/psrr-dc/
+*     perturbs; the quantity actually measured here is the DUT's own
+*     internal noise sources referred to vref (onoise_spectrum/onoise_total),
+*     not a response to the supply ripple, so inoise_spectrum/inoise_total
+*     (referred to vsup) are computed but unused.
+*   - Two independent `noise` analyses run in the same deck, because the
+*     0.1-10 Hz integrated figure and the >=1 kHz spot-density figures need
+*     different frequency ranges from the same sweep shape (dec 20,
+*     starting at 0.1 Hz -- the same decade-indexed convention
+*     sim/psrr-dc/ uses for its AC sweep, so index N means the same
+*     frequency in both benches):
+*
+*       1. `noise v(vref) vsup dec 20 0.1 10` -- exactly the 0.1-10 Hz band
+*          amendment A6 (README.md) names. Its own plot pair is
+*          (`noise1`, `noise2`): `noise1.onoise_spectrum` is the per-Hz
+*          density across that band (41 points, reference-only, not
+*          measured individually); `noise2.onoise_total` is ngspice's
+*          integral of onoise_spectrum^2 over the whole swept range --
+*          i.e. a **mean-square** volts^2 quantity, not an RMS voltage.
+*          The record's integrated-noise column takes its square root and
+*          says so, exactly as this comment does.
+*       2. `noise v(vref) vsup dec 20 0.1 100k` -- a second, wider sweep
+*          (0.1 Hz .. 100 kHz) whose own plot pair is (`noise3`, `noise4`).
+*          Only `noise3.onoise_spectrum` is used, to read off the spot
+*          noise density A6 anticipates ("add a spot-noise point if a
+*          later wave feeds an ADC") at 1 kHz (index 80), 10 kHz
+*          (index 100) and 100 kHz (index 120) -- the same index arithmetic
+*          sim/psrr-dc/ uses for its own spot columns at the same
+*          frequencies, dec 20 from a 0.1 Hz start. `noise4` (that sweep's
+*          own integrated total, 0.1 Hz-100 kHz) is not read: it is not
+*          the A6 band and would double-count against noise2.
+*       3. Frequency-assertion measures (f_band_lo_hz, f_band_hi_hz,
+*          f_spot_1khz_hz, f_spot_10khz_hz, f_spot_100khz_hz) prove the
+*          indices above really do land on 0.1 Hz/10 Hz/1 kHz/10 kHz/
+*          100 kHz -- the same "state the frequency, do not imply it"
+*          discipline sim/psrr-dc/ applies to its own f_dc_hz/
+*          f_band_edge_hz measures.
+*       4. Spot density is reported in nV/sqrt(Hz): sqrt(onoise_spectrum)
+*          converts ngspice's V^2/Hz density to V/sqrt(Hz), then *1e9 for
+*          the nV scale the ratified amendment anticipates.
+*
+* Load condition: none. Like sim/psrr-dc/, this bench measures the
+* unloaded block -- the ratified row's load condition is open item A4
+* (README.md), to be fixed with the output stage (#10). When A4 closes,
+* add the load here and mint a new record set; do not reinterpret these
+* records as if they had carried a load.
+*
+* No pass/fail threshold exists for the integrated or spot figures: A6
+* leaves the numeric limit open pending this evidence (see README.md and
+* spec/decision-records/0003-target-spec-ratification.md). Only the
+* frequency-index assertions, the vref_op sanity window and the
+* min_spread_pct integrity check are gated -- see tb.json.
+
+vsup vdd 0 dc {vdd_val} ac 1
+Xdut vdd 0 vref bandgap_top
+
+* Convergence seeding for the operating point the noise analysis
+* linearizes around; identical to sim/psrr-dc/'s seeding -- see
+* design/bandgap_operating_point.md 4.2 and #11. vref_op is measured so a
+* corner that linearized around the degenerate state is visible in the
+* record instead of contributing a meaningless noise number.
+.ic v(xdut.fb)=1.0 v(xdut.sns1)=0.6 v(xdut.sns2)=0.6 v(vref)=1.2
++ v(xdut.ibias)=0.6 v(xdut.xx1.casc)=1.8

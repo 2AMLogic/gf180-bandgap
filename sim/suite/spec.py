@@ -235,7 +235,12 @@ class UnclaimedRow:
 #: *not* covered is stated in the same breath.
 NOT_CLAIMED_HERE: tuple[UnclaimedRow, ...] = (
     UnclaimedRow("Trim", "no trim segments exist in the schematic yet -- #14"),
-    UnclaimedRow("Output noise", "threshold is open item A6 (README.md); no bench yet"),
+    UnclaimedRow(
+        "Output noise",
+        "threshold is open item A6 (README.md) -- sim/output-noise/ measures it "
+        "(0.1-10 Hz integrated + 1/10/100 kHz spot density, full PVT), but the "
+        "numeric limit remains open pending a narrowly-scoped decision record",
+    ),
     UnclaimedRow("Load", "load condition is open item A7 (README.md); no bench yet"),
     UnclaimedRow("Area", "a layout claim, not a simulation claim -- #15/#16"),
     UnclaimedRow("Long-term drift", "not specified for a canary block"),
