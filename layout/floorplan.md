@@ -691,6 +691,23 @@ state:**
   floorplan change, i.e. an item for this document, not only for
   `generate.py`.
 
+**Update (issue #156, 2026-08-21 — ratification-via-PR redirect; the bullets
+above are the historical record as of PR #162 and are left unedited).**
+[#166](https://github.com/2AMLogic/gf180-bandgap/issues/166) has since
+implemented the re-route the fifth bullet named as designed-but-not-yet-built,
+recovering 22.7 % of the drawn area (80,813.72 → **62,505.60 µm²**, 3.19× →
+2.47× overhead multiplier — see `bandgap_top/AREA.md` Finding 6). Per that
+finding's own stated next step, DR-0005's `< 0.085 mm²` proposal (sized
+against the pre-#166 measurement) is superseded — not edited — by
+[`spec/decision-records/0006-area-target-narrowed-post-166.md`](../spec/decision-records/0006-area-target-narrowed-post-166.md),
+which proposes narrowing the interim ceiling to `< 0.066 mm²` and, per the
+ratification-via-PR mechanism, carries that change directly into `README.md`'s
+Area row and `area_report.py`'s `RATIFIED_TARGET_UM2` in the same PR that
+files it — `area_report.py` now reports **PASS, 5.3 % headroom** against
+that proposed interim ceiling (still `FAIL`, 25.0 % over, against the
+originally-ratified 50,000 µm² from DR-0003). See `bandgap_top/AREA.md`
+Finding 7 for the full account.
+
 ### 11.2 Amp systematic-offset placeholder (owner: post-layout extraction, tracked by #10's own escalation)
 
 §6 notes that `design/bandgap_error_budget.md` §2.3's 2 mV (3σ-equivalent)

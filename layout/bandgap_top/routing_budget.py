@@ -32,8 +32,9 @@ It does that in four steps:
    (``STUDY_ESTIMATE_AREA_UM2`` vs. the drawn ``S1``) — the "estimate vs.
    measurement" record ``AREA.md`` Finding 6 carries.
 4. **Model what is left** — the row-stripe floorplan whitespace, which
-   routing does not touch — and print the row-packing efficiency the ratified
-   0.05 mm² target still needs.
+   routing does not touch — and print the row-packing efficiency the
+   currently-ratified/interim target (``area_report.RATIFIED_TARGET_UM2``;
+   see ``spec/decision-records/`` for its current provenance) still needs.
 
 Run from the repo root::
 

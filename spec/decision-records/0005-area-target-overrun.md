@@ -1,8 +1,21 @@
 # 0005: Area target overrun — escalated, revision proposed pending ratification
 
-- **Status**: proposed
+- **Status**: superseded by [0006](0006-area-target-narrowed-post-166.md)
 - **Date**: 2026-08-16
 - **Decided by**: Builder (issue #156), pending operator ratification
+
+> **Superseded (2026-08-21).** This record's `< 0.085 mm²` proposal was
+> sized against the 80,813.72 µm² measurement current at the time
+> (pre-#166). Issue #166 has since implemented the Metal2/Metal3 re-route
+> this record's own Consequences section and
+> `layout/routing/multi-metal-routing-study.md` §7 anticipated, recovering
+> 22.7 % of the drawn area (62,505.60 µm² measured). Per both documents'
+> own stated intent — "supersede this record rather than editing it" — the
+> narrower ceiling that measurement justifies is proposed in
+> [DR-0006](0006-area-target-narrowed-post-166.md), not by editing the
+> number below. The analysis and evidence below are left unedited as the
+> historical record of the pre-#166 state; do not treat the `0.085 mm²`
+> figure below as a live proposal.
 
 > This record proposes changing a **ratified spec value** (`README.md`
 > "Target specification", Area row, ratified by
