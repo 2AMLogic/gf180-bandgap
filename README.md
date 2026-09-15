@@ -40,7 +40,7 @@ this table supersedes the prior DRAFT.
 | Supply | 3.3 V ±10% | also 5 V flavor | headroom binds at SS / −40 °C / 2.97 V (see `sim/device-pnp-vbe/`, `sim/device-mos-vth/`) |
 | Quiescent current | < 50 µA | < 20 µA | binds at FF / 125 °C / 3.63 V (leakage + fastest devices) |
 | Load | TBD — pending output-stage design (DR-0001): either max DC load + load regulation, or explicit unbuffered — high-Z load only | — | n/a |
-| Area | < 0.05 mm² | — | n/a (not a PVT line) |
+| Area | < 0.066 mm² (interim ceiling, DR-0006) | — | n/a (not a PVT line) |
 | Startup | self-starting at all corners (incl. SS / −40 °C / 2.97 V), < 1 ms to within 1% of final value | — | binds at SS / −40 °C / 2.97 V |
 | Long-term drift | not specified (canary block) | — | n/a |
 
@@ -49,6 +49,15 @@ are amendments A4/A6/A7 from #35 carried through verbatim as open items — the
 spec review proposed the row *shape* without a numeric decision, so no number
 is invented here; each will be closed out as its own future decision record
 when the relevant design work (output stage, #10) resolves it.
+
+The Area row was originally ratified at `< 0.05 mm²` (DR-0003); the drawn
+layout has since measured over that target twice — `< 0.085 mm²`
+([DR-0005](spec/decision-records/0005-area-target-overrun.md), superseded)
+and now `< 0.066 mm²`
+([DR-0006](spec/decision-records/0006-area-target-narrowed-post-166.md)) —
+both driven by real, already-ratified device-sizing/routing work rather than
+a relaxation for its own sake; see those records for the full evidence and
+`layout/bandgap_top/AREA.md` for the measured history.
 
 **Status**: simulation-complete → layout DRC/LVS-clean → measured silicon
 over temperature. Device characterization and PVT corner sweeps are
