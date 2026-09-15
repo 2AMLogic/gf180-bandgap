@@ -47,7 +47,10 @@ current (`design/device-characterization.md` §1, record
 3 BJT corners × 6 temperatures). Four parallel instances of the *same*
 subcircuit have, by construction, exactly `4 × is` of one unit, at every
 corner and every temperature — the ratio is a topological identity, not an
-extraction result. Measured directly (ngspice, `bjt_typical`, 27 °C,
+extraction result. (That identity is an *equal-collector-current* one; the
+Brokaw core enforces equal *emitter* currents, which moves the effective
+ratio off 4.000 by ≈1 % — see Alternatives argument 2 and Decision item 1.)
+Measured directly (ngspice, `bjt_typical`, 27 °C,
 6.5 µA/branch, `exp(ΔVBE/VT)` against one `pnp_05p00x05p00` at the same
 current; #87's Finding):
 
@@ -113,25 +116,66 @@ one operating point measured so far). Specifically:
    design current**, `I = ΔVBE/R2 = 33.374 mV / 6586.5 Ω ≈ 5.07 µA` — not
    at 6.5 µA — and the sizing below locks to *that* measured value.
 
-2. **The PTAT re-derivation is a single-parameter, closed-form change:
-   `R2` scales, and nothing else.** Because `ΔVBE(T) = VT(T)·ln A` at every
-   temperature, replacing `A_old` by `A_new` multiplies ΔVBE by the constant
-   `λ = ln A_new / ln A_old` at *every* temperature. Scaling `R2 → λ·R2`
-   therefore leaves
+2. **The `R2` rescale is a single-parameter, closed-form change *to first
+   order*, and the TC null must then be re-verified — not assumed.**
+   `ΔVBE(T) = VT(T)·ln A`, so replacing `A_old` by `A_new` rescales ΔVBE by
+   `λ = ln A_new / ln A_old`, and `R2 → λ·R2` restores `I`, `I·(R1+Rtrim)`
+   and `Vref` **at the temperature `λ` was computed at**. Using the
+   same-bench pair from the finding table above (4.027 against 3.632, both
+   measured on the same setup — *not* the 3.634 three-temperature figure,
+   which is a different bench) that is `λ = 1.0800`: `R2`
+   `L = 36.341871 µm → 39.2508 µm` (6586.5 Ω → 7113.7 Ω). At an
+   exactly-4.000 ratio on the same basis, `λ = 1.0748`. `R1`, the trim unit
+   segment and every MOS device are untouched *by the rescale itself*.
 
-   ```
-   I(T)        = ΔVBE(T)/R2        exactly unchanged at every T
-   I·(R1+Rtrim)  (the PTAT term of Vref)  exactly unchanged
-   Vref(T)     = VEB(Q3, I) + I·(R1+Rtrim)   exactly unchanged
-   ```
+   **`λ` is not a temperature-invariant multiplier, and this record makes no
+   claim that the TC null survives untouched.** A constant `λ` would require
+   `A_old` *and* `A_new` both to be temperature-independent. `A_new` is, by
+   the construction argued above. `A_old` measurably is not — inverting the
+   same `bjt_typical` row this record already cites
+   ([`20260731-030932-8fb0ea6`](../../sim/device-pnp-vbe/records/20260731-030932-8fb0ea6.md))
+   with `A_old(T) = exp(ΔVBE/VT)`:
 
-   so the first-order TC null, #96's Chebyshev-optimal `R1`, #147's `R1`
-   re-centring and #61's `k = 2` quiescent-current margin are all preserved
-   **by construction** rather than re-optimised. At the measured 4.027 that
-   is `λ = 1.0800`: `R2` `L = 36.341871 µm → 39.2508 µm` (6586.5 Ω →
-   7113.7 Ω); at an exactly-4.000 ratio, `λ = 1.0744`. `R1`, the trim unit
-   segment, and every MOS device are untouched. These numbers are
-   indicative — the final `λ` comes from item 1's re-measurement.
+   | T | ΔVBE (measured) | `A_old(T)` |
+   |---|---|---|
+   | −40 °C | 25.660 mV | 3.5865 |
+   | 27 °C | 33.374 mV | 3.6339 |
+   | 125 °C | 44.664 mV | 3.6758 |
+
+   `A_old` drifts **+2.5 %** across the ratified temperature axis. This is
+   the same fact as ΔVBE_old's known linearity error: it is very *linear* in
+   `T` but not *proportional* to `T`, extrapolating to zero near −10 K
+   rather than 0 K. The drawn array's ΔVBE is the cleaner PTAT of the two —
+   which is an argument *for* Option A — but it is precisely why the two
+   realisations cannot be related by a single constant.
+
+   **Magnitude — an order-of-magnitude estimate, not a result.** Applying a
+   single `λ(27 °C) = 1.07438` (taking `A_new = 4.000` flat) against
+   `R1_total = 97562.8 Ω` at trim code 32, relative to the present TC-nulled
+   curve, gives **+4.1 mV at −40 °C, 0 at 27 °C, −6.1 mV at 125 °C** (a
+   +3.9/−5.8 mV bow on the PTAT term, plus the `VT·ln(I_new/I_old)` shift in
+   `VEB(Q3)`). A ≈10 mV monotonic excursion on a 1.2 V reference across
+   −40…125 °C is **≈50 ppm/°C of *new* drift** — against a ratified
+   50 ppm/°C limit and a present schematic worst case of 29.84 ppm/°C. That
+   residual is very nearly affine in `T`: decomposed, it is a ≈+17.7 mV
+   constant offset, a −0.059 mV/K slope (≈ a −3.6 % move in `R1_total`), and
+   only ≈0.04 mV of genuine curvature (≈0.2 ppm/°C). So an `R1` re-null plus
+   a `Vref` re-centre should recover most of it — but "should" is a
+   prediction from one corner's device data with `A_new` assumed exactly
+   4.000, which is exactly the kind of claim this repo does not accept
+   without a testbench.
+
+   **Therefore PR 2 must, as a precondition of claiming the sizing is
+   correct:** (a) re-run the temperature-coefficient bench over the ratified
+   PVT axis *after* the `R2` rescale, and (b) where the measured TC or
+   `Vref` centring no longer meets its ratified row with margin, re-null
+   `R1` and re-centre `Vref` against that measurement, by #147's method.
+   PR 2 may **not** infer the TC null from the `λ` algebra. #96's
+   Chebyshev-optimal `R1`, #147's `R1` re-centring and #61's `k = 2`
+   quiescent-current margin are **starting points** for that
+   re-verification, not results preserved by construction. All the figures
+   in this item are indicative; the final `λ`, `R2` and `R1` come from
+   item 1's re-measurement plus (a) and (b).
 
 3. **No ratified spec row moves.** Every `README.md` limit stays as
    ratified, and #87's acceptance criteria still require the full schematic
@@ -172,8 +216,14 @@ narrow amendment rather than a reopening of DR-0003:
   1. **It spends matching, which this block cannot measure, to buy paper
      continuity, which it can.** `plan.py`'s own weighting: a
      gradient-induced VBE error between `Q1` and `Q2` reaches `vref`
-     multiplied by `R1_total/R2` (now **14.81**, `bandgap_error_budget.md`
-     §5c), i.e. ~13× what the same error at `Q3` costs, which is precisely
+     multiplied by `R1_total/R2`, i.e. ~**14.8×** what the same error at
+     `Q3` costs at the current ratio `14.81259` — which is recorded in
+     `design/bandgap_core.sch`'s #147 header block
+     (`R1_total/R2 14.63021 -> 14.81259`), not in `bandgap_error_budget.md`,
+     whose §5a/§5b still carry the pre-#147 `15.28425` and `14.63021`.
+     (`plan.py`'s own prose says "~13×", from the pre-#147
+     `R1/R2 ≈ 12.8`; the multiplier has grown, not shrunk, since it was
+     written.) That weighting is precisely
      why the drawn array gives `Q1`/`Q2` an *exact* shared centroid
      (verified by `matching_report.py`). A monolithic 10×10 sitting beside a
      5×5 cannot share a centroid with it at all, so the first-order linear
@@ -192,9 +242,23 @@ narrow amendment rather than a reopening of DR-0003:
      way to validate before tape-out. `N` parallel instances of one unit
      device give exactly `N × is` in the model, and in silicon the ratio is
      set by drawn geometry replication, which is the standard reason analog
-     design uses unit arrays for ratioed devices at all. Option A makes the
-     design's most sensitive constant robust to a PDK model revision;
-     Option B keeps it hostage to one.
+     design uses unit arrays for ratioed devices at all.
+
+     **That identity is an equal-*collector*-current one, and the Brokaw
+     core enforces equal *emitter* currents** — through devices whose
+     forward beta is 0.89–2.82 across corners
+     (`device-characterization.md` §1) and whose per-unit current differs
+     4:1 from the reference, so the base-current split moves the effective
+     ratio off `N` by ≈1 %. That is the mechanism behind the measured
+     **4.027** rather than 4.000, and it is why Decision item 1 re-measures
+     rather than assuming. The advantage over Option B is therefore narrower
+     than a bare "exactly 4" would suggest — but it is still real and still
+     decisive: a ≈1 % equal-Ie excess that a testbench can measure at every
+     corner is a far better constant than an 8 % divergence rooted in an
+     `is` extraction across two different drawn geometries, which this repo
+     has no way to validate. Option A makes the design's most sensitive
+     constant robust to a PDK model revision; Option B keeps it hostage to
+     one.
   3. **The drawn layout is already DRC-clean and LVS-matching in the
      Option A configuration.** Option B redraws `plan.py`'s PNP row,
      invalidates the committed `bandgap_top.gds`, `matching_report.py`'s
@@ -217,13 +281,20 @@ narrow amendment rather than a reopening of DR-0003:
   and layout also means no future schematic-level result predicts the
   silicon, which is a worse property than either option's cost.
 
-- **Adopt Option A *and* re-null `R1` / re-optimise the sizing in the same
-  pass.** Rejected as unnecessary and risky: the `λ`-scaling of `R2` alone
-  leaves `I(T)`, `I·R1(T)`, `Vref(T)` and the TC null exactly invariant, so
-  #96's measured `R1` optimum and #147's re-centring remain optimal. Folding
-  a re-optimisation in would make the re-run impossible to attribute. Any
-  further `R1` move should be driven by its own measured objective, in its
-  own issue.
+- **Adopt Option A *and* fold a speculative `R1` re-optimisation into the
+  same pass.** Rejected — narrowly, and *not* because `R1` is expected to
+  stand still. Decision item 2 establishes that the `λ` rescale is only a
+  first-order correction, carrying a predicted ≈50 ppm/°C residual, and it
+  makes the post-rescale TC re-measurement plus a conditional `R1` re-null
+  and `Vref` re-centre an explicit **obligation** on PR 2. What is rejected
+  here is the different thing: pre-emptively re-opening #96's Chebyshev
+  search or #147's re-centring against the *modelled* residual, before the
+  post-rescale bench that would justify a target exists. A
+  measurement-driven `R1` re-null is in scope for PR 2; a re-optimisation
+  against a prediction would make the re-run impossible to attribute, and
+  would re-tune the design to a number no testbench produced. Any `R1` move
+  beyond restoring the ratified TC and `Vref` rows should be driven by its
+  own measured objective, in its own issue.
 
 - **Ratify `A = 4.027` as the new normative number directly in this
   record.** Rejected — one corner, one temperature, at an operating point
@@ -236,7 +307,10 @@ narrow amendment rather than a reopening of DR-0003:
 - **#87's second PR is unblocked and fully specified** once this record is
   ratified: edit `design/bandgap_core.sch` + `design/netlist/bandgap_top.spice`
   (`XQ2` → four parallel `pnp_05p00x05p00`, or `m=4`), take the corner-covered
-  ratio re-measurement, rescale `R2` by the resulting `λ`, correct
+  ratio re-measurement, rescale `R2` by the resulting `λ`, **re-measure the
+  TC over the ratified PVT axis and re-null `R1` / re-centre `Vref` if the
+  measurement requires it (Decision item 2 (a)/(b) — this is an obligation,
+  not a contingency to be waved through on the `λ` algebra)**, correct
   `layout/floorplan.md` §4.1, re-derive `design/bandgap_error_budget.md` §5,
   and re-run the full schematic suite plus the extracted re-run per #87's
   acceptance criteria. `layout/bandgap_top/plan.py` needs no change — that
@@ -251,9 +325,10 @@ narrow amendment rather than a reopening of DR-0003:
   `sim/device-pnp-vbe/` records are **measurements of the two-geometry
   pair** and stay exactly as they are — they were never wrong.
 - **The accuracy budget is expected to improve slightly, and this record
-  claims nothing about it.** §2.6a's `ρ = VT/(VT + ΔVBE)` falls from 0.4365
-  to ≈0.4176 at 27 °C, so the servoed-leg amplification `1/(1−ρ)` falls from
-  1.775 to 1.717 (−3.2 %), which should reduce the `M1`/`M2` mirror-mismatch
+  claims nothing about it.** §2.6a's `ρ = VT/(VT + ΔVBE) = 1/(1 + ln A)`
+  falls from 0.4365 to ≈0.4179 at 27 °C (at `A = 4.027`), so the servoed-leg
+  amplification `1/(1−ρ)` falls from 1.775 to 1.718 (−3.2 %), which should
+  reduce the `M1`/`M2` mirror-mismatch
   coefficients and, through §2.4's shared mechanism, the amplifier-offset
   sensitivity by a few percent. Direction is favourable; the magnitude is a
   measurement §2.7b's table must actually re-take in the second PR, not a
