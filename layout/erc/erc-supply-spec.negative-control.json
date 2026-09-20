@@ -1,0 +1,51 @@
+{
+  "_comment": [
+    "NEGATIVE CONTROL -- not signoff evidence. gf180-bandgap#192.",
+    "",
+    "erc-supply-spec.json's item-11 verdict is 'zero erc.unconnected_net and",
+    "zero erc.supply_short'. A count of zero is only meaningful if the rule",
+    "that produces it actually ran: a spec whose nets[] were silently dropped",
+    "(a typo'd key, a schema change, a label_layer that resolves to nothing)",
+    "reports exactly the same zero. This spec is the control that tells those",
+    "two cases apart.",
+    "",
+    "It is erc-supply-spec.json verbatim -- same stackup, same vias, same",
+    "label_layer -- with ONE extra nets[] entry naming a rail that does not",
+    "exist in this layout. The expected result is therefore NOT clean:",
+    "",
+    "    erc_finding_count: 1",
+    "    erc.unconnected_net  net='no_such_rail'",
+    "      \"declared net 'no_such_rail' matches no labelled geometry in this",
+    "       layout\"",
+    "    status: violations, exit 3",
+    "",
+    "and run_erc.py --expect findings asserts exactly that. If this control",
+    "ever comes back clean, the zero in the signoff report has stopped meaning",
+    "anything and the item-11 claim must be withdrawn until it is explained.",
+    "",
+    "vdd/vss/vref are carried unchanged so the control also demonstrates that",
+    "the real declarations still resolve while the bogus one does not -- one",
+    "finding, not four."
+  ],
+  "stackup": [
+    { "name": "Poly2", "layer": "30/0", "role": "gate", "active_layer": "22/0" },
+    { "name": "Metal1", "layer": "34/0", "label_layer": "34/10" },
+    { "name": "Metal2", "layer": "36/0" },
+    { "name": "Metal3", "layer": "42/0" },
+    { "name": "Metal4", "layer": "46/0" },
+    { "name": "Metal5", "layer": "81/0" }
+  ],
+  "vias": [
+    { "name": "Contact", "layer": "33/0", "between": ["Poly2", "Metal1"] },
+    { "name": "Via1", "layer": "35/0", "between": ["Metal1", "Metal2"] },
+    { "name": "Via2", "layer": "38/0", "between": ["Metal2", "Metal3"] },
+    { "name": "Via3", "layer": "40/0", "between": ["Metal3", "Metal4"] },
+    { "name": "Via4", "layer": "41/0", "between": ["Metal4", "Metal5"] }
+  ],
+  "nets": [
+    { "name": "vdd", "kind": "supply" },
+    { "name": "vss", "kind": "supply" },
+    { "name": "vref", "kind": "signal" },
+    { "name": "no_such_rail", "kind": "supply" }
+  ]
+}

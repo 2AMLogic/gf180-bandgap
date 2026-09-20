@@ -1,0 +1,81 @@
+{
+  "_comment": [
+    "KNOWN-GAP REPRODUCTION -- not signoff evidence. gf180-bandgap#192.",
+    "",
+    "This spec exists to reproduce klayout-tools#2169 on this block, so that",
+    "erc-supply-spec.json's omission of ties[] is a measured decision with a",
+    "committed artefact behind it rather than a claim in prose.",
+    "",
+    "It is erc-supply-spec.json verbatim, plus one ties[] entry declaring the",
+    "obvious gf180mcu n-well tie: well_layer Nwell 21/0, tap_layer Nplus 32/0",
+    "(gf180mcu has no distinct well-tap layer -- an n-well tap IS Comp under",
+    "Nplus inside Nwell), wired up through Metal1 to vdd. That is the",
+    "declaration a working erc.missing_tie check would need.",
+    "",
+    "The measured result on this layout is not a tie verdict at all:",
+    "",
+    "    gate_count      10 -> 1     (the whole design collapses to one island)",
+    "    erc_findings    0  -> 3, every one of them false:",
+    "      erc.supply_short          vdd  / vss",
+    "      erc.multiply_driven_net   vdd  / vref",
+    "      erc.multiply_driven_net   vref / vss",
+    "    status          not_checked -> violations, exit 3",
+    "",
+    "Every declared net -- both supplies AND the block's output -- reports as",
+    "shorted to every other one, which is the signature of a single collapsed",
+    "island rather than of three real shorts.",
+    "",
+    "vdd and vss are not shorted in this layout. The LVS report",
+    "(layout/lvs/reports/bandgap_top/, status 'match', 92/92 nets, 4/4 pins)",
+    "pairs them as two distinct nets, and the same klt erc run WITHOUT this",
+    "ties[] entry resolves them to two distinct islands. Registering the",
+    "well/tap layers into the connectivity graph is what merges everything.",
+    "",
+    "Independent significance: klayout-tools#2169 was isolated on a routed",
+    "STANDARD-CELL design (gf180-drone-fc, FRICTION F-034, four cases). This",
+    "is a hand-drawn ANALOG layout with no standard cells, no PDN and no",
+    "filltie masters, and it collapses the same way -- so the gap is not",
+    "specific to a P&R'd cell array, and no ties[] declaration is usable in",
+    "this repo either until #2169 is fixed.",
+    "",
+    "Because this report's own island model is collapsed, EVERY verdict in it",
+    "is unusable -- including its erc.missing_tie count of zero, which is",
+    "produced by the same collapse (once everything is one island, every tap",
+    "trivially reaches every net). Cite this report as evidence ABOUT THE",
+    "TOOL, never as evidence about this design.",
+    "",
+    "A p-substrate tie cannot be expressed here at all, separately from",
+    "#2169: ties[].well_layer needs a DRAWN well/tub layer, and this block",
+    "sits in the native p-substrate with no LVPWELL (204/0) drawn anywhere in",
+    "the GDS. See README.md, 'What is NOT verified here'."
+  ],
+  "stackup": [
+    { "name": "Poly2", "layer": "30/0", "role": "gate", "active_layer": "22/0" },
+    { "name": "Metal1", "layer": "34/0", "label_layer": "34/10" },
+    { "name": "Metal2", "layer": "36/0" },
+    { "name": "Metal3", "layer": "42/0" },
+    { "name": "Metal4", "layer": "46/0" },
+    { "name": "Metal5", "layer": "81/0" }
+  ],
+  "vias": [
+    { "name": "Contact", "layer": "33/0", "between": ["Poly2", "Metal1"] },
+    { "name": "Via1", "layer": "35/0", "between": ["Metal1", "Metal2"] },
+    { "name": "Via2", "layer": "38/0", "between": ["Metal2", "Metal3"] },
+    { "name": "Via3", "layer": "40/0", "between": ["Metal3", "Metal4"] },
+    { "name": "Via4", "layer": "41/0", "between": ["Metal4", "Metal5"] }
+  ],
+  "nets": [
+    { "name": "vdd", "kind": "supply" },
+    { "name": "vss", "kind": "supply" },
+    { "name": "vref", "kind": "signal" }
+  ],
+  "ties": [
+    {
+      "name": "nwell_tap",
+      "well_layer": "21/0",
+      "tap_layer": "32/0",
+      "connect_to": "Metal1",
+      "net": "vdd"
+    }
+  ]
+}

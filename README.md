@@ -70,13 +70,19 @@ scheduled; it is pending that decision and a subsequent passing
 extracted-netlist re-run (tracked in
 [#94](https://github.com/2AMLogic/gf180-bandgap/issues/94)).
 
+Where this block stands against the full **T1 evidence checklist** — all
+eleven items, each with the committed artifact behind it and, where the item
+is unmet, whether the blocker is a design defect or a tool gap — is tracked
+in [`docs/t1-gap.md`](docs/t1-gap.md).
+
 ## Layout
 
 ```
 spec/          ratified spec + decision records
 design/        schematics / netlists (xschem)
 sim/           testbenches + PVT corner results (ngspice)
-layout/        GDS + DRC/LVS reports (klayout-tools driven)
+layout/        GDS + DRC/LVS/ERC reports (klayout-tools driven)
+docs/t1-gap.md gap to T1, item by item
 measurements/  silicon characterization (empty until tape-out)
 ```
 

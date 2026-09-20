@@ -1,0 +1,162 @@
+{
+  "schema_version": 1,
+  "file": "layout/bandgap_top/bandgap_top.gds",
+  "spec": "layout/erc/erc-tie-spec.known-gap.json",
+  "pdk": null,
+  "gate_role": "Poly2",
+  "gate_count": 1,
+  "gates": [
+    {
+      "gate_id": "gate0",
+      "net": "vdd,vref,vss",
+      "gate_area_um2": 12628.625,
+      "antenna_verdict": "unchecked",
+      "levels": [
+        {
+          "layer": "Poly2",
+          "step_area_um2": 22795.371,
+          "cumulative_area_um2": 22795.371,
+          "antenna_ratio": 1.805056,
+          "antenna_ratio_max": null,
+          "antenna_ratio_source": null,
+          "verdict": "unchecked",
+          "remedy": null
+        },
+        {
+          "layer": "Metal1",
+          "step_area_um2": 2686.6904,
+          "cumulative_area_um2": 25482.0614,
+          "antenna_ratio": 2.017802,
+          "antenna_ratio_max": null,
+          "antenna_ratio_source": null,
+          "verdict": "unchecked",
+          "remedy": null
+        },
+        {
+          "layer": "Metal2",
+          "step_area_um2": 2162.2264,
+          "cumulative_area_um2": 27644.2878,
+          "antenna_ratio": 2.189018,
+          "antenna_ratio_max": null,
+          "antenna_ratio_source": null,
+          "verdict": "unchecked",
+          "remedy": null
+        },
+        {
+          "layer": "Metal3",
+          "step_area_um2": 1744.5996,
+          "cumulative_area_um2": 29388.8874,
+          "antenna_ratio": 2.327164,
+          "antenna_ratio_max": null,
+          "antenna_ratio_source": null,
+          "verdict": "unchecked",
+          "remedy": null
+        },
+        {
+          "layer": "Metal4",
+          "step_area_um2": 3600.2116,
+          "cumulative_area_um2": 32989.099,
+          "antenna_ratio": 2.612248,
+          "antenna_ratio_max": null,
+          "antenna_ratio_source": null,
+          "verdict": "unchecked",
+          "remedy": null
+        },
+        {
+          "layer": "Metal5",
+          "step_area_um2": 3390.215,
+          "cumulative_area_um2": 36379.314,
+          "antenna_ratio": 2.880703,
+          "antenna_ratio_max": null,
+          "antenna_ratio_source": null,
+          "verdict": "unchecked",
+          "remedy": null
+        }
+      ]
+    }
+  ],
+  "erc_findings": [
+    {
+      "rule": "erc.multiply_driven_net",
+      "description": "declared nets 'vdd' and 'vref' are electrically the same net (shorted together)",
+      "net": "vdd",
+      "other_net": "vref",
+      "gate_id": null,
+      "layer": null,
+      "bbox": null
+    },
+    {
+      "rule": "erc.multiply_driven_net",
+      "description": "declared nets 'vref' and 'vss' are electrically the same net (shorted together)",
+      "net": "vref",
+      "other_net": "vss",
+      "gate_id": null,
+      "layer": null,
+      "bbox": null
+    },
+    {
+      "rule": "erc.supply_short",
+      "description": "declared nets 'vdd' and 'vss' are electrically the same net (shorted together)",
+      "net": "vdd",
+      "other_net": "vss",
+      "gate_id": null,
+      "layer": null,
+      "bbox": null
+    }
+  ],
+  "erc_finding_count": 3,
+  "status": "violations",
+  "coverage": {
+    "scope": "antenna",
+    "schema_version": 1,
+    "known": true,
+    "checked": [],
+    "skipped": [
+      {
+        "id": "antenna:[\"gate0\",\"Metal1\"]",
+        "reason": "missing_antenna_pdk"
+      },
+      {
+        "id": "antenna:[\"gate0\",\"Metal2\"]",
+        "reason": "missing_antenna_pdk"
+      },
+      {
+        "id": "antenna:[\"gate0\",\"Metal3\"]",
+        "reason": "missing_antenna_pdk"
+      },
+      {
+        "id": "antenna:[\"gate0\",\"Metal4\"]",
+        "reason": "missing_antenna_pdk"
+      },
+      {
+        "id": "antenna:[\"gate0\",\"Metal5\"]",
+        "reason": "missing_antenna_pdk"
+      }
+    ],
+    "inapplicable": [
+      {
+        "id": "antenna:[\"gate0\",\"Poly2\"]",
+        "reason": "gate_reference_level"
+      }
+    ],
+    "unknown": [],
+    "nothing_checked": true,
+    "nothing_checked_reasons": [
+      "gate_reference_level",
+      "missing_antenna_pdk"
+    ]
+  },
+  "provenance": {
+    "klt_version": "0.5.0+gd5893304afc2.dirty",
+    "klayout_version": "0.30.12",
+    "pdk": null,
+    "deck": null,
+    "input": {
+      "content_hash": "sha256:3e1af18ef32dd461172a9d9d00a62ade323725de9a0f90ded08161237dcc1ae0",
+      "role": "layout"
+    },
+    "spec": {
+      "content_hash": "sha256:b58d2987abe9caea362942111fe5e0ceb241554ebf53e90a7d119518a1b6c2ba"
+    }
+  }
+}
