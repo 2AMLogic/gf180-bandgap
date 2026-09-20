@@ -56,6 +56,16 @@ layout/
     README.md           post-layout parasitic-extraction findings; resistor/MiM-cap
                          recognition resolved by #73, LVS reference staleness tracked as #75
     reports/bandgap_top/   <record-id>.{extract.json,extracted.spice}
+  erc/
+    README.md          T1 item 11 (structural power delivery) -- the verdict, and
+                         what erc.missing_tie does NOT cover (#192)
+    run_erc.py         reproducible klt erc invocation -> committed report; asserts
+                         the item-11 verdict rather than leaving it to a reader
+    test_run_erc.py    unit tests for run_erc.py's verdict helpers (no klt needed)
+    erc-supply-spec.json                    the supply read           <- SIGNOFF
+    erc-supply-spec.negative-control.json   proves the rules fire     <- control
+    erc-tie-spec.known-gap.json             reproduces klayout-tools#2169 <- control
+    reports/bandgap_top/   <record-id>.{erc,erc-negative-control,erc-tie-known-gap}.{json,txt}
 ```
 
 ## Install `klt`
@@ -107,6 +117,12 @@ python3 layout/lvs/run_lvs.py layout/bandgap_top/bandgap_top.gds
 #     Needs the `netgen` binary on PATH; see "The netgen cross-check" below.
 python3 layout/lvs/run_lvs.py layout/bandgap_top/bandgap_top.gds --engine both
 
+# 4c. ERC: the structural power-delivery read (T1 item 11, #192).
+#     Exits nonzero if a declared supply stops resolving to exactly one
+#     electrical island -- see layout/erc/README.md for the two controls
+#     that run beside it and for what it deliberately does NOT verify.
+python3 layout/erc/run_erc.py
+
 # 5. Area budget
 uv run --with klayout python3 layout/bandgap_top/area_report.py
 
@@ -123,6 +139,7 @@ Expected results (as committed):
 | `run_drc.py` | `status: clean`, `violation_count: 0` (`20260817-125327-972f6d5.drc.json`; see "RESOLVED — klt-version drift..." below) |
 | `run_lvs.py` | `status: match`, 164/164 devices, 92/92 nets (`20260817-125346-972f6d5.lvs.json`; see "RESOLVED — klt-version drift..." below) |
 | `routing_budget.py` | decomposition reconstructs the drawn bbox (221.70 × 281.03 µm) with **no corridor and no rail-band term left**, and the drawn `S1` area equals `area_report.py`'s measured 62,505.60 µm² / 2.47× — beating the study's 65,896.39 µm² / 2.60× estimate by 5.1 % (see [`routing/multi-metal-routing-study.md`](routing/multi-metal-routing-study.md) and `bandgap_top/AREA.md` Finding 6) |
+| `run_erc.py` | `gate_count: 10`, `erc_finding_count: 0` — **zero** `erc.unconnected_net` and **zero** `erc.supply_short` naming `vdd`/`vss`, i.e. each supply is exactly one electrical island (`20260920-062158-32dcc18.erc.json`). The report's own `status` is `not_checked`/exit 4 on every gf180mcu run, which T1 item 11 does not grade on — see [`erc/README.md`](erc/README.md), and note that `erc.missing_tie` is **not computed** there |
 | `run_lvs.py --engine both` | klayout `match`, 14 mismatches; netgen `mismatch`, 1 `device.property` error (`20260819-070132-1e66285.lvs-netgen.json`) — **engines DISAGREE by design**: [#168](https://github.com/2AMLogic/gf180-bandgap/issues/168) root-caused this to a netgen-only device-pairing artifact on graph-symmetric dummy devices, not a layout defect (see below); the `klayout` engine's `match` verdict is this repo's acceptance gate (#159/#170) and is unaffected |
 | `area_report.py` | 62,505.60 µm² vs. 50,000 µm² target — **FAIL, 25.0 % over budget** (issue #166 recovered 22.7 % of #156's 80,813.72 µm²; the remainder is row-stripe floorplan whitespace, not routing — see `layout/bandgap_top/AREA.md` Findings 5–6 and `spec/decision-records/0005-area-target-overrun.md`) |
 
@@ -698,7 +715,7 @@ top of this file and "Findings and escalations" below).
 
 ## Reports are append-only evidence
 
-`run_drc.py` and `run_lvs.py` write under
+`run_drc.py`, `run_lvs.py` and `run_erc.py` write under
 `layout/<flow>/reports/<block>/<record-id>.*` and **never overwrite an
 existing report** — mirroring the append-only evidence convention
 `sim/README.md` documents (`CLAUDE.md`: "`sim/` results are append-only
@@ -992,6 +1009,23 @@ specifics) on the public
   of the "genuine klt bug" hypothesis rather than a filing. See the
   "Expected results" table's "RESOLVED — klt-version drift..." note above
   for the full root-cause breakdown.
+- **`klt erc`'s `ties[]` collapses a design into one electrical island**,
+  reporting false `erc.supply_short`/`erc.multiply_driven_net` findings and
+  making T1 item 11's `erc.missing_tie` half unsatisfiable:
+  [`#2169`](https://github.com/2AMLogic/klayout-tools/issues/2169) — filed
+  upstream from a routed standard-cell design, and **independently
+  reproduced here** on a hand-drawn analog layout with no standard cells and
+  no PDN (`gate_count` 10 → 1, three false shorts). The reproduction is
+  committed as [`erc/erc-tie-spec.known-gap.json`](erc/erc-tie-spec.known-gap.json)
+  plus its report, so this repo's decision to omit `ties[]` is a measured
+  one. Still open.
+- **`klt erc --pdk` has an antenna-ratio limit table for sky130 only**, so
+  every gf180mcu run reports `status: "not_checked"` / exit 4 no matter how
+  clean its connectivity rules came back — a passing structural supply read
+  is indistinguishable, by status and exit code, from a run that checked
+  nothing: [`#2179`](https://github.com/2AMLogic/klayout-tools/issues/2179).
+  Filed 2026-09-20. It does not block T1 item 11 (which grades the finding
+  rules, not the status), but it does block machine-grading one. Still open.
 
 ## The `trivial_poly_res` DRC fixture (#15)
 
