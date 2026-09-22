@@ -75,7 +75,10 @@ extracted-netlist re-run (tracked in
 manifest and the committed per-item T1 verdict it produces. That record — not
 this paragraph, and not a hand-maintained checkbox list — is the verdict of
 record, and CI re-grades it so a claim resting on an artifact that has since
-changed fails instead of rotting.
+changed fails instead of rotting. `signoff/README.md`'s "Disclosures that
+travel with the claim" section carries the narrative detail a machine-graded
+`met`/`unmet` alone can't, including a real post-layout regression on the
+output-reference and temperature-coefficient rows (item 7).
 
 ## Layout
 
