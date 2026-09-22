@@ -11,6 +11,8 @@ name: CI
 # |----------------------------------------------|--------------|--------------------|
 # | `.github/scripts/lint.sh`                     | python3      | `lint` (here)      |
 # | evidence-record format + append-only          | python3+git  | `lint` (here)      |
+# | T1 signoff pins vs. committed artifacts       | python3      | `lint` (here)      |
+# | T1 signoff re-grade vs. committed record      | klt+network  | `signoff` (here)   |
 # | harness unit tests (`sim/tests/`)             | python3      | `test` (here)      |
 # | `sim/run_corners.py --list` manifest load     | python3      | `test` (here)      |
 # | `sim/selftest.sh` stages 1-2                  | python3      | `test` (here)      |
@@ -108,3 +110,46 @@ jobs:
           grep -q 'harness unit tests' "$log"
           grep -q 'SKIP: simulation stage' "$log" \
             || grep -q 'PASS: harness is functional end to end' "$log"
+
+  signoff:
+    name: T1 signoff re-grade (klt)
+    runs-on: ubuntu-latest
+    # The one job in this file that installs a third-party tool and needs
+    # network. It re-grades signoff/block-manifest.json with `klt signoff
+    # --manifest` and diffs the result against the committed verdict of record
+    # under signoff/reports/ -- so a manifest citing an artifact that has since
+    # changed, or a record that no longer matches what klt says, fails the PR
+    # instead of rotting. Needs no PDK, no ngspice and no klayout install of
+    # its own (klayout ships a wheel, pulled in as a klt dependency).
+    #
+    # The PDK-free half of the same check (pins vs. committed artifacts,
+    # manifest/record consistency) runs in the `lint` job with no network --
+    # see .github/scripts/lint.sh step 6/6. If this job is ever unavailable,
+    # that half still gates every PR.
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Install klt at the pinned revision
+        # Pinned, not floating: the T1 item skeleton is parsed out of
+        # klayout-tools' own docs/design-evidence-tiers.md at run time, so a
+        # floating main would make the committed record disagree with a re-run
+        # for reasons unrelated to this block's evidence. Bumping the pin is a
+        # deliberate act -- see signoff/klt-pin.txt.
+        run: |
+          set -euo pipefail
+          pin="$(grep -v '^[[:space:]]*#' signoff/klt-pin.txt | grep -v '^[[:space:]]*$' | head -1)"
+          echo "klayout-tools @ ${pin}"
+          python3 -m pip install --upgrade pip
+          python3 -m pip install "klayout-tools @ git+https://github.com/2AMLogic/klayout-tools@${pin}"
+          klt version || true
+
+      - name: Re-grade the block manifest
+        # `klt signoff --manifest` exits 3 when the block is not yet T1, which
+        # is this block's current state and not an error -- check_signoff.py
+        # knows that, and fails only on a real error or on any drift between
+        # the fresh grade and the committed record.
+        run: python3 signoff/check_signoff.py --run-klt
