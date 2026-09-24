@@ -54,6 +54,18 @@ METAL2_SPACE_MIN = 280  # metal2.space.1 (== metal3.space.1)
 VIA_WIDTH_MIN = 260  # via1.width.1 (== via2.width.1), DRM Vn.1 (#159)
 VIA_ENCLOSURE_MIN = 10  # metal2.enclosing.via1.1 (== metal3.enclosing.via2.1)
 
+# DR-0003's originally-ratified Area target (50,000 um^2 / 0.05 mm^2), fixed
+# here on purpose. ``area_report.RATIFIED_TARGET_UM2`` now tracks whichever
+# interim ceiling is currently proposed/ratified (DR-0005, then DR-0006 --
+# spec/decision-records/), which moves as routing/floorplan work recovers
+# area. ``RealisedRecoveryTests`` below pins the study's headline structural
+# claim -- "multi-metal routing alone does not reach the *original* ratified
+# target's required overhead multiplier" -- against that fixed historical
+# number, not the currently-live interim ceiling, so it keeps testing the
+# same claim regardless of which interim ceiling is proposed at any given
+# time.
+ORIGINAL_RATIFIED_TARGET_UM2 = 50_000.0
+
 
 @unittest.skipUnless(HAVE_KLAYOUT, "requires the klayout python module")
 class DecompositionTests(unittest.TestCase):
@@ -183,14 +195,24 @@ class RealisedRecoveryTests(unittest.TestCase):
 
     def test_routing_alone_does_not_reach_the_ratified_target(self) -> None:
         """The study's headline conclusion, now checked against the drawn
-        block rather than a model of it."""
+        block rather than a model of it. Pinned against
+        ``ORIGINAL_RATIFIED_TARGET_UM2`` (DR-0003's 50,000 um^2), not
+        ``area_report.RATIFIED_TARGET_UM2`` -- the latter now tracks the
+        currently-proposed interim ceiling (DR-0006), which the drawn block
+        *does* meet post-#166 (see ``test_the_drawn_block_meets_or_beats_the_
+        study_estimate`` / ``AREA.md`` Finding 7); this test is specifically
+        about the original target routing alone was shown not to reach."""
         body = self.decomposition.body_area_um2
-        required = area_report.RATIFIED_TARGET_UM2 / body
+        required = ORIGINAL_RATIFIED_TARGET_UM2 / body
         self.assertGreater(self.by_key["S1"].multiplier(body), required)
 
     def test_a_repack_is_what_closes_the_remaining_gap(self) -> None:
+        """Same fixed-target rationale as the test above: this checks the
+        row-packing efficiency a 2-D re-pack needs to close the gap against
+        the *original* ratified target, independent of any interim ceiling
+        currently proposed."""
         needed = routing_budget.required_efficiency(
-            self.decomposition, area_report.RATIFIED_TARGET_UM2
+            self.decomposition, ORIGINAL_RATIFIED_TARGET_UM2
         )
         self.assertGreater(needed, self.decomposition.row_packing)
         self.assertLess(needed, 1.0)

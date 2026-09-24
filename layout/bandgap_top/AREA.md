@@ -13,22 +13,27 @@ uv run --with klayout python3 layout/bandgap_top/area_report.py
 |---|---|
 | Drawn GDS bounding box (incl. guard ring) | **222.10 × 281.43 µm** |
 | Drawn GDS area | **62,505.60 µm² (0.06251 mm²)** |
-| Ratified target (`README.md` "Target specification", issue #1/#35) | 50,000 µm² (0.05 mm²) |
-| Margin | **FAIL — 12,505.60 µm² (25.0 %) OVER budget** |
+| Originally ratified target (`README.md` "Target specification", DR-0003, issue #1/#35) | 50,000 µm² (0.05 mm²) — FAIL, 12,505.60 µm² (25.0 %) over |
+| Current interim ceiling (`RATIFIED_TARGET_UM2`, DR-0006 — proposed, see Finding 7) | 66,000 µm² (0.066 mm²) |
+| Margin against the current interim ceiling | **PASS — 3,494.40 µm² (5.3 %) of headroom** |
 | Device body area, current netlist | 25,327.78 µm² |
 | Realised overhead multiplier | **2.47× body area** |
 | `floorplan.md` §8 body-area estimate | 10,425.45 µm² |
 | Current netlist vs. that estimate | **2.43×** |
 
-Verdict: **still over the ratified budget, by less than half of what it
-was** — see Findings 5 and 6. Five findings below are flagged rather than
-smoothed over, per CLAUDE.md's no-spec-relaxation rule; the headline numbers
-above are current as of issue #166 (the Metal2/Metal3 routing rewrite,
-2026-08-17), superseding the 80,813.72 µm² / 3.19× / 61.6 %-over verdict
-Finding 5 recorded at #156, which in turn superseded the "inside the
-ratified budget, but only just" verdict this file carried before that
-(48,938.26 µm², PASS at 2.1 % headroom, last regenerated at `ba091ea`/#105 —
-stale since #96/#147/#151).
+Verdict: **`area_report.py` reports `PASS` against the current interim
+ceiling (DR-0006, `< 0.066 mm²`, Finding 7), and `FAIL` against the
+originally-ratified `< 0.05 mm²` (DR-0003)** — the drawn area itself has not
+changed since #166; what changed is that DR-0006 proposes narrowing
+DR-0005's interim ceiling to match the post-#166 measurement, per the
+ratification-via-PR path (issue #156, 2026-08-21). See Findings 5–7. Seven
+findings below are flagged rather than smoothed over, per CLAUDE.md's
+no-spec-relaxation rule; the drawn-geometry numbers above are current as of
+issue #166 (the Metal2/Metal3 routing rewrite, 2026-08-17), superseding the
+80,813.72 µm² / 3.19× / 61.6 %-over verdict Finding 5 recorded at #156,
+which in turn superseded the "inside the ratified budget, but only just"
+verdict this file carried before that (48,938.26 µm², PASS at 2.1 %
+headroom, last regenerated at `ba091ea`/#105 — stale since #96/#147/#151).
 
 ## Finding 1 — `floorplan.md` §8's body-area estimate is 1.92× stale
 
@@ -307,6 +312,31 @@ on DR-0005's own ~5 % margin convention, tighter than the ≈0.070 mm² the
 study projected), but per `spec/decision-records/TEMPLATE.md` that is a
 **successor record**, not an edit to DR-0005, and it is out of scope for
 #166.
+
+## Finding 7 — the successor record this finding anticipated is now filed (issue #156, ratification-via-PR)
+
+Finding 6 named the exact next step in advance and deliberately left it out
+of #166's scope: file a **successor** record narrowing DR-0005's interim
+ceiling to match the post-#166 measurement, rather than editing DR-0005
+in place. That successor,
+[DR-0006](../../spec/decision-records/0006-area-target-narrowed-post-166.md),
+is now filed — via issue #156, whose disposition changed on 2026-08-21 from
+"escalated, pending operator ratification" (parked) to ordinary dispatchable
+work, routed through the fleet's ratification-via-PR path (a builder drafts
+the proposal as a PR on the evidence; a non-author EE key and a non-author
+market key review it before it merges; see the issue's own comment thread
+for the full policy citation).
+
+DR-0006 proposes `< 0.066 mm²` (66,000 µm²) — the exact figure this finding
+anticipated — and, per the ratification-via-PR mechanism, carries the change
+directly in its own PR's diff: `README.md`'s Area row and
+`RATIFIED_TARGET_UM2` both move to the new value in that same PR, and
+[DR-0005](../../spec/decision-records/0005-area-target-overrun.md)'s
+`Status` becomes `superseded by 0006`. Until that PR merges, this is a
+*proposal*, not a ratified value — this file's Headline table above already
+reflects it (labelled "current interim ceiling ... proposed") because the
+table tracks what the tooling reports once the diff is live, the same
+convention DR-0005's own filing used.
 
 ## Body area by group (current netlist)
 

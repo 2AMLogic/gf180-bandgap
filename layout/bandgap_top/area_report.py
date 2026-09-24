@@ -35,9 +35,16 @@ import plan as plan_mod  # noqa: E402
 #: ``layout/floorplan.md`` §8, "Subtotal (drawn active/body area only)".
 FLOORPLAN_ESTIMATE_UM2 = 10425.45
 
-#: ``README.md`` "Target specification" Area row, ratified 2026-07-31 via
-#: issue #1/#35 (``spec/decision-records/0003-target-spec-ratification.md``).
-RATIFIED_TARGET_UM2 = 50000.0
+#: ``README.md`` "Target specification" Area row. Originally ratified
+#: 2026-07-31 at 50,000 um^2 via issue #1/#35
+#: (``spec/decision-records/0003-target-spec-ratification.md``); the drawn
+#: layout has since measured over that target twice, each escalated (not
+#: silently absorbed) per CLAUDE.md's no-spec-relaxation rule: issue #156
+#: proposed an interim 85,000 um^2 ceiling
+#: (``spec/decision-records/0005-area-target-overrun.md``, superseded), and
+#: issue #166's Metal2/Metal3 re-route narrowed that to the current interim
+#: ceiling below (``spec/decision-records/0006-area-target-narrowed-post-166.md``).
+RATIFIED_TARGET_UM2 = 66000.0
 
 GDS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bandgap_top.gds")
 
