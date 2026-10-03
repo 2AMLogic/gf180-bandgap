@@ -1,11 +1,15 @@
 # 0007: `core.Q2` realised as a 4× unit-PNP array — the effective ΔVBE ratio input amended from 3.634
 
-- **Status**: proposed
-- **Date**: 2026-09-14
+- **Status**: Ratified (operator, 2026-10-02) — Option A, as recommended below
+- **Date**: 2026-09-14 (filed); ratified 2026-10-02
 - **Decided by**: Builder (issue
-  [#87](https://github.com/2AMLogic/gf180-bandgap/issues/87)), pending
-  two-key ratification review on the PR carrying this record
-  (`ratification/ee-key`, `ratification/market-key`)
+  [#87](https://github.com/2AMLogic/gf180-bandgap/issues/87)) proposed;
+  operator ruled "Ratify DR-0007, Option A" on #87 (2026-10-02, in-session
+  queue review), in place of the two-key (`ratification/ee-key`,
+  `ratification/market-key`) review, following the DR-0006 / PR #177
+  precedent of direct operator action on a held ratification-via-PR change.
+  The ratified scope is exactly what this record's Decision section states;
+  nothing else is relaxed.
 
 > **What this record does and does not change.** It proposes amending one
 > *device-level input value* that

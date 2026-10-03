@@ -200,8 +200,8 @@ by record ID.
 
 | Quantity | Value | Source |
 |---|---|---|
-| PNP pair | `pnp_05p00x05p00` / `pnp_10p00x10p00`, 4:1 drawn | DR-0001; §1 of device-characterization.md |
-| Effective area ratio (not 4.00) | 3.634 | record `20260731-030932-8fb0ea6` |
+| PNP pair | `pnp_05p00x05p00` / 4× `pnp_05p00x05p00` (`m=4`) since #87 (was `pnp_10p00x10p00`, 4:1 drawn) | DR-0001, DR-0007; §1 of device-characterization.md |
+| Effective area ratio | ~4.0 (4.027 at 6.5 µA, `bjt_typical`, 27 °C) for the unit array; 3.634 is the *monolithic-10x10* figure (record `20260731-030932-8fb0ea6`) and is no longer this design's input (DR-0007) | #87 |
 | ΔVBE at 10 µA, 27 °C | 33.374 mV | record `20260731-030932-8fb0ea6` |
 | ΔVBE PTAT slope | 115.13 µV/°C | record `20260731-030932-8fb0ea6` |
 | VEB(5×5) at 10 µA, 27 °C | 0.7227 V | record `20260731-030932-8fb0ea6` |

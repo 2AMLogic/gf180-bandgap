@@ -16,7 +16,7 @@ v {xschem version=3.4.7 file_version=1.2
 * wide-swing cascode-bias generator below:
 *
 *   Q1 (pnp_05p00x05p00, unit)      -- branch 1, sensed at sns1
-*   Q2 (pnp_10p00x10p00, 4x drawn)  -- branch 2, through PTAT resistor R2,
+*   Q2 (4x pnp_05p00x05p00, m=4)    -- branch 2, through PTAT resistor R2,
 *                                      sensed at sns2
 *   Q3 (pnp_05p00x05p00, unit)      -- output branch, through R1, taps vref
 *
@@ -103,17 +103,36 @@ v {xschem version=3.4.7 file_version=1.2
 * a given die IS the 1-point trim, and that is a wafer-probe step, not a
 * schematic default -- see design/bandgap_trim_network.md.
 *
+* Q2 AS A 4x UNIT ARRAY (issue #87, DR-0007 ratified 2026-10-02, Option A) --
+* Q2 was modelled as one pnp_10p00x10p00 while layout/bandgap_top/plan.py
+* draws four parallel pnp_05p00x05p00 units. The two have different dVBE: the
+* monolithic device measures an effective ratio of 3.632 against a 5x5, the
+* four-unit array 4.027 (same bench, 6.5 uA, bjt_typical, 27 C), i.e. dVBE was
+* 8.0 % larger in the drawn circuit than in this schematic. The schematic now
+* matches the layout: Q2 = pnp_05p00x05p00 m=4, and R2 is rescaled to restore
+* the design current for the larger ratio:
+*
+*   R2      L=36.341871u -> 39.275062u   (6586.5 -> 7113.5 ohm)
+*
+* L was solved on the full bandgap_top at tt/27 C/3.30 V so that vref returns
+* to its pre-#87 value (1.19857 V); lambda = R2_new/R2_old = 1.0800 (first-order
+* ln(4.027)/ln(3.632) gives the same). R1, the trim ladder and every MOS device
+* are UNCHANGED. Single-corner only: DR-0007 Decision item 2 still requires the
+* TC / vref-centring re-verification over the full PVT axis (and an R1 re-null
+* if it falls short) -- at tt/27 C tc_ppm moved 19.3 -> 34.2 ppm/C and vref
+* is centred, so the PTAT/CTAT balance is no longer at its #96 optimum.
+*
 * R1/R2 CO-SCALING (issue #61) -- the quiescent-current lever #55 proved
 * mirror sizing structurally cannot pull. The design current is
 *
-*     I = dVBE / R2 = VT*ln(A) / R2        (A = 3.634, the PNP area ratio)
+*     I = dVBE / R2 = VT*ln(A) / R2        (A = 3.634 when #61 was sized; A ~ 4.0 since #87/DR-0007)
 *
 * which contains no mirror geometry at all: widening M1/M2 changes Vov, not
 * I. The only lever that lowers I without touching dVBE is R2 itself, and
 * raising R2 alone would collapse the PTAT term I*R1. So R1 AND R2 are
 * co-scaled by one common factor k = 2:
 *
-*   R2      L=18u       -> 36.341871u   (3293.2  -> 6586.5  ohm)
+*   R2      L=18u       -> 39.275062u   (3293.2  -> 6586.5  ohm)
 *   R1      L=230.180u  -> 460.701871u  (41389.5 -> 82779.0 ohm)
 *   R_unit  L=1.215u    -> 2.771871u    (279.53  -> 559.06  ohm, bandgap_trim.sch)
 *
@@ -362,14 +381,14 @@ N 320 270 320 250 {}
 C {lab_pin.sym} 320 250 0 0 {name=l10 lab=vdd}
 N 320 300 340 300 {}
 C {lab_pin.sym} 340 300 0 0 {name=l11 lab=vdd}
-C {symbols/ppolyf_u.sym} 300 90 0 0 {name=R2 model=ppolyf_u W=2u L=36.341871u m=1}
+C {symbols/ppolyf_u.sym} 300 90 0 0 {name=R2 model=ppolyf_u W=2u L=39.275062u m=1}
 N 300 60 300 40 {}
 C {lab_pin.sym} 300 40 0 0 {name=l12 lab=sns2}
 N 300 120 300 140 {}
 C {lab_pin.sym} 300 140 0 0 {name=l13 lab=e2}
 N 280 90 260 90 {}
 C {lab_pin.sym} 260 90 0 0 {name=l14 lab=vss}
-C {symbols/pnp_10p00x10p00.sym} 300 -60 0 0 {name=Q2 model=pnp_10p00x10p00 m=1}
+C {symbols/pnp_05p00x05p00.sym} 300 -60 0 0 {name=Q2 model=pnp_05p00x05p00 m=4}
 N 320 -30 320 -10 {}
 C {lab_pin.sym} 320 -10 0 0 {name=l15 lab=vss}
 N 280 -60 260 -60 {}

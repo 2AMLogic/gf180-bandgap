@@ -30,7 +30,7 @@ every filename in this directory on `main`, including superseded records).
 | [0003](decision-records/0003-target-spec-ratification.md) | Target spec ratification (conditional on #35 amendments) | Ratified |
 | [0004](decision-records/0004-par-r-mismatch-coefficient-risk.md) | `par_r` resistor-mismatch coefficient accepted as a documented risk | Proposed |
 | [0005](decision-records/0005-area-target-overrun.md) | Area target overrun — escalated, revision proposed | Proposed |
-| [0007](decision-records/0007-q2-array-dvbe-ratio.md) | `core.Q2` realised as a 4× unit-PNP array — effective ΔVBE ratio input amended from 3.634 | Proposed |
+| [0007](decision-records/0007-q2-array-dvbe-ratio.md) | `core.Q2` realised as a 4× unit-PNP array — effective ΔVBE ratio input amended from 3.634 | Ratified (operator, 2026-10-02) |
 
 `0006` is not missing: it is claimed by an open PR
 ([#177](https://github.com/2AMLogic/gf180-bandgap/pull/177),
