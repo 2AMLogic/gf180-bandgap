@@ -273,8 +273,12 @@ from four unit devices "still measures 3.634, not 4". That was wrong. The
 currents for those two different geometries are in ratio 3.671, not 4.000.
 Four parallel instances of the *same* unit have exactly 4x one unit's `is`
 by construction, so the drawn array's ratio is the unit-array ratio
-(~4.0; 4.027 measured at one operating point, 6.5 uA, where the Brokaw
-core's equal-emitter-current condition adds ~1 %), not 3.634. The schematic
+(~4.0), not 3.634. (An effective ratio of 4.027 was seen at one operating
+point, 6.5 uA, where the Brokaw core's equal-emitter-current condition adds
+~1 %; that figure is an unrecorded local single-corner measurement taken
+while preparing the DR-0007 change, with no `sim/` record behind it. The
+corner-covered ratio re-measurement owed by DR-0007 Decision item 1 is what
+will record it.) The schematic
 used to model Q2 as the monolithic device, so it and the layout differed by
 +8.0 % in dVBE; neither DRC nor LVS can see that, because the LVS
 reference is derived from the drawn layout.
@@ -283,7 +287,13 @@ reference is derived from the drawn layout.
 netlist now model Q2 as four parallel `pnp_05p00x05p00` devices, i.e. what
 this layout draws, and `R2` was rescaled for the larger ratio. The layout's
 array construction is unchanged by this decision; layout cannot and need
-not "fix" the ratio.
+not "fix" the ratio. The one layout consequence is `R2`'s drawn length:
+`plan.py` reads it from the schematic, so DR-0007's "no layout change"
+expectation does not fully hold. The committed `bandgap_top.gds` and
+`layout/lvs/bandgap_top.ref.spice` still carry the pre-DR-0007 `R2` length
+until they are regenerated together with re-run DRC/LVS evidence on the
+pinned klt (the signoff pins in `signoff/pinned-inputs.json` cover the GDS);
+that regeneration lands with the extracted re-run (#202).
 
 **Array construction**: Q2 realized as **4 unit `pnp_05p00x05p00`
 devices** (not the monolithic `pnp_10p00x10p00` cell) is the layout
