@@ -257,27 +257,33 @@ see §8's tally.
 
 ## 4. PNP array (Q1, Q2, Q3)
 
-### 4.1 Sizing and the ratio caveat
+### 4.1 Sizing and the ratio (corrected, #87 / DR-0007)
 
 Per `design/bandgap_core.sch`: **Q1** (`pnp_05p00x05p00`, unit, diode-
-connected, base=collector=`vss`) senses branch 1; **Q2**
-(`pnp_10p00x10p00`, drawn 4× Q1) sits through R2 on branch 2; **Q3**
-(`pnp_05p00x05p00`, same unit type as Q1) sits through R1/trim on the
-output branch. `design/device-characterization.md` §1 (record
-`20260731-030932-8fb0ea6`) measured the **effective** area ratio at
-**3.634, not the drawn 4.00** — the PDK's saturation currents for the two
-geometries are in ratio 3.671, and at equal emitter current the measured
-effective ratio (via `exp(ΔVBE/VT)`) is 3.634.
+connected, base=collector=`vss`) senses branch 1; **Q2** (4 parallel
+`pnp_05p00x05p00` units, `m=4`, matching the drawn array) sits through R2
+on branch 2; **Q3** (`pnp_05p00x05p00`, same unit type as Q1) sits through
+R1/trim on the output branch.
 
-**This is a device-physics finding, not a layout defect, and layout
-cannot "fix" it.** If the array is built as **4 identical unit
-`pnp_05p00x05p00` devices** for Q2 (rather than the monolithic
-`pnp_10p00x10p00` device) to keep every element in the common-centroid
-array the same physical unit type as Q1/Q3, the effective ΔVBE ratio
-still measures 3.634, not 4 — the discrepancy is intrinsic saturation-
-current physics (`design/device-characterization.md` §1's "What this
-changes for the design" note), carried forward as a finding from #4/#8,
-not something this floorplan resizes the unit count to correct.
+**Correction.** An earlier version of this section claimed that building Q2
+from four unit devices "still measures 3.634, not 4". That was wrong. The
+3.634 figure (`design/device-characterization.md` §1, record
+`20260731-030932-8fb0ea6`) is the *effective ratio of a monolithic
+`pnp_10p00x10p00` against a `pnp_05p00x05p00`*: the PDK's saturation
+currents for those two different geometries are in ratio 3.671, not 4.000.
+Four parallel instances of the *same* unit have exactly 4x one unit's `is`
+by construction, so the drawn array's ratio is the unit-array ratio
+(~4.0; 4.027 measured at one operating point, 6.5 uA, where the Brokaw
+core's equal-emitter-current condition adds ~1 %), not 3.634. The schematic
+used to model Q2 as the monolithic device, so it and the layout differed by
++8.0 % in dVBE; neither DRC nor LVS can see that, because the LVS
+reference is derived from the drawn layout.
+
+**Resolution (DR-0007, ratified 2026-10-02, Option A):** the schematic and
+netlist now model Q2 as four parallel `pnp_05p00x05p00` devices, i.e. what
+this layout draws, and `R2` was rescaled for the larger ratio. The layout's
+array construction is unchanged by this decision; layout cannot and need
+not "fix" the ratio.
 
 **Array construction**: Q2 realized as **4 unit `pnp_05p00x05p00`
 devices** (not the monolithic `pnp_10p00x10p00` cell) is the layout

@@ -476,7 +476,7 @@ shift the loop applies to `fb` in response. The servo constraint is
 `VEB(Q1, I1) = I2·R2 + VEB(Q2, I2)`, i.e.
 
 ```
-VT * ln(A * I1 / I2) = I2 * R2 ,    A = 3.634 (effective PNP area ratio)
+VT * ln(A * I1 / I2) = I2 * R2 ,    A = 3.634 as derived here; ~4.0 (unit array) since #87 / DR-0007 (effective PNP area ratio)
 ```
 
 Linearising about the operating point, with `I0·R2 = ΔVBE0` by definition of
@@ -1203,7 +1203,7 @@ Three of the four core branches carry the design current `I`, and `I` is not
 a function of any mirror device's geometry:
 
 ```
-I = dVBE / R2 ,      dVBE = VT * ln(A)        (A = 3.634, the PNP area ratio)
+I = dVBE / R2 ,      dVBE = VT * ln(A)        (A = 3.634, the PNP area ratio; ~4.0 and R2 rescaled by 1.08 since #87 -- see below)
 ```
 
 The servo drives `fb` to *whatever* gate voltage delivers that current;
@@ -1817,6 +1817,27 @@ this bench must be re-run when it does, same as Section 5c states.
 stability criteria). Nothing was re-defined, and no other issue's margin was
 spent to buy this one — `M3/M4` is the only device geometry this issue
 touches.
+
+### 5e. #87 / DR-0007: Q2 becomes a 4x unit array; `R2` rescaled
+
+`core.Q2` is now `4 x pnp_05p00x05p00` (`m=4`), the circuit the layout
+actually draws, instead of one `pnp_10p00x10p00`. Every `A = 3.634` above
+(Sections 2.6a, 5, 5a) was derived for the monolithic device; the PTAT
+derivation `I = VT*ln(A)/R2` is unchanged in form with `A` -> the unit-array
+ratio (~4.0; 4.027 measured at 6.5 uA, `bjt_typical`, 27 C), and
+`R2 = 36.341871 -> 39.275062 um` (6586.5 -> 7113.5 ohm, `lambda = 1.0800`)
+restores the design current: at `tt`/27 C/3.30 V the full-circuit `vref`
+returns to 1.19857 V (solved on the circuit, not from the algebra).
+
+What is **not** claimed here: the sensitivity/mismatch tables above
+(2.6a/2.7/2.7a/2.7b) were measured at `A = 3.634` and are not re-taken by
+this section; `rho = 1/(1 + ln A)` falls from 0.4365 to ~0.418, which should
+lower the servoed-leg amplification slightly, but the magnitude is a
+measurement owed to the corner-covered re-run. DR-0007 Decision item 2's
+post-rescale TC re-verification over the full PVT axis (and a conditional
+`R1` re-null) is likewise owed: at `tt`/27 C only, `tc_ppm` moved
+19.3 -> 34.2 (still under the ratified 50), so the #96 `R1` optimum no longer
+holds exactly.
 
 ## 6. Summary of acceptance criteria
 
