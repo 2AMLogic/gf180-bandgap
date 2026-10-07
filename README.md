@@ -63,20 +63,27 @@ a relaxation for its own sake; see those records for the full evidence and
 over temperature. Device characterization and PVT corner sweeps are
 recorded as append-only evidence under `sim/` (see
 [`sim/README.md`](sim/README.md) for the record format). A full block layout
-is drawn and verified — DRC-clean (0 violations) and LVS-matching against the
-schematic netlist on both comparators (`klt lvs` and an independent `netgen`
-cross-check), with committed reports under `layout/` (see
+has committed DRC-clean (0 violations) and LVS-matching reports on both
+comparators (`klt lvs` and an independent `netgen` cross-check) for the
+pre-DR-0007 physical baseline under `layout/` (see
 [`layout/README.md`](layout/README.md), including what that LVS verdict does
 and does not cover). Post-layout extracted re-verification **has** run — see
 [`sim/postlayout-delta.md`](sim/postlayout-delta.md): the schematic-level
-record passes the full spec-line suite, but the parasitic-extracted record
-currently fails the output-reference and temperature-coefficient rows. That
-gap is attributed to the drawn PNP array's 4.03 effective dVBE ratio versus
-the schematic's 3.63
-([#87](https://github.com/2AMLogic/gf180-bandgap/issues/87), blocked on a
-spec decision record), not to a layout or extraction defect. Tapeout is not
-scheduled; it is pending that decision and a subsequent passing
-extracted-netlist re-run (tracked in
+captures a schematic-level suite pass and parasitic-extracted failures in
+the output-reference and temperature-coefficient rows before DR-0007.
+[DR-0007](spec/decision-records/0007-q2-array-dvbe-ratio.md) was ratified on
+2026-10-02, and [PR #201](https://github.com/2AMLogic/gf180-bandgap/pull/201)
+merged the four-unit Q2 schematic and first-order R2 rescaling. The committed
+GDS and LVS reference still use the prior R2 sizing; their clean reports do
+not certify the amended schematic. Corner-covered schematic measurements
+and sizing ([#203](https://github.com/2AMLogic/gf180-bandgap/issues/203))
+remain blocked on the fleet simulation prerequisite
+[klayout-tools#2733](https://github.com/2AMLogic/klayout-tools/issues/2733).
+Layout regeneration and pinned extracted verification
+([#204](https://github.com/2AMLogic/gf180-bandgap/issues/204)) follow that
+work, tracked by [#202](https://github.com/2AMLogic/gf180-bandgap/issues/202)
+and [#87](https://github.com/2AMLogic/gf180-bandgap/issues/87). Tapeout is not
+scheduled; passing updated acceptance evidence is still outstanding (see
 [#94](https://github.com/2AMLogic/gf180-bandgap/issues/94)).
 
 **Where this block sits on the evidence ladder is graded, not asserted**:
