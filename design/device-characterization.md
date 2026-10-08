@@ -23,6 +23,7 @@ cite the new record ID.
 | MOS threshold | `sim/device-mos-vth/` | `20260731-031337-8fb0ea6` | 5 MOS corners × 3 temperatures |
 | MOS mismatch | `sim/device-mos-mismatch/` | `20260731-031718-8fb0ea6` | `typical` × 3 temperatures, N = 300 each |
 | PNP mismatch | `sim/device-pnp-mismatch/` | `20260731-040850-187a336` | `bjt_typical` × 3 temperatures, N = 300 each |
+| Q2 array, equal-Ie (§6, fleet) | `sim/device-pnp-array/` | `20261008-120404-44d1a83` | 3 BJT corners × 3 temperatures |
 
 All five testbenches are two-terminal or source-referred device measurements
 with no supply rail, so the ±10 % supply axis of the CLAUDE.md PVT matrix does
@@ -285,6 +286,41 @@ parameters. This is a PDK-model artefact, not a claim that PNP devices are
 inherently better matched than MOS in silicon; see the record's plausibility
 note. Temperature dependence is weak (σ rises ~10–16 % from −40 °C to 125 °C,
 same common-random-numbers caveat as §4).
+
+## 6. Four-unit Q2 array, equal total emitter current — record `20261008-120404-44d1a83`
+
+Appended for [DR-0007](../spec/decision-records/0007-q2-array-dvbe-ratio.md)
+Decision item 1 (issue #208). §1 above is **unchanged**: 3.634 remains the
+correct figure for a `pnp_10p00x10p00`-vs-`pnp_05p00x05p00` pair
+(`sim/device-pnp-vbe/`), and the historical 4.027 stays a single-corner,
+6.5 µA datum. This section is the corner-covered measurement DR-0007 asked for.
+
+Bench: `sim/device-pnp-array/testbench/tb_pnp_array.spice` — one
+`pnp_05p00x05p00` versus four in parallel (as drawn), each branch forced with
+the **same total emitter current** (the Brokaw core's constraint), grounded
+base/collector; `A_eff = exp(ΔVBE/VT)`. Executed as a `klt sim` request on the
+Spot fleet (job `klt-sim-3824cc566e15`, klt 0.6.0+g1eb3e4bfd0f5, ngspice 46),
+3 BJT corners × −40/27/125 °C = 9 points, all returned and passing. Supply
+axis not applicable (no rail). Record:
+[`20261008-120404-44d1a83`](../sim/device-pnp-array/records/20261008-120404-44d1a83.md).
+
+| Quantity (equal total Ie = 5.07 µA) | Value |
+|---|---|
+| A_eff, array, range over 9 points | **4.0185 … 4.0281** (+0.46 % … +0.70 % over 4.000) |
+| A_eff, array, `bjt_typical` 27 °C — **nominal rescaling input** | **4.0209** (ΔVBE 35.991 mV) |
+| A_eff, monolithic 10×10, same bench, `bjt_typical` 27 °C | 3.6273 |
+| `λ = ln A_array / ln A_old`, `bjt_typical` 27 °C | 1.0799 (1.0759 against an exact 4.000) |
+| A_eff, array, `bjt_typical` over −40/27/125 °C | 4.0233 / 4.0209 / 4.0246 (flat to 0.09 %) |
+| A_eff, array, `bjt_typical` 27 °C at 6.5 µA | 4.0248 (cf. #87's single-point 4.027; 0.002 lower here, not reconciled) |
+
+DR-0007's premise holds: the measured ratio is the unit-count 4.000 plus a
++0.5…0.7 % equal-Ie excess, flat in temperature, and using 4.0209 instead of
+4.000 moves ΔVBE by only +0.135 mV at 27 °C. No successor decision record is
+opened. The retuning step should size `R2` on 4.0209 (nominal) and then
+re-verify the TC null by simulation, as DR-0007 item 2 requires — `λ` here is a
+27 °C figure and varies 1.071…1.095 over the corner/temperature matrix, so it is
+not a temperature-invariant multiplier. No resistor or layout change is made
+by this measurement.
 
 ---
 

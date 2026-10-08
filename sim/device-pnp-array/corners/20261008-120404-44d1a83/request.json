@@ -1,0 +1,90 @@
+{
+  "netlist": "body.spice",
+  "engine": "ngspice",
+  "models": {
+    "pdk": "gf180mcuD",
+    "lib": "libs.tech/ngspice/sm141064.ngspice"
+  },
+  "corners": {
+    "process": [
+      {
+        "name": "bjt_ss",
+        "sections": [
+          "bjt_ss"
+        ]
+      },
+      {
+        "name": "bjt_typical",
+        "sections": [
+          "bjt_typical"
+        ]
+      },
+      {
+        "name": "bjt_ff",
+        "sections": [
+          "bjt_ff"
+        ]
+      }
+    ],
+    "temperature_c": [
+      -40.0,
+      27.0,
+      125.0
+    ]
+  },
+  "analysis": {
+    "kind": "dc",
+    "args": "Vctrl 4.0 7.0 0.01"
+  },
+  "measurements": [
+    {
+      "name": "vbe_u_4",
+      "spice": ".meas dc vbe_u_4 FIND v(eu) AT=4",
+      "unit": "V"
+    },
+    {
+      "name": "vbe_a_4",
+      "spice": ".meas dc vbe_a_4 FIND v(ea) AT=4",
+      "unit": "V"
+    },
+    {
+      "name": "vbe_m_4",
+      "spice": ".meas dc vbe_m_4 FIND v(em) AT=4",
+      "unit": "V"
+    },
+    {
+      "name": "vbe_u_5p07",
+      "spice": ".meas dc vbe_u_5p07 FIND v(eu) AT=5.07",
+      "unit": "V"
+    },
+    {
+      "name": "vbe_a_5p07",
+      "spice": ".meas dc vbe_a_5p07 FIND v(ea) AT=5.07",
+      "unit": "V"
+    },
+    {
+      "name": "vbe_m_5p07",
+      "spice": ".meas dc vbe_m_5p07 FIND v(em) AT=5.07",
+      "unit": "V"
+    },
+    {
+      "name": "vbe_u_6p5",
+      "spice": ".meas dc vbe_u_6p5 FIND v(eu) AT=6.5",
+      "unit": "V"
+    },
+    {
+      "name": "vbe_a_6p5",
+      "spice": ".meas dc vbe_a_6p5 FIND v(ea) AT=6.5",
+      "unit": "V"
+    },
+    {
+      "name": "vbe_m_6p5",
+      "spice": ".meas dc vbe_m_6p5 FIND v(em) AT=6.5",
+      "unit": "V"
+    }
+  ],
+  "options": {
+    "timeout_s": 300,
+    "keep_artifacts": true
+  }
+}
