@@ -77,12 +77,18 @@ merged the four-unit Q2 schematic and first-order R2 rescaling. The committed
 GDS and LVS reference still use the prior R2 sizing; their clean reports do
 not certify the amended schematic. Corner-covered schematic measurements
 and sizing ([#203](https://github.com/2AMLogic/gf180-bandgap/issues/203))
-remain blocked pending successful fleet verification of the actual gf180mcu
-request. [klayout-tools#2733](https://github.com/2AMLogic/klayout-tools/issues/2733)
-closed on 2026-10-08 with failed-job diagnostics and troubleshooting guidance;
-its acceptance does not prove the historical model-bin failure resolved.
-Runner compatibility and provenance remain tracked by open
-[klayout-tools#2719](https://github.com/2AMLogic/klayout-tools/issues/2719).
+are tracked by the schematic-phase epic, decomposed into array measurement
+([#208](https://github.com/2AMLogic/gf180-bandgap/issues/208)), measured retuning
+([#209](https://github.com/2AMLogic/gf180-bandgap/issues/209)), active bench
+synchronization ([#210](https://github.com/2AMLogic/gf180-bandgap/issues/210)),
+and final schematic suite/mismatch evidence
+([#211](https://github.com/2AMLogic/gf180-bandgap/issues/211)). These children
+await independent curation and approval.
+[klayout-tools#2733](https://github.com/2AMLogic/klayout-tools/issues/2733)
+and [klayout-tools#2719](https://github.com/2AMLogic/klayout-tools/issues/2719)
+both closed on 2026-10-08. Their closure does not prove the historical model-bin
+failure resolved; successful execution of the actual gf180mcu fleet request
+remains an acceptance criterion of #208.
 Layout regeneration and pinned extracted verification
 ([#204](https://github.com/2AMLogic/gf180-bandgap/issues/204)) follow that
 work, tracked by [#202](https://github.com/2AMLogic/gf180-bandgap/issues/202)

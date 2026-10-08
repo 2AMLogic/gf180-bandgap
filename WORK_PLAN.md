@@ -44,6 +44,7 @@ _None._
 Issues carrying `loom:curated`.
 
 - **#87**: Layout's 4x unit-PNP array for core.Q2 gives an effective dVBE ratio of 4.03, not the schematic's 3.63 — floorplan 4.1 asserts the opposite *(curated)*
+- **#203**: DR-0007 phase A: measure array ratio and finalize schematic PVT evidence *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -53,6 +54,7 @@ _None._
 
 - **#94**: Track the gap to T1 sim-validated (klayout-tools design-evidence tiers)
 - **#202**: Q2 array (DR-0007): corner-covered PVT re-run, R1 re-null, extracted re-run on pinned klt
+- **#203**: DR-0007 phase A: measure array ratio and finalize schematic PVT evidence
 
 ## Backlog Balance
 
@@ -64,7 +66,7 @@ _None._
 | In Progress (`loom:building`) | 0 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 0 |
-| Curated | 1 |
+| Curated | 2 |
 | Architect / Hermit proposals | 0 |
-| Active epics | 2 |
+| Active epics | 3 |
 <!-- guide:plan-body:end -->
