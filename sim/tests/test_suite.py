@@ -19,7 +19,7 @@ from pathlib import Path
 SIM_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SIM_DIR))
 
-from suite import analysis, spec  # noqa: E402
+from suite import analysis, completeness, spec  # noqa: E402
 from suite.cli import BenchRun, render_summary  # noqa: E402
 
 
@@ -323,6 +323,161 @@ class SummaryTests(unittest.TestCase):
         self.assertIn("Output reference (untrimmed accuracy, both legs)", text)
         self.assertIn("Combined verdict: FAIL", text)
         self.assertNotIn("Simulation-complete**: all", text)
+
+
+class CompletenessTests(unittest.TestCase):
+    """Missing evidence must block the acceptance claim and the exit code."""
+
+    TT = "tt_27c_3.30v"
+    FF = "ff_125c_3.63v"
+
+    def _bench(self, slug, samples, status="ok", expected=None):
+        lines = spec.by_slug()[slug]
+        bench = BenchRun(
+            slug=slug, lines=lines, status=status, returncode=0 if status == "ok" else 2,
+            samples=samples, expected_corners=expected,
+        )
+        bench.outcomes = [analysis.evaluate_line(l, samples, expected) for l in lines]
+        return bench
+
+    def _good_samples(self, slug, corners):
+        names = {m.measurement for l in spec.by_slug()[slug] for m in l.limits}
+        good = {"iq_ua": 40.0, "vref": 1.2, "tc_ppm": 20.0, "psrr_1hz_db": 70.0,
+                "psrr_1khz_db": 70.0, "linereg_mv_per_v": 0.5, "vref_min": 1.19,
+                "vref_max": 1.21}
+        return {c: {n: good[n] for n in names} for c in corners}
+
+    def _combined(self, corners):
+        from suite import combined as cm
+
+        mc = {("mm_all", t): cm.GroupStats("mm_all", t, 300, 1.2, 0.001)
+              for t in (-40.0, 27.0, 125.0)}
+        return cm.evaluate({c: {"vref": 1.2} for c in corners}, mc)
+
+    def _all_corners(self):
+        return ["tt_-40c_2.97v", "tt_27c_3.30v", "ff_125c_3.63v"]
+
+    def _full(self):
+        corners = self._all_corners()
+        benches = []
+        for slug in spec.slugs():
+            if not any(l.limits for l in spec.by_slug()[slug]):
+                b = BenchRun(slug=slug, lines=spec.by_slug()[slug], status="ok", returncode=0)
+                b.outcomes = [analysis.evaluate_line(l, {}) for l in b.lines]
+                benches.append(b)
+                continue
+            benches.append(self._bench(slug, self._good_samples(slug, corners), expected=corners))
+        return benches, self._combined(corners)
+
+    def _text(self, benches, combined, mode="full PVT"):
+        import datetime as dt
+
+        return render_summary(
+            benches,
+            started=dt.datetime(2026, 8, 1, tzinfo=dt.timezone.utc),
+            git={"commit": "f" * 40, "short": "fffffff", "branch": "main", "dirty": False},
+            mode=mode, wrote_evidence=False, combined=combined,
+        )
+
+    def test_fully_complete_passing_fixture_claims_completion(self):
+        benches, combined = self._full()
+        self.assertEqual(combined.status, "PASS")
+        done = completeness.assess(benches, combined, spec.slugs())
+        self.assertTrue(done.complete, done.missing + done.failures)
+        self.assertEqual(done.exit_code, 0)
+        self.assertIn("**Simulation-complete**", self._text(benches, combined))
+
+    def test_iq_only_run_passes_but_makes_no_completeness_claim(self):
+        bench = self._bench("iq", self._good_samples("iq", [self.TT]), expected=[self.TT])
+        done = completeness.assess([bench], None, spec.slugs())
+        self.assertEqual(done.state, "subset")
+        self.assertEqual(done.exit_code, 0)
+        text = self._text([bench], None)
+        self.assertIn("Subset run", text)
+        self.assertNotIn("Simulation-complete**", text)
+        self.assertNotIn("two-legged untrimmed-accuracy row passes", text)
+
+    def test_smoke_run_passes_but_makes_no_completeness_claim(self):
+        benches, combined = self._full()
+        done = completeness.assess(benches, combined, spec.slugs(), smoke=True)
+        self.assertEqual(done.state, "subset")
+        self.assertEqual(done.exit_code, 0)
+        self.assertNotIn("Simulation-complete**", self._text(benches, combined, mode="smoke"))
+
+    def test_a_requested_bench_missing_from_the_tree_blocks(self):
+        benches, combined = self._full()
+        startup = next(b for b in benches if b.slug == "startup")
+        startup.status, startup.message = "missing", "no tb.json"
+        done = completeness.assess(benches, combined, spec.slugs())
+        self.assertTrue(done.blocked)
+        self.assertNotEqual(done.exit_code, 0)
+        self.assertIn("NOT simulation-complete", self._text(benches, combined))
+
+    def test_gated_no_data_blocks(self):
+        bench = self._bench("iq", {self.TT: {"vref": 1.2}}, expected=[self.TT])
+        done = completeness.assess([bench], None, spec.slugs())
+        self.assertTrue(done.blocked)
+        self.assertEqual(done.exit_code, 2)
+        text = self._text([bench], None)
+        self.assertIn("NO DATA", text)
+        self.assertNotIn("Subset run", text)
+
+    def test_measurement_missing_at_one_present_corner_is_not_a_pass(self):
+        samples = {self.TT: {"iq_ua": 40.0}, self.FF: {"vref": 1.2}}
+        outcome = analysis.evaluate_line(spec.by_slug()["iq"][0], samples)
+        self.assertEqual(outcome.status, "NO DATA")
+        self.assertEqual(outcome.worst.missing_corners, (self.FF,))
+        bench = self._bench("iq", samples)
+        done = completeness.assess([bench], None, spec.slugs())
+        self.assertEqual(done.exit_code, 2)
+        self.assertIn(self.FF, " ".join(done.missing))
+
+    def test_a_corner_with_no_log_is_caught_via_the_expected_grid(self):
+        samples = {self.TT: {"iq_ua": 40.0, "vref": 1.2}}
+        bench = self._bench("iq", samples, expected=[self.TT, self.FF])
+        self.assertEqual(completeness.assess([bench], None, spec.slugs()).exit_code, 2)
+
+    def test_a_real_violation_still_fails_even_with_gaps(self):
+        outcome = analysis.evaluate_line(
+            spec.by_slug()["iq"][0],
+            {self.TT: {"iq_ua": 73.0}, self.FF: {"vref": 1.2}},
+        )
+        self.assertEqual(outcome.status, "FAIL")
+
+    def test_runner_failure_with_partial_passing_logs_blocks(self):
+        bench = self._bench("iq", self._good_samples("iq", [self.TT]),
+                            status="error", expected=[self.TT])
+        done = completeness.assess([bench], None, spec.slugs())
+        self.assertTrue(done.blocked)
+        self.assertEqual(done.exit_code, 2)
+        self.assertNotIn("Subset run", self._text([bench], None))
+
+    def test_expected_corner_ids_follow_the_manifest_and_overrides(self):
+        from suite.cli import expected_corner_ids
+
+        self.assertEqual(len(expected_corner_ids("iq")), 81)
+        self.assertEqual(expected_corner_ids("iq", smoke=True), [self.TT])
+        self.assertEqual(len(expected_corner_ids("iq", corner_set="tt")), 9)
+        self.assertIsNone(expected_corner_ids("no-such-bench"))
+
+    def test_main_exit_codes_follow_the_assessment(self):
+        from unittest import mock
+
+        from suite import cli
+
+        no_data = False
+
+        def fake_run(slug, lines, extra, quiet=False, expected_corners=None):
+            samples = {self.TT: {"vref": 1.2}} if no_data else self._good_samples(slug, [self.TT])
+            return self._bench(slug, samples, expected=[self.TT])
+
+        import contextlib
+        import io
+
+        for no_data, code in ((False, 0), (True, 2)):
+            with mock.patch.object(cli, "run_bench", fake_run), \
+                    contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(cli.main(["--only", "iq", "--no-write", "--quiet"]), code)
 
 
 if __name__ == "__main__":

@@ -13,6 +13,16 @@ summary** against README.md's ratified target-spec table. A run where every
 line in that summary reads PASS is the operational definition of
 **simulation-complete** on this block's maturity ladder.
 
+"Every line reads PASS" is only the claim when the run is *complete*
+(`sim/suite/completeness.py`, shared by the summary text and the exit code):
+all indexed benches requested at full PVT, runners succeeded, every gated
+measurement present at every manifest-grid corner and PASS, and the
+two-legged accuracy row evaluated and PASS. A deliberate subset (`--only`,
+`--smoke`) that passes exits 0 but is worded "Subset run — no completeness
+claim". A missing bench, runner failure, gated NO DATA, or a measurement
+missing at any corner prints "NOT simulation-complete" and exits 2 (spec
+violations exit 1).
+
 The suite simulates nothing itself. It drives `sim/run_corners.py` once per
 experiment slug — so every bench mints an ordinary append-only record under
 `sim/<slug>/records/` in the format `sim/README.md` ratifies — and then reads

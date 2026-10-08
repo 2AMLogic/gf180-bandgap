@@ -22,6 +22,13 @@ from pathlib import Path
 
 from . import SUITE_VERSION
 from . import combined as combined_verdict
+from .completeness import (
+    EXIT_OK,
+    EXIT_RUN_ERROR,
+    EXIT_SPEC_FAIL,
+    Completeness,
+    assess,
+)
 from .analysis import (
     LineOutcome,
     compare_box_to_endpoints,
@@ -42,10 +49,6 @@ SUMMARY_DIR = SIM_DIR / "suite" / "summaries"
 sys.path.insert(0, str(SIM_DIR))
 from harness.paths import _repo_relative  # noqa: E402  (needs sys.path)
 from harness.fmt import _fmt as _harness_fmt  # noqa: E402  (needs sys.path)
-
-EXIT_OK = 0
-EXIT_SPEC_FAIL = 1
-EXIT_RUN_ERROR = 2
 
 #: Lines the corner runner prints that the suite needs to find its evidence.
 _RECORD_RE = re.compile(r"^record\s*:\s*(?P<path>.+)$")
@@ -69,6 +72,9 @@ class BenchRun:
     samples: dict = field(default_factory=dict)
     outcomes: list[LineOutcome] = field(default_factory=list)
     message: str = ""
+    #: Corner ids the run should have produced (manifest grid + suite
+    #: overrides); ``None`` when it cannot be derived.
+    expected_corners: list[str] | None = None
 
     @property
     def available(self) -> bool:
@@ -77,6 +83,36 @@ class BenchRun:
 
 def _bench_manifest(slug: str) -> Path:
     return SIM_DIR / slug / "testbench" / "tb.json"
+
+
+def expected_corner_ids(
+    slug: str, smoke: bool = False, corner_set: str = ""
+) -> list[str] | None:
+    """The corner ids ``run_corners.py`` will produce for ``slug``.
+
+    Derived from the bench's own manifest and the same overrides the suite
+    passes through, so bench conventions are honoured rather than hardcoded.
+    ``None`` if the manifest does not describe a PVT grid.
+    """
+    import json
+
+    from harness import corners as corners_mod
+
+    try:
+        manifest = json.loads(_bench_manifest(slug).read_text())
+        if smoke:
+            names, temps, tol = ["tt"], [27.0], 0.0
+        else:
+            names = [corner_set] if corner_set else manifest["corners"]
+            temps = manifest["temperatures_c"]
+            tol = manifest.get("supply_tolerance", corners_mod.DEFAULT_SUPPLY_TOLERANCE)
+        nominal = manifest.get("nominal_supply_v", corners_mod.DEFAULT_NOMINAL_SUPPLY_V)
+        grid = corners_mod.build_grid(
+            corners_mod.resolve_corners(names), temps, corners_mod.supply_points(nominal, tol)
+        )
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+    return [point.corner_id for point in grid]
 
 
 def _runner_status(returncode: int) -> str:
@@ -88,9 +124,10 @@ def run_bench(
     lines: list[SpecLine],
     extra: list[str],
     quiet: bool = False,
+    expected_corners: list[str] | None = None,
 ) -> BenchRun:
     """Run one bench through ``sim/run_corners.py`` and read back its evidence."""
-    bench = BenchRun(slug=slug, lines=lines)
+    bench = BenchRun(slug=slug, lines=lines, expected_corners=expected_corners)
     if not _bench_manifest(slug).is_file():
         bench.status = "missing"
         bench.message = f"sim/{slug}/testbench/tb.json does not exist yet"
@@ -132,7 +169,9 @@ def run_bench(
         bench.status = "error"
         bench.message = f"no per-corner logs found under {logs_dir}"
 
-    bench.outcomes = [evaluate_line(line, bench.samples) for line in lines]
+    bench.outcomes = [
+        evaluate_line(line, bench.samples, bench.expected_corners) for line in lines
+    ]
     return bench
 
 
@@ -172,10 +211,18 @@ def _verdict_rows(benches: list[BenchRun]) -> list[str]:
                 continue
             worst = outcome.worst
             measured = _fmt(worst.worst_value) + (worst.limit.units if worst else "")
+            verdict = outcome.status
+            if worst.missing_corners:
+                verdict += (
+                    f" — `{worst.limit.measurement}` missing at "
+                    f"{len(worst.missing_corners)} corner(s)"
+                )
+            elif outcome.status == "NO DATA":
+                verdict += f" — `{worst.limit.measurement}` not measured"
             rows.append(
                 f"| {line.row} | {line.target} | `{line.slug}` "
                 f"| {measured} (limit {worst.limit.describe()}) "
-                f"| `{worst.worst_corner or '—'}` | {outcome.status} |"
+                f"| `{worst.worst_corner or '—'}` | {verdict} |"
             )
     return rows
 
@@ -344,6 +391,21 @@ def _reference_section(benches: list[BenchRun]) -> list[str]:
     return lines
 
 
+def _completeness_section(done: Completeness) -> list[str]:
+    lines: list[str] = []
+    if done.omitted or done.smoke or done.missing or done.failures:
+        lines += ["", "## Completeness", ""]
+    if done.subset_reasons:
+        lines.append("Not the full suite: " + "; ".join(done.subset_reasons) + ".")
+    if done.missing:
+        lines += ["", "Missing or incomplete evidence (blocks any acceptance claim):", ""]
+        lines += [f"- {reason}" for reason in done.missing]
+    if done.failures:
+        lines += ["", "Failures:", ""]
+        lines += [f"- {reason}" for reason in done.failures]
+    return lines
+
+
 def render_summary(
     benches: list[BenchRun],
     started: _dt.datetime,
@@ -351,15 +413,11 @@ def render_summary(
     mode: str,
     wrote_evidence: bool,
     combined: combined_verdict.CombinedVerdict | None = None,
+    completeness: Completeness | None = None,
 ) -> str:
-    gated = [o for b in benches for o in b.outcomes if o.line.gated and b.available]
-    passing = [o for o in gated if o.status == "PASS"]
-    failing = [o for o in gated if o.status == "FAIL"]
-    pending = [o for b in benches for o in b.outcomes if not o.line.gated or not b.available]
-
-    # The untrimmed-accuracy row is ratified on TWO legs, so no per-bench line
-    # is that row's verdict: a summary that reads "simulation-complete" while
-    # the combined verdict fails would be claiming the row on one leg.
+    if completeness is None:
+        completeness = assess(benches, combined, slugs(), smoke=mode == "smoke")
+    done = completeness
     combined_short = ""
     if combined is not None and combined.status != "PASS":
         combined_short = (
@@ -371,26 +429,27 @@ def render_summary(
                 else "."
             )
         )
+    tally = f"{done.n_pass}/{done.n_gated} gated spec lines pass"
 
-    if failing or combined_short:
-        counted = (
-            f"{len(failing)} of {len(gated)} claimed spec lines FAIL against the "
-            "ratified table."
-            if failing
-            else f"every per-bench spec line passes ({len(passing)}/{len(gated)})."
-        )
-        verdict = f"**NOT simulation-complete**: {counted}{combined_short}"
-    elif pending:
+    if done.blocked:
+        problems = len(done.missing) + len(done.failures)
         verdict = (
-            f"**Not yet simulation-complete**: every claimed spec line passes "
-            f"({len(passing)}/{len(gated)}), but {len(pending)} line(s) are still "
-            "pending a bench."
+            f"**NOT simulation-complete**: {tally}; {len(done.failures)} failure(s) "
+            f"and {len(done.missing)} missing/incomplete item(s) "
+            f"({problems} issue(s), listed under Completeness).{combined_short}"
+        )
+    elif done.state == "subset":
+        verdict = (
+            f"**Subset run — no completeness claim**: the requested checks pass "
+            f"({tally}), but {'; '.join(done.subset_reasons)}. "
+            "Simulation-complete is not asserted; only a full-suite, full-PVT "
+            "run with every row PASS can claim it."
         )
     else:
         verdict = (
-            f"**Simulation-complete**: all {len(passing)} spec lines in the suite "
-            "index pass against the ratified table, and the two-legged "
-            "untrimmed-accuracy row passes at every corner."
+            f"**Simulation-complete**: all {done.n_pass} spec lines in the suite "
+            "index pass against the ratified table at every corner, and the "
+            "two-legged untrimmed-accuracy row passes at every corner."
         )
 
     lines = [
@@ -408,6 +467,7 @@ def render_summary(
         "",
     ]
     lines += _verdict_rows(benches)
+    lines += _completeness_section(done)
     lines += ["", "## Benches and their evidence", ""]
     lines += _bench_evidence_rows(benches)
     lines += _combined_section(combined)
@@ -559,7 +619,15 @@ def main(argv: list[str] | None = None) -> int:
     git = harness_report.git_provenance(REPO_ROOT)
 
     benches = [
-        run_bench(slug, grouped[slug], extra, quiet=args.quiet)
+        run_bench(
+            slug,
+            grouped[slug],
+            extra,
+            quiet=args.quiet,
+            expected_corners=expected_corner_ids(
+                slug, smoke=args.smoke, corner_set=args.corner_set or ""
+            ),
+        )
         for slug in targets
     ]
 
@@ -569,6 +637,7 @@ def main(argv: list[str] | None = None) -> int:
         else None
     )
 
+    completeness = assess(benches, combined, slugs(), smoke=args.smoke)
     summary = render_summary(
         benches,
         started=started,
@@ -576,6 +645,7 @@ def main(argv: list[str] | None = None) -> int:
         mode="smoke" if args.smoke else "full PVT",
         wrote_evidence=not no_write,
         combined=combined,
+        completeness=completeness,
     )
     print()
     print(summary)
@@ -589,17 +659,4 @@ def main(argv: list[str] | None = None) -> int:
         path.write_text(summary)
         print(f"summary written to {path.relative_to(REPO_ROOT)}")
 
-    if any(bench.status == "error" for bench in benches):
-        return EXIT_RUN_ERROR
-    if combined is not None and combined.status in {"NO DATA", "INVALID"}:
-        return EXIT_RUN_ERROR
-    if combined is not None and combined.status == "FAIL":
-        return EXIT_SPEC_FAIL
-    if any(
-        outcome.status == "FAIL"
-        for bench in benches
-        for outcome in bench.outcomes
-        if outcome.line.gated
-    ) or any(bench.status == "check-failed" for bench in benches):
-        return EXIT_SPEC_FAIL
-    return EXIT_OK
+    return completeness.exit_code

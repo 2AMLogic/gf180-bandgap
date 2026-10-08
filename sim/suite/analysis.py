@@ -17,6 +17,7 @@ Nothing here mutates anything under ``records/``, ``netlist-snapshots/`` or
 from __future__ import annotations
 
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -94,12 +95,18 @@ class LimitOutcome:
     n_samples: int = 0
     n_violations: int = 0
     missing: bool = False
+    #: Corners the run was expected to cover (or that left any log) in which
+    #: this measurement is absent. A PASS over a partial set of corners would
+    #: be a claim about corners nobody measured, so these make it NO DATA.
+    missing_corners: tuple[str, ...] = ()
 
     @property
     def status(self) -> str:
-        if self.missing or not self.n_samples:
+        if self.n_violations:
+            return "FAIL"   # a real violation is a FAIL however complete the rest is
+        if self.missing or not self.n_samples or self.missing_corners:
             return "NO DATA"
-        return "FAIL" if self.n_violations else "PASS"
+        return "PASS"
 
 
 @dataclass
@@ -115,14 +122,30 @@ class LineOutcome:
 
     @property
     def worst(self) -> LimitOutcome | None:
-        """The limit that decides the verdict (a failing one, if any)."""
-        failing = [o for o in self.outcomes if o.status == "FAIL"]
-        pool = failing or self.outcomes
-        return pool[0] if pool else None
+        """The limit that decides the verdict (failing first, then NO DATA)."""
+        for status in ("FAIL", "NO DATA"):
+            pool = [o for o in self.outcomes if o.status == status]
+            if pool:
+                return pool[0]
+        return self.outcomes[0] if self.outcomes else None
 
 
-def _worst(limit: Limit, samples: dict[str, dict[str, float]]) -> LimitOutcome:
+def _worst(
+    limit: Limit,
+    samples: dict[str, dict[str, float]],
+    expected_corners: Iterable[str] | None = None,
+) -> LimitOutcome:
     outcome = LimitOutcome(limit=limit)
+    # Every corner that is expected (manifest grid) or left a log at all must
+    # carry the measurement; otherwise the "worst" is only the worst of some.
+    everywhere = set(samples) | set(expected_corners or ())
+    outcome.missing_corners = tuple(
+        sorted(
+            corner_id
+            for corner_id in everywhere
+            if limit.measurement not in samples.get(corner_id, {})
+        )
+    )
     values = [
         (corner_id, values[limit.measurement])
         for corner_id, values in sorted(samples.items())
@@ -142,13 +165,23 @@ def _worst(limit: Limit, samples: dict[str, dict[str, float]]) -> LimitOutcome:
     return outcome
 
 
-def evaluate_line(line: SpecLine, samples: dict[str, dict[str, float]]) -> LineOutcome:
-    """Evaluate one spec line against one run's per-corner measurements."""
+def evaluate_line(
+    line: SpecLine,
+    samples: dict[str, dict[str, float]],
+    expected_corners: Iterable[str] | None = None,
+) -> LineOutcome:
+    """Evaluate one spec line against one run's per-corner measurements.
+
+    ``expected_corners`` is the corner-id grid the run was supposed to cover
+    (from the bench manifest and the suite's overrides); ``None`` means
+    unknown, in which case coverage is judged against the corners that left a
+    log.
+    """
     result = LineOutcome(line=line, n_corners=len(samples))
     if not line.gated:
         result.status = "PENDING"
         return result
-    result.outcomes = [_worst(limit, samples) for limit in line.limits]
+    result.outcomes = [_worst(limit, samples, expected_corners) for limit in line.limits]
     statuses = {outcome.status for outcome in result.outcomes}
     if "FAIL" in statuses:
         result.status = "FAIL"
