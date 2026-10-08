@@ -19,7 +19,22 @@ DEFAULT_TIMEOUT_S = 300
 
 # `print` output for a length-1 vector: "m_vout = 6.9043645202e-01"
 _MEAS_RE = re.compile(r"^\s*m_(\w+)\s*=\s*([-+]?[0-9.]+(?:[eE][-+]?[0-9]+)?)\s*$")
-_ERROR_RE = re.compile(r"^\s*(?:Error|ERROR|Fatal|fatal error|doAnalyses:)", re.MULTILINE)
+#: A simulator error diagnostic. Anchored at the start of a line so ngspice's
+#: benign chatter -- ``Warning: Dynamic gmin stepping failed`` (a warning: the
+#: solver falls back to source stepping and converges), ``Note: ...`` -- does
+#: not match. Checked against every committed ``sim/*/corners/**/*.log``: none
+#: of the accepted evidence logs carries a line this pattern matches.
+_ERROR_RE = re.compile(
+    r"^\s*(?:Error|ERROR|Fatal|fatal error|doAnalyses:|run simulation\(s\) aborted)",
+    re.MULTILINE,
+)
+
+#: First line of the trailer :func:`run_point` appends to the raw log of any
+#: point it did not accept (``status != "ok"``), *after* ngspice's own output,
+#: which is preserved verbatim above it. Downstream readers of the raw logs
+#: (``sim/suite/analysis.py``) key on this so an invalid point's numbers can
+#: never feed a PASS verdict. Keep in sync with ``suite.analysis``.
+INVALID_POINT_MARKER = "*** sim/harness: INVALID POINT"
 
 
 class NgspiceMissing(RuntimeError):
@@ -96,12 +111,30 @@ def compose_deck(tb: Testbench, pdk: Pdk, point: PvtPoint) -> str:
         lines.append(f"  let m_{name} = {expr}")
     for name in tb.measure:
         lines.append(f"  print m_{name}")
-    lines += [".endc", ".end", ""]
+    # Explicit successful termination (see run_point's termination policy):
+    # with `quit` as the last control command, a deck that ran to completion
+    # exits 0, so any other exit status means ngspice never got here.
+    lines += ["  quit", ".endc", ".end", ""]
     return "\n".join(lines)
 
 
 @dataclass
 class PointResult:
+    """Outcome of one PVT point.
+
+    ``status`` is the *simulation-validity* verdict, kept separate from the
+    spec-limit verdict (``report.evaluate_checks``, which only ever looks at
+    ``ok`` points):
+
+    - ``"ok"``     -- ngspice exited 0, printed no error diagnostic, and every
+      requested measurement parsed. The only status whose numbers count.
+    - ``"failed"`` -- ngspice ran to an exit but the run is not valid evidence:
+      a non-zero exit, an error diagnostic in the log, or a missing
+      measurement. Any measurements that did parse are kept for investigation.
+    - ``"error"``  -- the process did not terminate normally: timeout, or
+      killed by a signal.
+    """
+
     point: PvtPoint
     status: str                                   # "ok" | "failed" | "error"
     measurements: dict[str, float] = field(default_factory=dict)
@@ -110,6 +143,8 @@ class PointResult:
     deck: str = ""
     log: str = ""
     message: str = ""
+    returncode: int | None = None                 # None: no exit status (timeout)
+    diagnostic: str = ""                          # first simulator error line, if any
 
     def as_dict(self) -> dict:
         record = self.point.as_dict()
@@ -120,10 +155,13 @@ class PointResult:
                 "seconds": round(self.seconds, 3),
                 "deck": self.deck,
                 "log": self.log,
+                "returncode": self.returncode,
             }
         )
         if self.missing:
             record["missing_measurements"] = self.missing
+        if self.diagnostic:
+            record["diagnostic"] = self.diagnostic
         if self.message:
             record["message"] = self.message
         return record
@@ -141,6 +179,64 @@ def parse_measurements(text: str) -> dict[str, float]:
     return found
 
 
+def first_diagnostic(text: str) -> str:
+    """The first simulator error line in ``text``, stripped, or ``""``."""
+    for line in text.splitlines():
+        if _ERROR_RE.match(line):
+            return line.strip()
+    return ""
+
+
+def classify_point(
+    output: str,
+    returncode: int,
+    measure_names: list[str],
+) -> tuple[str, dict[str, float], list[str], str, str]:
+    """Apply the termination/diagnostic policy to one finished ngspice run.
+
+    Returns ``(status, measurements, missing, diagnostic, message)``. Every
+    rule is independent of whether the measurements parsed: numbers printed
+    before (or despite) a simulator error are not evidence.
+    """
+    measurements = parse_measurements(output)
+    missing = [name for name in measure_names if name not in measurements]
+    diagnostic = first_diagnostic(output)
+
+    if returncode < 0:
+        reason = f"ngspice terminated by signal {-returncode}"
+        return "error", measurements, missing, diagnostic, (
+            f"{reason}: {diagnostic}" if diagnostic else reason
+        )
+
+    reasons: list[str] = []
+    if diagnostic:
+        reasons.append(f"simulator error: {diagnostic}")
+    if returncode != 0:
+        reasons.append(f"ngspice exit {returncode}")
+    if missing:
+        reasons.append("missing " + ", ".join(f"m_{name}" for name in missing))
+    if not reasons:
+        return "ok", measurements, missing, diagnostic, ""
+    return "failed", measurements, missing, diagnostic, "; ".join(reasons)
+
+
+def _invalid_trailer(status: str, message: str, returncode: int | None) -> str:
+    exit_text = "none (no exit status)" if returncode is None else str(returncode)
+    return (
+        f"\n{INVALID_POINT_MARKER} -- status={status} ***\n"
+        f"*** exit status: {exit_text}\n"
+        f"*** reason: {message}\n"
+    )
+
+
+def _as_text(data) -> str:
+    if data is None:
+        return ""
+    if isinstance(data, bytes):
+        return data.decode(errors="replace")
+    return data
+
+
 def run_point(
     tb: Testbench,
     pdk: Pdk,
@@ -156,6 +252,17 @@ def run_point(
     ``<corner-id>.log``; that is the ``sim/<slug>/corners/<record-id>/``
     directory from ``sim/README.md``. It defaults to ``workdir`` so a
     throwaway run does not touch the evidence tree.
+
+    Termination policy (ngspice batch mode, ``ngspice -b``; documented in
+    ``sim/harness/README.md``): the generated control block ends in an
+    explicit ``quit``, so a run that reaches the end of its analyses exits 0.
+    A point is ``ok`` only if **all** of these hold -- the exit status is 0,
+    the log carries no simulator error diagnostic, and every requested
+    measurement parsed. A timeout or a signal-terminated process is
+    ``error``; anything else short of ``ok`` is ``failed``. The raw log is
+    always written, with any parsed measurements and the first diagnostic
+    kept on the result; a non-``ok`` point's log gets a harness trailer
+    (``INVALID_POINT_MARKER``) appended after ngspice's own output.
     """
     workdir.mkdir(parents=True, exist_ok=True)
     log_dir = workdir if log_dir is None else log_dir
@@ -174,50 +281,52 @@ def run_point(
             cwd=workdir,
             check=False,
         )
-        output = proc.stdout + "\n" + proc.stderr
-        returncode = proc.returncode
     except FileNotFoundError as exc:
         raise NgspiceMissing(str(exc)) from exc
-    except subprocess.TimeoutExpired:
+    except subprocess.TimeoutExpired as exc:
         elapsed = time.monotonic() - started
-        log_path.write_text(f"TIMEOUT after {timeout_s}s\n")
+        partial = _as_text(exc.stdout) + "\n" + _as_text(exc.stderr)
+        measurements = parse_measurements(partial)
+        diagnostic = first_diagnostic(partial)
+        message = f"ngspice timed out after {timeout_s}s"
+        log_path.write_text(
+            partial
+            + f"\nTIMEOUT after {timeout_s}s\n"
+            + _invalid_trailer("error", message, None)
+        )
         return PointResult(
             point=point,
             status="error",
+            measurements=measurements,
+            missing=[name for name in tb.measure if name not in measurements],
             seconds=elapsed,
             deck=deck_path.name,
             log=log_path.name,
-            message=f"ngspice timed out after {timeout_s}s",
+            message=message,
+            returncode=None,
+            diagnostic=diagnostic,
         )
     elapsed = time.monotonic() - started
+    output = proc.stdout + "\n" + proc.stderr
+
+    status, measurements, missing, diagnostic, message = classify_point(
+        output, proc.returncode, list(tb.measure)
+    )
+    if status != "ok":
+        output += _invalid_trailer(status, message, proc.returncode)
     log_path.write_text(output)
-
-    measurements = parse_measurements(output)
-    missing = [name for name in tb.measure if name not in measurements]
-
-    if missing:
-        errors = "; ".join(_ERROR_RE.findall(output)[:3])
-        first_error = next(
-            (line.strip() for line in output.splitlines() if _ERROR_RE.match(line)), ""
-        )
-        return PointResult(
-            point=point,
-            status="failed",
-            measurements=measurements,
-            missing=missing,
-            seconds=elapsed,
-            deck=deck_path.name,
-            log=log_path.name,
-            message=first_error or errors or f"ngspice exit {returncode}, no measurements parsed",
-        )
 
     return PointResult(
         point=point,
-        status="ok",
+        status=status,
         measurements=measurements,
+        missing=missing,
         seconds=elapsed,
         deck=deck_path.name,
         log=log_path.name,
+        message=message,
+        returncode=proc.returncode,
+        diagnostic=diagnostic,
     )
 
 

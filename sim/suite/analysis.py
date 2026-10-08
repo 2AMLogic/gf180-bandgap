@@ -31,6 +31,13 @@ CORNER_ID_RE = re.compile(r"^(?P<process>.+)_(?P<temp>-?\d+(?:\.\d+)?)c_(?P<supp
 #: ``print`` output for a length-1 vector: "m_vref = 1.2291153728e+00".
 MEASUREMENT_RE = re.compile(r"^\s*m_(\w+)\s*=\s*([-+]?[0-9.]+(?:[eE][-+]?[0-9]+)?)\s*$")
 
+#: First line of the trailer the PVT runner appends to the raw log of a point
+#: it did not accept (non-zero exit, simulator error diagnostic, missing
+#: measurement, timeout, signal). Mirrors ``harness.runner.INVALID_POINT_MARKER``
+#: (a test pins the two together); duplicated so this module stays importable
+#: without the harness on ``sys.path``.
+INVALID_POINT_MARKER = "*** sim/harness: INVALID POINT"
+
 #: Ratified box-method temperature span, -40..125 degC.
 BOX_SPAN_C = 165.0
 
@@ -72,13 +79,24 @@ def parse_log(text: str) -> dict[str, float]:
     return found
 
 
+def log_is_invalid(text: str) -> bool:
+    """Did the runner reject this point (see ``INVALID_POINT_MARKER``)?"""
+    return any(line.startswith(INVALID_POINT_MARKER) for line in text.splitlines())
+
+
 def read_corner_logs(corners_dir: Path) -> dict[str, dict[str, float]]:
-    """``{corner-id: {measurement: value}}`` for one record's raw logs."""
+    """``{corner-id: {measurement: value}}`` for one record's raw logs.
+
+    A log the runner flagged invalid still appears (so the corner is visibly
+    present) but contributes **no** measurements: numbers ngspice printed
+    alongside a simulator error are not evidence and must not reach a verdict.
+    """
     samples: dict[str, dict[str, float]] = {}
     if not corners_dir.is_dir():
         return samples
     for log in sorted(corners_dir.glob("*.log")):
-        samples[log.stem] = parse_log(log.read_text(errors="replace"))
+        text = log.read_text(errors="replace")
+        samples[log.stem] = {} if log_is_invalid(text) else parse_log(text)
     return samples
 
 

@@ -230,6 +230,46 @@ Exit codes: `0` pass · `1` a check failed · `2` a simulation failed or did not
 converge · `3` environment problem (no ngspice, no PDK, bad manifest,
 unjustified PVT subset).
 
+### Simulation validity vs spec-limit failure
+
+A point's numbers count only if the simulation itself is valid. That is
+decided **before**, and independently of, the `checks` above:
+
+| Point status | When | Counted? |
+|---|---|---|
+| `ok` | ngspice exited `0` **and** the log has no simulator error diagnostic **and** every `measure` entry parsed | yes |
+| `failed` | non-zero exit, **or** an error diagnostic anywhere in the log, **or** a missing measurement — each alone is enough | no |
+| `error` | the process did not terminate normally: timeout, or killed by a signal | no |
+
+The three `failed` conditions are checked independently: numbers ngspice
+printed before (or despite) an `Error:` / `doAnalyses:` / `Fatal` /
+`run simulation(s) aborted` line are not evidence, even when every requested
+scalar is present. `Warning:` and `Note:` lines (e.g. `Warning: Dynamic gmin
+stepping failed`, after which ngspice converges by source stepping) do not
+reject a run.
+
+**ngspice batch-mode termination policy.** The harness runs `ngspice -b` and
+ends every generated `.control` block with an explicit `quit`, after the
+`print` lines. A run that reaches the end of its analyses therefore exits `0`
+(verified on ngspice-42: the log ends `ngspice-42 done`, exit status 0); any
+other exit status means ngspice never reached `quit`, and the point is
+rejected. No non-zero exit is treated as benign.
+
+A rejected point is never silently dropped:
+
+- its raw log is still written to `corners/<record-id>/<corner-id>.log`,
+  ngspice's output verbatim, followed by a harness trailer beginning
+  `*** sim/harness: INVALID POINT` that states the status, exit status and
+  reason (a timeout also keeps whatever output arrived before the kill);
+- whatever measurements did parse, the first diagnostic line, the exit status
+  and the missing measurement names are kept on the result (and in the record's
+  per-corner row, which reads `ERROR — <reason>`);
+- it is excluded from the spread summary and from `min`/`max` checks, so it
+  cannot pass (or fail) a spec limit. Any non-`ok` point makes the record
+  status `ERROR` (exit `2`), distinct from a spec-limit `FAIL` (exit `1`);
+- `sim/run_suite.py` reads the raw logs directly; a log carrying the
+  `INVALID POINT` trailer contributes no measurements to any spec-line verdict.
+
 Generated decks land in `sim/.work/<experiment-slug>/<record-id>/` and are
 git-ignored, so a failing corner can be reproduced by hand with
 `ngspice -b sim/.work/<slug>/<record-id>/<corner-id>.spice`.

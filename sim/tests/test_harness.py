@@ -559,6 +559,203 @@ class RunDeviceCornerTests(unittest.TestCase):
                 self.assertNotIn('"ngspice", "-b"', source)
 
 
+class RunPointIntegrityTests(unittest.TestCase):
+    """run_point's simulation-validity policy (#216).
+
+    ngspice is a shell stub on ``PATH``: each test scripts one termination
+    behaviour and asserts what run_point makes of it. A point is ``ok`` only on
+    exit 0, no simulator error diagnostic, and every measurement present --
+    the three are checked independently, so numbers printed next to an error
+    are never accepted.
+    """
+
+    MEASURE_OK = 'echo "m_vout = 1.2000000000e+00"\necho "m_iq = 4.5e-05"\n'
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        (self.root / "tb").mkdir()
+        (self.root / "tb" / "x.spice").write_text("v1 out 0 dc {vdd_val}\n")
+        (self.root / "tb" / "tb.json").write_text(
+            json.dumps(
+                {
+                    "name": "x",
+                    "netlist": "x.spice",
+                    "measure": {"vout": "v(out)", "iq": "-i(v1)"},
+                    "checks": {"vout": {"min": 1.0, "max": 1.5}},
+                }
+            )
+        )
+        self.tb = testbench.load(self.root / "tb")
+        self.pdk = fake_pdk(self.root / "gf180mcuD")
+        self.points = corners.build_grid(
+            corners.resolve_corners(["tt", "ss"]), (27,), [3.3]
+        )
+        self.point = self.points[0]
+        self.work = self.root / "work"
+        self.logs = self.root / "corners"
+
+    def stub_ngspice(self, body: str) -> None:
+        bindir = self.root / "bin"
+        bindir.mkdir(exist_ok=True)
+        exe = bindir / "ngspice"
+        exe.write_text("#!/bin/sh\n" + body, encoding="utf-8")
+        exe.chmod(exe.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+        previous = os.environ.get("PATH", "")
+        os.environ["PATH"] = f"{bindir}{os.pathsep}{previous}"
+        self.addCleanup(os.environ.__setitem__, "PATH", previous)
+
+    def run_one(self, point=None, **kwargs) -> runner.PointResult:
+        return runner.run_point(
+            self.tb, self.pdk, point or self.point, self.work, log_dir=self.logs, **kwargs
+        )
+
+    def log_text(self, result: runner.PointResult) -> str:
+        return (self.logs / result.log).read_text()
+
+    # -- the generated deck ------------------------------------------------
+
+    def test_control_block_ends_in_an_explicit_quit(self):
+        deck = runner.compose_deck(self.tb, self.pdk, self.point)
+        control = deck[deck.index(".control"):deck.index(".endc")]
+        self.assertEqual(control.rstrip().splitlines()[-1].strip(), "quit")
+        last_print = deck.rindex("print m_")
+        self.assertLess(last_print, deck.index("  quit"))
+
+    # -- the five termination cases ---------------------------------------
+
+    def test_complete_success_is_ok(self):
+        self.stub_ngspice(self.MEASURE_OK + 'echo "Note: Simulation executed from .control section"\n')
+        result = self.run_one()
+        self.assertEqual(result.status, "ok")
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.measurements, {"vout": 1.2, "iq": 4.5e-05})
+        self.assertEqual((result.missing, result.diagnostic, result.message), ([], "", ""))
+        self.assertNotIn(runner.INVALID_POINT_MARKER, self.log_text(result))
+
+    def test_benign_warnings_do_not_reject_a_run(self):
+        # Seen in accepted evidence logs: gmin stepping falls back and converges.
+        self.stub_ngspice(
+            'echo "Warning: Dynamic gmin stepping failed"\n'
+            'echo "Warning: m=xx on .subckt line will override multiplier m hierarchy!"\n'
+            + self.MEASURE_OK
+        )
+        self.assertEqual(self.run_one().status, "ok")
+
+    def test_complete_measurements_plus_an_error_diagnostic_is_rejected(self):
+        diagnostics = [
+            "Error: no such vector out",
+            "ERROR: unknown subckt",
+            "doAnalyses: TRAN:  Timestep too small; time = 1e-09, timestep = 1e-21",
+            "run simulation(s) aborted",
+            "Fatal error: out of memory",
+        ]
+        for diag in diagnostics:
+            with self.subTest(diagnostic=diag):
+                self.stub_ngspice(f'echo "{diag}"\necho "Error: second one"\n' + self.MEASURE_OK)
+                result = self.run_one()
+                self.assertEqual(result.status, "failed")
+                self.assertEqual(result.returncode, 0)
+                # the numbers are kept for investigation, not accepted
+                self.assertEqual(result.measurements, {"vout": 1.2, "iq": 4.5e-05})
+                self.assertEqual(result.missing, [])
+                self.assertEqual(result.diagnostic, diag)
+                self.assertIn(f"simulator error: {diag}", result.message)
+                log = self.log_text(result)
+                self.assertIn(diag, log)
+                self.assertIn("m_vout = 1.2000000000e+00", log)
+                self.assertIn(runner.INVALID_POINT_MARKER, log)
+                # raw ngspice output first, harness trailer after it
+                self.assertLess(log.index("m_iq"), log.index(runner.INVALID_POINT_MARKER))
+
+    def test_nonzero_exit_is_rejected_even_with_every_measurement(self):
+        self.stub_ngspice(self.MEASURE_OK + "exit 1\n")
+        result = self.run_one()
+        self.assertEqual(result.status, "failed")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("ngspice exit 1", result.message)
+        self.assertIn("exit status: 1", self.log_text(result))
+
+    def test_partial_measurements_are_rejected_and_preserved(self):
+        self.stub_ngspice(
+            'echo "m_vout = 1.2000000000e+00"\n'
+            'echo "doAnalyses: iteration limit reached"\n'
+        )
+        result = self.run_one()
+        self.assertEqual(result.status, "failed")
+        self.assertEqual(result.measurements, {"vout": 1.2})
+        self.assertEqual(result.missing, ["iq"])
+        self.assertEqual(result.diagnostic, "doAnalyses: iteration limit reached")
+        self.assertIn("missing m_iq", result.message)
+        self.assertEqual(result.as_dict()["missing_measurements"], ["iq"])
+
+    def test_abnormal_termination_is_an_error(self):
+        self.stub_ngspice(self.MEASURE_OK + "kill -9 $$\n")
+        result = self.run_one()
+        self.assertEqual(result.status, "error")
+        self.assertEqual(result.returncode, -9)
+        self.assertIn("terminated by signal 9", result.message)
+        self.assertEqual(result.measurements, {"vout": 1.2, "iq": 4.5e-05})
+        self.assertIn(runner.INVALID_POINT_MARKER, self.log_text(result))
+
+    def test_timeout_is_an_error_and_keeps_partial_output(self):
+        # `exec` so the timeout's kill reaches the process holding the pipes.
+        self.stub_ngspice('echo "m_vout = 1.2000000000e+00"\nexec sleep 30\n')
+        result = self.run_one(timeout_s=1)
+        self.assertEqual(result.status, "error")
+        self.assertIsNone(result.returncode)
+        self.assertIn("timed out after 1s", result.message)
+        log = self.log_text(result)
+        self.assertIn("TIMEOUT after 1s", log)
+        self.assertIn(runner.INVALID_POINT_MARKER, log)
+        self.assertIn("exit status: none", log)
+        self.assertEqual(result.as_dict()["returncode"], None)
+
+    # -- downstream ---------------------------------------------------------
+
+    def test_an_invalid_point_cannot_count_toward_the_record(self):
+        self.stub_ngspice(self.MEASURE_OK)
+        good = self.run_one(self.points[0])
+        self.stub_ngspice('echo "Error: singular matrix"\n' + self.MEASURE_OK)
+        bad = self.run_one(self.points[1])
+        self.assertEqual((good.status, bad.status), ("ok", "failed"))
+
+        record = report.build_record(
+            tb=self.tb,
+            pdk=self.pdk,
+            points=self.points,
+            results=[good, bad],
+            ngspice="ngspice-test",
+            repo_root=self.root,
+            record_id="20261008-000000-abc1234",
+            started_utc="2026-10-08T00:00:00+00:00",
+            wall_seconds=0.0,
+            subset_reason="unit test",
+            git={"commit": "abc1234" * 5, "short": "abc1234", "branch": "t", "dirty": False},
+        )
+        # sim error, not a spec-limit fail, and the bad point is not counted
+        self.assertEqual(record["status"], "error")
+        self.assertEqual(record["grid"]["points_ok"], 1)
+        self.assertEqual(record["summary"]["vout"]["n"], 1)
+        self.assertEqual(record["checks"]["failures"], [])
+        bad_dict = record["points"][1]
+        self.assertEqual(bad_dict["diagnostic"], "Error: singular matrix")
+        self.assertEqual(bad_dict["log"], bad.log)
+        rendered = report.render_record(record, "x")
+        self.assertIn("ERROR — simulator error: Error: singular matrix", rendered)
+        self.assertIn("**Overall: ERROR**", rendered)
+
+        # the raw log survives and the suite's log reader withholds its numbers
+        from suite import analysis  # noqa: E402
+
+        self.assertEqual(analysis.INVALID_POINT_MARKER, runner.INVALID_POINT_MARKER)
+        samples = analysis.read_corner_logs(self.logs)
+        self.assertEqual(samples[good.point.corner_id], {"vout": 1.2, "iq": 4.5e-05})
+        self.assertIn(bad.point.corner_id, samples)
+        self.assertEqual(samples[bad.point.corner_id], {})
+
+
 class MatrixConformanceTests(unittest.TestCase):
     """sim/README.md requires the full mandated matrix, or a stated reason."""
 
