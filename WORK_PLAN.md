@@ -48,7 +48,7 @@ Issues carrying `loom:curated`.
 
 ## Proposed (Architect / Hermit)
 
-_None._
+- **#219**: sim harness: share the batch-backend guard and cap default local --jobs *(architect)*
 
 ## Epics
 
@@ -67,6 +67,6 @@ _None._
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 0 |
 | Curated | 2 |
-| Architect / Hermit proposals | 0 |
+| Architect / Hermit proposals | 1 |
 | Active epics | 3 |
 <!-- guide:plan-body:end -->
