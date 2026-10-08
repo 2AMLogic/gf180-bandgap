@@ -1,0 +1,46 @@
+* tb_pnp_array.spice -- equal-total-emitter-current effective ratio of the
+* four-unit Q2 realisation (DR-0007 Decision item 1, issue #208)
+*
+* Two grounded-base/collector diode-connected branches, each forced with the
+* SAME total emitter current Ie (the Brokaw core enforces equal emitter
+* currents in Q1 and Q2, not equal per-unit currents):
+*
+*   branch U  : ONE   pnp_05p00x05p00  carrying Ie           -> node eu
+*   branch A  : FOUR  pnp_05p00x05p00 in parallel, together
+*               carrying Ie (Ie/4 per unit by symmetry)       -> node ea
+*   branch M  : ONE   pnp_10p00x10p00 carrying Ie (the pre-DR-0007
+*               monolithic Q2; same-bench reference for lambda)  -> node em
+*
+* A_eff(array)      = exp((VBE_U - VBE_A) / VT),  VT = k(T+273.15)/q
+* A_eff(monolithic) = exp((VBE_U - VBE_M) / VT)
+*
+* PNP subckt node order is (collector base emitter); collector and base are
+* the grounded p-substrate, as in sim/device-pnp-vbe/testbench/tb_pnp_vbe.spice.
+* Zero-volt sources Vbu/Vba/Vbm sense base current.
+*
+* Ie is swept as v(ctrl) = Ie in uA (4.00 .. 7.00 step 0.01, so the design
+* point 5.07 uA and the historical 6.5 uA point are exact sweep points).
+* No supply rail exists on this bench (supply axis = "nosupply").
+*
+* Fragment: no .include/.lib/.temp/.control/.end -- the `klt sim` request
+* (sim/tools/mk_klt_device_request.py) supplies models, .temp and .meas.
+
+Vctrl ctrl 0 dc 5.07
+
+* ---- unit branch: one 5x5 carrying the full Ie ----
+Bu    0 eu I = v(ctrl) * 1e-6
+Vbu   bu 0 dc 0
+XQu   0 bu eu pnp_05p00x05p00
+
+* ---- array branch: four parallel 5x5 sharing the same total Ie ----
+Ba    0 ea I = v(ctrl) * 1e-6
+Vba   ba 0 dc 0
+XQa0  0 ba ea pnp_05p00x05p00
+XQa1  0 ba ea pnp_05p00x05p00
+XQa2  0 ba ea pnp_05p00x05p00
+XQa3  0 ba ea pnp_05p00x05p00
+
+* ---- monolithic reference: one 10x10 carrying the full Ie ----
+Bm    0 em I = v(ctrl) * 1e-6
+Vbm   bm 0 dc 0
+XQm   0 bm em pnp_10p00x10p00
