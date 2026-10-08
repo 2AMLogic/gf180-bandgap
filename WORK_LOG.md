@@ -2,6 +2,15 @@
 
 Chronological record of recently merged pull requests and closed issues, maintained by the Loom Guide role. Newest entries appear first.
 
+### 2026-10-08
+
+- **PR #218**: sim/harness: reject simulator errors even when every PVT measurement parsed
+- **Issue #216** (closed): Reject simulator error diagnostics even when all PVT measurements are present
+- **PR #217**: Suite completion must require all benches and complete gated measurements
+- **Issue #215** (closed): Suite completion must require all benches and complete gated measurements
+- **PR #213**: sim: record equal-Ie Q2 array ratio on the gf180 fleet (DR-0007 item 1)
+- **Issue #208** (closed): DR-0007: record equal-Ie Q2 array ratio on the gf180 fleet
+
 ### 2026-10-03
 
 - **PR #201**: design: Q2 as 4x unit PNP array, rescale R2, ratify DR-0007 (#87)
