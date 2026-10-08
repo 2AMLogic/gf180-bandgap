@@ -201,7 +201,7 @@ by record ID.
 | Quantity | Value | Source |
 |---|---|---|
 | PNP pair | `pnp_05p00x05p00` / 4× `pnp_05p00x05p00` (`m=4`) since #87 (was `pnp_10p00x10p00`, 4:1 drawn) | DR-0001, DR-0007; §1 of device-characterization.md |
-| Effective area ratio | ~4.0 (4.027 at 6.5 µA, `bjt_typical`, 27 °C) for the unit array; 3.634 is the *monolithic-10x10* figure (record `20260731-030932-8fb0ea6`) and is no longer this design's input (DR-0007) | #87 |
+| Effective area ratio | **4.0209** (measured, equal total Ie = 5.07 µA, `bjt_typical`, 27 °C; 4.0185–4.0281 over BJT corners × −40/27/125 °C) for the four-unit array (record `20261008-120404-44d1a83`, `device-characterization.md` §6); 3.634 is the *monolithic-10x10* figure (record `20260731-030932-8fb0ea6`) and is no longer this design's input (DR-0007). The earlier 4.027 (6.5 µA, single corner) is superseded | #87, #208, #209 |
 | ΔVBE at 10 µA, 27 °C | 33.374 mV | record `20260731-030932-8fb0ea6` |
 | ΔVBE PTAT slope | 115.13 µV/°C | record `20260731-030932-8fb0ea6` |
 | VEB(5×5) at 10 µA, 27 °C | 0.7227 V | record `20260731-030932-8fb0ea6` |
@@ -289,6 +289,29 @@ cross at equal worst-case TC. `R1_total/R2` moves from `15.28425` to
 hand-picked ratio, but what the corner-swept minimization landed on. Full
 derivation, the affine argument, and the measured full-81-point result:
 `bandgap_error_budget.md` Sec 5b.
+
+**Update (#209, DR-0007 retuning).** Both resistors move again, now from
+measured evidence rather than the first-order `λ` algebra:
+
+| | before (merged) | now | note |
+|---|---|---|---|
+| `R2` | `L = 39.275062 µm` (7113.1 Ω) | **`L = 39.195501 µm` (7098.8 Ω)** | `R2 = ΔVBE/I = 35.991 mV / 5.07 µA` from the measured array ratio 4.0209 (`R = 179.547·L + 61.382 Ω`, `W = 2 µm`, `tt`/27 °C); not a multiplier on the previous `R2` |
+| `R1` | `L = 443.4 µm` (79672.5 Ω) | **`L = 446.0 µm` (80139.3 Ω)** | re-nulled/re-centred by #147's method on the full-PVT fleet bench |
+
+Operating point: `I = ΔVBE/R2 = 35.991 mV / 7098.8 Ω = 5.07 µA` at `tt`/27 °C,
+inside the 4..7 µA window the array ratio was measured over, so the ratio
+input is justified without new characterization. The trim ladder and every
+MOS device are unchanged. `R1_total` at the default trim code 32 (R1 + 17890.1 Ω of ladder) moves
+97562.8 → 98029.4 Ω and `R1_total/R2` 13.716 → 13.809 (the merged DUT's
+`R2` was already 7113.1 Ω, so the earlier-quoted 14.81259 is the pre-DR-0007
+`R2 = 6586.5 Ω` figure; an outcome of the retune, not a target). Measured result
+on the final DUT (27 process × supply points, internal 1 °C sweep, fleet job
+`klt-sim-92f9de450c8e`, record `20261008-203951-300853e`): worst box TC
+**44.66 ppm/°C** (`bjt_ff`, 3.63 V), `Vref` **1.18859 … 1.21120 V** over all
+points, `tt`/27 °C/3.30 V `Vref = 1.20198 V`. The merged DUT before the retune
+measured 54.39 ppm/°C worst (record `20261008-203947-300853e`) — over the
+ratified limit — so the retune was required, not cosmetic. Derivation and
+the step table: `design/bandgap_error_budget.md` Sec 5f.
 
 ### Mirror (core) and amp devices
 
