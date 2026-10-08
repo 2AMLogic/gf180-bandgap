@@ -77,8 +77,12 @@ merged the four-unit Q2 schematic and first-order R2 rescaling. The committed
 GDS and LVS reference still use the prior R2 sizing; their clean reports do
 not certify the amended schematic. Corner-covered schematic measurements
 and sizing ([#203](https://github.com/2AMLogic/gf180-bandgap/issues/203))
-remain blocked on the fleet simulation prerequisite
-[klayout-tools#2733](https://github.com/2AMLogic/klayout-tools/issues/2733).
+remain blocked pending successful fleet verification of the actual gf180mcu
+request. [klayout-tools#2733](https://github.com/2AMLogic/klayout-tools/issues/2733)
+closed on 2026-10-08 with failed-job diagnostics and troubleshooting guidance;
+its acceptance does not prove the historical model-bin failure resolved.
+Runner compatibility and provenance remain tracked by open
+[klayout-tools#2719](https://github.com/2AMLogic/klayout-tools/issues/2719).
 Layout regeneration and pinned extracted verification
 ([#204](https://github.com/2AMLogic/gf180-bandgap/issues/204)) follow that
 work, tracked by [#202](https://github.com/2AMLogic/gf180-bandgap/issues/202)
