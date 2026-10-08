@@ -306,10 +306,10 @@ MOS device are unchanged. `R1_total` at the default trim code 32 (R1 + 17890.1 �
 `R2` was already 7113.1 Ω, so the earlier-quoted 14.81259 is the pre-DR-0007
 `R2 = 6586.5 Ω` figure; an outcome of the retune, not a target). Measured result
 on the final DUT (27 process × supply points, internal 1 °C sweep, fleet job
-`klt-sim-92f9de450c8e`, record `20261008-203951-300853e`): worst box TC
+`klt-sim-92f9de450c8e`, record `20261008-204019-aeaca90`): worst box TC
 **44.66 ppm/°C** (`bjt_ff`, 3.63 V), `Vref` **1.18859 … 1.21120 V** over all
 points, `tt`/27 °C/3.30 V `Vref = 1.20198 V`. The merged DUT before the retune
-measured 54.39 ppm/°C worst (record `20261008-203947-300853e`) — over the
+measured 54.39 ppm/°C worst (record `20261008-204016-aeaca90`) — over the
 ratified limit — so the retune was required, not cosmetic. Derivation and
 the step table: `design/bandgap_error_budget.md` Sec 5f.
 

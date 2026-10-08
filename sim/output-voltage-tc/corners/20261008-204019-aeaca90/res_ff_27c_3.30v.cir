@@ -1,0 +1,54 @@
+* klt sim -- generated corner deck, do not edit
+.lib /opt/pdk/gf180mcuD/libs.tech/ngspice/sm141064.ngspice typical
+.lib /opt/pdk/gf180mcuD/libs.tech/ngspice/sm141064.ngspice res_ff
+.lib /opt/pdk/gf180mcuD/libs.tech/ngspice/sm141064.ngspice bjt_typical
+.lib /opt/pdk/gf180mcuD/libs.tech/ngspice/sm141064.ngspice diode_typical
+.lib /opt/pdk/gf180mcuD/libs.tech/ngspice/sm141064.ngspice moscap_typical
+.lib /opt/pdk/gf180mcuD/libs.tech/ngspice/sm141064.ngspice mimcap_typical
+.include /var/tmp/eda-job-klt-sim-92f9de450c8e/inputs/netlist.cir
+.temp 27
+.meas dc vref_m40 FIND v(vref) AT=-40
+.meas dc vref_27 FIND v(vref) AT=27
+.meas dc vref_125 FIND v(vref) AT=125
+.meas dc vref_box_max MAX v(vref)
+.meas dc vref_box_min MIN v(vref)
+.meas dc vref_tm40 FIND v(vref) AT=-40
+.meas dc vref_tm35 FIND v(vref) AT=-35
+.meas dc vref_tm30 FIND v(vref) AT=-30
+.meas dc vref_tm25 FIND v(vref) AT=-25
+.meas dc vref_tm20 FIND v(vref) AT=-20
+.meas dc vref_tm15 FIND v(vref) AT=-15
+.meas dc vref_tm10 FIND v(vref) AT=-10
+.meas dc vref_tm5 FIND v(vref) AT=-5
+.meas dc vref_t0 FIND v(vref) AT=0
+.meas dc vref_t5 FIND v(vref) AT=5
+.meas dc vref_t10 FIND v(vref) AT=10
+.meas dc vref_t15 FIND v(vref) AT=15
+.meas dc vref_t20 FIND v(vref) AT=20
+.meas dc vref_t25 FIND v(vref) AT=25
+.meas dc vref_t30 FIND v(vref) AT=30
+.meas dc vref_t35 FIND v(vref) AT=35
+.meas dc vref_t40 FIND v(vref) AT=40
+.meas dc vref_t45 FIND v(vref) AT=45
+.meas dc vref_t50 FIND v(vref) AT=50
+.meas dc vref_t55 FIND v(vref) AT=55
+.meas dc vref_t60 FIND v(vref) AT=60
+.meas dc vref_t65 FIND v(vref) AT=65
+.meas dc vref_t70 FIND v(vref) AT=70
+.meas dc vref_t75 FIND v(vref) AT=75
+.meas dc vref_t80 FIND v(vref) AT=80
+.meas dc vref_t85 FIND v(vref) AT=85
+.meas dc vref_t90 FIND v(vref) AT=90
+.meas dc vref_t95 FIND v(vref) AT=95
+.meas dc vref_t100 FIND v(vref) AT=100
+.meas dc vref_t105 FIND v(vref) AT=105
+.meas dc vref_t110 FIND v(vref) AT=110
+.meas dc vref_t115 FIND v(vref) AT=115
+.meas dc vref_t120 FIND v(vref) AT=120
+.meas dc vref_t125 FIND v(vref) AT=125
+.control
+alter vsup=3.3
+dc temp -40 125 1
+quit
+.endc
+.end
