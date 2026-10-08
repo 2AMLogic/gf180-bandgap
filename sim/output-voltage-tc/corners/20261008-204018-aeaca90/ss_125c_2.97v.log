@@ -1,0 +1,71 @@
+* record-id : 20261008-204018-aeaca90
+* klt corner : ss/2.970V/27C (status pass); outer-axis point 125 C of the internal -40..125 C sweep
+
+Note: No compatibility mode selected!
+
+
+Circuit: * klt sim -- generated corner deck, do not edit
+
+Warning : IC on non-existent node - xdut.xx1.casc, ignored
+   Please check line .ic v(xdut.fb)=1.0 v(xdut.sns1)=0.6 v(xdut.sns2)=0.6 v(vref)=1.2 v(xdut.ibias)=0.6 v(xdut.xx1.casc)=1.8
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+
+No. of Data Rows : 166
+
+  Measurements for DC Analysis
+
+vref_m40            =  1.21186e+00
+vref_27             =  1.21517e+00
+vref_125            =  1.21526e+00
+vref_box_max        =  1.21577e+00 at=  7.50000e+01
+vref_box_min        =  1.21185e+00 at=  -3.90000e+01
+vref_tm40           =  1.21186e+00
+vref_tm35           =  1.21222e+00
+vref_tm30           =  1.21257e+00
+vref_tm25           =  1.21289e+00
+vref_tm20           =  1.21320e+00
+vref_tm15           =  1.21348e+00
+vref_tm10           =  1.21375e+00
+vref_tm5            =  1.21400e+00
+vref_t0             =  1.21422e+00
+vref_t5             =  1.21444e+00
+vref_t10            =  1.21463e+00
+vref_t15            =  1.21481e+00
+vref_t20            =  1.21497e+00
+vref_t25            =  1.21512e+00
+vref_t30            =  1.21525e+00
+vref_t35            =  1.21536e+00
+vref_t40            =  1.21546e+00
+vref_t45            =  1.21555e+00
+vref_t50            =  1.21562e+00
+vref_t55            =  1.21567e+00
+vref_t60            =  1.21572e+00
+vref_t65            =  1.21575e+00
+vref_t70            =  1.21577e+00
+vref_t75            =  1.21577e+00
+vref_t80            =  1.21577e+00
+vref_t85            =  1.21575e+00
+vref_t90            =  1.21572e+00
+vref_t95            =  1.21568e+00
+vref_t100           =  1.21563e+00
+vref_t105           =  1.21557e+00
+vref_t110           =  1.21551e+00
+vref_t115           =  1.21543e+00
+vref_t120           =  1.21535e+00
+vref_t125           =  1.21526e+00
+
+ngspice-46 done
+
+* ---- derived by sim/tools/tc_ingest.py from the fleet .meas values in this log ----
+m_vref = 1.2152600000e+00
+m_tc_ppm = 1.9550824788e+01
+m_vref_box_max = 1.2157700000e+00
+m_vref_box_min = 1.2118500000e+00
+m_vref_m40 = 1.2118600000e+00
+m_vref_27 = 1.2151700000e+00
+m_vref_125 = 1.2152600000e+00

@@ -170,8 +170,8 @@ W = 1 µm/5 µm points) — the actual drawn widths, per
 
 | Element | Drawn geometry | Squares | Role |
 |---|---|---|---|
-| R2 | W=2 µm, L=18 µm | 9 | PTAT-setting resistor |
-| R1 | W=2 µm, L=230.180 µm | 115.09 | Output-branch CTAT/PTAT summing resistor (shrunk from 280 µm by #14 to land on `tn0`) |
+| R2 | W=2 µm, L=18 µm (historic; **canonical schematic now L=39.195501 µm, #209**) | 9 | PTAT-setting resistor |
+| R1 | W=2 µm, L=230.180 µm (historic; **canonical schematic now L=446.0 µm, #209**) | 115.09 | Output-branch CTAT/PTAT summing resistor (shrunk from 280 µm by #14 to land on `tn0`) |
 | Trim unit segment (×63) | W=2 µm, L=1.215 µm each | 0.6075 each | Binary-weighted trim ladder, `tn0 → vref` |
 
 **Matching technique**: R1 and R2 are the same flavor and same unit
@@ -273,12 +273,13 @@ from four unit devices "still measures 3.634, not 4". That was wrong. The
 currents for those two different geometries are in ratio 3.671, not 4.000.
 Four parallel instances of the *same* unit have exactly 4x one unit's `is`
 by construction, so the drawn array's ratio is the unit-array ratio
-(~4.0), not 3.634. (An effective ratio of 4.027 was seen at one operating
-point, 6.5 uA, where the Brokaw core's equal-emitter-current condition adds
-~1 %; that figure is an unrecorded local single-corner measurement taken
-while preparing the DR-0007 change, with no `sim/` record behind it. The
-corner-covered ratio re-measurement owed by DR-0007 Decision item 1 is what
-will record it.) The schematic
+(~4.0), not 3.634. The Brokaw core's equal-emitter-current condition adds
+a small base-current excess: the corner-covered measurement DR-0007
+Decision item 1 owed is now recorded (`sim/device-pnp-array/records/
+20261008-120404-44d1a83`, `design/device-characterization.md` §6) —
+**4.0209** at the design current (5.07 uA, `bjt_typical`, 27 C), 4.0185–4.0281
+over BJT corners and −40/27/125 C. The earlier 4.027 (6.5 uA, one corner, no
+record) is superseded and the former "unrecorded" statement is corrected. The schematic
 used to model Q2 as the monolithic device, so it and the layout differed by
 +8.0 % in dVBE; neither DRC nor LVS can see that, because the LVS
 reference is derived from the drawn layout.
@@ -289,7 +290,10 @@ this layout draws, and `R2` was rescaled for the larger ratio. The layout's
 array construction is unchanged by this decision; layout cannot and need
 not "fix" the ratio. The one layout consequence is `R2`'s drawn length:
 `plan.py` reads it from the schematic, so DR-0007's "no layout change"
-expectation does not fully hold. The committed `bandgap_top.gds` and
+expectation does not fully hold. #209 re-derived the canonical sizing from
+the measured ratio: `R2` is now `L = 39.195501 µm` and `R1` `L = 446.0 µm`
+(schematic/netlist/`sim/dut`; `design/bandgap_error_budget.md` §5f), so the
+drawn lengths change again at regeneration. The committed `bandgap_top.gds` and
 `layout/lvs/bandgap_top.ref.spice` still carry the pre-DR-0007 `R2` length
 until they are regenerated together with re-run DRC/LVS evidence on the
 pinned klt (the signoff pins in `signoff/pinned-inputs.json` cover the GDS);

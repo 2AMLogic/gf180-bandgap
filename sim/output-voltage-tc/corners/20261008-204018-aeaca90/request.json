@@ -1,0 +1,326 @@
+{
+  "netlist": "body.spice",
+  "engine": "ngspice",
+  "models": {
+    "pdk": "gf180mcuD",
+    "lib": "libs.tech/ngspice/sm141064.ngspice"
+  },
+  "corners": {
+    "process": [
+      {
+        "name": "tt",
+        "sections": [
+          "typical",
+          "res_typical",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ]
+      },
+      {
+        "name": "ff",
+        "sections": [
+          "ff",
+          "res_ff",
+          "bjt_ff",
+          "diode_ff",
+          "moscap_ff",
+          "mimcap_ff"
+        ]
+      },
+      {
+        "name": "ss",
+        "sections": [
+          "ss",
+          "res_ss",
+          "bjt_ss",
+          "diode_ss",
+          "moscap_ss",
+          "mimcap_ss"
+        ]
+      },
+      {
+        "name": "fs",
+        "sections": [
+          "fs",
+          "res_typical",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ]
+      },
+      {
+        "name": "sf",
+        "sections": [
+          "sf",
+          "res_typical",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ]
+      },
+      {
+        "name": "res_ff",
+        "sections": [
+          "typical",
+          "res_ff",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ]
+      },
+      {
+        "name": "res_ss",
+        "sections": [
+          "typical",
+          "res_ss",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ]
+      },
+      {
+        "name": "bjt_ff",
+        "sections": [
+          "typical",
+          "res_typical",
+          "bjt_ff",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ]
+      },
+      {
+        "name": "bjt_ss",
+        "sections": [
+          "typical",
+          "res_typical",
+          "bjt_ss",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ]
+      }
+    ],
+    "supply_v": {
+      "vsup": [
+        2.97,
+        3.3,
+        3.63
+      ]
+    },
+    "temperature_c": [
+      27
+    ]
+  },
+  "analysis": {
+    "kind": "dc",
+    "args": "temp -40 125 1"
+  },
+  "measurements": [
+    {
+      "name": "vref_m40",
+      "spice": ".meas dc vref_m40 FIND v(vref) AT=-40",
+      "unit": "V"
+    },
+    {
+      "name": "vref_27",
+      "spice": ".meas dc vref_27 FIND v(vref) AT=27",
+      "unit": "V"
+    },
+    {
+      "name": "vref_125",
+      "spice": ".meas dc vref_125 FIND v(vref) AT=125",
+      "unit": "V"
+    },
+    {
+      "name": "vref_box_max",
+      "spice": ".meas dc vref_box_max MAX v(vref)",
+      "unit": "V"
+    },
+    {
+      "name": "vref_box_min",
+      "spice": ".meas dc vref_box_min MIN v(vref)",
+      "unit": "V"
+    },
+    {
+      "name": "vref_tm40",
+      "spice": ".meas dc vref_tm40 FIND v(vref) AT=-40",
+      "unit": "V"
+    },
+    {
+      "name": "vref_tm35",
+      "spice": ".meas dc vref_tm35 FIND v(vref) AT=-35",
+      "unit": "V"
+    },
+    {
+      "name": "vref_tm30",
+      "spice": ".meas dc vref_tm30 FIND v(vref) AT=-30",
+      "unit": "V"
+    },
+    {
+      "name": "vref_tm25",
+      "spice": ".meas dc vref_tm25 FIND v(vref) AT=-25",
+      "unit": "V"
+    },
+    {
+      "name": "vref_tm20",
+      "spice": ".meas dc vref_tm20 FIND v(vref) AT=-20",
+      "unit": "V"
+    },
+    {
+      "name": "vref_tm15",
+      "spice": ".meas dc vref_tm15 FIND v(vref) AT=-15",
+      "unit": "V"
+    },
+    {
+      "name": "vref_tm10",
+      "spice": ".meas dc vref_tm10 FIND v(vref) AT=-10",
+      "unit": "V"
+    },
+    {
+      "name": "vref_tm5",
+      "spice": ".meas dc vref_tm5 FIND v(vref) AT=-5",
+      "unit": "V"
+    },
+    {
+      "name": "vref_t0",
+      "spice": ".meas dc vref_t0 FIND v(vref) AT=0",
+      "unit": "V"
+    },
+    {
+      "name": "vref_t5",
+      "spice": ".meas dc vref_t5 FIND v(vref) AT=5",
+      "unit": "V"
+    },
+    {
+      "name": "vref_t10",
+      "spice": ".meas dc vref_t10 FIND v(vref) AT=10",
+      "unit": "V"
+    },
+    {
+      "name": "vref_t15",
+      "spice": ".meas dc vref_t15 FIND v(vref) AT=15",
+      "unit": "V"
+    },
+    {
+      "name": "vref_t20",
+      "spice": ".meas dc vref_t20 FIND v(vref) AT=20",
+      "unit": "V"
+    },
+    {
+      "name": "vref_t25",
+      "spice": ".meas dc vref_t25 FIND v(vref) AT=25",
+      "unit": "V"
+    },
+    {
+      "name": "vref_t30",
+      "spice": ".meas dc vref_t30 FIND v(vref) AT=30",
+      "unit": "V"
+    },
+    {
+      "name": "vref_t35",
+      "spice": ".meas dc vref_t35 FIND v(vref) AT=35",
+      "unit": "V"
+    },
+    {
+      "name": "vref_t40",
+      "spice": ".meas dc vref_t40 FIND v(vref) AT=40",
+      "unit": "V"
+    },
+    {
+      "name": "vref_t45",
+      "spice": ".meas dc vref_t45 FIND v(vref) AT=45",
+      "unit": "V"
+    },
+    {
+      "name": "vref_t50",
+      "spice": ".meas dc vref_t50 FIND v(vref) AT=50",
+      "unit": "V"
+    },
+    {
+      "name": "vref_t55",
+      "spice": ".meas dc vref_t55 FIND v(vref) AT=55",
+      "unit": "V"
+    },
+    {
+      "name": "vref_t60",
+      "spice": ".meas dc vref_t60 FIND v(vref) AT=60",
+      "unit": "V"
+    },
+    {
+      "name": "vref_t65",
+      "spice": ".meas dc vref_t65 FIND v(vref) AT=65",
+      "unit": "V"
+    },
+    {
+      "name": "vref_t70",
+      "spice": ".meas dc vref_t70 FIND v(vref) AT=70",
+      "unit": "V"
+    },
+    {
+      "name": "vref_t75",
+      "spice": ".meas dc vref_t75 FIND v(vref) AT=75",
+      "unit": "V"
+    },
+    {
+      "name": "vref_t80",
+      "spice": ".meas dc vref_t80 FIND v(vref) AT=80",
+      "unit": "V"
+    },
+    {
+      "name": "vref_t85",
+      "spice": ".meas dc vref_t85 FIND v(vref) AT=85",
+      "unit": "V"
+    },
+    {
+      "name": "vref_t90",
+      "spice": ".meas dc vref_t90 FIND v(vref) AT=90",
+      "unit": "V"
+    },
+    {
+      "name": "vref_t95",
+      "spice": ".meas dc vref_t95 FIND v(vref) AT=95",
+      "unit": "V"
+    },
+    {
+      "name": "vref_t100",
+      "spice": ".meas dc vref_t100 FIND v(vref) AT=100",
+      "unit": "V"
+    },
+    {
+      "name": "vref_t105",
+      "spice": ".meas dc vref_t105 FIND v(vref) AT=105",
+      "unit": "V"
+    },
+    {
+      "name": "vref_t110",
+      "spice": ".meas dc vref_t110 FIND v(vref) AT=110",
+      "unit": "V"
+    },
+    {
+      "name": "vref_t115",
+      "spice": ".meas dc vref_t115 FIND v(vref) AT=115",
+      "unit": "V"
+    },
+    {
+      "name": "vref_t120",
+      "spice": ".meas dc vref_t120 FIND v(vref) AT=120",
+      "unit": "V"
+    },
+    {
+      "name": "vref_t125",
+      "spice": ".meas dc vref_t125 FIND v(vref) AT=125",
+      "unit": "V"
+    }
+  ],
+  "options": {
+    "timeout_s": 300,
+    "keep_artifacts": true
+  }
+}

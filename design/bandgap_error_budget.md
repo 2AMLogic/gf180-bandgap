@@ -1839,6 +1839,71 @@ post-rescale TC re-verification over the full PVT axis (and a conditional
 19.3 -> 34.2 (still under the ratified 50), so the #96 `R1` optimum no longer
 holds exactly.
 
+> **Superseded by 5f (#209).** The 4.027 figure and the `lambda = 1.0800`
+> rescale above are the single-corner, 6.5 uA datum. The corner-covered
+> measurement (`sim/device-pnp-array/`, 4.0209 at 5.07 uA) and the owed
+> full-PVT re-verification are in Section 5f below; `R2`/`R1` there are the
+> current values.
+
+### 5f. #209 / DR-0007: `R2` re-derived from the measured array ratio, `R1` re-nulled and `Vref` re-centred
+
+DR-0007 Decision items 1-2 asked for the array ratio to be *measured* at the
+design current over the corner axis, `R2` sized on it, and the TC null and
+`Vref` centring re-verified on the full-PVT bench rather than inferred from
+`lambda`. This section is that step. Nothing under `spec/` or any
+`tb.json` threshold is touched; the untrimmed 3-sigma mismatch leg is the
+later suite child (#211) and is **not** claimed here.
+
+**R2 (sizing input).** `sim/device-pnp-array/records/20261008-120404-44d1a83`:
+four `pnp_05p00x05p00` versus one, equal *total* `Ie = 5.07 uA`, `bjt_typical`,
+27 C: `A_array = 4.0209`, `dVBE = 35.991 mV`; over 3 BJT corners x
+-40/27/125 C the ratio spans 4.0185..4.0281 (flat in T to 0.09 %). The
+design current carried since #61 is `5.07 uA` (`33.374 mV / 6586.5 ohm`), which
+is inside the measured 4..7 uA window, so the ratio input needs no new
+characterization. `R2 = dVBE / I = 35.991 mV / 5.07 uA = 7098.8 ohm`, i.e.
+`L = (7098.8 - 61.382) / 179.547 = 39.195501 um` (`ppolyf_u`, `W = 2 um`;
+`R = 179.547*L + 61.382`, `tt`/27 C). Baseline first: the merged DUT already
+carried `R2 = 39.275062 um` (7113.1 ohm), the DR-0007 first-order rescale
+(`lambda = 1.0800`), which gives `I = 5.060 uA` against the measured array,
+0.14 % low. The new value *replaces* it; no multiplier is applied to an
+already-rescaled `R2`. The historical `4.027` is not used anywhere.
+
+**R1 and centring (measured, not inferred).** All runs are `klt sim` requests
+dispatched to the Spot fleet (`sim/tools/mk_klt_request.py ... --curve`),
+27 process x supply points (9 process corners x 2.97/3.30/3.63 V), each with the
+internal `dc temp -40 125 1` sweep; box TC is `(max - min)/(Vref_27 * 165)`
+from the fleet's `.meas MAX/MIN` over the 1 C sweep (the fleet cannot return the point count, so completeness is cross-checked, not counted, by
+`sim/tools/tc_ingest.py`). The temperature axis is the internal sweep, so the
+logs are stored per outer temperature (-40c/27c/125c) from the one fleet log per process x supply point.
+
+| step | R2 L (um) | R1 L (um) | worst box TC (ppm/C) | Vref range, all 27 pts (V) | verdict | record |
+|---|---|---|---|---|---|---|
+| pre-retune baseline (merged DUT) | 39.275062 | 443.4 | **54.39** (`bjt_ff`, 3.63 V; 4 points > 50) | 1.18405 .. 1.20767 | **FAIL (TC)** | [`20261008-204016-aeaca90`](../sim/output-voltage-tc/records/20261008-204016-aeaca90.md) |
+| R2 re-derived, R1 held (point A) | 39.195501 | 443.4 | 51.35 (`bjt_ff`) | 1.18545 .. 1.20873 | FAIL (TC) | [`20261008-204017-aeaca90`](../sim/output-voltage-tc/records/20261008-204017-aeaca90.md) |
+| scan point B (not a candidate) | 39.195501 | 457.0 | 32.61 (`bjt_ss`) | 1.20191 .. 1.22311 | PASS, 0.9 mV window margin | [`20261008-204018-aeaca90`](../sim/output-voltage-tc/records/20261008-204018-aeaca90.md) |
+| **final** | **39.195501** | **446.0** | **44.66** (`bjt_ff`, 3.63 V) | **1.18859 .. 1.21120** | **PASS** 27/27 | [`20261008-204019-aeaca90`](../sim/output-voltage-tc/records/20261008-204019-aeaca90.md) |
+
+The merged design therefore did **not** keep its TC null through DR-0007's
+`R2` change (the DR's warning, confirmed): 54.4 ppm/C, over the ratified 50,
+at `bjt_ff` (and `res_ss` at 50.00). `Vref` is exactly affine in `R1` at fixed
+`R2` (Section 5b), so points A and B (sampled `Vref(T)` every 5 C at every
+corner) reconstruct the curve at any `R1`; the sampled box TC agrees with
+the fleet's 1 C box to <= 0.15 ppm/C at A and B. #147's method then applies:
+the two window edges balance about 1.200 V at `R1 = 446.0 um` (edges
+1.2112 / 1.1886 V predicted, 1.21120 / 1.18859 V measured; 12.8 / 12.6 mV
+margin to 1.224 / 1.176 V), worst TC predicted 44.6 and measured 44.66 ppm/C
+(10.7 % under the 50 limit). Minimising TC alone would sit at `R1 ~ 455 um`
+(~27 ppm/C) but leaves only ~5 mV on the upper window edge, which the
+mismatch leg cannot afford (Section 5c); the centred point is the same
+trade #147 made. `R1` resistance 79672.5 -> 80139.3 ohm; see
+`design/bandgap_operating_point.md` Sec 2 "Update (#209)".
+
+**Not closed here.** The untrimmed 3-sigma mismatch-MC leg and the combined
+accuracy verdict (the deterministic spread here is 22.5 mV against #147's
+20.4 mV, so the mismatch leg has to be re-run against this sizing), PSRR/Iq
+and the other suite rows were not re-run (#211). `sim/dut/` is the only
+simulated state changed; physical regeneration is #204.
+
 ## 6. Summary of acceptance criteria
 
 ### 6.1 #42 (amplifier)

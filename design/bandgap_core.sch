@@ -122,6 +122,32 @@ v {xschem version=3.4.7 file_version=1.2
 * if it falls short) -- at tt/27 C tc_ppm moved 19.3 -> 34.2 ppm/C and vref
 * is centred, so the PTAT/CTAT balance is no longer at its #96 optimum.
 *
+* DR-0007 RETUNING FROM MEASURED ARRAY EVIDENCE (issue #209) -- the first-order
+* rescale above is superseded by a measured one (sim/device-pnp-array/records/
+* 20261008-120404-44d1a83; design/device-characterization.md Sec 6) and a
+* full-PVT re-null:
+*
+*   R2      L=39.275062u -> 39.195501u   (7113.1 -> 7098.8 ohm)
+*   R1      L=443.400000u -> 446.000000u (79672.5 -> 80139.3 ohm)
+*
+* R2 = dVBE/I at the characterized point: the four-unit array measures
+* A_array = 4.0209 (bjt_typical, 27 C, equal TOTAL Ie = 5.07 uA), i.e.
+* dVBE = 35.991 mV, so R2 = 35.991 mV / 5.07 uA = 7098.8 ohm; L solved with
+* R = 179.547*L_um + 61.382 ohm (W=2u, tt/27 C). The historical 4.027 is not
+* used. The previous R2 had been scaled by lambda = 1.0800 from the pre-DR-0007
+* value, 0.14 % above this derivation (I = 5.060 uA there), so there is no
+* second rescale: R2 was re-derived, not multiplied again.
+*
+* R1 is NOT taken from the algebra (DR-0007 Decision item 2): the pre-retune
+* canonical DUT FAILED the TC row (worst box TC 54.39 ppm/C, bjt_ff), so R1
+* was re-nulled and Vref re-centred by #147's method against the fleet TC
+* bench (27 process/supply points, full 1 C -40..125 C sweep each): Vref(T) is
+* affine in R1, two fleet runs at R1 = 443.4 / 457.0 um reconstruct it for any
+* R1, and 446.0 um balances the two window edges about 1.200 V. Verified by a
+* third fleet run at 446.0 um: worst box TC 44.66 ppm/C, Vref 1.18859 ..
+* 1.21120 V over all 27 points. Evidence: sim/output-voltage-tc/records/ (see
+* design/bandgap_operating_point.md Sec 2 "Update (#209)").
+*
 * R1/R2 CO-SCALING (issue #61) -- the quiescent-current lever #55 proved
 * mirror sizing structurally cannot pull. The design current is
 *
@@ -381,7 +407,7 @@ N 320 270 320 250 {}
 C {lab_pin.sym} 320 250 0 0 {name=l10 lab=vdd}
 N 320 300 340 300 {}
 C {lab_pin.sym} 340 300 0 0 {name=l11 lab=vdd}
-C {symbols/ppolyf_u.sym} 300 90 0 0 {name=R2 model=ppolyf_u W=2u L=39.275062u m=1}
+C {symbols/ppolyf_u.sym} 300 90 0 0 {name=R2 model=ppolyf_u W=2u L=39.195501u m=1}
 N 300 60 300 40 {}
 C {lab_pin.sym} 300 40 0 0 {name=l12 lab=sns2}
 N 300 120 300 140 {}
@@ -413,7 +439,7 @@ N 620 270 620 250 {}
 C {lab_pin.sym} 620 250 0 0 {name=l20 lab=vdd}
 N 620 300 640 300 {}
 C {lab_pin.sym} 640 300 0 0 {name=l21 lab=vdd}
-C {symbols/ppolyf_u.sym} 600 90 0 0 {name=R1 model=ppolyf_u W=2u L=443.400000u m=1}
+C {symbols/ppolyf_u.sym} 600 90 0 0 {name=R1 model=ppolyf_u W=2u L=446.000000u m=1}
 N 600 60 600 40 {}
 C {lab_pin.sym} 600 40 0 0 {name=l22 lab=tn0}
 N 600 120 600 140 {}

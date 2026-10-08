@@ -1,7 +1,7 @@
 * DUT netlist fragment -- GENERATED, do not edit by hand.
 *
 * source     : design/netlist/bandgap_top.spice
-* sha256     : 47de0b2df73cf85076966986ea13def06f3f2ade6c5a78ad123033b543ef413e
+* sha256     : 0de347fc37cae8a2be5f07880208cabbe397895f9f7a09785f62c207b214520c
 * regenerate : python3 sim/tools/mk_dut.py design/netlist/bandgap_top.spice <this file>
 *
 * Subcircuits defined here: bandgap_top, bandgap_core, bandgap_amp, bandgap_startup, bandgap_trim
@@ -44,13 +44,13 @@ XM2 d2 fb vdd vdd pfet_03v3 L=8.5u W=85u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' 
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
 XMC2 sns2 casc d2 vdd pfet_03v3 L=8.5u W=85u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
-XR2 e2 sns2 vss ppolyf_u r_width=2u r_length=39.275062u m=1
+XR2 e2 sns2 vss ppolyf_u r_width=2u r_length=39.195501u m=1
 XQ2 vss vss e2 pnp_05p00x05p00 m=4
 XM3 d3 fb vdd vdd pfet_03v3 L=8.5u W=85u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
 XMC3 vref casc d3 vdd pfet_03v3 L=8.5u W=85u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
-XR1 e3 tn0 vss ppolyf_u r_width=2u r_length=443.400000u m=1
+XR1 e3 tn0 vss ppolyf_u r_width=2u r_length=446.000000u m=1
 XQ3 vss vss e3 pnp_05p00x05p00 m=1
 XM4 d4 fb vdd vdd pfet_03v3 L=8.5u W=10.625u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
