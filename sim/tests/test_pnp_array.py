@@ -78,6 +78,36 @@ class Request(unittest.TestCase):
         self.assertEqual(len(names), len(set(names)))
         self.assertEqual(len(names), 3 * len(req.CURRENTS_UA))
 
+    def _pairs(self, r):
+        return [(p["name"], t) for p in r["corners"]["process"] for t in r["corners"]["temperature_c"]]
+
+    def test_request_matches_expected_points(self):
+        import json
+
+        cases = [
+            {},
+            {"sections": ("bjt_ff", "bjt_ss"), "temps_c": (125.0, -40.0)},  # reordered subset
+            {"sections": ("bjt_typical",), "temps_c": (27.0,)},
+            {"sections": ("bjt_ff", "bjt_ss", "bjt_ff"), "temps_c": (125.0, 125.0, 27.0)},  # multiplicity
+        ]
+        for kw in cases:
+            with self.subTest(**kw):
+                r = req.build_request(**kw)
+                self.assertEqual(self._pairs(r), req.expected_points(**kw))
+                self.assertEqual(json.loads(json.dumps(r)), r)
+                for p in r["corners"]["process"]:
+                    self.assertEqual(p["sections"], [p["name"]])
+
+    def test_meas_names_map_uniquely_to_branch_current(self):
+        seen = {}
+        for ua in req.CURRENTS_UA:
+            for branch, node in req.BRANCHES.items():
+                seen.setdefault(req.meas_name(branch, ua), (branch, ua, node))
+        self.assertEqual(len(seen), len(req.BRANCHES) * len(req.CURRENTS_UA))
+        for m in req.build_request()["measurements"]:
+            branch, ua, node = seen[m["name"]]
+            self.assertIn(f"FIND v({node}) AT={ua:g}", m["spice"])
+
     def test_empty_axis_rejected(self):
         with self.assertRaises(ValueError):
             req.build_request(sections=())
