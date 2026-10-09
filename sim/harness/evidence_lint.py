@@ -573,12 +573,14 @@ def check_append_only(root: Path, base_ref: str) -> tuple[list, str | None]:
 
     # --no-renames so a rename surfaces as delete+add and trips the D filter;
     # git's rename detection would otherwise hide it behind an R status.
+    # T (type change) catches a file swapped for a symlink, e.g. a committed
+    # report replaced by a link to a newer one.
     diff = _git(
         root,
         "diff",
         "--name-status",
         "--no-renames",
-        "--diff-filter=MD",
+        "--diff-filter=MDT",
         base_sha,
         "--",
         "sim",
@@ -587,7 +589,7 @@ def check_append_only(root: Path, base_ref: str) -> tuple[list, str | None]:
     if diff is None or diff.returncode != 0:
         return [], "git diff against the merge base failed"
 
-    verb = {"M": "modified", "D": "deleted"}
+    verb = {"M": "modified", "D": "deleted", "T": "replaced (type changed)"}
     problems = []
     for line in diff.stdout.splitlines():
         status, _, path = line.partition("\t")
