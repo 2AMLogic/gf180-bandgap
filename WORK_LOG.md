@@ -2,6 +2,15 @@
 
 Chronological record of recently merged pull requests and closed issues, maintained by the Loom Guide role. Newest entries appear first.
 
+### 2026-10-09
+
+- **PR #233**: test: unit tests for mk_dut convert/validate
+- **Issue #231** (closed): Add unit tests for sim/tools/mk_dut.py convert and validate
+- **PR #232**: sim: sync embedded startup-bench cores to DR-0007 final core (#228)
+- **Issue #228** (closed): DR-0007: synchronize embedded startup experiment cores
+- **PR #230**: sim: sync embedded diagnostic cores to the DR-0007 final core (#227)
+- **Issue #227** (closed): DR-0007: synchronize embedded loop and sensitivity diagnostic cores
+
 ### 2026-10-08
 
 - **PR #224**: tests: unit-cover pure helpers in run_mc_untrimmed.py
