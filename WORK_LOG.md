@@ -4,6 +4,9 @@ Chronological record of recently merged pull requests and closed issues, maintai
 
 ### 2026-10-09
 
+- **PR #276**: sim: reject non-finite scalar measurements before evidence grading
+- **Issue #274** (closed): sim: reject non-finite scalar measurements before evidence grading
+
 - **PR #273**: feat(sim): characterization-only output-load sensitivity bench with fleet request and ingestion
 - **PR #272**: sim: extract run_device_experiment and record_stamp (#267)
 - **PR #271**: DR-0007: #239 fleet evidence run BLOCKED (runner klt version mismatch)
