@@ -38,7 +38,9 @@ HERE = Path(__file__).resolve().parent
 SIM = HERE.parent
 REPO = SIM.parent
 sys.path.insert(0, str(SIM))
+sys.path.insert(0, str(HERE))
 
+import fleet_common as fc  # noqa: E402
 from harness import corners as hc  # noqa: E402
 
 EXPERIMENT = "output-voltage-tc"
@@ -58,10 +60,7 @@ def load_tb() -> dict:
     return json.loads(TB_JSON.read_text())
 
 
-def corner_key(corner_id: str) -> tuple[str, float]:
-    """'tt/2.970V/27C' -> ('tt', 2.97)."""
-    process, supply, _temp = corner_id.split("/")
-    return process, float(supply.rstrip("Vv"))
+corner_key = fc.corner_key  # 'tt/2.970V/27C' -> ('tt', 2.97); shared with fleet_ingest.py
 
 
 def expected_points(tb: dict | None = None) -> list[tuple[str, float]]:
@@ -89,50 +88,20 @@ def curve_of(vals: dict) -> dict[int, float]:
 
 
 def collect(report: dict, expected: list[tuple[str, float]]):
-    """-> (points, missing, failed, problems)
+    """-> (points, missing, failed, problems); see `fleet_common.collect_units`.
 
     points : {(process, vdd): {measurement: value}} for corners that returned
-             every REQUIRED measurement as a number.
+             every REQUIRED measurement as a finite number.
     missing: expected points absent from the report, or present but lacking a
-             numeric REQUIRED measurement (reason attached).
-    failed : points whose klt status is not pass/fail-free (error etc.) with the
-             diagnostics the backend gave.
+             finite REQUIRED measurement (reason attached).
+    failed : points whose klt status is error (etc.) with the diagnostics the
+             backend gave.
     problems: report-level issues (duplicate corners, unexpected corners).
     """
-    points, failed, missing, problems = {}, [], [], []
-    seen = {}
-    for c in report.get("corners", []):
-        try:
-            key = corner_key(c["corner_id"])
-        except Exception:
-            problems.append(f"unparseable corner id {c.get('corner_id')!r}")
-            continue
-        key = (key[0], round(key[1], 4))
-        if key in seen:
-            problems.append(f"duplicate corner {key}")
-        seen[key] = c
-    for key in seen:
-        if key not in set(expected):
-            problems.append(f"unexpected corner {key}")
-    for key in expected:
-        c = seen.get(key)
-        if c is None:
-            missing.append((key, "absent from report"))
-            continue
-        vals = {m["name"]: m.get("value") for m in c.get("measurements", [])}
-        bad = [n for n in REQUIRED if not isinstance(vals.get(n), (int, float))]
-        diag = "; ".join(
-            f"{d.get('code')}: {d.get('message')}" for d in c.get("diagnostics", []) or []
-        )
-        status = c.get("status")
-        if status == "error" or bad and status != "fail":
-            failed.append((key, f"status={status}" + (f" ({diag[:300]})" if diag else "")))
-            continue
-        if bad:
-            missing.append((key, "measurement(s) without a value: " + ", ".join(bad)))
-            continue
-        points[key] = {k: v for k, v in vals.items() if isinstance(v, (int, float))}
-    return points, missing, failed, problems
+    return fc.collect_units(
+        report, expected, REQUIRED,
+        lambda cid: (lambda k: (k[0], round(k[1], 4)))(corner_key(cid)),
+    )
 
 
 def sweep_consistency(vals: dict) -> list[str]:
@@ -419,9 +388,7 @@ def write_corner_logs(cdir: Path, work: Path, report: dict, points: dict, record
 
 
 def sha256(p: Path) -> str:
-    import hashlib
-
-    return hashlib.sha256(p.read_bytes()).hexdigest()
+    return fc.sha256_file(p)
 
 
 def main() -> int:
