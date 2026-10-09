@@ -82,13 +82,18 @@ are tracked by the schematic-phase epic, decomposed into array measurement
 ([#209](https://github.com/2AMLogic/gf180-bandgap/issues/209)), active bench
 synchronization ([#210](https://github.com/2AMLogic/gf180-bandgap/issues/210)),
 and final schematic suite/mismatch evidence
-([#211](https://github.com/2AMLogic/gf180-bandgap/issues/211)). These children
-await independent curation and approval.
+([#211](https://github.com/2AMLogic/gf180-bandgap/issues/211)). Array measurement
+and measured retuning are complete via
+[PR #213](https://github.com/2AMLogic/gf180-bandgap/pull/213) and
+[PR #222](https://github.com/2AMLogic/gf180-bandgap/pull/222), with new fleet
+evidence recorded under `sim/device-pnp-array/` and `sim/output-voltage-tc/`.
+Bench synchronization and final suite/mismatch evidence still await independent
+curation and approval; the schematic-phase epic remains incomplete.
 [klayout-tools#2733](https://github.com/2AMLogic/klayout-tools/issues/2733)
 and [klayout-tools#2719](https://github.com/2AMLogic/klayout-tools/issues/2719)
-both closed on 2026-10-08. Their closure does not prove the historical model-bin
-failure resolved; successful execution of the actual gf180mcu fleet request
-remains an acceptance criterion of #208.
+both closed on 2026-10-08. Successful gf180mcu fleet execution is now recorded
+by #208 and #209; those measurements do not establish full schematic or
+extracted signoff.
 Layout regeneration and pinned extracted verification
 ([#204](https://github.com/2AMLogic/gf180-bandgap/issues/204)) follow that
 work, tracked by [#202](https://github.com/2AMLogic/gf180-bandgap/issues/202)
