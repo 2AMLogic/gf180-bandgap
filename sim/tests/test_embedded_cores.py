@@ -42,6 +42,22 @@ class EmbeddedCores(unittest.TestCase):
         self.assertIn(old, text)
         return chk.check_core(text.replace(old, new), CANON, chk.BENCHES[rel])
 
+    def test_startup_benches_covered_and_topology(self):
+        for rel, want in chk.STARTUP_INSTANCE.items():
+            with self.subTest(rel):
+                self.assertIn(rel, chk.BENCHES)
+                self.assertEqual(chk.has_startup_instance(bench(rel)), want)
+
+    def test_stale_startup_core_detected(self):
+        for rel in chk.STARTUP_INSTANCE:
+            with self.subTest(rel):
+                errs = self._stale(rel, "pnp_05p00x05p00 m=4", "pnp_10p00x10p00 m=1")
+                self.assertTrue(any("XQ2.model" in e for e in errs))
+                errs = self._stale(rel, "r_length=39.195501u", "r_length=36.341871u")
+                self.assertTrue(any("XR2.length" in e for e in errs))
+                errs = self._stale(rel, "r_length=545.639857u", "r_length=446.000000u")
+                self.assertTrue(any("lumped" in e for e in errs))
+
     def test_stale_q2_detected(self):
         rel = "sim/amp-psrr/testbench/tb_psrr.spice"
         errs = self._stale(rel, "pnp_05p00x05p00 m=4", "pnp_10p00x10p00 m=1")
