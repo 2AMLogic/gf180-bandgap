@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Static check: embedded bandgap_core copies match the canonical core (#227).
 
-Six diagnostic testbenches embed their own copy of bandgap_core (they need
+Ten diagnostic/startup testbenches (six in #227, four startup in #228) embed their own copy of bandgap_core (they need
 nodes a subcircuit boundary would hide, or ideal/perturbed devices). Those
 copies silently go stale whenever the canonical core resizes (DR-0007 did).
 This check compares the resistor/BJT realization of each embedded copy
@@ -46,7 +46,25 @@ BENCHES = {
     "sim/bandgap-loop-smoke/testbench/bandgap_loop_smoke.spice": "lumped",
     "sim/core-mirror-sensitivity/testbench/tb_core_mirror_sensitivity.spice": "explicit",
     "sim/core-psrr-ideal-amp/testbench/tb_core_psrr_ideal_amp.spice": "lumped",
+    # startup experiments (#228)
+    "sim/startup/testbench/bandgap_startup_ramp.spice": "lumped",
+    "sim/startup-slow-ramp/testbench/bandgap_startup_ramp.spice": "lumped",
+    "sim/startup-state-search/testbench/bandgap_startup_state_search.spice": "lumped",
+    "sim/startup-disabled-control/testbench/bandgap_startup_disabled.spice": "lumped",
 }
+
+#: Startup benches: whether the bandgap_startup subcircuit is instantiated.
+#: The disabled control must stay WITHOUT it (it is the experiment).
+STARTUP_INSTANCE = {
+    "sim/startup/testbench/bandgap_startup_ramp.spice": True,
+    "sim/startup-slow-ramp/testbench/bandgap_startup_ramp.spice": True,
+    "sim/startup-state-search/testbench/bandgap_startup_state_search.spice": True,
+    "sim/startup-disabled-control/testbench/bandgap_startup_disabled.spice": False,
+}
+
+
+def has_startup_instance(text: str) -> bool:
+    return bool(re.search(r"^X\S+\s+.*\bbandgap_startup\s*$", text, re.M))
 
 _DEV = re.compile(r"^(X(?:R1|R2|Q1|Q2|Q3))\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)(.*)$", re.M)
 _LEN = re.compile(r"\br_length=([0-9.]+)u")
@@ -132,7 +150,10 @@ def main() -> int:
     canon = parse_core(CANONICAL.read_text())
     failed = 0
     for rel, expected in BENCHES.items():
-        errs = check_core((REPO / rel).read_text(), canon, expected)
+        text = (REPO / rel).read_text()
+        errs = check_core(text, canon, expected)
+        if rel in STARTUP_INSTANCE and has_startup_instance(text) != STARTUP_INSTANCE[rel]:
+            errs.append(f"startup instance present={has_startup_instance(text)}, expected {STARTUP_INSTANCE[rel]}")
         status = "ok" if not errs else "STALE"
         print(f"{status:5s} {rel} [{expected}]")
         for e in errs:
