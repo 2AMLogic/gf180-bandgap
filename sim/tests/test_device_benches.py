@@ -24,6 +24,7 @@ sys.path.insert(0, str(SIM))
 
 from harness import corners as harness_corners  # noqa: E402
 from harness import evidence_lint  # noqa: E402
+from harness import report as harness_report  # noqa: E402
 from harness.pdk import Pdk  # noqa: E402
 
 
@@ -356,6 +357,108 @@ class ResistorTc(unittest.TestCase):
             for v in (2.97, 3.63)
         ]
         lint(self, "device-resistor-tc", text, ids)
+
+
+class RecordStamp(unittest.TestCase):
+    def test_round_trip(self):
+        self.assertEqual(
+            harness_report.record_stamp("20260101-123456-abcdef0"),
+            datetime(2026, 1, 1, 12, 34, 56, tzinfo=timezone.utc),
+        )
+        self.assertEqual(
+            harness_report.record_stamp(
+                harness_report.format_record_id("abc1234", STAMP)
+            ),
+            STAMP,
+        )
+
+    def test_malformed_id_raises_clear_error(self):
+        for bad in ("", "abc", "2026-01-01-abcdef0", "20261301-000000-abc"):
+            with self.assertRaises(ValueError) as cm:
+                harness_report.record_stamp(bad)
+            self.assertIn("malformed record id", str(cm.exception))
+
+
+class RunDeviceExperiment(unittest.TestCase):
+    def _run(self, here, **kw):
+        (here / "testbench").mkdir(parents=True, exist_ok=True)
+        (here / "testbench" / "tb_fake.spice").write_text("* deck\n", encoding="utf-8")
+        calls = []
+
+        def run_corner(deck, pdk, section, temp):
+            calls.append((deck.name, section, temp))
+            return f"log {section} {temp}\n"
+
+        def build_record(record, stamp, pdk, ngspice, results):
+            return f"{record}|{stamp.isoformat()}|{sorted(results.items())}\n"
+
+        rc = harness_report.run_device_experiment(
+            here,
+            "tb_fake.spice",
+            [("s1", -40.0), ("s1", 27.0), ("s2", 27.0)],
+            run_corner,
+            kw.pop("extract", lambda log, section, temp: {"n": len(log)}),
+            build_record,
+            banner="record {record}: fake",
+            pdk=PDK,
+            ngspice=NGSPICE,
+            git={"short": "abc1234", "branch": "t", "dirty": False},
+            root=here,
+            **kw,
+        )
+        return rc, calls
+
+    def test_writes_expected_layout(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            here = Path(tmp)
+            rc, calls = self._run(here)
+            self.assertEqual(rc, 0)
+            self.assertEqual(len(calls), 3)
+            (rec,) = (here / "records").glob("*.md")
+            record = rec.stem
+            self.assertTrue((here / "netlist-snapshots" / f"{record}.spice").exists())
+            logs = sorted(p.name for p in (here / "corners" / record).iterdir())
+            self.assertEqual(
+                logs,
+                sorted(
+                    f"{harness_corners.device_corner_id(s, t)}.log"
+                    for s, t in [("s1", -40.0), ("s1", 27.0), ("s2", 27.0)]
+                ),
+            )
+            first = (here / "corners" / record / logs[0]).read_text()
+            self.assertIn(record, first)
+            self.assertIn("log s", first)
+            text = rec.read_text()
+            self.assertIn(harness_report.record_stamp(record).isoformat(), text)
+            self.assertIn("('s1', -40.0)", text)
+
+    def test_custom_key(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            here = Path(tmp)
+            self._run(here, key=lambda section, temp: temp)
+            (rec,) = (here / "records").glob("*.md")
+            self.assertIn("(27.0,", rec.read_text())
+
+    def test_extract_failure_writes_no_record(self):
+        def bad(log, section, temp):
+            if section == "s2":
+                raise ValueError("out of range")
+            return {}
+
+        with tempfile.TemporaryDirectory() as tmp:
+            here = Path(tmp)
+            rc, _ = self._run(here, extract=bad, tolerate_extract_errors=True)
+            self.assertEqual(rc, 1)
+            self.assertFalse((here / "records").exists())
+            self.assertFalse((here / "netlist-snapshots").exists())
+
+    def test_extract_failure_propagates_by_default(self):
+        def bad(log, section, temp):
+            raise ValueError("boom")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaises(ValueError):
+                self._run(Path(tmp), extract=bad)
 
 
 if __name__ == "__main__":

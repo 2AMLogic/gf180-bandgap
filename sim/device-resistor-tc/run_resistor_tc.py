@@ -29,7 +29,6 @@ from __future__ import annotations
 
 import re
 import sys
-from datetime import datetime, timezone
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -345,7 +344,7 @@ def main() -> int:
     ngspice = ngspice_version()
     git = harness_report.git_provenance(root)
     record = harness_report.allocate_record_id(root, HERE / "records", git=git)
-    stamp = datetime.strptime(record[:15], "%Y%m%d-%H%M%S").replace(tzinfo=timezone.utc)
+    stamp = harness_report.record_stamp(record)
     deck = HERE / "testbench" / "tb_resistor_tc.spice"
 
     print(f"record {record}: {len(SECTIONS) * len(TEMPS)} corner points + 2 well-bias")

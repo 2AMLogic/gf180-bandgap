@@ -32,17 +32,14 @@ from __future__ import annotations
 
 import math
 import sys
-from datetime import datetime, timezone
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
 
-from harness import corners as harness_corners  # noqa: E402
 from harness import dctable as harness_dctable  # noqa: E402
 from harness import pdk as harness_pdk  # noqa: E402
 from harness import report as harness_report  # noqa: E402
-from harness.runner import ngspice_version  # noqa: E402
 
 # gf180mcu MOS corner sections. `typical`/`ff`/`ss`/`fs`/`sf` are top-level
 # `.LIB` wrappers in sm141064.ngspice that pull in the matching nfet_03v3_* and
@@ -265,56 +262,16 @@ def build_record(record, stamp, pdk, ngspice, results) -> str:
 
 
 def main() -> int:
-    pdk = harness_pdk.find_pdk()
-    root = harness_pdk.REPO_ROOT
-    ngspice = ngspice_version()
-    git = harness_report.git_provenance(root)
-    record = harness_report.allocate_record_id(root, HERE / "records", git=git)
-    stamp = datetime.strptime(record[:15], "%Y%m%d-%H%M%S").replace(tzinfo=timezone.utc)
-    deck = HERE / "testbench" / "tb_mos_vth.spice"
-
-    print(f"record {record}: {len(SECTIONS) * len(TEMPS)} corner points")
-    results: dict[tuple[str, float], dict] = {}
-    failed: list[str] = []
-    for section in SECTIONS:
-        for temp in TEMPS:
-            cid = harness_corners.device_corner_id(section, temp)
-            log = _run_corner(deck, pdk, section, temp)
-            harness_report.write_device_corner_log(
-                HERE / "corners",
-                record,
-                cid,
-                harness_report.device_log_header(
-                    pdk, deck, section, temp, record, stamp, ngspice
-                ),
-                log,
-            )
-            try:
-                results[(section, temp)] = extract(log)
-            except ValueError as exc:
-                # Out-of-range interpolation (or unparsable table): do not
-                # record a clamped/placeholder value as evidence (#249).
-                failed.append(cid)
-                print(f"  {cid}: FAIL ({exc})")
-                continue
-            print(f"  {cid}: ok")
-
-    if failed:
-        print(
-            f"FAIL: extraction failed at {len(failed)} corner(s): "
-            + ", ".join(failed)
-            + "; no record written"
-        )
-        return 1
-
-    harness_report.write_device_netlist_snapshot(
-        HERE / "netlist-snapshots", record, deck
+    return harness_report.run_device_experiment(
+        HERE,
+        "tb_mos_vth.spice",
+        [(s, t) for s in SECTIONS for t in TEMPS],
+        _run_corner,
+        lambda log, section, temp: extract(log),
+        build_record,
+        banner=f"record {{record}}: {len(SECTIONS) * len(TEMPS)} corner points",
+        tolerate_extract_errors=True,
     )
-    path = harness_report.device_write_record(
-        HERE / "records", record, build_record(record, stamp, pdk, ngspice, results)
-    )
-    print(f"wrote {path}")
-    return 0
 
 
 if __name__ == "__main__":
