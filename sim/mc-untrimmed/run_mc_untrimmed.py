@@ -71,6 +71,16 @@ unmodified, provided the extracted netlist still calls `ppolyf_u` primitives
 by name for the matched resistors (true of a schematic-preserving PEX flow;
 flagged here rather than assumed).
 
+## Fleet path (shared dispatch workers)
+
+This script runs ngspice from the invoking host, which shared workers must
+not do for a grid. `sim/tools/mk_klt_mc_request.py` expresses the same grid
+as `klt sim` `monte_carlo` requests and `sim/tools/mc_fleet_ingest.py` mints
+the same record format from the fleet reports. They take the group table,
+temperatures, N, seed, section list, DUT variants
+(`prepare_dut_variants()`) and bench circuit (`testbench_circuit_lines()`)
+from this module and its testbench; edit them here, not there.
+
 Usage:
     PDK_ROOT=... PDK=gf180mcuD sim/mc-untrimmed/run_mc_untrimmed.py
     PDK_ROOT=... PDK=gf180mcuD sim/mc-untrimmed/run_mc_untrimmed.py --dut path/to/extracted.spice
@@ -267,6 +277,76 @@ def inject_resistor_mismatch(text: str) -> tuple[str, list[dict]]:
             "injection matched nothing; is --dut pointing at the right file?"
         )
     return new_text, injected
+
+
+def prepare_dut_variants(dut_text: str) -> tuple[dict[str, str], list[dict]]:
+    """``({"baseline": ..., "mm": ...}, injected)`` from a DUT netlist's text.
+
+    The single place the per-group DUT variants are constructed: both this
+    module's local ngspice path and the fleet request builder
+    (`sim/tools/mk_klt_mc_request.py`) call it, so the two cannot drift.
+    ``baseline`` is the netlist with its trailing ``.end`` stripped; ``mm`` is
+    ``baseline`` with the resistor-length jitter injected.
+    """
+    baseline = strip_trailing_end(dut_text)
+    mm, injected = inject_resistor_mismatch(baseline)
+    return {"baseline": baseline, "mm": mm}, injected
+
+
+def group_definition() -> dict:
+    """Everything that defines the MC grid, as plain JSON-able data.
+
+    Hashed into the fleet plan so an ingest can tell the grid it is grading
+    is the one that was requested (a changed group table, N, seed, section
+    list or supply invalidates the plan).
+    """
+    return {
+        "groups": {
+            g: {"sw_stat_mismatch": c["sw_stat_mismatch"], "dut": c["dut"]}
+            for g, c in GROUPS.items()
+        },
+        "temps_c": list(TEMPS),
+        "n_samples": N_SAMPLES,
+        "seed": SEED,
+        "supply_v": SUPPLY_V,
+        "sections": list(SECTIONS),
+    }
+
+
+_TB_CONTROL_RE = re.compile(r"^\s*\.control\b.*?^\s*\.endc\b[^\n]*\n?", re.MULTILINE | re.DOTALL | re.IGNORECASE)
+
+
+def testbench_circuit_lines(tb_text: str) -> list[str]:
+    """The testbench's own circuit cards (sources, ``.ic``), read from the
+    committed deck: comments, the shim/DUT ``.include``s, the ``.control``
+    block and ``.end`` are dropped. The fleet deck reuses exactly these lines
+    rather than carrying a second hand-kept copy of the bench circuit.
+    """
+    body = _TB_CONTROL_RE.sub("", tb_text)
+    keep = []
+    for raw in body.splitlines():
+        line = raw.strip()
+        if not line or line.startswith("*"):
+            continue
+        low = line.lower()
+        if low.startswith(".include") or low == ".end":
+            continue
+        keep.append(line)
+    return keep
+
+
+def testbench_constants(tb_text: str) -> dict:
+    """``{"mc_runs", "seed", "supply_v"}`` as the committed testbench states
+    them (``let mc_runs``, ``setseed``, ``vsup ... dc``); ``None`` for any it
+    does not state. Lets a test pin N_SAMPLES/SEED/SUPPLY_V to the bench."""
+    runs = re.search(r"^\s*let\s+mc_runs\s*=\s*(\d+)", tb_text, re.MULTILINE)
+    seed = re.search(r"^\s*setseed\s+(\d+)", tb_text, re.MULTILINE)
+    sup = re.search(r"^\s*vsup\s+\S+\s+\S+\s+dc\s+([-+0-9.eE]+)", tb_text, re.MULTILINE)
+    return {
+        "mc_runs": int(runs.group(1)) if runs else None,
+        "seed": int(seed.group(1)) if seed else None,
+        "supply_v": float(sup.group(1)) if sup else None,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -468,8 +548,23 @@ def provenance_origin(relative: Path) -> str:
 
 
 def build_record(
-    record, stamp, pdk, ngspice: str, dut_path: Path, injected: list[dict], results: dict
+    record,
+    stamp,
+    pdk,
+    ngspice: str,
+    dut_path: Path,
+    injected: list[dict],
+    results: dict,
+    *,
+    seed_clause: str | None = None,
+    identity_lines: list[str] | None = None,
+    link_lines: list[str] | None = None,
+    pdk_line: str | None = None,
 ) -> str:
+    """Render the record. The keyword arguments are the fleet path's hooks
+    (`sim/tools/mc_fleet_ingest.py`); left unset, the output is byte-identical
+    to what this bench has always written.
+    """
     lines: list[str] = []
     add = lines.append
 
@@ -507,6 +602,8 @@ def build_record(
         "is the mismatch-injected variant, the one the claim-supporting "
         "`mm_all` group actually ran."
     )
+    for line in identity_lines or []:
+        add(line)
     add("- **Corner matrix run**:")
     add(
         "  - Process: all six gf180mcu device-family sections at `typical` "
@@ -538,9 +635,14 @@ def build_record(
     )
     add(
         f"- **Statistical convention**: **N = {N_SAMPLES}** Monte Carlo samples "
-        f"per (group, temperature) point (`setseed {SEED}` in the testbench, "
-        "reproducible; the same seed is reused across groups and "
-        "temperatures -- see the common-random-numbers note below). Spread "
+        f"per (group, temperature) point ("
+        + (
+            seed_clause
+            or f"`setseed {SEED}` in the testbench, "
+            "reproducible; the same seed is reused across groups and "
+            "temperatures -- see the common-random-numbers note below"
+        )
+        + "). Spread "
         "is reported as **1 sigma** of Vref, with the **3 sigma** value "
         "given alongside per the ratified spec's 3-sigma convention; sigma "
         "is the sample standard deviation (N-1 normalisation), so its own "
@@ -725,7 +827,9 @@ def build_record(
     add(f"  - Netlist snapshot (mismatch-injected DUT): `sim/mc-untrimmed/netlist-snapshots/{record}.spice`")
     add(f"  - Raw logs: `sim/mc-untrimmed/corners/{record}/`")
     add("  - Device-level supporting evidence: `sim/device-mos-mismatch/records/20260731-031718-8fb0ea6.md`, `sim/device-pnp-mismatch/records/20260731-040850-187a336.md`")
-    add(f"  - PDK: {pdk.variant} ({pdk.path}), ngspice {ngspice}")
+    for line in link_lines or []:
+        add(line)
+    add(pdk_line or f"  - PDK: {pdk.variant} ({pdk.path}), ngspice {ngspice}")
     add(
         "  - Friction-protocol candidate (to file generically, no design "
         "details, per CLAUDE.md): gf180mcu's ngspice models expose a single "
@@ -825,9 +929,8 @@ def main() -> int:
     if not dut_path.is_file():
         sys.exit(f"ERROR: DUT netlist not found: {dut_path}")
 
-    dut_baseline = strip_trailing_end(dut_path.read_text(encoding="utf-8"))
-    dut_mm, injected = inject_resistor_mismatch(dut_baseline)
-    dut_by_variant = {"baseline": dut_baseline, "mm": dut_mm}
+    dut_by_variant, injected = prepare_dut_variants(dut_path.read_text(encoding="utf-8"))
+    dut_mm = dut_by_variant["mm"]
 
     git = harness_report.git_provenance(root)
     record = harness_report.allocate_record_id(root, HERE / "records", git=git)

@@ -545,6 +545,73 @@ class ProvenancePairingTests(unittest.TestCase):
         self.assertEqual(verdict.matched_provenance, "schematic")
 
 
+class DutIdentityPairingTests(unittest.TestCase):
+    """Both legs state which DUT file they simulated; a disagreement is a problem."""
+
+    SHA_A = "a" * 64
+    SHA_B = "b" * 64
+    MC_ID = "20260802-000000-abcdef0"
+    CORNER_ID = "20260802-010000-abcdef0"
+
+    def _write(self, root: Path, mc_sha: str | None, corner_sha: str | None):
+        write_mc_record(
+            root,
+            self.MC_ID,
+            {"mm_all": {27.0: spread_about(1.2000, 0.0010)}, "mm_ctrl": {27.0: [1.2000] * 5}},
+            provenance="schematic",
+        )
+        write_corner_record(root, self.CORNER_ID, {"tt_27c_3.30v": 1.2000}, provenance="schematic")
+        for slug, rid, sha, line in (
+            (combined.MC_SLUG, self.MC_ID, mc_sha, "  - **DUT identity**: canonical DUT `sim/dut/bandgap_top.spice` sha256 `{}`\n"),
+            (combined.CORNER_SLUG, self.CORNER_ID, corner_sha, "- DUT `sim/dut/bandgap_top.spice` (sha256 `{}`)\n"),
+        ):
+            if sha:
+                path = root / slug / "records" / f"{rid}.md"
+                path.write_text(path.read_text() + line.format(sha))
+
+    def test_both_record_phrasings_are_read(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._write(root, self.SHA_A, self.SHA_B)
+            mc = combined.dut_sha_of_path(root / combined.MC_SLUG / "records" / f"{self.MC_ID}.md")
+            corner = combined.dut_sha_of_path(root / combined.CORNER_SLUG / "records" / f"{self.CORNER_ID}.md")
+        self.assertEqual((mc, corner), (self.SHA_A, self.SHA_B))
+
+    def test_different_duts_claim_no_verdict(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._write(root, self.SHA_A, self.SHA_B)
+            verdict = combined.load(sim_dir=root)
+        self.assertEqual(verdict.status, "NO DATA")  # a pairing problem: no verdict is claimed
+        self.assertTrue(any("different DUTs" in p for p in verdict.problems))
+
+    def test_the_same_dut_pairs_normally(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._write(root, self.SHA_A, self.SHA_A)
+            verdict = combined.load(sim_dir=root)
+        self.assertEqual(verdict.status, "PASS")
+        self.assertEqual(verdict.problems, [])
+
+    def test_a_leg_that_states_no_dut_is_not_judged(self):
+        for mc_sha, corner_sha in ((None, self.SHA_A), (self.SHA_A, None), (None, None)):
+            with self.subTest(mc=mc_sha, corner=corner_sha), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                self._write(root, mc_sha, corner_sha)
+                verdict = combined.load(sim_dir=root)
+            self.assertEqual(verdict.status, "PASS")
+
+    def test_disagreeing_anchors_stay_invalid_with_matching_duts(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._write(root, self.SHA_A, self.SHA_A)
+            write_corner_record(root, "20260802-020000-abcdef0", {"tt_27c_3.30v": 1.2100}, provenance="schematic")
+            path = root / combined.CORNER_SLUG / "records" / "20260802-020000-abcdef0.md"
+            path.write_text(path.read_text() + f"- DUT `x` (sha256 `{self.SHA_A}`)\n")
+            verdict = combined.load(sim_dir=root)
+        self.assertEqual(verdict.status, "INVALID")
+
+
 class CommittedEvidenceTests(unittest.TestCase):
     """The tool against this repo's own committed evidence.
 
