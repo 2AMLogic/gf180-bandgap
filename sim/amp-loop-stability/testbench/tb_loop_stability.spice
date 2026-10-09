@@ -1,5 +1,16 @@
 * amp-loop-stability -- loop-gain / stability-margin sim
 *
+* CORE RE-SYNCED TO THE DR-0007 FINAL CORE IN #227 -- RECORDS TAKEN BEFORE
+* AND AFTER ARE NOT COMPARABLE. The embedded core now carries sim/dut/
+* bandgap_top.spice's values (as of #222): R2 ppolyf_u W=2u L=39.195501u,
+* Q2 pnp_05p00x05p00 m=4 (was pnp_10p00x10p00 m=1, R2 L=36.341871u), base
+* R1 L=446.000000u. R1 is lumped here (R1 + 32 trim units, trim code 32) in
+* ONE ppolyf_u: L=545.639857u, solved against the real PDK model (R = a*L + b
+* overhead, so NOT 446u and NOT 446u + 32 units) -- exact at tt/27 C, residual
+* -0.18%/+0.27% at -40/125 C. See sim/embedded-core-inventory.md and
+* sim/tools/{measure_lumped_r1,check_embedded_cores}.py. Diagnostic topology
+* below is unchanged. No signoff claim; full-suite PVT is #211.
+*
 * CORE RESIZED IN #61 -- RECORDS TAKEN BEFORE AND AFTER ARE NOT COMPARABLE.
 * The bandgap_core copy embedded below carries #61's R1/R2 co-scaling: both
 * the PTAT resistor R2 and the output-branch summing resistor R1 (here in
@@ -123,13 +134,13 @@ XM2 d2 fb vdd vdd pfet_03v3 L=8.5u W=85u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' 
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
 XMC2 sns2 casc d2 vdd pfet_03v3 L=8.5u W=85u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
-XR2 e2 sns2 vss ppolyf_u r_width=2u r_length=36.341871u m=1
-XQ2 vss vss e2 pnp_10p00x10p00 m=1
+XR2 e2 sns2 vss ppolyf_u r_width=2u r_length=39.195501u m=1
+XQ2 vss vss e2 pnp_05p00x05p00 m=4
 XM3 d3 fb vdd vdd pfet_03v3 L=8.5u W=85u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
 XMC3 vref casc d3 vdd pfet_03v3 L=8.5u W=85u nf=4 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
-XR1 e3 vref vss ppolyf_u r_width=2u r_length=560.341647u m=1
+XR1 e3 vref vss ppolyf_u r_width=2u r_length=545.639857u m=1
 XQ3 vss vss e3 pnp_05p00x05p00 m=1
 XM4 d4 fb vdd vdd pfet_03v3 L=8.5u W=10.625u nf=1 ad='int((nf+1)/2) * W/nf * 0.18u' as='int((nf+2)/2) * W/nf * 0.18u' pd='2*int((nf+1)/2) * (W/nf + 0.18u)'
 + ps='2*int((nf+2)/2) * (W/nf + 0.18u)' nrd='0.18u / W' nrs='0.18u / W' sa=0 sb=0 sd=0 m=1
