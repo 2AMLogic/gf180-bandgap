@@ -62,6 +62,22 @@ def parse_klt_corner_id(corner_id: str) -> tuple[str, float | None, float]:
     return process, sup, float(temp[:-1])
 
 
+def parse_klt_mc_corner_id(corner_id: str) -> tuple[str, float | None, float, int]:
+    """'tt/3.300V/-40C/mc17' -> ('tt', 3.3, -40.0, 17).
+
+    The Monte Carlo sample form of :func:`parse_klt_corner_id` (klt appends
+    ``/mc<sample_index>`` to the corner a sample was drawn from). Deliberately
+    a separate function: the deterministic corner benches must keep rejecting
+    an ``/mcN`` id (a sampled id in a corner report is a wrong report), while
+    the MC ingester must reject the *absence* of one. Raises ValueError on
+    anything that is not exactly ``<process>/<supply>/<temp>C/mc<N>``."""
+    base, sep, tail = corner_id.rpartition("/")
+    if not sep or not tail.startswith("mc") or not tail[2:].isdigit():
+        raise ValueError(f"not a Monte Carlo sample corner id {corner_id!r}")
+    process, supply, temp = parse_klt_corner_id(base)
+    return process, supply, temp, int(tail[2:])
+
+
 def diagnostics_text(c: dict, limit: int = 300) -> str:
     diag = "; ".join(f"{d.get('code')}: {d.get('message')}" for d in c.get("diagnostics", []) or [])
     return diag[:limit]

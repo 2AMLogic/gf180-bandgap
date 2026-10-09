@@ -302,6 +302,50 @@ def provenance_of_path(record: Path) -> str:
     return UNKNOWN_PROVENANCE
 
 
+#: The DUT file hash a record states about the circuit it simulated, e.g.
+#: ``DUT `sim/dut/bandgap_top.spice` (sha256 `<64 hex>`)`` (corner records) or
+#: ``**DUT identity**: canonical DUT `...` sha256 `<64 hex>``` (fleet MC
+#: records). The first such statement in the record is the identity.
+DUT_SHA_FIELD = re.compile(r"\bDUT\b[^\n]*?sha256 `([0-9a-f]{64})`")
+
+
+def dut_sha_of_path(record: Path) -> str | None:
+    """The DUT sha256 a record states, or ``None`` (older records predate the
+    field; absence is "not stated", never a mismatch)."""
+    try:
+        text = record.read_text(errors="replace")
+    except OSError:
+        return None
+    hit = DUT_SHA_FIELD.search(text)
+    return hit.group(1) if hit else None
+
+
+def dut_identity_problems(
+    corner_evidence: EvidenceRef | None,
+    mc_evidence: EvidenceRef | None,
+    sim_dir: Path = SIM_DIR,
+) -> list[str]:
+    """A problem when both legs state a DUT hash and the hashes differ.
+
+    Same provenance *class* is necessary but not sufficient to pair the legs:
+    two schematic records can describe different revisions of the DUT. When
+    both records state which DUT file they simulated, they must state the same
+    one; a leg that states nothing is not judged (legacy records).
+    """
+    if corner_evidence is None or mc_evidence is None:
+        return []
+    corner = dut_sha_of_path(sim_dir / corner_evidence.slug / "records" / f"{corner_evidence.record_id}.md")
+    mc = dut_sha_of_path(sim_dir / mc_evidence.slug / "records" / f"{mc_evidence.record_id}.md")
+    if corner and mc and corner != mc:
+        return [
+            f"the legs simulated different DUTs: `sim/{corner_evidence.slug}/` record "
+            f"`{corner_evidence.record_id}` states DUT sha256 `{corner[:12]}...` but "
+            f"`sim/{mc_evidence.slug}/` record `{mc_evidence.record_id}` states `{mc[:12]}...` -- "
+            "re-run the stale leg against the current DUT, or pin a matching pair"
+        ]
+    return []
+
+
 def record_provenance(slug: str, record_id: str, sim_dir: Path = SIM_DIR) -> str:
     """The provenance class of ``sim/<slug>/records/<record-id>.md``."""
     return provenance_of_path(sim_dir / slug / "records" / f"{record_id}.md")
@@ -1453,6 +1497,7 @@ def load(
     )
     for problem in reversed(pairing.problems):
         combined.problems.insert(0, problem)
+    combined.problems.extend(dut_identity_problems(corner_evidence, mc_evidence, sim_dir))
     if corner_evidence is None and not corner_samples:
         combined.problems.insert(
             0, f"no readable record + raw logs found under `sim/{CORNER_SLUG}/`"

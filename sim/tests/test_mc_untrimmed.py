@@ -156,6 +156,35 @@ class Extract(unittest.TestCase):
         self.assertEqual(res["degenerate_indices"], list(range(run.N_SAMPLES)))
 
 
+class SharedConstruction(unittest.TestCase):
+    """The helpers the fleet request builder reuses (#238)."""
+
+    TB = (SIM / "mc-untrimmed" / "testbench" / "tb_mc_untrimmed.spice").read_text()
+
+    def test_prepare_dut_variants_is_the_local_path_construction(self):
+        variants, injected = run.prepare_dut_variants(NETLIST)
+        self.assertEqual(variants["baseline"], run.strip_trailing_end(NETLIST))
+        self.assertEqual((variants["mm"], injected), run.inject_resistor_mismatch(variants["baseline"]))
+        self.assertNotIn("agauss", variants["baseline"])
+
+    def test_testbench_constants_match_the_run_constants(self):
+        self.assertEqual(
+            run.testbench_constants(self.TB),
+            {"mc_runs": run.N_SAMPLES, "seed": run.SEED, "supply_v": run.SUPPLY_V},
+        )
+
+    def test_testbench_circuit_lines_drop_control_includes_and_comments(self):
+        lines = run.testbench_circuit_lines(self.TB)
+        self.assertEqual([l.split()[0] for l in lines], ["vsup", "vssref", ".ic"])
+        self.assertFalse(any("setseed" in l or "dowhile" in l for l in lines))
+
+    def test_group_definition_covers_every_group_switch(self):
+        defn = run.group_definition()
+        self.assertEqual(set(defn["groups"]), set(run.GROUPS))
+        self.assertEqual(defn["n_samples"], 300)
+        self.assertEqual(defn["sections"], list(run.SECTIONS))
+
+
 class ProvenanceClass(unittest.TestCase):
     def test_classes(self):
         P = Path
