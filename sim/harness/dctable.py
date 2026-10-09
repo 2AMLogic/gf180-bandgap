@@ -45,12 +45,24 @@ def column(columns: list[str], rows: list[list[float]], name: str) -> list[float
     return [row[idx] for row in rows]
 
 
-def interp_at(xs: list[float], ys: list[float], x: float) -> float:
-    """Linear interpolation of y(x) on a monotonically increasing xs."""
-    if x <= xs[0]:
+def interp_at(
+    xs: list[float], ys: list[float], x: float, *, clamp: bool = False
+) -> float:
+    """Linear interpolation of y(x) on a monotonically increasing xs.
+
+    If `x` lies outside `[xs[0], xs[-1]]` the sweep never reached it. By
+    default this raises ValueError so a missing crossing cannot be recorded
+    as a plausible-looking endpoint value (issue #249); pass `clamp=True` to
+    get the endpoint y instead.
+    """
+    if x < xs[0] or x > xs[-1]:
+        if not clamp:
+            raise ValueError(
+                f"x={x!r} outside sweep range [{xs[0]!r}, {xs[-1]!r}]"
+            )
+        return ys[0] if x < xs[0] else ys[-1]
+    if x == xs[0]:
         return ys[0]
-    if x >= xs[-1]:
-        return ys[-1]
     for i in range(1, len(xs)):
         if xs[i] >= x:
             x0, x1 = xs[i - 1], xs[i]

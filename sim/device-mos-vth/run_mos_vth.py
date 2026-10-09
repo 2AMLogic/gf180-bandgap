@@ -275,6 +275,7 @@ def main() -> int:
 
     print(f"record {record}: {len(SECTIONS) * len(TEMPS)} corner points")
     results: dict[tuple[str, float], dict] = {}
+    failed: list[str] = []
     for section in SECTIONS:
         for temp in TEMPS:
             cid = harness_corners.device_corner_id(section, temp)
@@ -288,8 +289,23 @@ def main() -> int:
                 ),
                 log,
             )
-            results[(section, temp)] = extract(log)
+            try:
+                results[(section, temp)] = extract(log)
+            except ValueError as exc:
+                # Out-of-range interpolation (or unparsable table): do not
+                # record a clamped/placeholder value as evidence (#249).
+                failed.append(cid)
+                print(f"  {cid}: FAIL ({exc})")
+                continue
             print(f"  {cid}: ok")
+
+    if failed:
+        print(
+            f"FAIL: extraction failed at {len(failed)} corner(s): "
+            + ", ".join(failed)
+            + "; no record written"
+        )
+        return 1
 
     harness_report.write_device_netlist_snapshot(
         HERE / "netlist-snapshots", record, deck
