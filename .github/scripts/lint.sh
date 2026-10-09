@@ -51,7 +51,7 @@ collect() {
   done < <(git ls-files -z -- "$1" ':!:.loom/**' ':!:.claude/**' ':!:loom.sh')
 }
 
-echo "== 1/6 shellcheck (shell scripts) =="
+echo "== 1/7 shellcheck (shell scripts) =="
 collect '*.sh'
 if [ "${#files[@]}" -eq 0 ]; then
   echo "no shell scripts tracked"
@@ -69,7 +69,7 @@ else
 fi
 
 echo
-echo "== 2/6 python syntax =="
+echo "== 2/7 python syntax =="
 collect '*.py'
 if [ "${#files[@]}" -eq 0 ]; then
   echo "no python files tracked"
@@ -84,7 +84,7 @@ else
 fi
 
 echo
-echo "== 3/6 json well-formedness =="
+echo "== 3/7 json well-formedness =="
 collect '*.json'
 if [ "${#files[@]}" -eq 0 ]; then
   echo "no json files tracked"
@@ -113,7 +113,7 @@ sys.exit(1 if bad else 0)
 fi
 
 echo
-echo "== 4/6 evidence records (sim/*/records) =="
+echo "== 4/7 evidence records (sim/*/records) =="
 # The schema in sim/README.md -- nine required fields, <record-id> naming, the
 # corner-id grammar, and the append-only rule -- enforced instead of merely
 # documented. Tracked files only, same as collect() above; the append-only half
@@ -125,7 +125,7 @@ if ! python3 sim/check_records.py ${EVIDENCE_ARGS[@]+"${EVIDENCE_ARGS[@]}"}; the
 fi
 
 echo
-echo "== 5/6 DUT freshness (sim/dut/bandgap_top.spice) =="
+echo "== 5/7 DUT freshness (sim/dut/bandgap_top.spice) =="
 # sim/dut/bandgap_top.spice is generated from design/netlist/bandgap_top.spice
 # (sim/dut/README.md) and every spec-line bench simulates it via each tb.json's
 # "dut" key. Nothing else re-derives it, so a schematic edit that lands
@@ -144,7 +144,7 @@ else
 fi
 
 echo
-echo "== 6/6 T1 signoff manifest (signoff/) =="
+echo "== 6/7 T1 signoff manifest (signoff/) =="
 # signoff/block-manifest.json is what `klt signoff --manifest` grades, and
 # signoff/reports/<record-id>.signoff.json is the committed verdict of record
 # (signoff/README.md). Both are static, so both rot: a pinned content_hash
@@ -155,6 +155,16 @@ echo "== 6/6 T1 signoff manifest (signoff/) =="
 # and stdlib-only; the klt re-grade half runs in ci.yml's `signoff` job.
 if ! python3 signoff/check_signoff.py; then
   echo "FAIL: T1 signoff manifest"
+  status=1
+fi
+
+echo
+echo "== 7/7 decision records (spec/decision-records) =="
+# Status vocabulary, README index consistency, and immutability of records
+# ratified on the merge base (spec/README.md). Same --require-append-only
+# semantics as step 4.
+if ! python3 spec/check_decision_records.py ${EVIDENCE_ARGS[@]+"${EVIDENCE_ARGS[@]}"}; then
+  echo "FAIL: decision records"
   status=1
 fi
 

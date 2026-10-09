@@ -117,6 +117,9 @@ jobs:
         # Negative fixtures for signoff/check_signoff.py (stdlib only; no klt).
         run: python3 -m unittest discover -s signoff/tests -v
 
+      - name: Decision-record checker unit tests
+        run: python3 -m unittest discover -s spec/tests -v
+
       - name: Layout unit tests
         # klayout-dependent tests skip cleanly here; the script fails if any
         # test fails or a directory collects zero tests.
