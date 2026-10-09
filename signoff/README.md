@@ -176,6 +176,12 @@ bench. An output-noise bench has since landed
 yet — so "6/6 claimed lines pass" is accurate as written and is not the same
 statement as "the ratified table's full row set passes".
 
+The existing evidence for those three rows, their provenance and coverage
+gaps, and one ranked operator question per row are collected in
+[`spec/tbd-row-evidence.md`](../spec/tbd-row-evidence.md). That packet only
+prepares decisions: it changes no verdict here, ratifies no row, and reserves
+no decision-record number.
+
 ### Item 6 — Monte Carlo evidence exists, in a form the grader can't read
 
 `sim/mc-untrimmed/records/` carries an N≥300 local-mismatch distribution of
