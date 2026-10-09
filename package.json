@@ -4,9 +4,10 @@
   "private": true,
   "scripts": {
     "worktree:return": "./.loom/scripts/worktree-return.sh",
-    "check:ci": "bash .github/scripts/lint.sh && bash sim/selftest.sh",
-    "check:all": "bash .github/scripts/lint.sh && bash sim/selftest.sh",
+    "check:ci": "bash .github/scripts/lint.sh && bash sim/selftest.sh && bash .github/scripts/test_layout.sh",
+    "check:all": "bash .github/scripts/lint.sh && bash sim/selftest.sh && bash .github/scripts/test_layout.sh",
     "test": "bash sim/selftest.sh",
+    "test:layout": "bash .github/scripts/test_layout.sh",
     "test:unit": "python3 -m unittest discover -s sim/tests -t sim/tests -v",
     "sim:env": "python3 sim/run_corners.py --check-env",
     "sim:list": "python3 sim/run_corners.py --list",

@@ -14,7 +14,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from klayout_builder import BuilderBase  # noqa: E402
+try:
+    from klayout_builder import BuilderBase  # noqa: E402
+
+    HAVE_KLAYOUT = True
+except ImportError:  # klayout module absent (headless CI)
+    BuilderBase = None  # type: ignore[assignment,misc]
+    HAVE_KLAYOUT = False
 
 L_POLY2 = (30, 0)
 L_METAL1 = (34, 0)
@@ -26,6 +32,7 @@ LAYER_NAMES = {
 }
 
 
+@unittest.skipUnless(HAVE_KLAYOUT, "klayout python module not importable")
 class BuilderBaseTests(unittest.TestCase):
     def test_creates_top_cell_with_requested_name(self) -> None:
         b = BuilderBase("probe_top", LAYER_NAMES)
