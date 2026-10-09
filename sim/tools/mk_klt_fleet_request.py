@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Emit `klt sim` requests for the psrr-dc, line-regulation and startup benches.
+"""Emit `klt sim` requests for the psrr-dc, line-regulation, startup and output-load-sensitivity benches.
 
 Sibling of `sim/tools/mk_klt_request.py` (output-voltage-tc / iq; issue #237).
 Shared dispatch workers must not run SPICE grids themselves, so each bench is
@@ -51,6 +51,20 @@ Mapping:
                      is deliberately NOT inlined (that would redefine
                      `bandgap_top`); the plan records both identities.
 
+``output-load-sensitivity``  CHARACTERIZATION ONLY (#269; no spec threshold, no
+                     load rating). One request: the bench's internal ``dc iload
+                     -1u 2u 10n`` load-current sweep x process x supply (``alter
+                     vsup``, the full +/-10 % axis) x temperature; `.meas dc` min/max
+                     of v(vref) as a print-precision cross-check, waveform for the
+                     baseline, signed shifts, slope at zero load and the
+                     sign/units check (``sim/tools/load_ingest.py``). The sweep's
+                     definition is tb.json ``load_sweep``, validated here by
+                     :func:`load_sweep_spec` before anything is written. A
+                     supplied extracted DUT (``--dut layout/...``) is inlined like
+                     the schematic one and labelled ``extracted`` in the plan;
+                     a DUT that ``.include``s other files is refused (the fleet
+                     stages only the deck).
+
 Tool-gap references (2AMLogic/klayout-tools): #2482 (one analysis per corner: the
 ac operating-point companion) and #2964 (no param/ramp supply axis; `.meas AT=`
 at sweep end points).
@@ -77,6 +91,18 @@ GENERATOR = "sim/tools/mk_klt_fleet_request.py"
 SUPPLY_SOURCE = "vsup"
 PLAN_SCHEMA = "gf180-bandgap/fleet-plan/1"
 BENCHES = ("psrr-dc", "line-regulation", "startup")
+#: Benches that characterize rather than verify: no ratified row, no spec
+#: check, never PASS/FAIL. Kept apart from BENCHES so nothing that grades
+#: spec rows (fleet_ingest.SPEC_CHECKS, the suite) can pick them up.
+CHARACTERIZATION_BENCHES = ("output-load-sensitivity",)
+SUPPORTED = BENCHES + CHARACTERIZATION_BENCHES
+LOAD_BENCH = "output-load-sensitivity"
+#: The only tb.json checks the load bench may carry: measurement sanity
+#: (grid, baseline index, sense current), never a threshold on a load figure.
+LOAD_SANITY_CHECKS = frozenset({"sweep_points", "i_zero_check", "i_lo_check", "i_hi_check"})
+#: How far a grid value may sit from its nominal and still be "that point"
+#: (relative to the sweep step): float noise only, never interpolation.
+GRID_TOL = 1e-6
 
 #: PSRR spot frequencies: measurement tag -> Hz. (tb.json indexes them on the
 #: `ac dec 20 0.1 10meg` grid; here the frequency is explicit and the grid is
@@ -127,6 +153,77 @@ def expected_units(tb: dict, supplies: list[float | None]) -> list[list]:
     return [[n, s, float(t)] for n in names for t in tb["temperatures_c"] for s in supplies]
 
 
+def dut_provenance_class(dut_rel: str) -> str:
+    """``schematic`` / ``frozen schematic`` / ``extracted`` from the DUT path
+    (the rule `harness.testbench.Testbench.dut_provenance_class` applies)."""
+    if dut_rel.startswith("layout/"):
+        return "extracted"
+    if "/frozen/" in dut_rel:
+        return "frozen schematic"
+    return "schematic"
+
+
+def load_sweep_spec(tb: dict) -> dict:
+    """The validated load-sweep definition of the output-load-sensitivity
+    manifest -> plain numbers the request and the ingestor share.
+
+    Raises ValueError when the manifest cannot define the measurement
+    unambiguously: the ``dc`` card disagreeing with ``load_sweep``, no grid
+    point at exactly 0 A (no unloaded baseline), a report point off the grid,
+    too few points either side of zero for the step-refinement slope check,
+    or a tb.json check on anything but measurement sanity (this bench carries
+    no spec threshold)."""
+    from fleet_ingest import _spice_number
+
+    ls = tb.get("load_sweep")
+    if not isinstance(ls, dict):
+        raise ValueError("tb.json has no load_sweep definition")
+    rng = ls["exploratory_range"]
+    if "not a supported-load rating" not in rng.get("label", ""):
+        raise ValueError("exploratory_range.label must say it is not a supported-load rating")
+    lo, hi, step = float(rng["lo_a"]), float(rng["hi_a"]), float(rng["step_a"])
+    card = pick_analysis(tb, "dc")["args"].split()
+    if len(card) != 4:
+        raise ValueError(f"dc card {card!r} is not `<source> <lo> <hi> <step>`")
+    if card[0].lower() != ls["source"].lower():
+        raise ValueError(f"dc card sweeps {card[0]!r}, load_sweep.source is {ls['source']!r}")
+    c_lo, c_hi, c_step = (_spice_number(x) for x in card[1:])
+    for name, a, b in (("lo", c_lo, lo), ("hi", c_hi, hi), ("step", c_step, step)):
+        if abs(a - b) > GRID_TOL * step:
+            raise ValueError(f"dc card {name} {a:g} A differs from load_sweep {b:g} A")
+    if not (step > 0 and lo < 0 < hi):
+        raise ValueError("the sweep must step upwards and straddle 0 A (baseline interior, slope central)")
+    n = round((hi - lo) / step) + 1
+    k0 = round(-lo / step)
+    if abs(lo + k0 * step) > GRID_TOL * step or abs(lo + (n - 1) * step - hi) > GRID_TOL * step:
+        raise ValueError("0 A and the sweep end are not exactly on the step grid: no unloaded baseline point")
+    slope = ls["slope"]
+    steps = [int(m) for m in slope["steps"]]
+    if not steps or steps[0] != 1 or any(m < 1 for m in steps):
+        raise ValueError("slope.steps must start at 1 grid step")
+    need = max(int(ls["min_points_each_side"]), max(steps))
+    if k0 < need or (n - 1 - k0) < need:
+        raise ValueError(f"insufficient resolution: {k0} / {n - 1 - k0} points below / above 0 A, need >= {need}")
+    points = []
+    for i in ls["report_points_a"]:
+        i = float(i)
+        j = round((i - lo) / step)
+        if i == 0 or not (0 <= j < n) or abs(lo + j * step - i) > GRID_TOL * step:
+            raise ValueError(f"report point {i:g} A is zero, outside the sweep or off the grid")
+        points.append(i)
+    extra = set(tb.get("checks", {})) - LOAD_SANITY_CHECKS
+    if extra:
+        raise ValueError(f"characterization bench carries non-sanity checks {sorted(extra)}: no spec threshold here")
+    return {
+        "source": ls["source"], "sense": ls["sense"], "lo": lo, "hi": hi, "step": step, "n_points": n,
+        "baseline_index": k0, "report_points": points, "slope_steps": steps,
+        "slope_rel_tol": float(slope["step_refinement_rel_tol"]), "slope_abs_floor": float(slope["abs_floor_v_per_a"]),
+        "min_points_each_side": int(ls["min_points_each_side"]),
+        "sense_rel_tol": float(ls["sense_rel_tol"]), "sense_abs_tol": float(ls["sense_abs_tol_a"]),
+        "supply_rel_tol": float(ls["supply_rel_tol"]),
+    }
+
+
 def _req_common(tb: dict, analysis: dict, measurements, supply_v, *, timeout_s: int) -> dict:
     corners = {"process": process_axis(tb), "temperature_c": list(tb["temperatures_c"])}
     if supply_v is not None:
@@ -160,8 +257,12 @@ def build_plan(bench: str, tb: dict, *, design_include: Path, dut: Path, tb_netl
                dut_rel: str, submitting_klt_version: str | None = None) -> tuple[dict, dict[str, str]]:
     """Pure builder -> (plan, files) where files maps ``<request>/request.json``
     and ``<request>/body.spice`` (and ``plan.json``) to their text."""
-    if bench not in BENCHES:
-        raise ValueError(f"unsupported bench {bench!r}; supported: {', '.join(BENCHES)}")
+    if bench not in SUPPORTED:
+        raise ValueError(f"unsupported bench {bench!r}; supported: {', '.join(SUPPORTED)}")
+    load_spec = load_sweep_spec(tb) if bench == LOAD_BENCH else None
+    if load_spec is not None and any(
+            ln.strip().lower().startswith(".include") for ln in Path(dut).read_text().splitlines()):
+        raise ValueError(f"DUT {dut_rel} .includes other files; the fleet stages only the deck -- flatten it first")
     nominal = tb["nominal_supply_v"]
     vdds = hc.supply_points(nominal, tb.get("supply_tolerance", 0.0))
     files: dict[str, str] = {}
@@ -208,6 +309,17 @@ def build_plan(bench: str, tb: dict, *, design_include: Path, dut: Path, tb_netl
         files["sweep/body.spice"], files["sweep/request.json"] = text, json.dumps(req, indent=2) + "\n"
         requests.append(_entry("sweep", "sweep", None, req, text, expected_units(tb, vdds), [m[0] for m in meas],
                                sweep={"lo": lo, "hi": hi, "step": step}))
+    elif bench == LOAD_BENCH:
+        dc = pick_analysis(tb, "dc")
+        meas = [  # print-precision cross-check only; every reported figure comes from the waveform
+            ("vref_min", ".meas dc vref_min MIN v(vref)", "V"),
+            ("vref_max", ".meas dc vref_max MAX v(vref)", "V"),
+        ]
+        text = deck("sweep", nominal)
+        req = _req_common(tb, dc, meas, vdds, timeout_s=300)
+        files["sweep/body.spice"], files["sweep/request.json"] = text, json.dumps(req, indent=2) + "\n"
+        requests.append(_entry("sweep", "sweep", None, req, text, expected_units(tb, vdds), [m[0] for m in meas],
+                               load_sweep=load_spec))
     else:  # startup
         tran = pick_analysis(tb, "tran")
         params = dict(tb.get("params", {}))
@@ -230,6 +342,10 @@ def build_plan(bench: str, tb: dict, *, design_include: Path, dut: Path, tb_netl
         "supplies_v": vdds,
         "requests": requests,
     }
+    if load_spec is not None:
+        plan["dut"]["provenance_class"] = dut_provenance_class(dut_rel)
+        plan["scope"] = ("characterization-only: output-load sensitivity of the DUT named above; exploratory "
+                         "measurement range, not a supported-load rating; no spec threshold")
     files["plan.json"] = json.dumps(plan, indent=2) + "\n"
     return plan, files
 
@@ -246,9 +362,10 @@ def klt_version() -> str | None:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("bench", choices=BENCHES)
+    ap.add_argument("bench", choices=SUPPORTED)
     ap.add_argument("outdir")
-    ap.add_argument("--dut", default="sim/dut/bandgap_top.spice")
+    ap.add_argument("--dut", default="sim/dut/bandgap_top.spice",
+                    help="DUT to inline (repo-relative), e.g. a regenerated extracted netlist under layout/")
     a = ap.parse_args()
 
     from mk_klt_request import hc_pdk
@@ -267,6 +384,8 @@ def main() -> int:
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(text)
     print(f"wrote {out}/plan.json ({len(plan['requests'])} request(s)); NOT dispatched.")
+    if a.bench in CHARACTERIZATION_BENCHES:
+        print(f"  characterization only -- ingest with: python3 sim/tools/load_ingest.py {out} --dut {plan['dut']['path']}")
     for r in plan["requests"]:
         n = len(r["expected_units"])
         print(f"  {r['name']}: {n} corner unit(s) -> klt sim --backend batch -o {out}/{r['name']}/out "
