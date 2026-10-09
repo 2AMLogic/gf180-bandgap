@@ -7,7 +7,7 @@ This roadmap is generated from the current GitHub label state by the Loom Guide 
 
 Judge-approved PRs stuck under a `loom:operator` merge-risk hold — implementation work is done, only a human merge decision is missing.
 
-_None._
+- **#244**: docs: remove stale hard-coded harness unit-test count
 
 ## Operator Priority
 
@@ -19,14 +19,15 @@ _None._
 
 Human-approved issues ready for implementation (`loom:issue`).
 
-_None._
+- **#239**: DR-0007: execute final-DUT fleet suite and mismatch evidence run
+- **#267**: sim device benches: extract the shared main() driver and record_stamp() helper
+- **#269**: sim: characterize current-DUT output-load sensitivity before A7 ratification
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
-- **#234**: spec: prepare evidence and ranked operator questions for the three TBD rows
-- **#235**: docs: trim README Status paragraph to durable facts; point at signoff/ and WORK_PLAN.md for live state
+_None._
 
 ## PRs Awaiting Review
 
@@ -38,7 +39,7 @@ _None._
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
-_None._
+- **#244**: docs: remove stale hard-coded harness unit-test count
 
 ## Proposed
 
@@ -46,12 +47,14 @@ Issues carrying `loom:curated`.
 
 - **#87**: Layout's 4x unit-PNP array for core.Q2 gives an effective dVBE ratio of 4.03, not the schematic's 3.63 — floorplan 4.1 asserts the opposite *(curated)*
 - **#203**: DR-0007 phase A: measure array ratio and finalize schematic PVT evidence *(curated)*
-- **#234**: spec: prepare evidence and ranked operator questions for the three TBD rows *(curated)*
-- **#235**: docs: trim README Status paragraph to durable facts; point at signoff/ and WORK_PLAN.md for live state *(curated)*
+- **#239**: DR-0007: execute final-DUT fleet suite and mismatch evidence run *(curated)*
+- **#243**: docs: remove stale hard-coded harness unit-test count (40 vs 256) *(curated)*
+- **#267**: sim device benches: extract the shared main() driver and record_stamp() helper *(curated)*
 
 ## Proposed (Architect / Hermit)
 
 - **#219**: sim harness: share the batch-backend guard and cap default local --jobs *(architect)*
+- **#268**: sim: add fleet request and ingestion support for output-noise *(architect)*
 
 ## Epics
 
@@ -63,13 +66,13 @@ Issues carrying `loom:curated`.
 
 | Tier | Count |
 |------|-------|
-| Operator merge-risk holds | 0 |
+| Operator merge-risk holds | 1 |
 | Operator priority | 0 |
-| Ready (`loom:issue`) | 0 |
-| In Progress (`loom:building`) | 2 |
+| Ready (`loom:issue`) | 3 |
+| In Progress (`loom:building`) | 0 |
 | PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 0 |
-| Curated | 4 |
-| Architect / Hermit proposals | 1 |
+| Approved PRs awaiting merge | 1 |
+| Curated | 5 |
+| Architect / Hermit proposals | 2 |
 | Active epics | 3 |
 <!-- guide:plan-body:end -->

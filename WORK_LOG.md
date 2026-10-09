@@ -4,6 +4,34 @@ Chronological record of recently merged pull requests and closed issues, maintai
 
 ### 2026-10-09
 
+- **PR #266**: lint: check spec.py limits against README spec table
+- **PR #265**: spec: lint decision records (status vocabulary, index, ratified immutability)
+- **PR #263**: DR-0007: fleet Monte Carlo mismatch request and ingestion for untrimmed accuracy (#238)
+- **PR #260**: test(signoff): exercise signoff validator rejection paths without klt or PDK
+- **PR #259**: feat(lint): enforce append-only on signoff/reports (#257)
+- **PR #256**: test(sim): unit-cover klt request builders and measure_lumped_r1
+- **PR #255**: test(sim): unit tests for device bench extract/build_record
+- **PR #254**: test(sim): unit-test dctable/fmt; stop interp_at silently clamping (#249)
+- **PR #253**: docs(spec): evidence packet and operator questions for the TBD rows
+- **PR #248**: test(sim): unit tests for postlayout_delta
+- **PR #247**: feat(sim): fleet adapters + ingestion for psrr-dc, line-regulation, startup
+- **PR #246**: ci: run the layout/ unit tests in CI (#245)
+- **PR #240**: docs: trim README Status to durable facts
+- **Issue #264** (closed): Guard telemetry: retain shared-stash creation protection
+- **Issue #262** (closed): lint: check sim/suite/spec.py limits against the ratified README spec table
+- **Issue #261** (closed): spec: lint decision records (status vocabulary, index consistency, ratified-record immutability)
+- **Issue #258** (closed): tests: exercise signoff validator rejection paths without klt or PDK
+- **Issue #257** (closed): signoff: enforce append-only history for committed verdict reports
+- **Issue #251** (closed): tests: unit-cover klt request builders and measure_lumped_r1 (request/expected-points invariant)
+- **Issue #250** (closed): tests: unit-cover extract/build_record in the five device-* bench run scripts
+- **Issue #249** (closed): sim/harness: unit-test dctable/fmt and stop interp_at silently clamping out-of-range sweeps
+- **Issue #245** (closed): ci: run the layout/ unit tests in CI (currently only sim/tests run)
+- **Issue #242** (closed): sim: add unit tests for postlayout_delta (verdict-bearing, currently untested)
+- **Issue #238** (closed): DR-0007: fleet Monte Carlo mismatch request and ingestion for untrimmed accuracy
+- **Issue #237** (closed): DR-0007: fleet request and ingestion adapters for startup, PSRR and line regulation
+- **Issue #235** (closed): docs: trim README Status paragraph to durable facts; point at signoff/ and WORK_PLAN.md for live state
+- **Issue #234** (closed): spec: prepare evidence and ranked operator questions for the three TBD rows
+
 - **Issue #210** (closed): DR-0007: synchronize active embedded benches with final core sizing
 
 - **PR #233**: test: unit tests for mk_dut convert/validate
