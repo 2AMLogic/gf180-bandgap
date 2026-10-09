@@ -36,7 +36,10 @@ What is checked, per ``sim/<slug>/records/<record-id>.md``:
   already-committed, already-superseded record is fixed by minting a new
   head, not by editing the old one);
 - nothing under ``records/``, ``netlist-snapshots/`` or ``corners/`` has been
-  modified or deleted relative to the merge base -- evidence is append-only.
+  modified or deleted relative to the merge base -- evidence is append-only;
+- the same holds for every file under ``signoff/reports/`` (a rename or move
+  reads as delete + add, so it is flagged too). Other ``signoff/`` files
+  (manifest, pins, README) are mutable and not covered.
 
 What is deliberately *not* checked: the prose inside a field (a record is a
 human/agent-written argument, not a form), and files under ``corners/<id>/``
@@ -113,6 +116,11 @@ EVIDENCE_PATH_RE = re.compile(
     r"^sim/(?P<slug>[^/]+)/(?P<kind>%s)/(?P<rest>.+)$"
     % "|".join(re.escape(d) for d in (RECORDS_DIR, SNAPSHOT_DIR, CORNERS_DIR))
 )
+
+#: Committed signoff verdicts: ``signoff/reports/<record-id>.signoff.json``.
+#: Append-only like sim/ evidence (signoff/README.md). The manifest, pins and
+#: narrative docs elsewhere under ``signoff/`` stay mutable.
+SIGNOFF_REPORT_RE = re.compile(r"^signoff/reports/.+")
 
 
 @dataclass(frozen=True)
@@ -574,6 +582,7 @@ def check_append_only(root: Path, base_ref: str) -> tuple[list, str | None]:
         base_sha,
         "--",
         "sim",
+        "signoff/reports",
     )
     if diff is None or diff.returncode != 0:
         return [], "git diff against the merge base failed"
@@ -583,16 +592,28 @@ def check_append_only(root: Path, base_ref: str) -> tuple[list, str | None]:
     for line in diff.stdout.splitlines():
         status, _, path = line.partition("\t")
         path = path.strip()
-        if not path or not EVIDENCE_PATH_RE.match(path):
+        if not path:
             continue
-        problems.append(
-            Problem(
-                path,
-                f"{verb.get(status[:1], status)} since {base_sha[:7]} -- sim/ evidence "
-                "is append-only: mint a new <record-id> and reference the old one "
-                "via **Supersedes** (sim/README.md)",
+        what = verb.get(status[:1], status)
+        if EVIDENCE_PATH_RE.match(path):
+            problems.append(
+                Problem(
+                    path,
+                    f"{what} since {base_sha[:7]} -- sim/ evidence "
+                    "is append-only: mint a new <record-id> and reference the old one "
+                    "via **Supersedes** (sim/README.md)",
+                )
             )
-        )
+        elif SIGNOFF_REPORT_RE.match(path):
+            problems.append(
+                Problem(
+                    path,
+                    f"{what} since {base_sha[:7]} -- signoff/ reports "
+                    "are append-only: add a new signoff/reports/<record-id>"
+                    ".signoff.json instead of changing, removing or moving an "
+                    "existing one (signoff/README.md)",
+                )
+            )
     return problems, None
 
 

@@ -392,6 +392,64 @@ class AppendOnlyTests(unittest.TestCase):
         problems = self.check()
         self.assertTrue(any("deleted since" in p for p in problems), problems)
 
+    def _seed_report(self, name="20260920-062540-32dcc18.signoff.json"):
+        reports = self.root / "signoff" / "reports"
+        reports.mkdir(parents=True, exist_ok=True)
+        (reports / name).write_text('{"verdict": "t0"}\n')
+        (self.root / "signoff" / "block-manifest.json").write_text("{}\n")
+        self.git("add", "-A")
+        self.git("commit", "--quiet", "-m", "seed report")
+        self.base = self.git("rev-parse", "HEAD").stdout.strip()
+        return reports / name
+
+    def test_adding_a_signoff_report_is_allowed(self):
+        old = self._seed_report()
+        (old.parent / "20260922-014706-cc6f6f0.signoff.json").write_text("{}\n")
+        self.git("add", "-A")
+        self.git("commit", "--quiet", "-m", "new report")
+        self.assertEqual(self.check(), [])
+
+    def test_editing_a_signoff_report_is_rejected(self):
+        old = self._seed_report()
+        old.write_text('{"verdict": "t1"}\n')
+        problems = self.check()
+        self.assertTrue(
+            any(old.name in p and "modified since" in p for p in problems), problems
+        )
+
+    def test_deleting_a_signoff_report_is_rejected(self):
+        old = self._seed_report()
+        old.unlink()
+        self.git("add", "-A")
+        self.git("commit", "--quiet", "-m", "drop report")
+        problems = self.check()
+        self.assertTrue(
+            any(old.name in p and "deleted since" in p for p in problems), problems
+        )
+
+    def test_moving_or_replacing_a_signoff_report_is_rejected(self):
+        old = self._seed_report()
+        old.rename(old.parent / "20260923-000000-abcdef1.signoff.json")
+        self.git("add", "-A")
+        self.git("commit", "--quiet", "-m", "rename report")
+        problems = self.check()
+        self.assertTrue(
+            any(old.name in p and "deleted since" in p for p in problems), problems
+        )
+
+    def test_moving_a_signoff_report_out_of_the_directory_is_rejected(self):
+        old = self._seed_report()
+        old.rename(self.root / "signoff" / old.name)
+        self.git("add", "-A")
+        self.git("commit", "--quiet", "-m", "move report out")
+        problems = self.check()
+        self.assertTrue(any(old.name in p for p in problems), problems)
+
+    def test_other_signoff_files_may_change_freely(self):
+        self._seed_report()
+        (self.root / "signoff" / "block-manifest.json").write_text('{"a": 1}\n')
+        self.assertEqual(self.check(), [])
+
     def test_non_evidence_files_under_sim_may_change_freely(self):
         harness = self.root / "sim" / "harness"
         harness.mkdir(parents=True, exist_ok=True)
