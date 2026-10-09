@@ -19,9 +19,7 @@ _None._
 
 Human-approved issues ready for implementation (`loom:issue`).
 
-- **#239**: DR-0007: execute final-DUT fleet suite and mismatch evidence run
-- **#267**: sim device benches: extract the shared main() driver and record_stamp() helper
-- **#269**: sim: characterize current-DUT output-load sensitivity before A7 ratification
+_None._
 
 ## In Progress
 
@@ -49,7 +47,6 @@ Issues carrying `loom:curated`.
 - **#203**: DR-0007 phase A: measure array ratio and finalize schematic PVT evidence *(curated)*
 - **#239**: DR-0007: execute final-DUT fleet suite and mismatch evidence run *(curated)*
 - **#243**: docs: remove stale hard-coded harness unit-test count (40 vs 256) *(curated)*
-- **#267**: sim device benches: extract the shared main() driver and record_stamp() helper *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -68,11 +65,11 @@ Issues carrying `loom:curated`.
 |------|-------|
 | Operator merge-risk holds | 1 |
 | Operator priority | 0 |
-| Ready (`loom:issue`) | 3 |
+| Ready (`loom:issue`) | 0 |
 | In Progress (`loom:building`) | 0 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 1 |
-| Curated | 5 |
+| Curated | 4 |
 | Architect / Hermit proposals | 2 |
 | Active epics | 3 |
 <!-- guide:plan-body:end -->

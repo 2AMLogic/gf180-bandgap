@@ -4,6 +4,12 @@ Chronological record of recently merged pull requests and closed issues, maintai
 
 ### 2026-10-09
 
+- **PR #273**: feat(sim): characterization-only output-load sensitivity bench with fleet request and ingestion
+- **PR #272**: sim: extract run_device_experiment and record_stamp (#267)
+- **PR #271**: DR-0007: #239 fleet evidence run BLOCKED (runner klt version mismatch)
+- **Issue #269** (closed): sim: characterize current-DUT output-load sensitivity before A7 ratification
+- **Issue #267** (closed): sim device benches: extract the shared main() driver and record_stamp() helper
+
 - **PR #266**: lint: check spec.py limits against README spec table
 - **PR #265**: spec: lint decision records (status vocabulary, index, ratified immutability)
 - **PR #263**: DR-0007: fleet Monte Carlo mismatch request and ingestion for untrimmed accuracy (#238)
