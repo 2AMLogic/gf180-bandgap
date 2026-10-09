@@ -1,0 +1,82 @@
+{
+  "name": "output-load-sensitivity",
+  "description": "CHARACTERIZATION ONLY: Vref of the canonical bandgap_top vs a DC current sink at vref (exploratory -1..+2 uA sweep, 10 nA steps) at every process/temperature/supply corner -- unloaded baseline, signed shifts, slope at zero load. No spec threshold; not a load rating.",
+  "claim": "CHARACTERIZATION ONLY -- no ratified spec row is claimed. Diagnostic evidence for the operator's open decisions on README.md row 'Load' (amendment A7: max DC load + load regulation, or explicit unbuffered/high-Z only) and on the PSRR row's load condition (amendment A4); see spec/tbd-row-evidence.md Row 3 and issue #269. The bench measures how far v(vref) of the current, unbuffered circuit moves when DC current is drawn from it; it sets no limit, selects no output stage and rates no load. The sweep span is an EXPLORATORY MEASUREMENT RANGE, not a supported-load range: a value inside it is not a statement that the block may be loaded that hard, and a value outside it is not a statement that it may not.",
+  "netlist": "tb_output_load.spice",
+  "dut": "sim/dut/bandgap_top.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0.1,
+  "temperatures_c": [-40, 27, 125],
+  "corners": ["full"],
+  "analyses": [
+    "dc iload -1u 2u 10n"
+  ],
+  "options": ["wnflag=1"],
+  "load_sweep": {
+    "role": "characterization-only; no spec threshold, no load rating, no accuracy budget",
+    "source": "iload",
+    "sense": "vlsense",
+    "direction": "positive iload = current SUNK out of vref into vss (the load draws current); negative = current sourced into vref. i(vlsense) carries the same sign and must equal the sweep value at every point.",
+    "units": {
+      "current": "A in the deck; reported in uA",
+      "voltage": "V; unloaded baseline reported in V, shifts reported in mV",
+      "slope": "dV(vref)/dI(sink) in V/A; reported in mV/uA (numerically kOhm). zout_kohm = -slope, positive when sinking lowers vref."
+    },
+    "exploratory_range": {
+      "lo_a": -1e-6,
+      "hi_a": 2e-6,
+      "step_a": 1e-8,
+      "label": "EXPLORATORY MEASUREMENT RANGE -- not a supported-load rating",
+      "why": "Wide enough to show curvature and a few hundred mV of shift on the unbuffered node, fine enough (10 nA) to resolve the slope at zero load with a step-refinement check. Chosen from one tt/27 C/3.3 V operating-point probe of the current DUT (issue #269); it encodes no requirement."
+    },
+    "baseline": "unloaded vref = v(vref) at the sweep point where iload is exactly 0 A; the point must exist on the grid (|iload| <= 1e-6 * step), otherwise the corner is invalid -- never interpolated.",
+    "shift": "signed shift_mv(I) = (v(vref)(I) - unloaded vref) * 1000 at each report point; negative means vref fell.",
+    "report_points_a": [-1e-6, -5e-7, -1e-7, 1e-7, 5e-7, 1e-6, 2e-6],
+    "slope": {
+      "method": "central difference about iload = 0: s(m) = (v[k0+m] - v[k0-m]) / (x[k0+m] - x[k0-m]), m in grid steps",
+      "steps": [1, 2, 4],
+      "reported": "s(1), the finest step",
+      "step_refinement_rel_tol": 0.01,
+      "abs_floor_v_per_a": 1.0,
+      "why": "|s(m) - s(1)| <= rel_tol * max(|s(1)|, abs_floor) for every m; a slope that moves with the step size is not resolved (insufficient resolution or a non-converged sweep) and the corner is invalid."
+    },
+    "min_points_each_side": 8,
+    "sense_rel_tol": 1e-6,
+    "sense_abs_tol_a": 1e-15,
+    "supply_rel_tol": 1e-6,
+    "nonlinearity": "nonlin_max_mv = max over the sweep of |v(vref) - vref0 - s(1) * iload| * 1000: departure from the zero-load tangent (recorded, not gated)."
+  },
+  "measure": {
+    "vref_unloaded": "dc1.v(vref)[100]",
+    "slope_mv_per_ua": "(dc1.v(vref)[101]-dc1.v(vref)[99])*1000/0.02",
+    "shift_mv_source_1u": "(dc1.v(vref)[0]-dc1.v(vref)[100])*1000",
+    "shift_mv_sink_1u": "(dc1.v(vref)[200]-dc1.v(vref)[100])*1000",
+    "shift_mv_sink_2u": "(dc1.v(vref)[300]-dc1.v(vref)[100])*1000",
+    "i_zero_check": "dc1.i(vlsense)[100]",
+    "i_lo_check": "dc1.i(vlsense)[0]",
+    "i_hi_check": "dc1.i(vlsense)[300]",
+    "sweep_points": "length(dc1.v(vref))"
+  },
+  "checks": {
+    "sweep_points": {
+      "min": 301,
+      "max": 301,
+      "description": "Not a spec check: asserts the sweep ran at the stated 10 nA resolution over -1..+2 uA (301 points), so the fixed indices above (baseline at [100]) mean what they say."
+    },
+    "i_zero_check": {
+      "min": -1e-15,
+      "max": 1e-15,
+      "description": "Not a spec check: asserts index 100 is the unloaded (0 A) baseline point."
+    },
+    "i_lo_check": {
+      "min": -1.000001e-6,
+      "max": -0.999999e-6,
+      "description": "Not a spec check: asserts the measured load current at the first point is -1 uA (sourced into vref) -- sign and units of the load convention."
+    },
+    "i_hi_check": {
+      "min": 1.999998e-6,
+      "max": 2.000002e-6,
+      "description": "Not a spec check: asserts the measured load current at the last point is +2 uA (sunk out of vref)."
+    }
+  }
+}

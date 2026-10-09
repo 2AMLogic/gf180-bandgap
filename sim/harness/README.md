@@ -352,6 +352,26 @@ original grep evidence), migrated onto this pattern in issue #123.
 `sim/tools/devchar.py` has since been **deleted**: no experiment imports it
 any more.
 
+## sim/output-load-sensitivity/: characterization, not a spec line
+
+`sim/output-load-sensitivity/` (issue #269) sweeps a DC current sink at
+`vref` of the canonical `bandgap_top` over every corner. It records the
+unloaded Vref, the signed shifts and the slope at zero load. Its `tb.json`
+fits the harness contract, so
+`sim/run_corners.py output-load-sensitivity --corners tt --temps 27
+--supply-tol 0 --no-write` can serve as a one-corner debug probe. Its only
+`checks` are measurement sanity checks (grid size, the 0 A baseline index and
+the measured load current). There is **no spec threshold**, and the slug is
+not a suite line.
+
+Evidence comes from the fleet path instead: `sim/tools/mk_klt_fleet_request.py
+output-load-sensitivity`, then `sim/tools/load_ingest.py`. A run ends
+COMPLETE or INCOMPLETE, never PASS or FAIL. The sweep span is an
+**exploratory measurement range, not a supported-load rating**. The load
+convention, the validity rules and how the numbers feed the operator's open
+A7 decision (high-Z vs buffered) and the A4 decision are covered in
+[`sim/output-load-sensitivity/README.md`](../output-load-sensitivity/README.md).
+
 ## xschem
 
 `design/xschemrc` resolves the PDK the same way the harness does and sources

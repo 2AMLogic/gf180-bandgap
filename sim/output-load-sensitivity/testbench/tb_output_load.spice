@@ -1,0 +1,39 @@
+* output-load-sensitivity -- Vref vs a DC load current drawn from vref
+*
+* CHARACTERIZATION ONLY (issue #269). Not a spec claim, not a load rating:
+* the ratified Load row is open item A7 and the PSRR load condition is A4
+* (README.md, spec/tbd-row-evidence.md Row 3). Nothing here sets a limit.
+*
+* Netlist FRAGMENT for sim/harness (see sim/harness/README.md). The DUT is
+* .include-d from the manifest's "dut" key (or inlined by
+* sim/tools/mk_klt_fleet_request.py for the fleet), so this testbench re-runs
+* unedited against a frozen or extracted netlist via `--dut <path>`.
+*
+* Load convention (tb.json "load_sweep" is the authoritative definition):
+*
+*   - `iload nl 0` is an ideal DC current source. SPICE drives a positive
+*     source value from its + node (nl) through the source into its - node
+*     (vss), so a POSITIVE iload is current SUNK out of vref into vss -- the
+*     load draws current. A NEGATIVE iload sources current into vref.
+*   - `vlsense vref nl 0` is a 0 V ammeter in series. ngspice reports a
+*     voltage source's branch current flowing into its + node (vref), so
+*     i(vlsense) is the load current with the same sign convention. The
+*     ingestor asserts i(vlsense) equals the sweep value point by point:
+*     that is the sign and units check, independent of this comment.
+*   - The load current is swept internally (`dc iload ...`, tb.json
+*     "analyses"); the unloaded baseline is the sweep point at exactly 0 A.
+*     The sweep span is an EXPLORATORY MEASUREMENT RANGE, chosen to resolve
+*     the slope at zero load and show curvature -- it is not a supported
+*     load range and implies nothing about what load the block may drive.
+*   - Process, temperature and supply are the full mandated harness axes
+*     (supply via `vsup`, which the fleet alters per corner).
+
+vsup vdd 0 dc {vdd_val}
+Xdut vdd 0 vref bandgap_top
+vlsense vref nl dc 0
+iload nl 0 dc 0
+
+* Convergence seeding, as sim/line-regulation/ (design/bandgap_operating_point.md
+* 4.2 and #11). Only nodes that exist at the top level are seeded.
+.ic v(xdut.fb)=1.0 v(xdut.sns1)=0.6 v(xdut.sns2)=0.6 v(vref)=1.2
++ v(xdut.ibias)=0.6

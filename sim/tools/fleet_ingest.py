@@ -351,6 +351,7 @@ def plan_problems(bench: str, tb: dict, plan: dict) -> list[str]:
     want = {
         "psrr-dc": {"ac": expected_units(tb, vdds), "op": expected_units(tb, [None])},
         "line-regulation": {"sweep": expected_units(tb, vdds)},
+        "output-load-sensitivity": {"sweep": expected_units(tb, vdds)},  # characterization: sim/tools/load_ingest.py
         "startup": {r["name"]: expected_units(tb, [None]) for r in plan.get("requests", [])},
     }[bench]
     got = {r["name"]: r["expected_units"] for r in plan.get("requests", [])}
