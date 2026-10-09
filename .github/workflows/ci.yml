@@ -98,7 +98,7 @@ jobs:
           fi
 
       - name: Harness self-test
-        # Stage 1 (the 40 harness unit tests) always runs. Stage 2 probes for
+        # Stage 1 (the harness unit tests in the sim tests directory) always runs. Stage 2 probes for
         # ngspice + the PDK and, finding neither on this runner, prints SKIP
         # and exits 0 -- the 81-point PVT stage 3 is covered by sim-pdk.yml
         # instead. The assertions below pin that contract so this job cannot go

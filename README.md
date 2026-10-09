@@ -152,7 +152,7 @@ post-layout (extracted) level.
 Every PR and every push to `main` runs
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml): lint
 (shellcheck + python/json well-formedness) and the PDK-free half of the
-harness self-test (40 unit tests, testbench-manifest loading). It needs
+harness self-test (the harness unit tests in the sim tests directory, testbench-manifest loading). It needs
 nothing but python3, so no PR waits on a PDK download.
 
 The PDK-dependent half — the 81-point PVT smoke run against ngspice and the
