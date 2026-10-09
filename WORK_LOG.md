@@ -4,6 +4,10 @@ Chronological record of recently merged pull requests and closed issues, maintai
 
 ### 2026-10-08
 
+- **PR #224**: tests: unit-cover pure helpers in run_mc_untrimmed.py
+- **Issue #223** (closed): tests: unit-cover the pure netlist/parse helpers in sim/mc-untrimmed/run_mc_untrimmed.py
+- **PR #222**: DR-0007: retune canonical R2/R1 from measured array evidence (#209)
+- **Issue #209** (closed): DR-0007: retune canonical R2 and R1 from measured array evidence
 - **PR #218**: sim/harness: reject simulator errors even when every PVT measurement parsed
 - **Issue #216** (closed): Reject simulator error diagnostics even when all PVT measurements are present
 - **PR #217**: Suite completion must require all benches and complete gated measurements
