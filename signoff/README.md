@@ -5,7 +5,11 @@ prose in this file. It is
 [`block-manifest.json`](block-manifest.json) — what this block claims, and the
 evidence envelope backing each claim — graded mechanically by `klt signoff
 --manifest`, with the graded output committed under
-[`reports/`](reports/) as append-only evidence.
+[`reports/`](reports/) as append-only evidence. The PR gate enforces that:
+`sim/harness/evidence_lint.py` (run by `.github/scripts/lint.sh`, strict in
+CI) rejects any modification, deletion or rename/move of a report already
+present at the merge base; new reports are fine. The manifest, pins and this
+file are mutable and outside that rule.
 
 Read the newest record in `reports/` for the current per-item verdict. Nothing
 in this file restates it, on purpose: a hand-maintained checkbox list goes
