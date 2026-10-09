@@ -513,3 +513,33 @@ Review cases exercised:
   `psrr-dc` (adapter, no record).
 - **Stale or provisional DUT evidence:** every cited record. Dirty-tree
   provenance is flagged per record.
+
+---
+
+## Unit-contract correction (2026-10-09, issue #252)
+
+The "Units: unresolved discrepancy" section above is now resolved by
+measurement. A PDK-free known-resistor probe
+(`sim/output-noise/unit-probe/`, ngspice-42, 5 kohm, 27 C, 0.1-10 Hz and
+0.1 Hz-100 kHz, default vs `set sqrnoise`) shows that with `sqrnoise` unset
+(ngspice's default) `onoise_spectrum` is V/sqrt(Hz) and `onoise_total` is V
+rms, both within 0.1 % of the analytical sqrt(4kTR) and sqrt(4kTR*(fh-fl)).
+Under `set sqrnoise` both are squared. The recorded `sqrt()` conversions were
+therefore a double square root.
+
+- `sim/output-noise/testbench/tb.json` now scales only
+  (`noise2.onoise_total * 1e6`, `noise3.onoise_spectrum[i] * 1e9`) and forces
+  `unset sqrnoise`; the stale "provisional 5T OTA" caveat is replaced (the DUT
+  amp is the #42 telescopic-cascode OTA).
+- Historical records `20260910-060222-a6f8b96` and `20260910-060236-a6f8b96`
+  are unchanged. Their "uVrms" and "nV/sqrt(Hz)" columns are square-rooted
+  amplitudes and are not corrected measurements; the "squared back" figures
+  in the table above remain an arithmetic reinterpretation of old numbers,
+  not new evidence.
+- This is unit verification on a resistor, not a DUT measurement. **No new
+  current-DUT noise record exists and no A6 threshold or pass is claimed.**
+- Deferred: current schematic and extracted DUT records over the full
+  -40/27/125 C, +/-10 % supply, process matrix must be minted through the
+  fleet after #268 supplies noise request/ingestion support (#268 Phase B
+  consumes this contract). Full-PVT grids do not run on shared dispatch
+  workers.

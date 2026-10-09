@@ -1,0 +1,27 @@
+* PDK-free known-noise unit probe for ngspice `noise` output (issue #252).
+* Two ideal 10 kohm resistors form a divider, so the output node sees
+* Req = R1||R2 = 5 kohm of thermal noise to ground (vin is an ideal source,
+* AC ground for noise). Temperature 27 C = 300.15 K, white spectrum.
+*   analytical density  sqrt(4 k T Req)            = 9.1 nV/sqrt(Hz)
+*   analytical rms      sqrt(4 k T Req (fh - fl))  over 0.1-10 Hz
+* Mode is selected by the SQRNOISE_MODE line appended by run_probe.sh
+* ("unset sqrnoise" or "set sqrnoise"); the deck never relies on startup files.
+vin in 0 dc 0 ac 1
+r1 in out 10k
+r2 out 0 10k
+.temp 27
+.options noinit
+.control
+set noaskquit
+set numdgt=10
+set sqrnoise
+noise v(out) vin dec 20 0.1 10
+print noise1.onoise_spectrum[0] noise1.onoise_spectrum[20] noise1.onoise_spectrum[40]
+print noise1.frequency[0] noise1.frequency[40]
+print noise2.onoise_total
+noise v(out) vin dec 20 0.1 100k
+print noise3.onoise_spectrum[80] noise3.onoise_spectrum[100] noise3.onoise_spectrum[120]
+print noise3.frequency[80] noise3.frequency[100] noise3.frequency[120]
+quit
+.endc
+.end

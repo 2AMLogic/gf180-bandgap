@@ -53,6 +53,8 @@ NOMINAL_TEMP_C = 27.0
 # of only the aggregate onoise_spectrum/onoise_total it prints for a dense
 # sweep.
 ANALYSES = (
+    # Force the amplitude representation (V/sqrt(Hz)); see unit-probe/ (#252).
+    "unset sqrnoise",
     "op",
     "noise v(vref) vsup lin 1 1 1 1",
     "echo === NOISE_BREAKDOWN_1HZ_START ===",
@@ -154,7 +156,8 @@ def summarize_section(values: dict[str, float], total: float, top_n: int = 8) ->
     ngspice's per-device noise summary (this module's ``ANALYSES``, i.e. a
     single-point ``noise`` analysis with ``pts_per_summary=1``) prints each
     device's own ``onoise_<name>`` bare total alongside the circuit's overall
-    ``onoise_spectrum`` -- but empirically (verified against two independent
+    ``onoise_spectrum`` (all in V/sqrt(Hz), ngspice's default amplitude
+    representation, enforced by ``unset sqrnoise`` in ``ANALYSES``) -- but empirically (verified against two independent
     hand-built RC networks with known, symmetric, equal-split noise sources:
     N identical resistors each attribute exactly 1/N of total *power*) the
     two do **not** combine linearly. They combine in quadrature: summing
@@ -180,7 +183,7 @@ def summarize_section(values: dict[str, float], total: float, top_n: int = 8) ->
             have_blocks = True
             by_block[bucket] = by_block.get(bucket, 0.0) + power
 
-    lines = [f"  Total onoise_spectrum: {total:.6e} V^2/Hz"]
+    lines = [f"  Total onoise_spectrum: {total:.6e} V/sqrt(Hz)"]
     lines.append("  By device family (share of total output-noise power):")
     for family, power in sorted(by_family.items(), key=lambda kv: -kv[1]):
         lines.append(f"    {power / total_sq * 100:6.2f}%  {family}")
