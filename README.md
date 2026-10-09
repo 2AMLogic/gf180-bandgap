@@ -18,7 +18,7 @@ filed generically on the public
 The bandgap topology was chosen first because the analog-PMU category is
 well understood at 180nm-class nodes and the gf180mcu PDK is uncontested —
 a good first target for proving out an agent-native, open-source-only path
-from spec toward silicon.
+from spec to measured silicon.
 
 ## Target specification (RATIFIED 2026-07-31, see issue #1 and #35)
 
@@ -70,7 +70,6 @@ Amended-schematic verification and updated physical/extracted signoff remain
 work to verify, and tapeout is not scheduled. The graded verdict of record is
 [`signoff/README.md`](signoff/README.md); live issue and dependency state is in
 [`WORK_PLAN.md`](WORK_PLAN.md).
-[#94](https://github.com/2AMLogic/gf180-bandgap/issues/94)).
 
 **Where this block sits on the evidence ladder is graded, not asserted**:
 [`signoff/`](signoff/README.md) holds the `klt signoff --manifest` block
