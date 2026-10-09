@@ -29,10 +29,15 @@
 *          (`noise1`, `noise2`): `noise1.onoise_spectrum` is the per-Hz
 *          density across that band (41 points, reference-only, not
 *          measured individually); `noise2.onoise_total` is ngspice's
-*          integral of onoise_spectrum^2 over the whole swept range --
-*          i.e. a **mean-square** volts^2 quantity, not an RMS voltage.
-*          The record's integrated-noise column takes its square root and
-*          says so, exactly as this comment does.
+*          integral of the spectrum over the whole swept range.
+*          UNIT CONTRACT (verified, issue #252, sim/output-noise/unit-probe/):
+*          with the `sqrnoise` control variable UNSET (ngspice >= 27
+*          default; tb.json's first `analyses` entry, `unset sqrnoise`,
+*          forces it so a user .spiceinit cannot change it),
+*          onoise_spectrum is V/sqrt(Hz) and onoise_total is RMS volts.
+*          Neither takes a square root: the record's integrated column is
+*          onoise_total * 1e6 (uVrms). Under `set sqrnoise` both would be
+*          squared (V^2/Hz, V^2) -- that mode is not used.
 *       2. `noise v(vref) vsup dec 20 0.1 100k` -- a second, wider sweep
 *          (0.1 Hz .. 100 kHz) whose own plot pair is (`noise3`, `noise4`).
 *          Only `noise3.onoise_spectrum` is used, to read off the spot
@@ -49,9 +54,9 @@
 *          100 kHz -- the same "state the frequency, do not imply it"
 *          discipline sim/psrr-dc/ applies to its own f_dc_hz/
 *          f_band_edge_hz measures.
-*       4. Spot density is reported in nV/sqrt(Hz): sqrt(onoise_spectrum)
-*          converts ngspice's V^2/Hz density to V/sqrt(Hz), then *1e9 for
-*          the nV scale the ratified amendment anticipates.
+*       4. Spot density is reported in nV/sqrt(Hz): onoise_spectrum is
+*          already V/sqrt(Hz) (see the unit contract above), so only the
+*          *1e9 scaling to nV is applied.
 *
 * Load condition: none. Like sim/psrr-dc/, this bench measures the
 * unloaded block -- the ratified row's load condition is open item A4

@@ -1,7 +1,7 @@
 {
   "name": "output-noise",
   "description": "Output-referred voltage noise of bandgap_top: 0.1-10 Hz integrated noise (uVrms) against the open A6 band, plus 1 kHz/10 kHz/100 kHz spot noise density (nV/sqrt(Hz)) reference columns.",
-  "claim": "README.md 'Target specification (RATIFIED 2026-07-31)' -> row 'Output noise' (amendment A6): band is defined -- 0.1-10 Hz integrated, uVrms -- but the numeric threshold is an explicit open item ('threshold TBD; add a spot-noise point if a later wave feeds an ADC'). This bench produces the measurement A6's eventual decision record needs; it does not itself claim a pass/fail threshold, and sim/suite/spec.py's NOT_CLAIMED_HERE list keeps 'Output noise' unclaimed for exactly that reason. Convention: two noise analyses per corner, both with vsup (vdd) as the required nonzero-AC input source and vref as the output. The first, `noise v(vref) vsup dec 20 0.1 10`, integrates onoise_spectrum over exactly the 0.1-10 Hz band A6 names; ngspice's onoise_total is a mean-square (V^2) quantity, so the record reports its square root as uVrms. The second, `noise v(vref) vsup dec 20 0.1 100k`, is read only at the 1 kHz/10 kHz/100 kHz decade-boundary indices (the spot-noise point A6 anticipates), converting the V^2/Hz density to V/sqrt(Hz) via sqrt() and then to nV via *1e9. Load condition: unloaded, exactly as sim/psrr-dc/ -- the ratified row's load condition is open item A4, to be fixed with the output stage (#10). Caveat until #10 lands: bandgap_amp is #8's provisional 5T OTA (design/bandgap_operating_point.md 4.1, 4.3), so these figures are a statement about provisional sizing, not the final amp's noise floor.",
+  "claim": "README.md 'Target specification (RATIFIED 2026-07-31)' -> row 'Output noise' (amendment A6): band is defined -- 0.1-10 Hz integrated, uVrms -- but the numeric threshold is an explicit open item ('threshold TBD; add a spot-noise point if a later wave feeds an ADC'). This bench produces the measurement A6's eventual decision record needs; it does not itself claim a pass/fail threshold, and sim/suite/spec.py's NOT_CLAIMED_HERE list keeps 'Output noise' unclaimed for exactly that reason. Convention: two noise analyses per corner, both with vsup (vdd) as the required nonzero-AC input source and vref as the output. The first, `noise v(vref) vsup dec 20 0.1 10`, integrates onoise_spectrum over exactly the 0.1-10 Hz band A6 names; with ngspice's default amplitude representation (sqrnoise unset, forced by the first analyses entry), onoise_total is already RMS volts, so the record scales it by 1e6 to uVrms with no square root. The second, `noise v(vref) vsup dec 20 0.1 100k`, is read only at the 1 kHz/10 kHz/100 kHz decade-boundary indices (the spot-noise point A6 anticipates), where onoise_spectrum is already V/sqrt(Hz), scaled by 1e9 to nV/sqrt(Hz) with no square root. Unit convention verified by sim/output-noise/unit-probe/ (known-resistor, default vs `set sqrnoise`; issue #252): the pre-#252 records (20260910-060222-a6f8b96, 20260910-060236-a6f8b96) applied sqrt() to already-amplitude values and are not corrected measurements (see spec/tbd-row-evidence.md). Load condition: unloaded, exactly as sim/psrr-dc/ -- the ratified row's load condition is open item A4, to be fixed with the output stage (#10). Amplifier: bandgap_amp is the telescopic-cascode OTA that #42 substituted for #8's provisional 5T OTA (design/bandgap_operating_point.md; ncasc/XCC in sim/dut/bandgap_amp.spice); the output-stage/load open item A4 (#10) still applies.",
   "netlist": "tb_output_noise.spice",
   "dut": "sim/dut/bandgap_top.spice",
   "nominal_supply_v": 3.3,
@@ -9,15 +9,16 @@
   "temperatures_c": [-40, 27, 125],
   "corners": ["full"],
   "analyses": [
+    "unset sqrnoise",
     "op",
     "noise v(vref) vsup dec 20 0.1 10",
     "noise v(vref) vsup dec 20 0.1 100k"
   ],
   "measure": {
-    "onoise_int_0p1_10hz_uvrms": "sqrt(noise2.onoise_total) * 1e6",
-    "onoise_1khz_nv_rthz": "sqrt(noise3.onoise_spectrum[80]) * 1e9",
-    "onoise_10khz_nv_rthz": "sqrt(noise3.onoise_spectrum[100]) * 1e9",
-    "onoise_100khz_nv_rthz": "sqrt(noise3.onoise_spectrum[120]) * 1e9",
+    "onoise_int_0p1_10hz_uvrms": "noise2.onoise_total * 1e6",
+    "onoise_1khz_nv_rthz": "noise3.onoise_spectrum[80] * 1e9",
+    "onoise_10khz_nv_rthz": "noise3.onoise_spectrum[100] * 1e9",
+    "onoise_100khz_nv_rthz": "noise3.onoise_spectrum[120] * 1e9",
     "vref_op": "op1.v(vref)",
     "f_band_lo_hz": "real(noise1.frequency[0])",
     "f_band_hi_hz": "real(noise1.frequency[40])",
