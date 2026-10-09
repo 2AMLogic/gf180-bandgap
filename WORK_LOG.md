@@ -4,6 +4,9 @@ Chronological record of recently merged pull requests and closed issues, maintai
 
 ### 2026-10-09
 
+- **PR #278**: sim: fix output-noise unit contract (#252)
+- **Issue #252** (closed): sim/output-noise: verify ngspice noise units (possible double square-root in recorded uVrms and nV/rtHz)
+
 - **PR #276**: sim: reject non-finite scalar measurements before evidence grading
 - **Issue #274** (closed): sim: reject non-finite scalar measurements before evidence grading
 
