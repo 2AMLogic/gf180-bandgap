@@ -18,7 +18,7 @@ filed generically on the public
 The bandgap topology was chosen first because the analog-PMU category is
 well understood at 180nm-class nodes and the gf180mcu PDK is uncontested —
 a good first target for proving out an agent-native, open-source-only path
-from spec to measured silicon.
+from spec toward silicon.
 
 ## Target specification (RATIFIED 2026-07-31, see issue #1 and #35)
 
@@ -59,46 +59,17 @@ both driven by real, already-ratified device-sizing/routing work rather than
 a relaxation for its own sake; see those records for the full evidence and
 `layout/bandgap_top/AREA.md` for the measured history.
 
-**Status**: simulation-complete → layout DRC/LVS-clean → measured silicon
-over temperature. Device characterization and PVT corner sweeps are
-recorded as append-only evidence under `sim/` (see
-[`sim/README.md`](sim/README.md) for the record format). A full block layout
-has committed DRC-clean (0 violations) and LVS-matching reports on both
-comparators (`klt lvs` and an independent `netgen` cross-check) for the
-pre-DR-0007 physical baseline under `layout/` (see
-[`layout/README.md`](layout/README.md), including what that LVS verdict does
-and does not cover). Post-layout extracted re-verification **has** run — see
-[`sim/postlayout-delta.md`](sim/postlayout-delta.md): the schematic-level
-captures a schematic-level suite pass and parasitic-extracted failures in
-the output-reference and temperature-coefficient rows before DR-0007.
-[DR-0007](spec/decision-records/0007-q2-array-dvbe-ratio.md) was ratified on
-2026-10-02, and [PR #201](https://github.com/2AMLogic/gf180-bandgap/pull/201)
-merged the four-unit Q2 schematic and first-order R2 rescaling. The committed
-GDS and LVS reference still use the prior R2 sizing; their clean reports do
-not certify the amended schematic. Corner-covered schematic measurements
-and sizing ([#203](https://github.com/2AMLogic/gf180-bandgap/issues/203))
-are tracked by the schematic-phase epic, decomposed into array measurement
-([#208](https://github.com/2AMLogic/gf180-bandgap/issues/208)), measured retuning
-([#209](https://github.com/2AMLogic/gf180-bandgap/issues/209)), active bench
-synchronization ([#210](https://github.com/2AMLogic/gf180-bandgap/issues/210)),
-and final schematic suite/mismatch evidence
-([#211](https://github.com/2AMLogic/gf180-bandgap/issues/211)). Array measurement
-and measured retuning are complete via
-[PR #213](https://github.com/2AMLogic/gf180-bandgap/pull/213) and
-[PR #222](https://github.com/2AMLogic/gf180-bandgap/pull/222), with new fleet
-evidence recorded under `sim/device-pnp-array/` and `sim/output-voltage-tc/`.
-Bench synchronization and final suite/mismatch evidence still await independent
-curation and approval; the schematic-phase epic remains incomplete.
-[klayout-tools#2733](https://github.com/2AMLogic/klayout-tools/issues/2733)
-and [klayout-tools#2719](https://github.com/2AMLogic/klayout-tools/issues/2719)
-both closed on 2026-10-08. Successful gf180mcu fleet execution is now recorded
-by #208 and #209; those measurements do not establish full schematic or
-extracted signoff.
-Layout regeneration and pinned extracted verification
-([#204](https://github.com/2AMLogic/gf180-bandgap/issues/204)) follow that
-work, tracked by [#202](https://github.com/2AMLogic/gf180-bandgap/issues/202)
-and [#87](https://github.com/2AMLogic/gf180-bandgap/issues/87). Tapeout is not
-scheduled; passing updated acceptance evidence is still outstanding (see
+**Status**: schematic-amendment phase; no measured silicon exists. Device
+characterization and PVT sweeps are recorded as append-only evidence under
+`sim/` (see [`sim/README.md`](sim/README.md)). The committed full-block layout
+and its DRC/LVS reports ([`layout/README.md`](layout/README.md)) predate
+[DR-0007](spec/decision-records/0007-q2-array-dvbe-ratio.md), which amended the
+Q2 array and R2 sizing: the committed GDS and LVS reference still use the prior
+R2 sizing, and their clean reports do not certify the amended schematic.
+Amended-schematic verification and updated physical/extracted signoff remain
+work to verify, and tapeout is not scheduled. The graded verdict of record is
+[`signoff/README.md`](signoff/README.md); live issue and dependency state is in
+[`WORK_PLAN.md`](WORK_PLAN.md).
 [#94](https://github.com/2AMLogic/gf180-bandgap/issues/94)).
 
 **Where this block sits on the evidence ladder is graded, not asserted**:
