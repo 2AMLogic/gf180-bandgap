@@ -25,7 +25,8 @@ _None._
 
 Issues currently being built (`loom:building`).
 
-_None._
+- **#234**: spec: prepare evidence and ranked operator questions for the three TBD rows
+- **#235**: docs: trim README Status paragraph to durable facts; point at signoff/ and WORK_PLAN.md for live state
 
 ## PRs Awaiting Review
 
@@ -45,8 +46,8 @@ Issues carrying `loom:curated`.
 
 - **#87**: Layout's 4x unit-PNP array for core.Q2 gives an effective dVBE ratio of 4.03, not the schematic's 3.63 — floorplan 4.1 asserts the opposite *(curated)*
 - **#203**: DR-0007 phase A: measure array ratio and finalize schematic PVT evidence *(curated)*
-- **#210**: DR-0007: synchronize active embedded benches with final core sizing *(curated)*
-- **#227**: DR-0007: synchronize embedded loop and sensitivity diagnostic cores *(curated)*
+- **#234**: spec: prepare evidence and ranked operator questions for the three TBD rows *(curated)*
+- **#235**: docs: trim README Status paragraph to durable facts; point at signoff/ and WORK_PLAN.md for live state *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -57,7 +58,6 @@ Issues carrying `loom:curated`.
 - **#94**: Track the gap to T1 sim-validated (klayout-tools design-evidence tiers)
 - **#202**: Q2 array (DR-0007): corner-covered PVT re-run, R1 re-null, extracted re-run on pinned klt
 - **#203**: DR-0007 phase A: measure array ratio and finalize schematic PVT evidence
-- **#210**: DR-0007: synchronize active embedded benches with final core sizing
 
 ## Backlog Balance
 
@@ -66,10 +66,10 @@ Issues carrying `loom:curated`.
 | Operator merge-risk holds | 0 |
 | Operator priority | 0 |
 | Ready (`loom:issue`) | 0 |
-| In Progress (`loom:building`) | 0 |
+| In Progress (`loom:building`) | 2 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 0 |
 | Curated | 4 |
 | Architect / Hermit proposals | 1 |
-| Active epics | 4 |
+| Active epics | 3 |
 <!-- guide:plan-body:end -->

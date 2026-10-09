@@ -4,6 +4,8 @@ Chronological record of recently merged pull requests and closed issues, maintai
 
 ### 2026-10-09
 
+- **Issue #210** (closed): DR-0007: synchronize active embedded benches with final core sizing
+
 - **PR #233**: test: unit tests for mk_dut convert/validate
 - **Issue #231** (closed): Add unit tests for sim/tools/mk_dut.py convert and validate
 - **PR #232**: sim: sync embedded startup-bench cores to DR-0007 final core (#228)
