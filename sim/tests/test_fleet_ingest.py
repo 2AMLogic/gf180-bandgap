@@ -350,6 +350,43 @@ class LineReg(TmpCase):
         res = self.fx("line-regulation", vals=vals).assess()
         self.assertEqual(res["overall"], "INCOMPLETE")
 
+    def test_small_disagreement_beyond_print_precision_is_incomplete(self):
+        # 1e-5 V at 1.2 V is ~8e-6 relative: well past 7-digit rounding (<= 5e-7)
+        w = dc_wave()
+        hi, lo = max(w["v(vref)"]), min(w["v(vref)"])
+        def vals(r, p, s, t):
+            return {"vref_min": lo, "vref_max": hi + 1e-5, "v_lo_check": 2.97, "v_hi_check": 3.63}
+        res = self.fx("line-regulation", vals=vals).assess()
+        self.assertEqual(res["overall"], "INCOMPLETE")
+
+    def test_meas_rounded_like_ngspice_prints_is_valid(self):
+        # ngspice prints `.meas` lines with %e (7 significant digits); klt parses
+        # that line, while the waveform keeps full rawfile precision.
+        def wave(r, p, s, t):
+            x = [2.97 + 0.005 * i for i in range(133)]
+            return {"v-sweep": x, "v(vref)": [1.200342379 + 6.6e-6 * (v - 2.97) / 0.66 + 1.23456789e-10 * i
+                                             for i, v in enumerate(x)], "v(vdd)": x}
+        def vals(r, p, s, t):
+            v = wave(r, p, s, t)["v(vref)"]
+            return {"vref_min": float(f"{min(v):e}"), "vref_max": float(f"{max(v):e}"),
+                    "v_lo_check": 2.97, "v_hi_check": 3.63}
+        sample = wave(None, None, None, None)["v(vref)"]
+        rounded = float(f"{max(sample):e}")
+        self.assertNotEqual(rounded, max(sample))
+        self.assertGreater(abs(rounded - max(sample)), 1e-9)  # the old 1e-9 tolerance would reject this
+        res = self.fx("line-regulation", vals=vals, wave=wave).assess()
+        self.assertEqual(res["overall"], "PASS", res["problems"] + list(map(str, res["invalid"].values())))
+        m = res["rows"][res["grid"][0]]["measures"]
+        # gated values come from the full-precision waveform, not the rounded .meas
+        self.assertEqual(m["vref_max"], max(sample))
+        self.assertEqual(m["vref_min"], min(sample))
+        self.assertEqual(m["linereg_mv_per_v"], (max(sample) - min(sample)) * 1000.0 / 0.66)
+
+    def test_meas_agrees_tolerance_is_print_precision(self):
+        for x in (1.200348979, 1.200342379, 2.0726349036795e-3, 3.63, 0.0):
+            self.assertTrue(fi.meas_agrees(float(f"{x:e}"), x))
+        self.assertFalse(fi.meas_agrees(1.200349, 1.200349 + 3e-6))
+
     def test_sweep_endpoint_sanity(self):
         def vals(r, p, s, t):
             return {"vref_min": 1.2, "vref_max": 1.2, "v_lo_check": 3.0, "v_hi_check": 3.63}

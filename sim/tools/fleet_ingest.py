@@ -66,7 +66,22 @@ SPEC_CHECKS = {
 
 PSRR_TAGS = ("1hz", "10hz", "100hz", "1khz", "10khz", "100khz", "1mhz")
 LINEREG_REQUIRED = ("vref_min", "vref_max", "v_lo_check", "v_hi_check")
-SWEEP_TOL_V = 1e-9  # .meas vs waveform: the same solution, so equal to roundoff
+#: .meas vs waveform cross-check tolerance. klt reads `.meas` results from
+#: ngspice's stdout line, which ngspice prints with `%e` (7 significant
+#: digits), while the waveform comes from the rawfile at ~16 digits. A
+#: correctly rounded 7-digit print is within 0.5 ulp of the 7th digit, i.e.
+#: <= 5e-7 relative; MEAS_REL_TOL = 1e-6 (one unit in the 7th digit) covers
+#: that with a factor-2 margin and nothing more. MEAS_ABS_TOL only guards
+#: values at/near zero. Gated values never come from `.meas` when a waveform
+#: is available; this is a consistency check only.
+MEAS_REL_TOL = 1e-6
+MEAS_ABS_TOL = 1e-12
+
+
+def meas_agrees(meas: float, full: float) -> bool:
+    """True when a printed `.meas` value is the full-precision ``full`` up to
+    ngspice's 7-significant-digit print rounding."""
+    return abs(meas - full) <= MEAS_REL_TOL * max(abs(meas), abs(full)) + MEAS_ABS_TOL
 STARTUP_REACH_TOL = 1e-3  # relative: vdd_final must be the requested rail
 
 
@@ -167,7 +182,7 @@ def op_values(wave: dict | None, supplies: list[float]) -> dict:
     """{vref_op_s<i>: v(vref) at supply i} from the companion `dc` sweep waveform."""
     if wave is None:
         raise ValueError("no dc waveform returned")
-    x = list(next(iter(wave.values())))
+    x = list(next(iter(wave.values())))  # klt waveform contract: variables[0] is always the sweep variable
     vref = column(wave, "v(vref)", "vref")
     out = {}
     for i, v in enumerate(supplies):
@@ -186,14 +201,22 @@ def _linereg_span(tb: dict) -> float:
 
 
 def derive_linereg(vals: dict, wave: dict | None, tb: dict, sweep: dict):
-    """-> (measures, errs). Sweep count and cross-checks come from the waveform."""
+    """-> (measures, errs). vref_min / vref_max / linereg_mv_per_v, the sweep
+    count and the endpoints all come from the full-precision waveform (as the
+    harness computes them from full-precision vectors in `.control`); the
+    fleet's printed `.meas` vref_min / vref_max are only a cross-check at
+    ngspice's print precision (see MEAS_REL_TOL). Without a usable waveform
+    the corner is invalid (errs non-empty), so `.meas`-derived values are
+    never gated."""
     errs: list[str] = []
+    span = _linereg_span(tb)
     m = {k: vals[k] for k in LINEREG_REQUIRED}
-    m["linereg_mv_per_v"] = (vals["vref_max"] - vals["vref_min"]) * 1000.0 / _linereg_span(tb)
+    m["linereg_mv_per_v"] = (vals["vref_max"] - vals["vref_min"]) * 1000.0 / span
     if wave is None:
         errs.append("no dc waveform returned: sweep point count / extrema not verifiable")
         return m, errs
     try:
+        # klt waveform contract: variables[0] is always the sweep variable.
         x = list(next(iter(wave.values())))
         if not all(fc.is_finite_number(v) for v in x):
             raise ValueError("non-finite sweep axis")
@@ -210,9 +233,12 @@ def derive_linereg(vals: dict, wave: dict | None, tb: dict, sweep: dict):
         errs.append("sweep axis is not uniform at the bench's step")
     if abs(x[0] - sweep["lo"]) > 1e-6 or abs(x[-1] - sweep["hi"]) > 1e-6:
         errs.append(f"sweep axis spans {x[0]:.4f}..{x[-1]:.4f} V, not {sweep['lo']}..{sweep['hi']}")
-    for name, got in (("vref_max", max(vref)), ("vref_min", min(vref))):
-        if abs(got - vals[name]) > SWEEP_TOL_V:
-            errs.append(f"{name} {vals[name]:.9f} (.meas) disagrees with the waveform's {got:.9f}")
+    m["vref_max"], m["vref_min"] = max(vref), min(vref)
+    m["linereg_mv_per_v"] = (m["vref_max"] - m["vref_min"]) * 1000.0 / span
+    for name in ("vref_max", "vref_min"):
+        if not meas_agrees(vals[name], m[name]):
+            errs.append(f"{name} {vals[name]:.9f} (.meas) disagrees with the waveform's {m[name]:.9f} "
+                        f"beyond ngspice's 7-digit print precision")
     return m, errs
 
 
@@ -607,8 +633,9 @@ def build_record(record: str, stamp: datetime, bench: str, tb: dict, plan: dict,
             "own operating point (an ac-kind klt request cannot return it); it is a surrogate, stated rather than implied. "
             "Reference columns (10 Hz ... 1 MHz) are recorded, not gated.")
     if bench == "line-regulation":
-        add("  - Sweep point count / extrema are verified from the returned waveform (the fleet `.meas` values alone "
-            "cannot count points).")
+        add("  - vref_min / vref_max / linereg_mv_per_v, the sweep point count and the endpoints are computed from the "
+            "full-precision returned waveform; the fleet `.meas` vref_min / vref_max (printed by ngspice at 7 "
+            "significant digits) are only a cross-check at that precision and are not gated.")
     if bench == "startup":
         add("  - t0 = first time vdd reaches 90 % of its final value; settled = start of the last unbroken stretch inside "
             "+/-1 % of vref's final value (backward scan over the returned waveform; a first-crossing approximation is "
