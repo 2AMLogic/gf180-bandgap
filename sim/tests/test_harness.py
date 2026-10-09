@@ -318,6 +318,79 @@ class ParseTests(unittest.TestCase):
         )
 
 
+class NonFiniteMeasurementTests(unittest.TestCase):
+    """Overflowing scalar text (1e999) is never evidence (#274)."""
+
+    def test_parse_drops_overflow_and_nan(self):
+        text = "m_a = 1e999\nm_b = -1e999\nm_c = nan\nm_d = 2.5\n"
+        self.assertEqual(runner.parse_measurements(text), {"d": 2.5})
+
+    def test_classify_rejects_positive_and_negative_overflow(self):
+        for text in ("m_gain = 1e999\n", "m_gain = -1e999\n"):
+            with self.subTest(text=text):
+                status, meas, missing, diag, msg = runner.classify_point(
+                    text, 0, ["gain"]
+                )
+                self.assertEqual(status, "failed")
+                self.assertNotIn("gain", meas)
+                self.assertIn("non-finite m_gain", msg)
+                self.assertIn("999", msg)
+
+    def test_classify_keeps_missing_and_error_behavior(self):
+        status, _, missing, _, msg = runner.classify_point(
+            "m_a = 1e999\n", 0, ["a", "b"]
+        )
+        self.assertEqual(status, "failed")
+        self.assertIn("missing m_b", msg)
+        self.assertNotIn("missing m_a", msg)
+        status, _, _, diag, msg = runner.classify_point(
+            "Error: boom\nm_a = 1e999\n", 0, ["a"]
+        )
+        self.assertEqual(status, "failed")
+        self.assertIn("simulator error", msg)
+        self.assertIn("non-finite", msg)
+
+    def test_classify_ordinary_finite_is_ok(self):
+        status, meas, missing, _, msg = runner.classify_point(
+            "m_gain = -1.5e+02\n", 0, ["gain"]
+        )
+        self.assertEqual((status, meas, missing, msg), ("ok", {"gain": -150.0}, [], ""))
+
+    def test_overflowing_arithmetic_on_finite_inputs_fails_spread_checks(self):
+        big = 1.7e308
+        results = [_StubResult("a", {"v": big}), _StubResult("b", {"v": -big})]
+        summary = report.summarize(results, ["v"])
+        self.assertIsNone(summary["v"]["spread_pct"])
+        for kind in ("max_spread_pct", "min_spread_pct"):
+            failures = report.evaluate_checks({"v": {kind: 10.0}}, results, summary)
+            self.assertEqual([f["kind"] for f in failures], [kind])
+
+    def test_non_finite_summary_value_cannot_satisfy_checks(self):
+        inf = float("inf")
+        results = [_StubResult("a", {"v": inf})]
+        summary = {"v": {"spread_pct": float("nan")}}
+        for check in ({"max_spread_pct": 10.0}, {"min_spread_pct": 1.0}):
+            self.assertEqual(
+                len(report.evaluate_checks({"v": check}, [], summary)), 1
+            )
+        # minimum-only check must reject +inf even if one reaches it
+        failures = report.evaluate_checks({"v": {"min": 1.0}}, results, {})
+        self.assertEqual([f["kind"] for f in failures], ["non_finite"])
+
+    def test_mixed_valid_and_invalid_corners(self):
+        results = [
+            _StubResult("a", {"v": 1.0}),
+            _StubResult("b", {}, status="failed"),
+            _StubResult("c", {"v": 1.1}),
+        ]
+        summary = report.summarize(results, ["v"])
+        self.assertEqual(summary["v"]["n"], 2)
+        self.assertEqual(
+            report.evaluate_checks({"v": {"min": 0.9, "max_spread_pct": 20.0}}, results, summary),
+            [],
+        )
+
+
 class _StubPoint:
     def __init__(self, corner_id):
         self.corner_id = corner_id

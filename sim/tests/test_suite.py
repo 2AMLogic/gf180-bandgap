@@ -100,6 +100,24 @@ class LogReadingTests(unittest.TestCase):
             analysis.parse_log(text), {"iq_ua": 44.277512345, "vref": 1.2291153728}
         )
 
+    def test_overflowing_scalars_are_not_measurements(self):
+        text = "m_iq_ua = 1e999\nm_vref = -1e999\nm_ok = 1.5\n"
+        self.assertEqual(analysis.parse_log(text), {"ok": 1.5})
+
+    def test_overflowing_raw_log_is_no_data_never_pass(self):
+        line = next(l for l in spec.SUITE if l.key == "quiescent-current")
+        with tempfile.TemporaryDirectory() as tmp:
+            (Path(tmp) / "tt_27c_3.30v.log").write_text("m_iq_ua = -1e999\n")
+            samples = analysis.read_corner_logs(Path(tmp))
+        self.assertEqual(analysis.evaluate_line(line, samples).status, "NO DATA")
+        # mixed: a finite corner alongside an overflowed one still cannot pass
+        # for the overflowed corner when coverage is expected.
+        mixed = {"tt_27c_3.30v": {}, "ss_-40c_2.97v": {"iq_ua": 30.0}}
+        status = analysis.evaluate_line(
+            line, mixed, expected_corners=list(mixed)
+        ).status
+        self.assertNotEqual(status, "PASS")
+
     def test_reads_one_directory_of_corner_logs(self):
         with tempfile.TemporaryDirectory() as tmp:
             corners = Path(tmp)
