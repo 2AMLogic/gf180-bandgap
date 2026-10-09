@@ -33,7 +33,6 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from datetime import datetime, timezone
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -258,7 +257,7 @@ def main() -> int:
 
     git = hreport.git_provenance(hreport.REPO_ROOT) if hasattr(hreport, "REPO_ROOT") else hreport.git_provenance(SIM.parent)
     record = hreport.allocate_record_id(SIM.parent, HERE / "records", git=git)
-    stamp = datetime.strptime(record[:15], "%Y%m%d-%H%M%S").replace(tzinfo=timezone.utc)
+    stamp = hreport.record_stamp(record)
     cids = [hcorners.device_corner_id(s, t) for s, t in expected]
 
     cdir = HERE / "corners" / record

@@ -32,17 +32,14 @@ from __future__ import annotations
 
 import math
 import sys
-from datetime import datetime, timezone
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
 
-from harness import corners as harness_corners  # noqa: E402
 from harness import pdk as harness_pdk  # noqa: E402
 from harness import report as harness_report  # noqa: E402
 from harness import stats as harness_stats  # noqa: E402
-from harness.runner import ngspice_version  # noqa: E402
 
 SECTION = "typical"
 TEMPS = [-40.0, 27.0, 125.0]
@@ -274,39 +271,16 @@ def build_record(record, stamp, pdk, ngspice, results) -> str:
 
 
 def main() -> int:
-    pdk = harness_pdk.find_pdk()
-    root = harness_pdk.REPO_ROOT
-    ngspice = ngspice_version()
-    git = harness_report.git_provenance(root)
-    record = harness_report.allocate_record_id(root, HERE / "records", git=git)
-    stamp = datetime.strptime(record[:15], "%Y%m%d-%H%M%S").replace(tzinfo=timezone.utc)
-    deck = HERE / "testbench" / "tb_mos_mismatch.spice"
-
-    print(f"record {record}: {len(TEMPS)} Monte Carlo points, N={N_SAMPLES} each")
-    results: dict[float, dict] = {}
-    for temp in TEMPS:
-        cid = harness_corners.device_corner_id(SECTION, temp)
-        log = _run_corner(deck, pdk, SECTION, temp)
-        harness_report.write_device_corner_log(
-            HERE / "corners",
-            record,
-            cid,
-            harness_report.device_log_header(
-                pdk, deck, SECTION, temp, record, stamp, ngspice
-            ),
-            log,
-        )
-        results[temp] = extract(log)
-        print(f"  {cid}: ok")
-
-    harness_report.write_device_netlist_snapshot(
-        HERE / "netlist-snapshots", record, deck
+    return harness_report.run_device_experiment(
+        HERE,
+        "tb_mos_mismatch.spice",
+        [(SECTION, t) for t in TEMPS],
+        _run_corner,
+        lambda log, section, temp: extract(log),
+        build_record,
+        banner=f"record {{record}}: {len(TEMPS)} Monte Carlo points, N={N_SAMPLES} each",
+        key=lambda section, temp: temp,
     )
-    path = harness_report.device_write_record(
-        HERE / "records", record, build_record(record, stamp, pdk, ngspice, results)
-    )
-    print(f"wrote {path}")
-    return 0
 
 
 if __name__ == "__main__":

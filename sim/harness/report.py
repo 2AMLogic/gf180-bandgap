@@ -35,6 +35,7 @@ from .corners import (
     DEFAULT_SUPPLY_TOLERANCE,
     DEFAULT_TEMPERATURES_C,
     PvtPoint,
+    device_corner_id,
 )
 from .fmt import _fmt
 from .pdk import Pdk
@@ -110,6 +111,30 @@ def format_record_id(short_sha: str, when: _dt.datetime) -> str:
     the ratified convention specifies.
     """
     return f"{when.strftime('%Y%m%d-%H%M%S')}-{short_sha}"
+
+
+_RECORD_ID_RE = re.compile(r"^(\d{8}-\d{6})-[0-9A-Za-z]+")
+
+
+def record_stamp(record: str) -> _dt.datetime:
+    """Parse the tz-aware UTC timestamp out of a ``<record-id>``.
+
+    The single place the ``<YYYYMMDD>-<HHMMSS>-<sha>`` layout (see
+    :func:`format_record_id`) is parsed. Raises ``ValueError`` with a clear
+    message on a malformed id instead of a bare slice/strptime failure.
+    """
+    m = _RECORD_ID_RE.match(record)
+    if not m:
+        raise ValueError(
+            f"malformed record id {record!r}: expected "
+            "<YYYYMMDD>-<HHMMSS>-<short-git-sha>"
+        )
+    try:
+        return _dt.datetime.strptime(m.group(1), "%Y%m%d-%H%M%S").replace(
+            tzinfo=_dt.timezone.utc
+        )
+    except ValueError as exc:
+        raise ValueError(f"malformed record id {record!r}: {exc}") from exc
 
 
 def allocate_record_id(
@@ -788,3 +813,92 @@ def device_write_record(records_dir: Path, record: str, body: str) -> Path:
         )
     path.write_text(body, encoding="utf-8")
     return path
+
+
+def run_device_experiment(
+    here: Path,
+    deck_name: str,
+    points,
+    run_corner,
+    extract,
+    build_record,
+    *,
+    banner: str,
+    key=None,
+    tolerate_extract_errors: bool = False,
+    pdk: Pdk | None = None,
+    ngspice: str | None = None,
+    git: dict | None = None,
+    root: Path | None = None,
+) -> int:
+    """Shared ``main()`` for the single-device ``sim/device-*/run_*.py`` benches.
+
+    Owns: PDK/ngspice/git provenance, record-id allocation, the per-corner
+    loop (corner id, ``run_corner``, corner log with
+    :func:`device_log_header`, ``extract``), the netlist snapshot and the
+    append-only record write. Per-experiment pieces are callables:
+
+    * ``points`` -- iterable of ``(section, temp_c)``.
+    * ``run_corner(deck, pdk, section, temp_c) -> log``.
+    * ``extract(log, section, temp_c) -> dict`` (a ``ValueError`` is a per-
+      corner failure when ``tolerate_extract_errors``; no record is written
+      and the exit code is 1, otherwise it propagates).
+    * ``build_record(record, stamp, pdk, ngspice, results) -> markdown``.
+    * ``key(section, temp_c)`` -- key into ``results`` (default
+      ``(section, temp_c)``).
+    * ``banner`` -- ``str.format`` template with ``{record}``.
+
+    ``pdk``/``ngspice``/``git``/``root`` default to the live lookups; tests
+    inject fakes.
+    """
+    from . import pdk as _pdk
+    from .runner import ngspice_version
+
+    pdk = pdk if pdk is not None else _pdk.find_pdk()
+    root = root if root is not None else _pdk.REPO_ROOT
+    ngspice = ngspice if ngspice is not None else ngspice_version()
+    git = git if git is not None else git_provenance(root)
+    key = key or (lambda section, temp: (section, temp))
+    record = allocate_record_id(root, here / "records", git=git)
+    stamp = record_stamp(record)
+    deck = here / "testbench" / deck_name
+
+    print(banner.format(record=record))
+    results: dict = {}
+    failed: list[str] = []
+    for section, temp in points:
+        cid = device_corner_id(section, temp)
+        log = run_corner(deck, pdk, section, temp)
+        write_device_corner_log(
+            here / "corners",
+            record,
+            cid,
+            device_log_header(pdk, deck, section, temp, record, stamp, ngspice),
+            log,
+        )
+        try:
+            results[key(section, temp)] = extract(log, section, temp)
+        except ValueError as exc:
+            if not tolerate_extract_errors:
+                raise
+            # Out-of-range interpolation (or unparsable table): do not
+            # record a clamped/placeholder value as evidence (#249).
+            failed.append(cid)
+            print(f"  {cid}: FAIL ({exc})")
+            continue
+        print(f"  {cid}: ok")
+
+    if failed:
+        print(
+            f"FAIL: extraction failed at {len(failed)} corner(s): "
+            + ", ".join(failed)
+            + "; no record written"
+        )
+        return 1
+
+    write_device_netlist_snapshot(here / "netlist-snapshots", record, deck)
+    path = device_write_record(
+        here / "records", record, build_record(record, stamp, pdk, ngspice, results)
+    )
+    print(f"wrote {path}")
+    return 0
