@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import re
 import shutil
 import subprocess
@@ -167,16 +168,31 @@ class PointResult:
         return record
 
 
-def parse_measurements(text: str) -> dict[str, float]:
+def _scan_measurements(text: str) -> tuple[dict[str, float], dict[str, str]]:
+    """Split ``m_<name> = <scalar>`` lines into finite values and non-finite text."""
     found: dict[str, float] = {}
+    nonfinite: dict[str, str] = {}
     for line in text.splitlines():
         match = _MEAS_RE.match(line)
         if match:
             try:
-                found[match.group(1)] = float(match.group(2))
+                value = float(match.group(2))
             except ValueError:  # pragma: no cover - regex already constrains this
                 continue
-    return found
+            name = match.group(1)
+            if math.isfinite(value):
+                found[name] = value
+                nonfinite.pop(name, None)
+            else:
+                # Text such as ``1e999`` overflows to inf; never evidence.
+                found.pop(name, None)
+                nonfinite[name] = match.group(2)
+    return found, nonfinite
+
+
+def parse_measurements(text: str) -> dict[str, float]:
+    """Finite ``m_<name>`` scalars only; overflowed/inf/nan values are dropped."""
+    return _scan_measurements(text)[0]
 
 
 def first_diagnostic(text: str) -> str:
@@ -198,7 +214,7 @@ def classify_point(
     rule is independent of whether the measurements parsed: numbers printed
     before (or despite) a simulator error are not evidence.
     """
-    measurements = parse_measurements(output)
+    measurements, nonfinite = _scan_measurements(output)
     missing = [name for name in measure_names if name not in measurements]
     diagnostic = first_diagnostic(output)
 
@@ -213,8 +229,15 @@ def classify_point(
         reasons.append(f"simulator error: {diagnostic}")
     if returncode != 0:
         reasons.append(f"ngspice exit {returncode}")
-    if missing:
-        reasons.append("missing " + ", ".join(f"m_{name}" for name in missing))
+    absent = [name for name in missing if name not in nonfinite]
+    if absent:
+        reasons.append("missing " + ", ".join(f"m_{name}" for name in absent))
+    bad = [name for name in measure_names if name in nonfinite]
+    if bad:
+        reasons.append(
+            "non-finite "
+            + ", ".join(f"m_{name} = {nonfinite[name]}" for name in bad)
+        )
     if not reasons:
         return "ok", measurements, missing, diagnostic, ""
     return "failed", measurements, missing, diagnostic, "; ".join(reasons)

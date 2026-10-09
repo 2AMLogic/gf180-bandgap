@@ -16,6 +16,7 @@ Nothing here mutates anything under ``records/``, ``netlist-snapshots/`` or
 
 from __future__ import annotations
 
+import math
 import re
 from collections.abc import Iterable
 from dataclasses import dataclass, field
@@ -67,15 +68,21 @@ def parse_corner_id(corner_id: str) -> CornerKey | None:
 
 
 def parse_log(text: str) -> dict[str, float]:
-    """Every ``m_<name> = <scalar>`` line of one raw ngspice log."""
+    """Every finite ``m_<name> = <scalar>`` line of one raw ngspice log."""
     found: dict[str, float] = {}
     for line in text.splitlines():
         match = MEASUREMENT_RE.match(line)
         if match:
             try:
-                found[match.group(1)] = float(match.group(2))
+                value = float(match.group(2))
             except ValueError:  # pragma: no cover - the regex constrains this
                 continue
+            if math.isfinite(value):
+                found[match.group(1)] = value
+            else:
+                # ``1e999`` overflows to inf: not evidence, so the
+                # measurement reads as absent (NO DATA), never PASS.
+                found.pop(match.group(1), None)
     return found
 
 

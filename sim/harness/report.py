@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import datetime as _dt
 import getpass
+import math
 import platform
 import re
 import shutil
@@ -172,6 +173,12 @@ def summarize(results: list[PointResult], measure_names: list[str]) -> dict:
         hi_value, hi_at = max(samples, key=lambda s: s[0])
         mean = sum(values) / len(values)
         spread_pct = (hi_value - lo_value) / abs(mean) * 100.0 if mean else None
+        # Finite inputs can still overflow in the arithmetic; a non-finite
+        # derived value is "no value", which cannot satisfy any check.
+        if not math.isfinite(mean):
+            mean = None
+        if spread_pct is not None and not math.isfinite(spread_pct):
+            spread_pct = None
         summary[name] = {
             "n": len(values),
             "min": lo_value,
@@ -199,6 +206,17 @@ def evaluate_checks(
                 if result.status != "ok" or name not in result.measurements:
                     continue
                 value = result.measurements[name]
+                if not math.isfinite(value):
+                    failures.append(
+                        {
+                            "measurement": name,
+                            "kind": "non_finite",
+                            "limit": low if low is not None else high,
+                            "value": None,
+                            "at": result.point.corner_id,
+                        }
+                    )
+                    continue
                 if low is not None and value < low:
                     failures.append(
                         {
@@ -233,6 +251,7 @@ def evaluate_checks(
             observed = (summary.get(name) or {}).get("spread_pct")
             violated = (
                 observed is None
+                or not math.isfinite(observed)
                 or (kind == "max_spread_pct" and observed > limit)
                 or (kind == "min_spread_pct" and observed < limit)
             )
