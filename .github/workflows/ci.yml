@@ -15,6 +15,7 @@ name: CI
 # | T1 signoff re-grade vs. committed record      | klt+network  | `signoff` (here)   |
 # | harness unit tests (`sim/tests/`)             | python3      | `test` (here)      |
 # | layout unit tests (`layout/**/test_*.py`)     | python3      | `test` (here)      |
+# | signoff validator unit tests (`signoff/tests/`)| python3     | `test` (here)      |
 # | `sim/run_corners.py --list` manifest load     | python3      | `test` (here)      |
 # | `sim/selftest.sh` stages 1-2                  | python3      | `test` (here)      |
 # | `sim/selftest.sh` stage 3 (81-point PVT run)  | ngspice+PDK  | `sim-pdk.yml`      |
@@ -111,6 +112,10 @@ jobs:
           grep -q 'harness unit tests' "$log"
           grep -q 'SKIP: simulation stage' "$log" \
             || grep -q 'PASS: harness is functional end to end' "$log"
+
+      - name: Signoff validator unit tests
+        # Negative fixtures for signoff/check_signoff.py (stdlib only; no klt).
+        run: python3 -m unittest discover -s signoff/tests -v
 
       - name: Layout unit tests
         # klayout-dependent tests skip cleanly here; the script fails if any

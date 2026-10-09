@@ -170,6 +170,9 @@ def check_pins(manifest_evidence: dict, failures: Failures) -> None:
     doc = load_json(PINNED_INPUTS, failures, "pinned-inputs")
     if doc is None:
         return
+    if not isinstance(doc, dict):
+        failures.add("pinned-inputs: top level is not a JSON object")
+        return
     inputs = doc.get("inputs")
     if not isinstance(inputs, dict):
         failures.add("pinned-inputs: `inputs` must be an object")
@@ -248,6 +251,9 @@ def check_report(report_doc, manifest, manifest_evidence: dict, failures: Failur
     items = report_doc.get("items")
     if not isinstance(items, list) or not items:
         failures.add("report: `items` is missing or empty")
+        return
+    if not all(isinstance(item, dict) for item in items):
+        failures.add("report: every entry of `items` must be an object")
         return
 
     t1_ids = {item.get("id") for item in items if item.get("tier") == "T1"}
@@ -387,6 +393,9 @@ def run_klt(report_doc, failures: Failures) -> None:
         fresh = json.loads(completed.stdout)
     except ValueError as exc:
         failures.add(f"klt re-grade: stdout is not valid JSON ({exc})")
+        return
+    if not isinstance(fresh, dict):
+        failures.add("klt re-grade: stdout is not a JSON object")
         return
 
     for field in ("block", "kind", "tier", "t1_item_count", "t1_met_count"):
