@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Ingest finished fleet `klt sim` runs of psrr-dc / line-regulation / startup (#237).
+"""Ingest finished fleet `klt sim` runs of psrr-dc / line-regulation / startup (#237) and output-noise (#268).
 
 Sibling of `sim/tools/tc_ingest.py` and following its conventions:
 
@@ -29,6 +29,17 @@ check that fails (operating point, frequency index, sweep endpoints/points,
 vdd reaching the requested rail) means the number is uninterpretable, so the
 corner is INVALID and the bench INCOMPLETE -- the per-corner log then carries
 the harness' INVALID POINT trailer so `sim/suite/` reads it as NO DATA.
+
+output-noise (MEASUREMENT_BENCHES) has no ratified threshold (A6 open): its
+overall verdict is ``MEASURED`` (every corner of every request came back
+valid, unit-checked and identity-checked) or ``INCOMPLETE`` -- never PASS or
+FAIL. Conversions are tb.json's own (#252: scale only, no square root), read
+through ``plan["noise"]`` (``mk_klt_fleet_request.noise_spec``): the fleet
+returns raw SI values and this module multiplies by tb.json's scale. A corner
+is INVALID when a noise request reports ``sqrnoise`` set, the wrong sweep
+point count, an integrated-noise artifact that is not amplitude-mode
+(``Integrated Noise`` / type ``voltage``), a reported unit other than the
+plan's, or a waveform/expr disagreement beyond print precision.
 """
 
 from __future__ import annotations
@@ -53,6 +64,10 @@ import fleet_common as fc  # noqa: E402
 from harness import corners as hc  # noqa: E402
 
 BENCHES = ("psrr-dc", "line-regulation", "startup")
+NOISE_BENCH = "output-noise"
+#: No ratified threshold: verdict is MEASURED / INCOMPLETE, never PASS / FAIL.
+MEASUREMENT_BENCHES = (NOISE_BENCH,)
+MEASURED = "MEASURED"
 INVALID_POINT_MARKER = "*** sim/harness: INVALID POINT"  # mirrors harness.runner / suite.analysis
 
 #: tb.json checks that are ratified-spec limits. Every other tb.json check is
@@ -62,6 +77,7 @@ SPEC_CHECKS = {
     "psrr-dc": {"psrr_1hz_db", "psrr_1khz_db"},
     "line-regulation": {"linereg_mv_per_v", "vref_min", "vref_max"},
     "startup": {"startup_time_s"},
+    NOISE_BENCH: frozenset(),  # A6 threshold open: every tb.json check is a sanity check
 }
 
 PSRR_TAGS = ("1hz", "10hz", "100hz", "1khz", "10khz", "100khz", "1mhz")
@@ -317,6 +333,132 @@ def _spice_number(tok: str) -> float:
 
 
 # --------------------------------------------------------------------------
+# output-noise (#268): unit-checked, conversion from tb.json via the plan
+# --------------------------------------------------------------------------
+
+#: ngspice's integrated-noise plot name in amplitude mode (``sqrnoise`` unset);
+#: squared mode names it "Integrated Noise - V^2 or A^2" and types its
+#: vectors ``voltage^2`` (verified with klt 0.7.0 / ngspice 46, see
+#: sim/output-noise/fleet-capability/README.md).
+NOISE_TOTAL_PLOT = "Integrated Noise"
+NOISE_TOTAL_TYPE = "voltage"
+
+
+def wave_columns(doc: dict) -> dict[str, list]:
+    """{variable name: [values]} from an already-parsed klt waveform document."""
+    names = [v["name"] for v in doc["variables"]]
+    pts = doc["points"]
+    if not pts or any(len(r) != len(names) for r in pts):
+        raise ValueError("waveform has no points or ragged rows")
+    return {n: [r[i] for r in pts] for i, n in enumerate(names)}
+
+
+def read_waveform_doc_for(c: dict, work: Path) -> dict | None:
+    """The raw klt waveform document (plot name and variable types kept), or None."""
+    p = ((c or {}).get("artifacts") or {}).get("waveform")
+    if not p or not (work / p).exists():
+        return None
+    try:
+        doc = json.loads((work / p).read_text())
+        wave_columns(doc)
+        return doc
+    except (ValueError, KeyError, TypeError, json.JSONDecodeError):
+        return None
+
+
+def reported_units(c: dict | None) -> dict:
+    return {m.get("name"): m.get("unit") for m in (c or {}).get("measurements", []) or []}
+
+
+def noise_unit_problems(doc: dict | None) -> list[str]:
+    """Why an integrated-noise waveform artifact does not show amplitude mode."""
+    if doc is None:
+        return ["no integrated-noise waveform returned: amplitude vs squared representation not verifiable"]
+    errs = []
+    if doc.get("plotname") != NOISE_TOTAL_PLOT:
+        errs.append(f"integrated-noise plot is {doc.get('plotname')!r}, not amplitude-mode {NOISE_TOTAL_PLOT!r} (#252)")
+    types = {str(v.get("name")).lower(): v.get("type") for v in doc.get("variables", [])}
+    t = types.get("v(onoise_total)", types.get("onoise_total"))
+    if t != NOISE_TOTAL_TYPE:
+        errs.append(f"onoise_total has type {t!r}, not {NOISE_TOTAL_TYPE!r} (amplitude mode, #252)")
+    return errs
+
+
+def _full_precision(doc: dict | None, vector: str) -> float:
+    """The single-point value of ``vector`` (``v(x)`` or ``onoise_total``) from an op / integrated-noise waveform."""
+    if doc is None:
+        raise ValueError("no waveform returned")
+    wave = wave_columns(doc)
+    bare = vector[2:-1] if vector.startswith("v(") else vector
+    col = column(wave, f"v({bare})", bare)
+    if len(col) != 1:
+        raise ValueError(f"{vector} has {len(col)} points, a single-point plot was expected")
+    return col[0]
+
+
+def noise_request_units(nspec: dict, rname: str) -> dict:
+    """measurement name -> the SI unit the plan asked klt to label it with."""
+    out = {f"raw_{m}": s["si_unit"] for m, s in nspec["measures"].items() if s["request"] == rname}
+    if nspec["requests"][rname]["analysis"]["kind"] == "noise":
+        out.update({"n_points": "1", "sqrnoise_set": "1"})
+    return out
+
+
+def derive_noise(nspec: dict, vals: dict, docs: dict, units: dict):
+    """-> (measures, errs) for one PVT corner.
+
+    ``vals`` / ``docs`` / ``units``: request name -> that corner's finite klt
+    values / waveform document / reported measurement units. Every measure
+    is tb.json's own expression evaluated by ngspice on the worker (plot
+    renumbered, scale stripped) times tb.json's scale. Single-point vectors
+    (the integrated total, the operating point) come from the full-precision
+    waveform and the printed expr is only a cross-check (MEAS_REL_TOL);
+    spectrum points and frequencies only exist as printed expr values (the
+    artifact holds the integrated plot only, klt #2893), 7 significant
+    digits."""
+    errs: list[str] = []
+    for rname, rq in nspec["requests"].items():
+        v = vals[rname]
+        for mname, want in noise_request_units(nspec, rname).items():
+            got = units.get(rname, {}).get(mname)
+            if got != want:
+                errs.append(f"{rname}: {mname} reported in {got!r}, the plan requested {want!r}")
+        if rq["analysis"]["kind"] != "noise":
+            continue
+        if v.get("sqrnoise_set") != nspec["sqrnoise_set_expected"]:
+            errs.append(f"{rname}: sqrnoise is set on the worker (squared V^2/Hz mode), #252 requires it unset")
+        if v.get("n_points") != rq["n_points"]:
+            errs.append(f"{rname}: noise sweep has {v.get('n_points')} points, `{rq['analysis']['args']}` "
+                        f"implies {rq['n_points']}")
+        errs += [f"{rname}: {e}" for e in noise_unit_problems(docs.get(rname))]
+    m: dict[str, float] = {}
+    for name, s in nspec["measures"].items():
+        raw = vals[s["request"]][f"raw_{name}"]
+        if s["kind"] in ("total", "op"):
+            try:
+                full = _full_precision(docs.get(s["request"]), s["vector"])
+            except ValueError as exc:
+                errs.append(f"{name}: full-precision {s['vector']} unavailable ({exc})")
+            else:
+                if not meas_agrees(raw, full):
+                    errs.append(f"{name}: printed {raw!r} disagrees with the waveform's {full!r} beyond print precision")
+                raw = full
+        m[name] = raw * s["scale"]
+    return m, errs
+
+
+def spread_pct(values: list[float]) -> float | None:
+    """(max - min) / |mean| in %, as `harness.report.summarize` computes it."""
+    if not values:
+        return None
+    mean = sum(values) / len(values)
+    if not mean:
+        return None
+    out = (max(values) - min(values)) / abs(mean) * 100.0
+    return out if math.isfinite(out) else None
+
+
+# --------------------------------------------------------------------------
 # bench assessment
 # --------------------------------------------------------------------------
 
@@ -348,12 +490,23 @@ def plan_problems(bench: str, tb: dict, plan: dict) -> list[str]:
     vdds = hc.supply_points(tb["nominal_supply_v"], tb.get("supply_tolerance", 0.0))
     if plan.get("supplies_v") != vdds:
         probs.append("plan supply points differ from tb.json / corners.py")
-    want = {
-        "psrr-dc": {"ac": expected_units(tb, vdds), "op": expected_units(tb, [None])},
-        "line-regulation": {"sweep": expected_units(tb, vdds)},
-        "output-load-sensitivity": {"sweep": expected_units(tb, vdds)},  # characterization: sim/tools/load_ingest.py
-        "startup": {r["name"]: expected_units(tb, [None]) for r in plan.get("requests", [])},
-    }[bench]
+    if bench == NOISE_BENCH:
+        from mk_klt_fleet_request import noise_spec
+
+        try:
+            nspec = noise_spec(tb)
+        except ValueError as exc:
+            return probs + [f"tb.json leaves the fleet noise contract: {exc}"]
+        if plan.get("noise") != json.loads(json.dumps(nspec)):
+            probs.append("plan noise contract (requests / measures / conversions) differs from tb.json's")
+        want = {name: expected_units(tb, vdds) for name in nspec["requests"]}
+    else:
+        want = {
+            "psrr-dc": {"ac": expected_units(tb, vdds), "op": expected_units(tb, [None])},
+            "line-regulation": {"sweep": expected_units(tb, vdds)},
+            "output-load-sensitivity": {"sweep": expected_units(tb, vdds)},  # characterization: sim/tools/load_ingest.py
+            "startup": {r["name"]: expected_units(tb, [None]) for r in plan.get("requests", [])},
+        }[bench]
     got = {r["name"]: r["expected_units"] for r in plan.get("requests", [])}
     if set(got) != set(want):
         probs.append(f"plan requests {sorted(got)} differ from the bench's {sorted(want)}")
@@ -421,6 +574,7 @@ def assess_bench(bench: str, tb: dict, plan: dict, reports: dict, work: Path, *,
     failed: list = []
     pts: dict[str, dict] = {}
     waves: dict[tuple, dict] = {}  # (request, unit key) -> waveform
+    docs: dict[tuple, dict | None] = {}  # (request, unit key) -> raw waveform document (output-noise)
     corners_of: dict[tuple, dict] = {}
     for r in plan.get("requests", []):
         rep = reports.get(r["name"])
@@ -445,6 +599,8 @@ def assess_bench(bench: str, tb: dict, plan: dict, reports: dict, work: Path, *,
             w = read_waveform_for(corners_of.get((r["name"], k)), work)
             if r["role"] in ("ac", "sweep", "tran"):
                 waves[(r["name"], k)] = w
+            elif r["role"] in ("noise", "op_point"):
+                docs[(r["name"], k)] = read_waveform_doc_for(corners_of.get((r["name"], k)), work)
             elif r["role"] == "op":
                 try:
                     p[k] = op_values(w, plan["supplies_v"])
@@ -490,6 +646,17 @@ def assess_bench(bench: str, tb: dict, plan: dict, reports: dict, work: Path, *,
                             series[key] = {"sweep": x, "v(vref)": column(w, "v(vref)", "vref")}
                         except ValueError:
                             pass
+            elif bench == NOISE_BENCH:
+                nspec = plan.get("noise") or {}
+                ukey = (proc, sup, temp)
+                vals = {n: pts.get(n, {}).get(ukey) for n in nspec.get("requests", {})}
+                absent = sorted(n for n, v in vals.items() if v is None)
+                if absent or not vals:
+                    errs.append("unit unavailable in request(s) " + (", ".join(absent) or "(plan has no noise contract)"))
+                else:
+                    derived, e = derive_noise(nspec, vals, {n: docs.get((n, ukey)) for n in vals},
+                                              {n: reported_units(corners_of.get((n, ukey))) for n in vals})
+                    errs += e
             else:
                 rname = next((n for n, r in req.items() if r["supply_v"] is not None and abs(r["supply_v"] - sup) < 1e-6), None)
                 u = pts.get(rname, {}).get((proc, round(sup, 4), temp)) if rname else None
@@ -521,12 +688,27 @@ def assess_bench(bench: str, tb: dict, plan: dict, reports: dict, work: Path, *,
             bad = [f"sanity {n} out of window ({derived[n]:.6g})" for n, ok in row["sanity"].items() if not ok]
             invalid[key] = "; ".join(row["errs"] + bad)
 
+    spreads: dict = {}
+    if bench in MEASUREMENT_BENCHES:
+        # grid-level spread floor (harness.report semantics): a figure that should
+        # move with PVT but comes back flat means .temp / .lib never took effect.
+        for name, chk in tb["checks"].items():
+            if "min_spread_pct" not in chk:
+                continue
+            got = spread_pct([r["measures"][name] for k, r in rows.items() if k not in invalid and name in r["measures"]])
+            spreads[name] = (got, chk["min_spread_pct"])
+            if got is None or got < chk["min_spread_pct"]:
+                problems.append(f"{name}: spread over the valid corners is {_f(got, 4)} %, below the "
+                                f"{chk['min_spread_pct']:g} % floor (the PVT sweep may not have taken effect)")
     spec_fail = [k for k, r in rows.items() if k not in invalid and not all(r["spec"].values())]
     incomplete = bool(problems or missing or failed or invalid)
-    overall = "INCOMPLETE" if incomplete else ("FAIL" if spec_fail else "PASS")
+    if bench in MEASUREMENT_BENCHES:
+        overall = "INCOMPLETE" if incomplete else MEASURED  # measurement completion, never a spec pass
+    else:
+        overall = "INCOMPLETE" if incomplete else ("FAIL" if spec_fail else "PASS")
     return {
         "bench": bench, "overall": overall, "grid": grid, "rows": rows, "invalid": invalid, "spec_fail": spec_fail,
-        "missing": missing, "failed": failed, "problems": problems, "series": series,
+        "missing": missing, "failed": failed, "problems": problems, "series": series, "spreads": spreads,
         "corners_of": {f"{a}|{b}": c for (a, b), c in corners_of.items()},
     }
 
@@ -607,7 +789,8 @@ def build_record(record: str, stamp: datetime, bench: str, tb: dict, plan: dict,
         + f" Fleet (`klt sim`) evidence for issue #{issue}."
         + ("" if overall != "INCOMPLETE" else " **INCOMPLETE -- see Result: no verdict is claimed.**"))
     emb = plan.get("embedded_core")
-    add(f"- **Netlist provenance**: schematic. Canonical DUT `{dut_label}` sha256 `{plan['dut']['sha256']}`; "
+    add(f"- **Netlist provenance**: {plan['dut'].get('provenance_class', 'schematic')}. "
+        f"{'Canonical' if 'provenance_class' not in plan['dut'] else 'Supplied'} DUT `{dut_label}` sha256 `{plan['dut']['sha256']}`; "
         f"testbench sha256 `{plan['tb_netlist_sha256']}`; tb.json sha256 `{plan['manifest_sha256']}`.")
     if emb:
         add("  - **Embedded-core convention** (`sim/startup-embedded-core-sync.md`): this bench simulates its OWN "
@@ -641,6 +824,26 @@ def build_record(record: str, stamp: datetime, bench: str, tb: dict, plan: dict,
         add("  - t0 = first time vdd reaches 90 % of its final value; settled = start of the last unbroken stretch inside "
             "+/-1 % of vref's final value (backward scan over the returned waveform; a first-crossing approximation is "
             "not equivalent); a negative value means the loop was in band before vdd reached 90 %.")
+    if bench == NOISE_BENCH:
+        nspec = plan.get("noise") or {}
+        add(f"  - **Measurement only.** {plan.get('scope', '')}. `{MEASURED}` means every corner of every request came "
+            "back valid; it is not a spec verdict, and the Output-noise row stays unclaimed (sim/suite NOT_CLAIMED_HERE).")
+        add("  - Unit contract (#252, `sim/output-noise/unit-probe/`): ngspice amplitude mode, forced by "
+            f"`options.ngspice_init` {nspec.get('control')}; each noise request returned `$?sqrnoise` = 0 and an "
+            f"integrated-noise artifact `{NOISE_TOTAL_PLOT}` typed `{NOISE_TOTAL_TYPE}`. Conversions are tb.json's own "
+            "(scale only, no square root): the fleet returned raw SI values, multiplied here by:")
+        for name, s in nspec.get("measures", {}).items():
+            add(f"    - `{name}` = `{s['manifest_expr']}` -> request `{s['request']}` `{s['expr']}` [{s['si_unit']}] "
+                f"x {s['scale']:g} [{s['unit']}]")
+        add("  - Requests (one analysis per corner each): " + "; ".join(
+            f"`{n}` = `{(q['analysis']['kind'] + ' ' + q['analysis']['args']).strip()}`"
+            for n, q in nspec.get("requests", {}).items())
+            + ". `vref_op` is the companion `op` request's solve of the same deck and corner (the point ngspice's "
+            "`noise` linearizes around), not read from inside the noise request.")
+        add("  - Integrated total and `vref_op` come from the full-precision waveform artifact (the printed expr is a "
+            "cross-check); spot densities and frequency indices are printed expr values (7 significant digits).")
+        for name, (got, lim) in result.get("spreads", {}).items():
+            add(f"  - Grid spread of `{name}` over valid corners: {_f(got, 4)} % (floor {lim:g} %).")
     if overall == "INCOMPLETE":
         add("  - **INCOMPLETE.**")
         for k, why in result["missing"]:
@@ -664,6 +867,10 @@ def build_record(record: str, stamp: datetime, bench: str, tb: dict, plan: dict,
             add(f"  | `{corner_id(key)}` | " + " | ".join("-" for _ in cols) + " | - | **INVALID** |")
             continue
         okspec = all(row["spec"].values())
+        if bench in MEASUREMENT_BENCHES:
+            add(f"  | `{corner_id(key)}` | " + " | ".join(_f(row["measures"].get(c)) for c in cols)
+                + f" | n/a | {MEASURED} |")
+            continue
         add(f"  | `{corner_id(key)}` | " + " | ".join(_f(row["measures"].get(c)) for c in cols)
             + f" | {'ok' if okspec else 'FAIL'} | {'PASS' if okspec else 'FAIL'} |")
     add("")
@@ -757,7 +964,7 @@ def load_work(work: Path) -> tuple[dict, dict, dict]:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("bench", choices=BENCHES)
+    ap.add_argument("bench", choices=BENCHES + MEASUREMENT_BENCHES)
     ap.add_argument("workdir", help="dir written by mk_klt_fleet_request.py, with <request>/report.json added")
     ap.add_argument("--dut", default="sim/dut/bandgap_top.spice", help="canonical DUT the requests were built from")
     ap.add_argument("--issue", default="239")
@@ -781,11 +988,11 @@ def main() -> int:
     for p in result["problems"][:10]:
         print("  problem:", p)
     if a.dry_run:
-        return 0 if result["overall"] == "PASS" else 2
+        return 0 if result["overall"] in ("PASS", MEASURED) else 2
     path = write_evidence(SIM / a.bench, work, a.bench, tb, plan, result, reports, dut_label=a.dut,
                           issue=a.issue, supersedes=a.supersedes, note=a.note)
     print(f"wrote {path}")
-    return 0 if result["overall"] == "PASS" else 2
+    return 0 if result["overall"] in ("PASS", MEASURED) else 2
 
 
 if __name__ == "__main__":
