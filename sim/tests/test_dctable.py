@@ -175,6 +175,49 @@ class NonFiniteInterpTests(unittest.TestCase):
             interp_at([0.0, 1.0], [-big, big], 0.75)
 
 
+class SeriesShapeTests(unittest.TestCase):
+    """Series length/order validation (issue #324)."""
+
+    def test_interior_reversal(self):
+        with self.assertRaisesRegex(ValueError, r"1->2"):
+            interp_at([0, 2, 1, 3], [0, 20, 100, 30], 1.5)
+
+    def test_fully_descending(self):
+        with self.assertRaises(ValueError):
+            interp_at([3, 2, 1], [1, 2, 3], 2)
+
+    def test_reversal_both_clamp_modes_and_exact_node(self):
+        xs, ys = [0, 2, 1, 3], [0, 20, 100, 30]
+        for clamp in (False, True):
+            for q in (0, 3, -5, 10):
+                with self.assertRaises(ValueError):
+                    interp_at(xs, ys, q, clamp=clamp)
+
+    def test_invalid_tail_behind_exact_node(self):
+        with self.assertRaisesRegex(ValueError, r"3->4"):
+            interp_at([0, 1, 2, 3, 2], [0, 1, 2, 3, 4], 0)
+
+    def test_unequal_lengths(self):
+        for xs, ys in (([0, 1], [0, 10, 999]), ([0, 1, 2], [0, 10])):
+            for clamp in (False, True):
+                with self.assertRaisesRegex(ValueError, "length"):
+                    interp_at(xs, ys, 1, clamp=clamp)
+
+    def test_empty(self):
+        for clamp in (False, True):
+            with self.assertRaises(ValueError):
+                interp_at([], [], 0, clamp=clamp)
+            with self.assertRaises(ValueError):
+                interp_at([], [1], 0, clamp=clamp)
+
+    def test_single_point(self):
+        self.assertEqual(interp_at([1.0], [5.0], 1.0), 5.0)
+        self.assertEqual(interp_at([1.0], [5.0], 9.0, clamp=True), 5.0)
+
+    def test_equal_adjacent_allowed(self):
+        self.assertEqual(interp_at([0, 1, 1, 2], [0, 5, 7, 9], 1), 5)
+
+
 class FmtTests(unittest.TestCase):
     def test_none(self):
         self.assertEqual(_fmt(None), "n/a")

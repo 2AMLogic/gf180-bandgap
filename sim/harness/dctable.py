@@ -94,7 +94,18 @@ def interp_at(
 
     Non-finite query, x-series or y-series values, and non-finite results,
     raise ValueError in both clamp modes (issue #317).
+
+    The series shape is validated before any clamp or exact-node return:
+    both series must be nonempty and of equal length, and xs must never
+    decrease (equal adjacent values are allowed; the first match wins).
+    Inputs are never sorted (issue #324).
     """
+    if len(xs) != len(ys):
+        raise ValueError(
+            f"interpolation series length mismatch: len(xs)={len(xs)}, len(ys)={len(ys)}"
+        )
+    if len(xs) == 0:
+        raise ValueError("empty interpolation series")
     if not math.isfinite(x):
         raise ValueError(f"non-finite interpolation query x={x!r}")
     for i, v in enumerate(xs):
@@ -103,6 +114,12 @@ def interp_at(
     for i, v in enumerate(ys):
         if not math.isfinite(v):
             raise ValueError(f"non-finite y-series value ys[{i}]={v!r}")
+    for i in range(1, len(xs)):
+        if xs[i] < xs[i - 1]:
+            raise ValueError(
+                f"x-series decreases at indices {i - 1}->{i}: "
+                f"xs[{i - 1}]={xs[i - 1]!r} > xs[{i}]={xs[i]!r}"
+            )
     result = _interp_checked(xs, ys, x, clamp)
     if not math.isfinite(result):
         raise ValueError(f"non-finite interpolation result at x={x!r}")
