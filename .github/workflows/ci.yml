@@ -13,6 +13,7 @@ name: CI
 # | evidence-record format + append-only          | python3+git  | `lint` (here)      |
 # | T1 signoff pins vs. committed artifacts       | python3      | `lint` (here)      |
 # | T1 signoff re-grade vs. committed record      | klt+network  | `signoff` (here)   |
+# | committed GDS == `generate.py` output (#308)  | klayout (klt)| `signoff` (here)   |
 # | harness unit tests (`sim/tests/`)             | python3      | `test` (here)      |
 # | layout unit tests (`layout/**/test_*.py`)     | python3      | `test` (here)      |
 # | signoff validator unit tests (`signoff/tests/`)| python3     | `test` (here)      |
@@ -147,6 +148,16 @@ jobs:
           python3 -m pip install --upgrade pip
           python3 -m pip install "klayout-tools @ git+https://github.com/2AMLogic/klayout-tools@${pin}"
           klt version || true
+
+      - name: Committed bandgap_top.gds is fresh (generate.py output)
+        # Regenerates into a temp dir and byte-compares with the committed
+        # GDS that signoff pins and DRC/LVS/area are graded against. Fails on
+        # mismatch, missing file or generation error; never a skip. The
+        # focused tests run with REQUIRE_KLAYOUT=1 so they cannot skip here.
+        run: |
+          set -euo pipefail
+          python3 layout/bandgap_top/check_freshness.py
+          REQUIRE_KLAYOUT=1 python3 -m unittest discover -s layout/bandgap_top -p 'test_check_freshness.py' -v
 
       - name: Re-grade the block manifest
         # `klt signoff --manifest` exits 3 when the block is not yet T1, which
