@@ -165,6 +165,29 @@ def column(wave: dict, *candidates: str) -> list[float]:
 # --------------------------------------------------------------------------
 
 
+# Tolerance on |log10(f_i) - (log10(f0) + i/per_dec)|. Normal generated grids
+# (f0 * 10**(i/per_dec)) agree to ~1e-16 in log10; ngspice-printed vectors are
+# well inside 1e-9. 1e-6 (about 2.3e-6 relative in f) leaves margin for
+# serialisation rounding yet is far below any grid-point substitution.
+AC_AXIS_LOG10_TOL = 1e-6
+
+
+def ac_axis_errors(freq: list[float], per_dec: int, f0: float, f1: float) -> list[str]:
+    """Problems with the full returned AC frequency vector vs the requested
+    ``ac dec <per_dec> <f0> <f1>`` sweep (empty when it is the requested grid).
+    Call only when len(freq) already equals the expected point count."""
+    if not all(fc.is_finite_number(f) and f > 0 for f in freq):
+        return ["ac frequency axis has non-finite or non-positive values"]
+    if any(b <= a for a, b in zip(freq, freq[1:])):
+        return ["ac frequency axis is not strictly increasing"]
+    l0 = math.log10(f0)
+    dev = max(abs(math.log10(f) - (l0 + i / per_dec)) for i, f in enumerate(freq))
+    if dev > AC_AXIS_LOG10_TOL:
+        return [f"ac frequency axis departs from the requested log grid {f0:g}..{f1:g} Hz "
+                f"(max log10 deviation {dev:.3g} > {AC_AXIS_LOG10_TOL:g})"]
+    return []
+
+
 def derive_psrr(ac_vals: dict, wave: dict | None, op_vals: dict | None, supply_index: int, tb: dict):
     """-> (measures, errs). PSRR(f) = -vdb(v(vref)) for the 1 V supply perturbation."""
     errs: list[str] = []
@@ -178,13 +201,18 @@ def derive_psrr(ac_vals: dict, wave: dict | None, op_vals: dict | None, supply_i
     else:
         try:
             freq = column(wave, "frequency")
-            for name, target in (("f_dc_hz", 1.0), ("f_band_edge_hz", 1e3)):
-                m[name] = min(freq, key=lambda f: abs(math.log10(f) - math.log10(target)))
             args = next(c for c in tb["analyses"] if c.startswith("ac ")).split()
             per_dec, f0, f1 = int(args[2]), float(args[3].replace("meg", "e6")), float(args[4].replace("meg", "e6"))
             want = round(per_dec * math.log10(f1 / f0)) + 1
             if len(freq) != want:
                 errs.append(f"ac grid has {len(freq)} points, the bench's `ac` card implies {want}")
+            else:
+                errs.extend(ac_axis_errors(freq, per_dec, f0, f1))
+            # spot lookup needs log10: skip it on a non-positive / non-finite axis
+            # (the corner is already invalid via the checks above).
+            if all(fc.is_finite_number(f) and f > 0 for f in freq):
+                for name, target in (("f_dc_hz", 1.0), ("f_band_edge_hz", 1e3)):
+                    m[name] = min(freq, key=lambda f: abs(math.log10(f) - math.log10(target)))
         except (ValueError, StopIteration) as exc:
             errs.append(f"ac waveform unusable: {exc}")
     if op_vals is None or f"vref_op_s{supply_index}" not in op_vals:

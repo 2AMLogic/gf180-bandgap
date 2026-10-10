@@ -433,6 +433,93 @@ class Psrr(TmpCase):
         res = self.fx("psrr-dc", wave=wave).assess()
         self.assertEqual(res["overall"], "INCOMPLETE")
 
+    def _axis_wave(self, mutate):
+        # Valid op companion for every non-ac role: the AC axis is the only defect.
+        def wave(r, p, s, t):
+            if r["role"] != "ac":
+                return op_wave()
+            w = ac_wave()
+            w["frequency"] = mutate(list(w["frequency"]))
+            return w
+        return wave
+
+    def _bad_axis(self, mutate):
+        res = self.fx("psrr-dc", wave=self._axis_wave(mutate)).assess()
+        self.assertEqual(res["overall"], "INCOMPLETE")
+        reasons = list(map(str, res["invalid"].values()))
+        self.assertTrue(reasons, res["problems"])
+        for why in reasons:
+            self.assertIn("ac frequency axis", why)
+        self.assertEqual(len(res["invalid"]), 81)
+        self.assertFalse(any("fails" in str(p) for p in res["problems"]))
+        return res
+
+    def test_full_valid_grid_still_passes(self):
+        res = self.fx("psrr-dc").assess()
+        self.assertEqual(res["overall"], "PASS")
+
+    def test_float_jitter_on_valid_grid_still_passes(self):
+        # ~1e-12 relative jitter (serialisation rounding) is far inside the tolerance.
+        def m(f):
+            return [x * (1 + (1e-12 if i % 2 else -1e-12)) for i, x in enumerate(f)]
+        res = self.fx("psrr-dc", wave=self._axis_wave(m)).assess()
+        self.assertEqual(res["overall"], "PASS", res["problems"] + list(map(str, res["invalid"].values())))
+
+    def test_repro_two_distinct_frequencies(self):
+        self._bad_axis(lambda f: [1.0] * 80 + [1000.0] * 81)
+
+    def test_duplicated_points(self):
+        def m(f):
+            f[70] = f[69]
+            return f
+        self._bad_axis(m)
+
+    def test_reordered_points(self):
+        def m(f):
+            f[70], f[71] = f[71], f[70]
+            return f
+        self._bad_axis(m)
+
+    def test_endpoint_substitutions(self):
+        def lo(f):
+            f[0] = 0.05
+            return f
+        def hi(f):
+            f[-1] = 2e7
+            return f
+        for name, m in (("lo", lo), ("hi", hi)):
+            with self.subTest(endpoint=name):
+                self._bad_axis(m)
+
+    def test_interior_perturbation_keeps_count_and_spot_frequencies(self):
+        def m(f):
+            f[100] *= 1.01  # still increasing; f[20]=1 Hz and f[80]=1 kHz untouched
+            return f
+        self._bad_axis(m)
+
+    def test_nonpositive_axis(self):
+        def neg(f):
+            f[5] = -1.0
+            return f
+        def zero(f):
+            f[5] = 0.0
+            return f
+        for name, m in (("negative", neg), ("zero", zero)):
+            with self.subTest(value=name):
+                self._bad_axis(m)
+
+    def test_nonfinite_axis_is_invalid(self):
+        # Guarded upstream by column() (pre-dates the axis check): NaN never
+        # reaches ac_axis_errors, so assert that guard's reason instead.
+        def nan(f):
+            f[5] = float("nan")
+            return f
+        res = self.fx("psrr-dc", wave=self._axis_wave(nan)).assess()
+        self.assertEqual(res["overall"], "INCOMPLETE")
+        self.assertEqual(len(res["invalid"]), 81)
+        for why in res["invalid"].values():
+            self.assertIn("non-finite values in waveform column 'frequency'", str(why))
+
 
 # ---------------------------------------------------------------- line regulation
 
