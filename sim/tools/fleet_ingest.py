@@ -551,7 +551,7 @@ def read_waveform_for(c: dict, work: Path):
 
 def assess_bench(bench: str, tb: dict, plan: dict, reports: dict, work: Path, *, dut_sha: str | None = None,
                  decks: dict | None = None, manifest_sha: str | None = None, tb_sha: str | None = None,
-                 require_remote: bool = True) -> dict:
+                 require_remote: bool = True, requests: dict | None = None) -> dict:
     """Judge one bench from its plan and the klt reports (``{request name: report}``).
 
     Never raises on bad evidence: every defect lands in ``problems`` /
@@ -566,6 +566,7 @@ def assess_bench(bench: str, tb: dict, plan: dict, reports: dict, work: Path, *,
             manifest_sha=manifest_sha or plan.get("manifest_sha256"),
             deck_sha={n: fc.sha256_bytes(t.encode()) for n, t in decks.items()} or
                      {r["name"]: r["deck_sha256"] for r in plan.get("requests", [])},
+            requests=requests,
         )
     for n, text in decks.items():
         problems += deck_problems(bench, plan, text, n)
@@ -949,9 +950,9 @@ def write_evidence(exp_dir: Path, work: Path, bench: str, tb: dict, plan: dict, 
 # --------------------------------------------------------------------------
 
 
-def load_work(work: Path) -> tuple[dict, dict, dict]:
+def load_work(work: Path) -> tuple[dict, dict, dict, dict]:
     plan = json.loads((work / "plan.json").read_text())
-    reports, decks = {}, {}
+    reports, decks, requests = {}, {}, {}
     for r in plan.get("requests", []):
         rp = work / r["name"] / "report.json"
         if rp.exists():
@@ -959,7 +960,10 @@ def load_work(work: Path) -> tuple[dict, dict, dict]:
         bp = work / r["name"] / "body.spice"
         if bp.exists():
             decks[r["name"]] = bp.read_text()
-    return plan, reports, decks
+        qp = work / r["name"] / "request.json"
+        if qp.exists():
+            requests[r["name"]] = qp.read_text()
+    return plan, reports, decks, requests
 
 
 def main() -> int:
@@ -975,10 +979,10 @@ def main() -> int:
 
     work = Path(a.workdir).resolve()
     tb = load_tb(a.bench)
-    plan, reports, decks = load_work(work)
+    plan, reports, decks, requests = load_work(work)
     dut = Path(a.dut) if Path(a.dut).is_absolute() else REPO / a.dut
     result = assess_bench(
-        a.bench, tb, plan, reports, work, dut_sha=fc.sha256_file(dut), decks=decks,
+        a.bench, tb, plan, reports, work, dut_sha=fc.sha256_file(dut), decks=decks, requests=requests,
         manifest_sha=fc.sha256_file(SIM / a.bench / "testbench" / "tb.json"),
         tb_sha=fc.sha256_file(SIM / a.bench / "testbench" / tb["netlist"]),
     )

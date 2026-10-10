@@ -217,7 +217,7 @@ def derive_load(vals: dict | None, wave: dict | None, spec: dict, supply: float)
 
 def assess(tb: dict, plan: dict, reports: dict, work: Path, *, dut_sha: str | None = None,
            dut_label: str | None = None, decks: dict | None = None, manifest_sha: str | None = None,
-           tb_sha: str | None = None, require_remote: bool = True) -> dict:
+           tb_sha: str | None = None, require_remote: bool = True, requests: dict | None = None) -> dict:
     """Judge one fleet run from its plan and klt reports (``{request: report}``).
 
     Never raises on bad evidence: every defect lands in ``problems`` (run-level:
@@ -248,6 +248,7 @@ def assess(tb: dict, plan: dict, reports: dict, work: Path, *, dut_sha: str | No
             manifest_sha=manifest_sha or plan.get("manifest_sha256"),
             deck_sha={n: fc.sha256_bytes(t.encode()) for n, t in decks.items()} or
                      {r["name"]: r["deck_sha256"] for r in plan.get("requests", [])},
+            requests=requests,
         )
     for n, text in decks.items():
         problems += fi.deck_problems(BENCH, plan, text, n)
@@ -510,14 +511,14 @@ def main() -> int:
 
     work = Path(a.workdir).resolve()
     tb = fi.load_tb(BENCH)
-    plan, reports, decks = fi.load_work(work)
+    plan, reports, decks, requests = fi.load_work(work)
     dut = (Path(a.dut) if Path(a.dut).is_absolute() else REPO / a.dut).resolve()
     try:
         label = str(dut.relative_to(REPO))  # the form mk_klt_fleet_request.py froze into the plan
     except ValueError:
         label = str(dut)
     result = assess(
-        tb, plan, reports, work, dut_sha=fc.sha256_file(dut), dut_label=label, decks=decks,
+        tb, plan, reports, work, dut_sha=fc.sha256_file(dut), dut_label=label, decks=decks, requests=requests,
         manifest_sha=fc.sha256_file(SIM / BENCH / "testbench" / "tb.json"),
         tb_sha=fc.sha256_file(SIM / BENCH / "testbench" / tb["netlist"]),
     )

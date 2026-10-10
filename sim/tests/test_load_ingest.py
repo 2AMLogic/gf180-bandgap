@@ -107,10 +107,15 @@ class Fixture:
     def decks(self):
         return {"sweep": (self.tmp / "sweep" / "body.spice").read_text()}
 
+    def requests(self):
+        p = self.tmp / "sweep" / "request.json"
+        return {"sweep": p.read_text()} if p.exists() else {}
+
     def assess(self, **kw):
         kw.setdefault("dut_sha", fc.sha256_file(DUT))
         kw.setdefault("dut_label", self.plan["dut"]["path"])
         kw.setdefault("decks", self.decks())
+        kw.setdefault("requests", self.requests())
         return li.assess(self.tb, self.plan, self.reports, self.tmp, **kw)
 
 
@@ -426,6 +431,34 @@ class Assess(TmpCase):
         decks = f.decks()
         decks["sweep"] += "* tampered\n"
         self.assertTrue(any("deck sha256" in p for p in f.assess(decks=decks)["problems"]))
+
+    def test_frozen_request_bytes_verified(self):
+        f = self.fx()
+        self.assertFalse([p for p in f.assess()["problems"] if "request" in p and "sha256" in p])
+        rp = self.tmp / "sweep" / "request.json"
+        orig = rp.read_text()
+        doc = json.loads(orig)
+        for what, edit in {
+            "analysis": lambda d: d.__setitem__("analysis", {"kind": "dc", "args": ["vsup", "3.0", "3.6", "0.005"]}),
+            "options": lambda d: d.__setitem__("options", {"reltol": 1e-1}),
+            "model": lambda d: d.__setitem__("model_selection", "tampered"),
+        }.items():
+            with self.subTest(edit=what):
+                d = json.loads(orig)
+                edit(d)
+                rp.write_text(json.dumps(d, indent=2) + "\n")
+                res = f.assess()
+                self.assertEqual(res["overall"], "INCOMPLETE")
+                self.assertTrue(any("request.json sha256 differs" in p for p in res["problems"]), res["problems"])
+        rp.unlink()
+        res = f.assess()
+        self.assertEqual(res["overall"], "INCOMPLETE")
+        self.assertTrue(any("request.json missing" in p for p in res["problems"]), res["problems"])
+        rp.write_text(orig)
+        f.plan["requests"][0].pop("request_sha256")
+        res = f.assess()
+        self.assertEqual(res["overall"], "INCOMPLETE")
+        self.assertTrue(any("no request_sha256" in p for p in res["problems"]), res["problems"])
 
     def test_klt_version_and_remote_provenance(self):
         f = self.fx()

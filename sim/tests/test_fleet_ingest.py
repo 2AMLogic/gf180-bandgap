@@ -155,9 +155,14 @@ class Fixture:
     def decks(self):
         return {r["name"]: (self.tmp / r["name"] / "body.spice").read_text() for r in self.plan["requests"]}
 
+    def requests(self):
+        return {r["name"]: (self.tmp / r["name"] / "request.json").read_text()
+                for r in self.plan["requests"] if (self.tmp / r["name"] / "request.json").exists()}
+
     def assess(self, **kw):
         kw.setdefault("dut_sha", fc.sha256_file(DUT))
         kw.setdefault("decks", self.decks())
+        kw.setdefault("requests", self.requests())
         return fi.assess_bench(self.bench, self.tb, self.plan, self.reports, self.tmp, **kw)
 
     def corner(self, name, idx=0):
@@ -269,6 +274,7 @@ class NoiseFixture(Fixture):
     def assess(self, **kw):
         kw.setdefault("dut_sha", fc.sha256_file(self.dut))
         kw.setdefault("decks", self.decks())
+        kw.setdefault("requests", self.requests())
         return fi.assess_bench(self.bench, self.tb, self.plan, self.reports, self.tmp, **kw)
 
 
@@ -651,6 +657,40 @@ class Fails(TmpCase):
             self.assertTrue(any("deck sha256" in p for p in f.assess(decks=decks)["problems"]))
             self.assertTrue(any("testbench netlist" in p for p in f.assess(tb_sha="1" * 64)["problems"]))
             self.assertTrue(any("tb.json changed" in p for p in f.assess(manifest_sha="1" * 64)["problems"]))
+
+    def test_frozen_request_bytes_verified(self):
+        for f in self.each():
+            n = self.first_request(f)
+            base = f.assess()
+            self.assertFalse([p for p in base["problems"] if "request" in p and "sha256" in p], base["problems"])
+            rp = f.tmp / n / "request.json"
+            orig = rp.read_text()
+            doc = json.loads(orig)
+            edits = {
+                "analysis": lambda d: d.__setitem__("analysis", {"kind": "dc", "args": ["vsup", "3.0", "3.6", "0.005"]}),
+                "options": lambda d: d.__setitem__("options", {"reltol": 1e-1}),
+                "model": lambda d: d.__setitem__("model_selection", "tampered"),
+            }
+            for what, edit in edits.items():
+                with self.subTest(bench=f.bench, edit=what):
+                    d = copy.deepcopy(doc)
+                    edit(d)
+                    rp.write_text(json.dumps(d, indent=2) + "\n")
+                    res = f.assess()
+                    self.assertEqual(res["overall"], "INCOMPLETE")
+                    self.assertTrue(any("request.json sha256 differs" in p for p in res["problems"]), res["problems"])
+            rp.write_text(orig + " ")  # whitespace-only change is still a different frozen byte stream
+            self.assertTrue(any("request.json sha256 differs" in p for p in f.assess()["problems"]))
+            rp.write_text(orig)
+            rp.unlink()
+            res = f.assess()
+            self.assertEqual(res["overall"], "INCOMPLETE")
+            self.assertTrue(any("request.json missing" in p for p in res["problems"]), res["problems"])
+            rp.write_text(orig)
+            f.plan["requests"][[r["name"] for r in f.plan["requests"]].index(n)].pop("request_sha256")
+            res = f.assess()
+            self.assertEqual(res["overall"], "INCOMPLETE")
+            self.assertTrue(any("no request_sha256" in p for p in res["problems"]), res["problems"])
 
     def test_duplicate_subckt_definition_in_deck(self):
         for f in self.each():
