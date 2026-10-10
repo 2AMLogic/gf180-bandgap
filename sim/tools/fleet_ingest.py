@@ -137,27 +137,32 @@ def read_waveform(path: Path) -> dict[str, list[float]]:
     """{variable name: [values]} from klt's waveform JSON (``variables`` +
     row-major ``points``). Raises ValueError on a malformed file; non-finite
     values are rejected by the callers for the columns they use."""
-    doc = json.loads(Path(path).read_text())
-    names = [v["name"] for v in doc["variables"]]
-    pts = doc["points"]
-    if not pts or any(len(r) != len(names) for r in pts):
-        raise ValueError("waveform has no points or ragged rows")
-    return {n: [r[i] for r in pts] for i, n in enumerate(names)}
+    return wave_columns(json.loads(Path(path).read_text()))
 
 
 def column(wave: dict, *candidates: str) -> list[float]:
     """First matching column among ``candidates`` (names are case-insensitive;
     ``i(x)`` also matches ngspice's ``x#branch`` spelling)."""
-    low = {k.lower(): k for k in wave}
+    low: dict[str, str] = {}
+    for k in wave:
+        if k.lower() in low:
+            raise ValueError(f"duplicate waveform column {k!r} (collides with {low[k.lower()]!r}, case-insensitive): ambiguous evidence")
+        low[k.lower()] = k
+    hits: list[str] = []
     for cand in candidates:
         for form in (cand, cand.replace("i(", "").rstrip(")") + "#branch" if cand.startswith("i(") else cand):
             k = low.get(form.lower())
-            if k is not None:
-                col = wave[k]
-                if not all(fc.is_finite_number(x) for x in col):
-                    raise ValueError(f"non-finite values in waveform column {k!r}")
-                return col
-    raise ValueError("waveform lacks column " + " / ".join(candidates))
+            if k is not None and k not in hits:
+                hits.append(k)
+    if not hits:
+        raise ValueError("waveform lacks column " + " / ".join(candidates))
+    # Alias spellings of one requested vector may coexist only if they agree.
+    if any(wave[k] != wave[hits[0]] for k in hits[1:]):
+        raise ValueError("conflicting waveform columns for " + " / ".join(candidates) + ": " + ", ".join(map(repr, hits)))
+    col = wave[hits[0]]
+    if not all(fc.is_finite_number(x) for x in col):
+        raise ValueError(f"non-finite values in waveform column {hits[0]!r}")
+    return col
 
 
 # --------------------------------------------------------------------------
@@ -373,8 +378,19 @@ NOISE_TOTAL_TYPE = "voltage"
 
 
 def wave_columns(doc: dict) -> dict[str, list]:
-    """{variable name: [values]} from an already-parsed klt waveform document."""
+    """{variable name: [values]} from an already-parsed klt waveform document.
+
+    The single validated mapping used by every waveform path. Duplicate
+    variable names (case-insensitive, the identity ``column`` looks up by) are
+    rejected, even when their values are identical: which column supports a
+    claim must never depend on ordering."""
     names = [v["name"] for v in doc["variables"]]
+    seen: dict[str, str] = {}
+    for n in names:
+        key = str(n).lower()
+        if key in seen:
+            raise ValueError(f"duplicate waveform column {n!r} (collides with {seen[key]!r}, case-insensitive): ambiguous evidence")
+        seen[key] = n
     pts = doc["points"]
     if not pts or any(len(r) != len(names) for r in pts):
         raise ValueError("waveform has no points or ragged rows")
@@ -405,7 +421,15 @@ def noise_unit_problems(doc: dict | None) -> list[str]:
     errs = []
     if doc.get("plotname") != NOISE_TOTAL_PLOT:
         errs.append(f"integrated-noise plot is {doc.get('plotname')!r}, not amplitude-mode {NOISE_TOTAL_PLOT!r} (#252)")
-    types = {str(v.get("name")).lower(): v.get("type") for v in doc.get("variables", [])}
+    types: dict[str, object] = {}
+    for v in doc.get("variables", []):
+        key = str(v.get("name")).lower()
+        if key in types:
+            errs.append(f"duplicate waveform variable {v.get('name')!r} (case-insensitive): ambiguous type metadata")
+        types[key] = v.get("type")
+    found = {types[k] for k in ("v(onoise_total)", "onoise_total") if k in types}
+    if len(found) > 1:
+        errs.append(f"onoise_total aliases carry conflicting types {sorted(map(repr, found))}")
     t = types.get("v(onoise_total)", types.get("onoise_total"))
     if t != NOISE_TOTAL_TYPE:
         errs.append(f"onoise_total has type {t!r}, not {NOISE_TOTAL_TYPE!r} (amplitude mode, #252)")
