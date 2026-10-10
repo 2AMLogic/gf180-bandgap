@@ -74,17 +74,23 @@ jobs:
         run: .github/scripts/lint.sh --require-shellcheck --require-append-only
 
   test:
-    name: Harness self-test (no PDK)
+    name: Harness self-test (no PDK, py${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 3.9 is the documented floor (sim/harness/README.md); 3.12 is the
+        # modern interpreter. Keep the floor here equal to the README's.
+        python-version: ['3.9', '3.12']
     steps:
       - uses: actions/checkout@v7
 
       - uses: actions/setup-python@v7
         with:
           # The harness is stdlib-only (sim/harness/README.md: python3 >= 3.9,
-          # no venv, no packages), so there is nothing to install and no
-          # dependency matrix to sweep -- one modern interpreter is the check.
-          python-version: '3.12'
+          # no venv, no packages), so there is nothing to install; the matrix
+          # only sweeps the interpreter (documented floor and a modern one).
+          python-version: ${{ matrix.python-version }}
 
       - name: Harness self-test
         # Stage 1 (the harness unit tests) always runs. Stage 2 probes for

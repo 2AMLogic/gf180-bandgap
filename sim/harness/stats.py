@@ -45,7 +45,10 @@ def parse_op_series(log: str) -> list[dict[str, float]]:
 
 
 def mean(values: list[float]) -> float:
-    return sum(values) / len(values)
+    # fsum, not sum: builtin sum() gained compensated float summation in 3.12,
+    # so a plain sum differs in the last bits between 3.9 and 3.12 and turns
+    # a zero-spread sample into ~1e-15 sigma on the documented 3.9 floor.
+    return math.fsum(values) / len(values)
 
 
 def stdev(values: list[float]) -> float:
@@ -54,4 +57,4 @@ def stdev(values: list[float]) -> float:
     if n < 2:
         return 0.0
     mean_v = mean(values)
-    return math.sqrt(sum((v - mean_v) ** 2 for v in values) / (n - 1))
+    return math.sqrt(math.fsum((v - mean_v) ** 2 for v in values) / (n - 1))
