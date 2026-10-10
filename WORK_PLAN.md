@@ -19,23 +19,20 @@ _None._
 
 Human-approved issues ready for implementation (`loom:issue`).
 
-_None._
+- **#308**: ci: fail when committed bandgap_top.gds differs from generate.py output
+- **#326**: layout/bandgap_top: routing-budget S1 area disagrees with committed GDS bbox (klayout-gated test fails on main)
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
-- **#281**: docs: document guard-compatible evidence copies and assignment-chain reproduction
-- **#288**: sim: classify reduced corner-set suite runs as diagnostic subsets
-- **#291**: sim: validate Monte Carlo process and mismatch seed components
-- **#294**: sim: reject duplicate waveform columns before deriving verdicts
-- **#298**: sim: validate standalone TC outer temperature before corner aggregation
+_None._
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
-- **#299**: sim: validate standalone TC outer corner identity (#298)
+_None._
 
 ## Approved (Awaiting Merge)
 
@@ -51,11 +48,14 @@ Issues carrying `loom:curated`.
 - **#203**: DR-0007 phase A: measure array ratio and finalize schematic PVT evidence *(curated)*
 - **#239**: DR-0007: execute final-DUT fleet suite and mismatch evidence run *(curated)*
 - **#243**: docs: remove stale hard-coded harness unit-test count (40 vs 256) *(curated)*
-- **#281**: docs: document guard-compatible evidence copies and assignment-chain reproduction *(curated)*
+- **#308**: ci: fail when committed bandgap_top.gds differs from generate.py output *(curated)*
+- **#326**: layout/bandgap_top: routing-budget S1 area disagrees with committed GDS bbox (klayout-gated test fails on main) *(curated)*
 
 ## Proposed (Architect / Hermit)
 
 - **#219**: sim harness: share the batch-backend guard and cap default local --jobs *(architect)*
+- **#306**: ci: run klayout/klt-gated layout tests in the signoff job and fail on skips *(architect)*
+- **#328**: signoff: use the repository klt pin for default local re-grading *(architect)*
 
 ## Epics
 
@@ -69,11 +69,11 @@ Issues carrying `loom:curated`.
 |------|-------|
 | Operator merge-risk holds | 1 |
 | Operator priority | 0 |
-| Ready (`loom:issue`) | 0 |
-| In Progress (`loom:building`) | 5 |
-| PRs awaiting review | 1 |
+| Ready (`loom:issue`) | 2 |
+| In Progress (`loom:building`) | 0 |
+| PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 1 |
-| Curated | 5 |
-| Architect / Hermit proposals | 1 |
+| Curated | 6 |
+| Architect / Hermit proposals | 3 |
 | Active epics | 3 |
 <!-- guide:plan-body:end -->
