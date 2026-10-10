@@ -1,0 +1,12 @@
+{"netlist": "body.spice", "engine": "ngspice",
+ "corners": {"temperature_c": [27]},
+ "analysis": {"kind": "noise", "args": "v(out) vin dec 20 0.1 10"},
+ "measurements": [
+   {"name": "onoise_total", "expr": "noise2.onoise_total", "unit": "V"},
+   {"name": "dens0", "expr": "noise1.onoise_spectrum[0]", "unit": "V/sqrt(Hz)"},
+   {"name": "f_lo", "expr": "real(noise1.frequency[0])", "unit": "Hz"},
+   {"name": "f_hi", "expr": "real(noise1.frequency[40])", "unit": "Hz"},
+   {"name": "n_pts", "expr": "length(noise1.frequency)", "unit": "1"},
+   {"name": "sqrnoise_set", "expr": "$?sqrnoise", "unit": "1"}
+ ],
+ "options": {"timeout_s": 60, "keep_artifacts": true, "waveforms": true, "ngspice_init": ["unset sqrnoise"]}}

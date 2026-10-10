@@ -1,0 +1,23 @@
+* klt sim -- generated corner deck, do not edit
+.include body.spice
+.temp 27
+.control
+save all
+set filetype=ascii
+noise v(out) vin dec 20 0.1 10
+write out_band_sq/default_novdd_27C/waveform.raw
+let onoise_total = noise2.onoise_total
+print onoise_total
+let dens0 = noise1.onoise_spectrum[0]
+print dens0
+let f_lo = real(noise1.frequency[0])
+print f_lo
+let f_hi = real(noise1.frequency[40])
+print f_hi
+let n_pts = length(noise1.frequency)
+print n_pts
+let sqrnoise_set = $?sqrnoise
+print sqrnoise_set
+quit
+.endc
+.end

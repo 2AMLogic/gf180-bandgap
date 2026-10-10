@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "error": {
+    "command": "sim",
+    "message": "batch backend failed: batch-fleet-provision.sh launch failed (exit 1): error: no capacity in any of the 30 pools after 3 attempt(s) \u2014 this is the capacity-refusal case, and it is now visible instead of silent",
+    "code": "batch_no_capacity"
+  }
+}

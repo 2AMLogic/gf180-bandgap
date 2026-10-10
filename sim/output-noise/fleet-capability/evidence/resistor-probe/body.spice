@@ -1,0 +1,4 @@
+* PDK-free known-noise resistor divider (Req = 5 kohm), probe for klt noise capability
+vin in 0 dc 0 ac 1
+r1 in out 10k
+r2 out 0 10k

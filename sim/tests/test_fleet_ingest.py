@@ -164,6 +164,114 @@ class Fixture:
         return self.reports[name]["corners"][idx]
 
 
+def printed(x: float) -> float:
+    """A value as klt reads it from ngspice's `print` line: 7 significant digits."""
+    return float(f"{x:e}")
+
+
+#: Known-resistor references from sim/output-noise/unit-probe/README.md (#252):
+#: amplitude-mode ngspice output for Req = 5 kohm at 27 C.
+PROBE_TOTAL_V = 2.8644637779e-08      # onoise_total over 0.1-10 Hz, V rms
+PROBE_DENSITY_V_RTHZ = 9.1038635016e-09  # onoise_spectrum, V/sqrt(Hz)
+
+
+class NoiseFixture(Fixture):
+    """Synthetic output-noise work dir: the three requests (op, noise_1 band,
+    noise_2 spot), klt expr measurements with their reported units, and the
+    waveform artifacts klt returns (operating-point plot / integrated-noise
+    plot with ngspice's variable types)."""
+
+    def __init__(self, bench, tmp, *, raw=None, docs=None, units=None, include_wave=True, dut=DUT,
+                 dut_rel="sim/dut/bandgap_top.spice"):
+        self.raw_override, self.docs_override, self.units_override = raw, docs, units
+        self.bench, self.tmp, self.include_wave = bench, tmp, include_wave
+        self.tb = fi.load_tb(bench)
+        self.dut = dut
+        (tmp / "design.ngspice").write_text("* stub pdk include\n")
+        self.plan, files = mk.build_plan(
+            bench, self.tb, design_include=tmp / "design.ngspice", dut=dut,
+            tb_netlist=SIM / bench / "testbench" / self.tb["netlist"], dut_rel=dut_rel,
+            submitting_klt_version="0.7.0+gtest")
+        self.files = files
+        for rel, text in files.items():
+            p = tmp / rel
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text(text)
+        self.wave, self.vals = None, None
+        self.reports = {r["name"]: self.make_report(r) for r in self.plan["requests"]}
+
+    # full-precision "true" values of one corner (index i over the report)
+    def truth(self, r, i):
+        total = PROBE_TOTAL_V * (600.0 + 7.0 * i)  # ~17 uVrms, moves with the corner (spread floor)
+        dens = PROBE_DENSITY_V_RTHZ * 97.0 * (1.0 + 0.01 * i)
+        vals = {"vref_op": 1.2019834567 + 1e-5 * i, "onoise_int_0p1_10hz_uvrms": total,
+                "onoise_1khz_nv_rthz": dens, "onoise_10khz_nv_rthz": dens * 0.97, "onoise_100khz_nv_rthz": dens * 1.1}
+        for name, s in self.plan["noise"]["measures"].items():
+            if s["vector"] == "frequency":
+                idx = int(s["expr"].split("[")[1].rstrip("])"))
+                rq = self.plan["noise"]["requests"][s["request"]]
+                vals[name] = rq["f_lo"] * 10 ** (idx / rq["per_dec"])
+        return vals
+
+    def corner_raw(self, r, i):
+        nspec = self.plan["noise"]
+        t = self.truth(r, i)
+        out = {f"raw_{m}": printed(t[m]) for m, s in nspec["measures"].items() if s["request"] == r["name"]}
+        if r["role"] == "noise":
+            out.update({"n_points": float(r["n_points"]), "sqrnoise_set": 0.0})
+        if self.raw_override:
+            out = self.raw_override(r, i, out)
+        return out
+
+    def corner_doc(self, r, i):
+        t = self.truth(r, i)
+        if r["role"] == "op_point":
+            doc = {"plotname": "Operating Point",
+                   "variables": [{"index": 0, "name": "v(vdd)", "type": "voltage"},
+                                 {"index": 1, "name": "v(vref)", "type": "voltage"}],
+                   "points": [[3.3, t["vref_op"]]]}
+        else:
+            total = t["onoise_int_0p1_10hz_uvrms"] if r["name"] == "noise_1" else t["onoise_int_0p1_10hz_uvrms"] * 3
+            doc = {"plotname": "Integrated Noise",
+                   "variables": [{"index": 0, "name": "v(onoise_total)", "type": "voltage"},
+                                 {"index": 1, "name": "v(inoise_total)", "type": "voltage"}],
+                   "points": [[total, total * 2]]}
+        if self.docs_override:
+            doc = self.docs_override(r, i, doc)
+        return doc
+
+    def make_report(self, r):
+        mk_units = {m["name"]: m["unit"] for m in json.loads(self.files[f"{r['name']}/request.json"])["measurements"]}
+        corners = []
+        for i, (p, s, t) in enumerate(r["expected_units"]):
+            cid = self.corner_id(r, p, s, t)
+            slug = cid.replace("/", "_")
+            d = self.tmp / r["name"] / "out"
+            d.mkdir(parents=True, exist_ok=True)
+            art = {}
+            doc = self.corner_doc(r, i)
+            if doc is not None and self.include_wave:
+                (d / f"{slug}.json").write_text(json.dumps(doc))
+                art["waveform"] = str(d / f"{slug}.json")
+            (d / f"{slug}.log").write_text(f"ngspice log {cid}\n")
+            art["log"] = str(d / f"{slug}.log")
+            u = dict(mk_units)
+            if self.units_override:
+                u = self.units_override(r, i, u)
+            corners.append({
+                "corner_id": cid, "status": "pass", "diagnostics": [],
+                "measurements": [{"name": k, "value": v, "unit": u.get(k)} for k, v in self.corner_raw(r, i).items()],
+                "artifacts": art,
+            })
+        return {"corners": corners, "environment": {"engine": "ngspice", "engine_version": "46", "remote": dict(REMOTE)},
+                "provenance": {"klt_version": "0.7.0+gtest", "pdk": {"name": "gf180mcuD", "version": "x"}}}
+
+    def assess(self, **kw):
+        kw.setdefault("dut_sha", fc.sha256_file(self.dut))
+        kw.setdefault("decks", self.decks())
+        return fi.assess_bench(self.bench, self.tb, self.plan, self.reports, self.tmp, **kw)
+
+
 class TmpCase(unittest.TestCase):
     def setUp(self):
         self._td = tempfile.TemporaryDirectory()
@@ -171,7 +279,7 @@ class TmpCase(unittest.TestCase):
         self.tmp = Path(self._td.name)
 
     def fx(self, bench, **kw):
-        return Fixture(bench, self.tmp, **kw)
+        return (NoiseFixture if bench == mk.NOISE_BENCH else Fixture)(bench, self.tmp, **kw)
 
 
 # ---------------------------------------------------------------- requests
@@ -589,6 +697,290 @@ class Fails(TmpCase):
         res = f.assess()
         self.assertEqual(res["overall"], "INCOMPLETE")
         self.assertEqual(len(res["invalid"]), 27)
+
+
+# ---------------------------------------------------------------- output-noise (#268)
+
+
+def noise_tb(**changes) -> dict:
+    tb = copy.deepcopy(fi.load_tb("output-noise"))
+    for k, v in changes.items():
+        tb[k] = v
+    return tb
+
+
+class NoiseRequests(TmpCase):
+    """Phase A: the request/plan contract, derived from tb.json, PDK-free."""
+
+    def test_three_requests_both_bands_and_operating_point(self):
+        f = self.fx("output-noise")
+        self.assertEqual([(r["name"], r["role"]) for r in f.plan["requests"]],
+                         [("op", "op_point"), ("noise_1", "noise"), ("noise_2", "noise")])
+        reqs = {r["name"]: json.loads((self.tmp / r["name"] / "request.json").read_text()) for r in f.plan["requests"]}
+        self.assertEqual(reqs["op"]["analysis"], {"kind": "op", "args": ""})
+        self.assertEqual(reqs["noise_1"]["analysis"], {"kind": "noise", "args": "v(vref) vsup dec 20 0.1 10"})
+        self.assertEqual(reqs["noise_2"]["analysis"], {"kind": "noise", "args": "v(vref) vsup dec 20 0.1 100k"})
+        for name, req in reqs.items():
+            self.assertEqual(req["corners"]["supply_v"], {"vsup": [2.97, 3.3, 3.63]})  # vsup is DC + ac 1: alter-able
+            self.assertEqual(req["corners"]["temperature_c"], [-40, 27, 125])
+            self.assertEqual(req["options"]["ngspice_init"], ["unset sqrnoise"])  # #252: forced amplitude mode
+            self.assertTrue(req["options"]["waveforms"])  # the unit metadata the ingestor checks
+            self.assertTrue(all("expr" in m and "spice" not in m for m in req["measurements"]))  # no .meas noise type
+        self.assertEqual(len(f.plan["requests"][0]["expected_units"]), 81)
+        self.assertEqual(fi.plan_problems("output-noise", f.tb, f.plan), [])
+
+    def test_frequency_endpoints_and_point_counts(self):
+        nspec = self.fx("output-noise").plan["noise"]
+        self.assertEqual(nspec["requests"]["noise_1"]["n_points"], 41)
+        self.assertEqual(nspec["requests"]["noise_2"]["n_points"], 121)
+        m = nspec["measures"]
+        self.assertEqual((m["f_band_lo_hz"]["request"], m["f_band_lo_hz"]["expr"]), ("noise_1", "real(noise1.frequency[0])"))
+        self.assertEqual((m["f_band_hi_hz"]["request"], m["f_band_hi_hz"]["expr"]), ("noise_1", "real(noise1.frequency[40])"))
+        for name, idx in (("f_spot_1khz_hz", 80), ("f_spot_10khz_hz", 100), ("f_spot_100khz_hz", 120)):
+            self.assertEqual((m[name]["request"], m[name]["expr"]), ("noise_2", f"real(noise1.frequency[{idx}])"))
+
+    def test_plot_renumbering_and_scale_stripped_conversions_from_tb_json(self):
+        m = self.fx("output-noise").plan["noise"]["measures"]
+        # band total: harness noise2 -> request noise_1's own noise2; tb.json scale only, no sqrt (#252)
+        self.assertEqual(m["onoise_int_0p1_10hz_uvrms"], {
+            "request": "noise_1", "expr": "noise2.onoise_total", "manifest_expr": "noise2.onoise_total * 1e6",
+            "kind": "total", "vector": "onoise_total", "scale": 1e6, "si_unit": "V", "unit": "uVrms"})
+        # spot density: harness noise3 is the second card's spectrum -> its own request's noise1
+        self.assertEqual((m["onoise_1khz_nv_rthz"]["request"], m["onoise_1khz_nv_rthz"]["expr"],
+                          m["onoise_1khz_nv_rthz"]["scale"], m["onoise_1khz_nv_rthz"]["si_unit"]),
+                         ("noise_2", "noise1.onoise_spectrum[80]", 1e9, "V/sqrt(Hz)"))
+        self.assertEqual((m["vref_op"]["request"], m["vref_op"]["expr"]), ("op", "op1.v(vref)"))
+        for name, s in m.items():
+            self.assertNotIn("sqrt", s["expr"])
+            self.assertEqual(s["manifest_expr"], fi.load_tb("output-noise")["measure"][name])
+
+    def test_noise_requests_carry_mode_and_point_count_probes(self):
+        self.fx("output-noise")
+        for name in ("noise_1", "noise_2"):
+            meas = {x["name"]: x for x in json.loads((self.tmp / name / "request.json").read_text())["measurements"]}
+            self.assertEqual(meas["sqrnoise_set"]["expr"], "$?sqrnoise")
+            self.assertEqual(meas["n_points"]["expr"], "length(noise1.frequency)")
+        op = json.loads((self.tmp / "op" / "request.json").read_text())["measurements"]
+        self.assertEqual(op, [{"name": "raw_vref_op", "expr": "op1.v(vref)", "unit": "V"}])
+
+    def test_deterministic_serialization_and_identities(self):
+        f = self.fx("output-noise")
+        plan2, files2 = mk.build_plan("output-noise", f.tb, design_include=self.tmp / "design.ngspice", dut=DUT,
+                                      tb_netlist=SIM / "output-noise" / "testbench" / f.tb["netlist"],
+                                      dut_rel="sim/dut/bandgap_top.spice", submitting_klt_version="0.7.0+gtest")
+        self.assertEqual(files2, f.files)
+        self.assertEqual(f.plan["dut"], {"path": "sim/dut/bandgap_top.spice", "sha256": fc.sha256_file(DUT),
+                                         "provenance_class": "schematic"})
+        self.assertEqual(f.plan["manifest_sha256"], fc.sha256_file(SIM / "output-noise" / "testbench" / "tb.json"))
+        self.assertEqual(f.plan["tb_netlist_sha256"], fc.sha256_file(SIM / "output-noise" / "testbench" / f.tb["netlist"]))
+        for r in f.plan["requests"]:
+            self.assertEqual(r["deck_sha256"], fc.sha256_bytes(f.files[f"{r['name']}/body.spice"].encode()))
+            self.assertEqual(r["request_sha256"], fc.sha256_bytes(f.files[f"{r['name']}/request.json"].encode()))
+            self.assertIn("begin inlined DUT", f.files[f"{r['name']}/body.spice"])
+        self.assertIn("never a spec pass", f.plan["scope"])
+
+    def test_supplied_extracted_dut(self):
+        dut = self.tmp / "layout" / "extracted.spice"
+        dut.parent.mkdir()
+        dut.write_text(DUT.read_text())
+        f = self.fx("output-noise", dut=dut, dut_rel="layout/extracted.spice")
+        self.assertEqual(f.plan["dut"]["provenance_class"], "extracted")
+        self.assertEqual(f.assess()["overall"], fi.MEASURED)
+        dut.write_text(".include other.spice\n" + DUT.read_text())  # the fleet stages only the deck
+        with self.assertRaises(ValueError):
+            self.fx("output-noise", dut=dut, dut_rel="layout/extracted.spice")
+
+    def test_off_contract_manifests_are_refused(self):
+        base = fi.load_tb("output-noise")
+        bad = {
+            "double square root (pre-#252)": {"measure": {**base["measure"],
+                                              "onoise_int_0p1_10hz_uvrms": "sqrt(noise2.onoise_total) * 1e6"}},
+            "scale disagrees with the name": {"measure": {**base["measure"], "onoise_1khz_nv_rthz": "noise3.onoise_spectrum[80] * 1e6"}},
+            "squared vector": {"measure": {**base["measure"], "vref_op": "noise2.onoise_total"}},
+            "index past the sweep": {"measure": {**base["measure"], "f_band_hi_hz": "real(noise1.frequency[41])"}},
+            "plot not produced": {"measure": {**base["measure"], "f_spot_1khz_hz": "real(noise5.frequency[80])"}},
+            "sqrnoise not forced": {"analyses": base["analyses"][1:]},
+            "squared mode": {"analyses": ["set sqrnoise"] + base["analyses"][1:]},
+            "unmapped analysis": {"analyses": base["analyses"] + ["ac dec 20 0.1 10"]},
+            "off-grid band edge": {"analyses": base["analyses"][:2] + ["noise v(vref) vsup dec 20 0.1 15"] + base["analyses"][3:]},
+            "threshold-shaped check": {"checks": {**base["checks"], "onoise_int_0p1_10hz_uvrms": {"max_spread_pct": 1}}},
+        }
+        for why, change in bad.items():
+            with self.subTest(why=why), self.assertRaises(ValueError):
+                mk.noise_spec(noise_tb(**change))
+
+    def test_plan_drift_from_tb_json_is_a_problem(self):
+        f = self.fx("output-noise")
+        f.plan["noise"]["measures"]["onoise_int_0p1_10hz_uvrms"]["scale"] = 1e3
+        self.assertTrue(any("noise contract" in p for p in fi.plan_problems("output-noise", f.tb, f.plan)))
+        g = self.fx("output-noise")
+        g.plan["requests"] = g.plan["requests"][:2]  # a band dropped from the plan
+        self.assertTrue(fi.plan_problems("output-noise", g.tb, g.plan))
+
+    def test_existing_benches_keep_their_contract(self):
+        self.assertEqual(mk.BENCHES, ("psrr-dc", "line-regulation", "startup"))
+        self.assertEqual(fi.BENCHES, mk.BENCHES)
+        self.assertNotIn("output-noise", mk.BENCHES)
+        self.assertIn("output-noise", mk.SUPPORTED)
+
+
+class NoiseIngest(TmpCase):
+    """Phase B: conversion-aware, unit-checked ingestion (#252 contract)."""
+
+    def test_complete_run_is_measured_never_pass(self):
+        f = self.fx("output-noise")
+        res = f.assess()
+        self.assertEqual(res["overall"], fi.MEASURED, res["problems"] + list(map(str, res["invalid"].values())))
+        self.assertNotIn(res["overall"], ("PASS", "FAIL"))
+        self.assertEqual(len(res["grid"]), 81)
+        self.assertEqual(res["spec_fail"], [])
+        row = res["rows"][res["grid"][0]]
+        self.assertEqual(row["spec"], {})  # no ratified threshold: nothing is graded as spec
+        self.assertTrue(all(row["sanity"].values()))
+
+    def test_corrected_conversions_scale_only(self):
+        # Known-resistor values from the #252 unit probe: amplitude mode, so
+        # uVrms = V * 1e6 and nV/sqrt(Hz) = V/sqrt(Hz) * 1e9 -- no square root.
+        def raw(r, i, out):
+            if "raw_onoise_1khz_nv_rthz" in out:
+                out["raw_onoise_1khz_nv_rthz"] = printed(PROBE_DENSITY_V_RTHZ)
+            if "raw_onoise_int_0p1_10hz_uvrms" in out:
+                out["raw_onoise_int_0p1_10hz_uvrms"] = printed(PROBE_TOTAL_V * (1 + 0.01 * i))
+            return out
+
+        def docs(r, i, doc):
+            if r["name"] == "noise_1":
+                doc["points"] = [[PROBE_TOTAL_V * (1 + 0.01 * i), 0.0]]
+            return doc
+        res = self.fx("output-noise", raw=raw, docs=docs).assess()
+        self.assertEqual(res["overall"], fi.MEASURED, res["problems"] + list(map(str, res["invalid"].values())))
+        m = res["rows"][res["grid"][0]]["measures"]
+        self.assertEqual(m["onoise_int_0p1_10hz_uvrms"], PROBE_TOTAL_V * 1e6)  # full precision from the waveform
+        self.assertAlmostEqual(m["onoise_int_0p1_10hz_uvrms"], 0.028644637779, places=12)
+        self.assertAlmostEqual(m["onoise_1khz_nv_rthz"], 9.103864, places=6)
+        self.assertNotAlmostEqual(m["onoise_int_0p1_10hz_uvrms"], math.sqrt(PROBE_TOTAL_V) * 1e6, places=3)
+
+    def test_frequency_endpoints_and_operating_point(self):
+        res = self.fx("output-noise").assess()
+        m = res["rows"][res["grid"][0]]["measures"]
+        self.assertAlmostEqual(m["f_band_lo_hz"], 0.1)
+        self.assertAlmostEqual(m["f_band_hi_hz"], 10.0, places=5)
+        self.assertAlmostEqual(m["f_spot_1khz_hz"], 1e3, places=2)
+        self.assertAlmostEqual(m["f_spot_100khz_hz"], 1e5, places=0)
+        self.assertEqual(m["vref_op"], 1.2019834567)  # full precision from the op waveform
+
+    def test_band_edge_off_index_is_invalid(self):
+        def raw(r, i, out):
+            if "raw_f_band_hi_hz" in out:
+                out["raw_f_band_hi_hz"] = 9.0
+            return out
+        res = self.fx("output-noise", raw=raw).assess()
+        self.assertEqual(res["overall"], "INCOMPLETE")
+        self.assertEqual(len(res["invalid"]), 81)
+        self.assertTrue(all("f_band_hi_hz" in why for why in res["invalid"].values()))
+
+    def test_operating_point_outside_window_is_invalid(self):
+        res = self.fx("output-noise", docs=lambda r, i, d: (
+            {**d, "points": [[3.3, 0.2]]} if r["name"] == "op" else d),
+            raw=lambda r, i, out: {**out, "raw_vref_op": 0.2} if "raw_vref_op" in out else out).assess()
+        self.assertEqual(res["overall"], "INCOMPLETE")
+        self.assertTrue(all("vref_op" in why for why in res["invalid"].values()))
+
+    def test_squared_mode_is_rejected(self):
+        res = self.fx("output-noise", raw=lambda r, i, out: {**out, "sqrnoise_set": 1.0} if "sqrnoise_set" in out else out).assess()
+        self.assertEqual(res["overall"], "INCOMPLETE")
+        self.assertTrue(all("sqrnoise" in why for why in res["invalid"].values()))
+
+        def docs(r, i, d):
+            if r["role"] != "noise":
+                return d
+            return {**d, "plotname": "Integrated Noise - V^2 or A^2",
+                    "variables": [{"index": 0, "name": "onoise_total", "type": "voltage^2"},
+                                  {"index": 1, "name": "inoise_total", "type": "voltage^2"}]}
+        res = self.fx("output-noise", docs=docs).assess()
+        self.assertEqual(res["overall"], "INCOMPLETE")
+        self.assertTrue(all("voltage^2" in why for why in res["invalid"].values()))
+
+    def test_unit_mismatch_is_rejected(self):
+        def units(r, i, u):
+            if "raw_onoise_1khz_nv_rthz" in u:
+                u["raw_onoise_1khz_nv_rthz"] = "V^2/Hz"
+            return u
+        res = self.fx("output-noise", units=units).assess()
+        self.assertEqual(res["overall"], "INCOMPLETE")
+        self.assertTrue(all("V^2/Hz" in why for why in res["invalid"].values()))
+        res = self.fx("output-noise", units=lambda r, i, u: {}).assess()  # a report with no unit metadata at all
+        self.assertEqual(res["overall"], "INCOMPLETE")
+
+    def test_wrong_point_count_is_rejected(self):
+        res = self.fx("output-noise", raw=lambda r, i, out: {**out, "n_points": 21.0} if "n_points" in out else out).assess()
+        self.assertEqual(res["overall"], "INCOMPLETE")
+        self.assertTrue(all("points" in why for why in res["invalid"].values()))
+
+    def test_printed_total_disagreeing_with_waveform_is_rejected(self):
+        res = self.fx("output-noise", raw=lambda r, i, out: (
+            {**out, "raw_onoise_int_0p1_10hz_uvrms": out["raw_onoise_int_0p1_10hz_uvrms"] * 1.001}
+            if "raw_onoise_int_0p1_10hz_uvrms" in out else out)).assess()
+        self.assertEqual(res["overall"], "INCOMPLETE")
+
+    def test_missing_artifacts_and_companion(self):
+        res = self.fx("output-noise", docs=lambda r, i, d: None if r["name"] == "noise_2" else d).assess()
+        self.assertEqual(res["overall"], "INCOMPLETE")  # spot request without unit metadata
+        self.assertEqual(len(res["invalid"]), 81)
+        f = self.fx("output-noise")
+        del f.reports["op"]
+        res = f.assess()
+        self.assertEqual(res["overall"], "INCOMPLETE")
+        self.assertTrue(all("op" in why for why in res["invalid"].values()))
+        g = self.fx("output-noise")
+        g.reports["noise_1"]["corners"].pop(0)  # one band corner never came back
+        res = g.assess()
+        self.assertEqual(res["overall"], "INCOMPLETE")
+        self.assertEqual(len(res["invalid"]), 1)
+
+    def test_flat_grid_fails_the_spread_floor(self):
+        f = self.fx("output-noise", docs=lambda r, i, d: (
+            {**d, "points": [[PROBE_TOTAL_V * 600, 0.0]]} if r["name"] == "noise_1" else d),
+            raw=lambda r, i, out: ({**out, "raw_onoise_int_0p1_10hz_uvrms": printed(PROBE_TOTAL_V * 600)}
+                                   if "raw_onoise_int_0p1_10hz_uvrms" in out else out))
+        res = f.assess()
+        self.assertEqual(res["overall"], "INCOMPLETE")
+        self.assertEqual(res["invalid"], {})
+        self.assertTrue(any("spread" in p for p in res["problems"]))
+
+    def test_worker_identity_mismatch(self):
+        f = self.fx("output-noise")
+        f.reports["noise_2"]["environment"]["remote"]["runner_compatibility"] = "mismatch"
+        f.reports["noise_2"]["environment"]["remote"]["runner_klt_version"] = "0.5.0"  # predates measurements[].expr
+        res = f.assess()
+        self.assertEqual(res["overall"], "INCOMPLETE")
+        self.assertTrue(any("compatibility" in p for p in res["problems"]))
+
+    def test_record_says_measured_and_writes_suite_logs(self):
+        f = self.fx("output-noise")
+        res = f.assess()
+        exp = self.tmp / "exp" / "output-noise"
+        rec = fi.write_evidence(exp, self.tmp, "output-noise", f.tb, f.plan, res, f.reports,
+                                dut_label="sim/dut/bandgap_top.spice", issue=268, git=GIT)
+        text = rec.read_text()
+        self.assertIn("Overall: MEASURED", text)
+        self.assertNotIn("Overall: PASS", text)
+        self.assertNotIn("| PASS |", text)
+        self.assertIn("noise2.onoise_total * 1e6", text)  # the conversion is tb.json's, stated
+        self.assertIn("unset sqrnoise", text)
+        (cdir,) = list((exp / "corners").iterdir())
+        samples = analysis.read_corner_logs(cdir)
+        self.assertEqual(len(samples), 81)
+        self.assertIn("onoise_int_0p1_10hz_uvrms", next(iter(samples.values())))
+        self.assertEqual(len(list((exp / "netlist-snapshots").glob("*.spice"))), 3)
+
+
+class NoiseFails(Fails):
+    """The shared completeness / provenance fixtures, run on output-noise."""
+    BENCHES = (mk.NOISE_BENCH,)
+
+    def first_request(self, f):
+        return "noise_1"
 
 
 # ---------------------------------------------------------------- suite integration

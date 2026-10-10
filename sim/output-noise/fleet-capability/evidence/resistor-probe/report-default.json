@@ -1,0 +1,229 @@
+{
+  "schema_version": 3,
+  "netlist": {
+    "path": null,
+    "scope": "external"
+  },
+  "status": "pass",
+  "corner_count": 1,
+  "passed": 1,
+  "failed": 0,
+  "errored": 0,
+  "inconclusive": 0,
+  "diagnostic_counts": {
+    "by_code": {},
+    "by_severity": {},
+    "corners_with_diagnostics": 0
+  },
+  "metrics": {
+    "sim__corner__count": 1,
+    "sim__corner__passed_count": 1,
+    "sim__corner__failed_count": 0,
+    "sim__corner__errored_count": 0,
+    "sim__corner__inconclusive_count": 0
+  },
+  "environment": {
+    "engine": "ngspice",
+    "engine_version": "46",
+    "ngspice_binary": "~/.local/bin/ngspice",
+    "models_lib": {
+      "path": null,
+      "scope": "absent"
+    },
+    "models_lib_sha256": null,
+    "netlist_sha256": "509af45d867c734e0675c5d9cf38878e1dfbfb5c0a20387b7a6942d13cbdd9ef",
+    "netlist_closure": [
+      {
+        "path": null,
+        "scope": "external",
+        "sha256": "509af45d867c734e0675c5d9cf38878e1dfbfb5c0a20387b7a6942d13cbdd9ef"
+      }
+    ]
+  },
+  "coverage": {
+    "corners_simulated": 1,
+    "measurements_declared": 6,
+    "measurements_with_limits": 0,
+    "unrecognized_limit_keys": [],
+    "schema_version": 1,
+    "known": true,
+    "checked": [
+      "measurement:[0,\"default/novdd/27C\",\"dens0\"]/observation",
+      "measurement:[0,\"default/novdd/27C\",\"f_hi\"]/observation",
+      "measurement:[0,\"default/novdd/27C\",\"f_lo\"]/observation",
+      "measurement:[0,\"default/novdd/27C\",\"n_pts\"]/observation",
+      "measurement:[0,\"default/novdd/27C\",\"onoise_total\"]/observation",
+      "measurement:[0,\"default/novdd/27C\",\"sqrnoise_set\"]/observation"
+    ],
+    "skipped": [],
+    "inapplicable": [
+      {
+        "id": "measurement:[0,\"default/novdd/27C\",\"dens0\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"default/novdd/27C\",\"f_hi\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"default/novdd/27C\",\"f_lo\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"default/novdd/27C\",\"n_pts\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"default/novdd/27C\",\"onoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"default/novdd/27C\",\"sqrnoise_set\"]/limits",
+        "reason": "characterization_without_limits"
+      }
+    ],
+    "unknown": [],
+    "nothing_checked": false,
+    "nothing_checked_reasons": []
+  },
+  "provenance": {
+    "klt_version": "0.7.0+g5e5b55992a7f",
+    "klayout_version": "0.30.12",
+    "pdk": null,
+    "deck": null,
+    "input": {
+      "content_hash": "sha256:509af45d867c734e0675c5d9cf38878e1dfbfb5c0a20387b7a6942d13cbdd9ef",
+      "role": "netlist"
+    }
+  },
+  "measurements": [
+    {
+      "name": "onoise_total",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "default/novdd/27C",
+        "value": 2.864464e-08,
+        "margin": null
+      }
+    },
+    {
+      "name": "dens0",
+      "unit": "V/sqrt(Hz)",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "default/novdd/27C",
+        "value": 9.103864e-09,
+        "margin": null
+      }
+    },
+    {
+      "name": "f_lo",
+      "unit": "Hz",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "default/novdd/27C",
+        "value": 0.1,
+        "margin": null
+      }
+    },
+    {
+      "name": "f_hi",
+      "unit": "Hz",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "default/novdd/27C",
+        "value": 10.0,
+        "margin": null
+      }
+    },
+    {
+      "name": "n_pts",
+      "unit": "1",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "default/novdd/27C",
+        "value": 41.0,
+        "margin": null
+      }
+    },
+    {
+      "name": "sqrnoise_set",
+      "unit": "1",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "default/novdd/27C",
+        "value": 0.0,
+        "margin": null
+      }
+    }
+  ],
+  "corners": [
+    {
+      "corner_id": "default/novdd/27C",
+      "process": null,
+      "supply_v": {},
+      "temperature_c": 27,
+      "status": "pass",
+      "runtime_s": 0.005,
+      "measurements": [
+        {
+          "name": "onoise_total",
+          "value": 2.864464e-08,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "dens0",
+          "value": 9.103864e-09,
+          "unit": "V/sqrt(Hz)",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "f_lo",
+          "value": 0.1,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "f_hi",
+          "value": 10.0,
+          "unit": "Hz",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "n_pts",
+          "value": 41.0,
+          "unit": "1",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "sqrnoise_set",
+          "value": 0.0,
+          "unit": "1",
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "out_band/default_novdd_27C/ngspice.log",
+        "raw": "out_band/default_novdd_27C/waveform.raw",
+        "waveform": "out_band/default_novdd_27C/waveform.raw.json",
+        "deck": "out_band/default_novdd_27C/corner.cir"
+      },
+      "monte_carlo": null
+    }
+  ]
+}

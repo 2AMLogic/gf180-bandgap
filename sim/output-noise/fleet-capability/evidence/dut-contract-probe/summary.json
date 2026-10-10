@@ -1,0 +1,224 @@
+{
+  "note": "Contract probe only: one corner (tt/3.300V/27C) per request, local backend. NOT a measurement, NOT fleet evidence, no PVT. Noise and operating-point values are deliberately omitted; only the schema, units, statuses, frequency/point-count/mode probes and artifact metadata are kept.",
+  "requests": {
+    "op": {
+      "analysis": {
+        "kind": "op",
+        "args": ""
+      },
+      "ngspice_init": [
+        "unset sqrnoise"
+      ],
+      "corner_id": "tt/3.300V/27C",
+      "status": "pass",
+      "diagnostics": [],
+      "measurements": [
+        {
+          "name": "raw_vref_op",
+          "unit": "V",
+          "status": "pass",
+          "value_present": true
+        }
+      ],
+      "artifacts": [
+        "deck",
+        "log",
+        "raw",
+        "waveform"
+      ],
+      "waveform": {
+        "plotname": "Operating Point",
+        "variables_first": [
+          {
+            "index": 0,
+            "name": "v(vdd)",
+            "type": "voltage"
+          },
+          {
+            "index": 1,
+            "name": "v(vref)",
+            "type": "voltage"
+          }
+        ],
+        "n_variables": 219,
+        "n_points": 1
+      },
+      "provenance_klt_version": "0.7.0+g5e5b55992a7f",
+      "engine": [
+        "ngspice",
+        "46"
+      ]
+    },
+    "noise_1": {
+      "analysis": {
+        "kind": "noise",
+        "args": "v(vref) vsup dec 20 0.1 10"
+      },
+      "ngspice_init": [
+        "unset sqrnoise"
+      ],
+      "corner_id": "tt/3.300V/27C",
+      "status": "pass",
+      "diagnostics": [],
+      "measurements": [
+        {
+          "name": "raw_onoise_int_0p1_10hz_uvrms",
+          "unit": "V",
+          "status": "pass",
+          "value_present": true
+        },
+        {
+          "name": "raw_f_band_lo_hz",
+          "unit": "Hz",
+          "status": "pass",
+          "value_present": true,
+          "value": 0.1
+        },
+        {
+          "name": "raw_f_band_hi_hz",
+          "unit": "Hz",
+          "status": "pass",
+          "value_present": true,
+          "value": 10.0
+        },
+        {
+          "name": "n_points",
+          "unit": "1",
+          "status": "pass",
+          "value_present": true,
+          "value": 41.0
+        },
+        {
+          "name": "sqrnoise_set",
+          "unit": "1",
+          "status": "pass",
+          "value_present": true,
+          "value": 0.0
+        }
+      ],
+      "artifacts": [
+        "deck",
+        "log",
+        "raw",
+        "waveform"
+      ],
+      "waveform": {
+        "plotname": "Integrated Noise",
+        "variables_first": [
+          {
+            "index": 0,
+            "name": "v(onoise_total)",
+            "type": "voltage"
+          },
+          {
+            "index": 1,
+            "name": "v(inoise_total)",
+            "type": "voltage"
+          }
+        ],
+        "n_variables": 2,
+        "n_points": 1
+      },
+      "provenance_klt_version": "0.7.0+g5e5b55992a7f",
+      "engine": [
+        "ngspice",
+        "46"
+      ]
+    },
+    "noise_2": {
+      "analysis": {
+        "kind": "noise",
+        "args": "v(vref) vsup dec 20 0.1 100k"
+      },
+      "ngspice_init": [
+        "unset sqrnoise"
+      ],
+      "corner_id": "tt/3.300V/27C",
+      "status": "pass",
+      "diagnostics": [],
+      "measurements": [
+        {
+          "name": "raw_onoise_1khz_nv_rthz",
+          "unit": "V/sqrt(Hz)",
+          "status": "pass",
+          "value_present": true
+        },
+        {
+          "name": "raw_onoise_10khz_nv_rthz",
+          "unit": "V/sqrt(Hz)",
+          "status": "pass",
+          "value_present": true
+        },
+        {
+          "name": "raw_onoise_100khz_nv_rthz",
+          "unit": "V/sqrt(Hz)",
+          "status": "pass",
+          "value_present": true
+        },
+        {
+          "name": "raw_f_spot_1khz_hz",
+          "unit": "Hz",
+          "status": "pass",
+          "value_present": true,
+          "value": 1000.0
+        },
+        {
+          "name": "raw_f_spot_10khz_hz",
+          "unit": "Hz",
+          "status": "pass",
+          "value_present": true,
+          "value": 10000.0
+        },
+        {
+          "name": "raw_f_spot_100khz_hz",
+          "unit": "Hz",
+          "status": "pass",
+          "value_present": true,
+          "value": 100000.0
+        },
+        {
+          "name": "n_points",
+          "unit": "1",
+          "status": "pass",
+          "value_present": true,
+          "value": 121.0
+        },
+        {
+          "name": "sqrnoise_set",
+          "unit": "1",
+          "status": "pass",
+          "value_present": true,
+          "value": 0.0
+        }
+      ],
+      "artifacts": [
+        "deck",
+        "log",
+        "raw",
+        "waveform"
+      ],
+      "waveform": {
+        "plotname": "Integrated Noise",
+        "variables_first": [
+          {
+            "index": 0,
+            "name": "v(onoise_total)",
+            "type": "voltage"
+          },
+          {
+            "index": 1,
+            "name": "v(inoise_total)",
+            "type": "voltage"
+          }
+        ],
+        "n_variables": 2,
+        "n_points": 1
+      },
+      "provenance_klt_version": "0.7.0+g5e5b55992a7f",
+      "engine": [
+        "ngspice",
+        "46"
+      ]
+    }
+  }
+}
