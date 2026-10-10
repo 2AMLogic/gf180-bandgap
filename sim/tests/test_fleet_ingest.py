@@ -1426,5 +1426,106 @@ class SharedHelpers(unittest.TestCase):
             fc.parse_klt_corner_id("tt/3.300V/27C/mc3")
 
 
+# ---------------------------------------------------------------- duplicate waveform columns (#294)
+
+
+def raw_doc(names, rows, types=None):
+    return {"plotname": "x", "variables": [{"index": i, "name": n, "type": (types or {}).get(n, "voltage")}
+                                           for i, n in enumerate(names)], "points": rows}
+
+
+class DuplicateWaveformColumns(TmpCase):
+    def test_wave_columns_rejects_duplicates_either_order_and_identical(self):
+        for names, rows in ((["x", "v(vref)", "v(vref)"], [[0, 1.2, 1.3]]),
+                            (["x", "v(vref)", "v(vref)"], [[0, 1.3, 1.2]]),
+                            (["x", "v(vref)", "v(vref)"], [[0, 1.2, 1.2]]),
+                            (["x", "v(vref)", "V(VREF)"], [[0, 1.2, 1.3]])):
+            with self.assertRaisesRegex(ValueError, "duplicate waveform column"):
+                fi.wave_columns(raw_doc(names, rows))
+            path = self.tmp / "w.json"
+            path.write_text(json.dumps(raw_doc(names, rows)))
+            with self.assertRaisesRegex(ValueError, "duplicate waveform column"):
+                fi.read_waveform(path)
+
+    def test_unique_columns_unchanged(self):
+        doc = raw_doc(["x", "v(vref)"], [[0, 1.2], [1, 1.3]])
+        self.assertEqual(fi.wave_columns(doc), {"x": [0, 1], "v(vref)": [1.2, 1.3]})
+        self.assertEqual(fi.column(fi.wave_columns(doc), "v(vref)", "vref"), [1.2, 1.3])
+
+    def test_column_rejects_case_collision_in_a_mapping(self):
+        with self.assertRaisesRegex(ValueError, "duplicate waveform column"):
+            fi.column({"v(vref)": [1.2], "V(VREF)": [1.3]}, "v(vref)")
+
+    def test_alias_candidates_agree_or_reject(self):
+        self.assertEqual(fi.column({"v(vref)": [1.2], "vref": [1.2]}, "v(vref)", "vref"), [1.2])
+        for w in ({"v(vref)": [1.2], "vref": [1.3]}, {"vref": [1.3], "v(vref)": [1.2]}):
+            with self.assertRaisesRegex(ValueError, "conflicting waveform columns"):
+                fi.column(w, "v(vref)", "vref")
+        with self.assertRaisesRegex(ValueError, "conflicting waveform columns"):
+            fi.column({"i(vs)": [1.0], "vs#branch": [2.0]}, "i(vs)")
+
+    def test_noise_type_lookup_rejects_duplicates_and_conflicts(self):
+        good = raw_doc(["v(onoise_total)"], [[1.0]])
+        good["plotname"] = fi.NOISE_TOTAL_PLOT
+        self.assertEqual(fi.noise_unit_problems(good), [])
+        for names, types in ((["v(onoise_total)", "V(ONOISE_TOTAL)"], ["voltage", "voltage^2"]),
+                             (["v(onoise_total)", "V(ONOISE_TOTAL)"], ["voltage^2", "voltage"]),
+                             (["v(onoise_total)", "v(onoise_total)"], ["voltage", "voltage"]),
+                             (["v(onoise_total)", "onoise_total"], ["voltage", "voltage^2"]),
+                             (["onoise_total", "v(onoise_total)"], ["voltage^2", "voltage"])):
+            doc = {"plotname": fi.NOISE_TOTAL_PLOT,
+                   "variables": [{"index": i, "name": n, "type": t} for i, (n, t) in enumerate(zip(names, types))],
+                   "points": [[1.0] * len(names)]}
+            self.assertTrue(fi.noise_unit_problems(doc), (names, types))
+
+    def _dup_files(self, fx, mutate):
+        for rep in fx.reports.values():
+            for c in rep["corners"]:
+                p = (c.get("artifacts") or {}).get("waveform")
+                if p:
+                    doc = json.loads(Path(p).read_text())
+                    Path(p).write_text(json.dumps(mutate(doc)))
+
+    def _dup_vref(self, order):
+        def mutate(doc):
+            names = [v["name"] for v in doc["variables"]]
+            i = names.index("v(vref)")
+            doc["variables"].append({"index": len(names), "name": "v(vref)", "type": "voltage"})
+            for r in doc["points"]:
+                r.append(r[i] + (1e-3 if order == "bad-last" else 0.0))
+            if order == "bad-first":
+                for r in doc["points"]:
+                    r[i] += 1e-3
+            return doc
+        return mutate
+
+    def test_deterministic_benches_are_incomplete_for_every_duplicate_form(self):
+        for bench in ("line-regulation", "startup"):
+            for order in ("bad-last", "bad-first", "identical"):
+                with self.subTest(bench=bench, order=order):
+                    tmp = self.tmp / f"{bench}-{order}"
+                    tmp.mkdir()
+                    fx = Fixture(bench, tmp)
+                    self._dup_files(fx, self._dup_vref(order))
+                    res = fx.assess()
+                    self.assertEqual(res["overall"], "INCOMPLETE")
+                    self.assertNotIn("PASS", [res["overall"]])
+
+    def test_noise_duplicate_type_metadata_is_incomplete(self):
+        def docs(r, i, d):
+            if r["role"] != "noise":
+                return d
+            v = d["variables"]
+            return {**d, "variables": v + [{"index": 2, "name": "V(ONOISE_TOTAL)", "type": "voltage^2"}],
+                    "points": [row + [row[0]] for row in d["points"]]}
+        res = self.fx("output-noise", docs=docs).assess()
+        self.assertEqual(res["overall"], "INCOMPLETE")
+        self.assertTrue(res["invalid"] or res["problems"])
+
+    def test_noise_clean_run_unchanged(self):
+        res = self.fx("output-noise").assess()
+        self.assertNotEqual(res["overall"], "INCOMPLETE", res["problems"])
+
+
 if __name__ == "__main__":
     unittest.main()

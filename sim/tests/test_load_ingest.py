@@ -248,6 +248,13 @@ class Requests(TmpCase):
 
 
 class Derive(TmpCase):
+    def test_case_colliding_vref_columns_are_rejected(self):
+        w = load_wave()
+        w["V(VREF)"] = [x + 1e-3 for x in w["v(vref)"]]
+        m, errs = self.derive(w)
+        self.assertIsNone(m)
+        self.assertTrue(any("duplicate waveform column" in e for e in errs), errs)
+
     def test_linear_slope_sign_and_units(self):
         m, errs = self.derive(load_wave())
         self.assertEqual(errs, [])
