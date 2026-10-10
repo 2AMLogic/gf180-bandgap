@@ -585,6 +585,7 @@ def assess_bench(bench: str, tb: dict, plan: dict, reports: dict, work: Path, *,
             pts[r["name"]] = {}
             continue
         problems += [f"{r['name']}: {p}" for p in fc.provenance_problems(rep, plan, require_remote=require_remote)]
+        problems += [f"{r['name']}: {p}" for p in fc.report_identity_problems(rep, r.get("deck_sha256"))]
         required = r["measurements"]
         p, mi, fa, pr = fc.collect_units(rep, _expected_keys(r), required, _unit_key(r))
         pts[r["name"]] = p

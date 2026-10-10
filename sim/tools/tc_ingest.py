@@ -87,7 +87,7 @@ def curve_of(vals: dict) -> dict[int, float]:
     return dict(sorted(out.items()))
 
 
-def collect(report: dict, expected: list[tuple[str, float]]):
+def collect(report: dict, expected: list[tuple[str, float]], deck_sha256: str | None = None):
     """-> (points, missing, failed, problems); see `fleet_common.collect_units`.
 
     points : {(process, vdd): {measurement: value}} for corners that returned
@@ -98,10 +98,13 @@ def collect(report: dict, expected: list[tuple[str, float]]):
              backend gave.
     problems: report-level issues (duplicate corners, unexpected corners).
     """
-    return fc.collect_units(
+    points, missing, failed, problems = fc.collect_units(
         report, expected, REQUIRED,
         lambda cid: (lambda k: (k[0], round(k[1], 4)))(corner_key(cid)),
     )
+    if deck_sha256 is not None:
+        problems = list(problems) + fc.report_identity_problems(report, deck_sha256)
+    return points, missing, failed, problems
 
 
 def sweep_consistency(vals: dict) -> list[str]:
@@ -410,7 +413,7 @@ def main() -> int:
     req = json.loads((work / "request.json").read_text())
     tb = load_tb()
     expected = expected_points(tb)
-    points, missing, failed, problems = collect(report, expected)
+    points, missing, failed, problems = collect(report, expected, deck_sha256=sha256(work / "body.spice"))
     verdict = assess(points, missing, failed, problems, tb)
     w = worst(points, verdict["rows"])
     print(f"overall={verdict['overall']} points={len(points)}/{len(expected)} "

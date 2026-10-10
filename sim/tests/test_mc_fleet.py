@@ -70,8 +70,10 @@ def fake_report(entry: dict, *, sigma: float, nominal: float, isup: float = 2.0e
         "status": "pass", "corners": corners,
         "environment": {"engine": "ngspice", "engine_version": "46",
                         "monte_carlo": {"n": entry["n"], "seed": entry["seed"], "vary": entry["vary"]},
+                        "netlist_sha256": entry["deck_sha256"],
                         **({"remote": dict(remote)} if remote else {})},
-        "provenance": {"klt_version": KLT, "pdk": {"name": "gf180mcuD", "version": "x"}},
+        "provenance": {"klt_version": KLT, "pdk": {"name": "gf180mcuD", "version": "x"},
+                       "input": {"content_hash": "sha256:" + entry["deck_sha256"], "role": "netlist"}},
     }
 
 
