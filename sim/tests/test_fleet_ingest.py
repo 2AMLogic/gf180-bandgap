@@ -596,6 +596,52 @@ class Fails(TmpCase):
             self.assertEqual(res["overall"], "INCOMPLETE")
             self.assertTrue(any("boom" in why for _, why in res["failed"]))
 
+    def test_missing_status_is_failed_closed(self):
+        for f in self.each():
+            c = f.corner(self.first_request(f), 2)
+            del c["status"]
+            res = f.assess()
+            self.assertEqual(res["overall"], "INCOMPLETE")
+            self.assertTrue(any("unknown corner status" in why for _, why in res["failed"]))
+
+    def test_unknown_or_untrusted_status_is_failed_closed(self):
+        for st in ("weird", "pass_partial", "inconclusive", None, 1):
+            for f in self.each():
+                f.corner(self.first_request(f), 2)["status"] = st
+                res = f.assess()
+                self.assertEqual(res["overall"], "INCOMPLETE", st)
+                self.assertEqual(len(res["failed"]), 1, st)
+
+    def test_complete_values_with_error_diagnostic_is_not_pass(self):
+        for sev in ("error", "ERROR", "fatal", None):
+            for f in self.each():
+                c = f.corner(self.first_request(f), 2)
+                d = {"code": "simulation_failed", "message": "kaboom"}
+                if sev is not None:
+                    d["severity"] = sev  # None: severity absent, treated as error
+                c["diagnostics"] = [d]
+                res = f.assess()
+                self.assertEqual(res["overall"], "INCOMPLETE", sev)
+                self.assertTrue(any("kaboom" in why for _, why in res["failed"]), sev)
+
+    def test_warning_only_diagnostic_is_retained_not_fatal(self):
+        for f in self.each():
+            before = f.assess()["overall"]
+            f.corner(self.first_request(f), 2)["diagnostics"] = [
+                {"severity": "warning", "code": "recovered_stepping", "message": "gmin stepping"}]
+            res = f.assess()
+            self.assertEqual(res["failed"], [])
+            self.assertEqual(res["overall"], before)
+
+    def test_legitimate_fail_status_is_graded_not_missing(self):
+        for f in self.each():
+            before = f.assess()["overall"]
+            f.corner(self.first_request(f), 2)["status"] = "fail"
+            res = f.assess()
+            self.assertEqual(res["failed"], [])
+            self.assertEqual(res["missing"], [])
+            self.assertEqual(res["overall"], before)
+
     def test_null_and_nonfinite_measurements(self):
         for f in self.each():
             n = self.first_request(f)
@@ -1109,6 +1155,30 @@ class SharedHelpers(unittest.TestCase):
         pts, miss, fail, prob = ti.collect(rep, [("tt", 3.3)])
         self.assertEqual(pts, {})
         self.assertTrue(miss)  # NaN is not a measurement (was silently accepted before #237)
+
+    def test_collect_units_execution_policy(self):
+        def rep(**kw):
+            c = {"corner_id": "tt/3.300V/27C", "status": "pass", "diagnostics": [],
+                 "measurements": [{"name": "a", "value": 1.0}]}
+            c.update(kw)
+            return {"corners": [c]}
+        def run(r):
+            return fc.collect_units(r, [("tt", 3.3)], ["a"], lambda cid: fc.parse_klt_corner_id(cid)[:2])
+        pts, miss, fail, _ = run(rep())
+        self.assertTrue(pts and not miss and not fail)
+        pts, miss, fail, _ = run(rep(status="fail"))
+        self.assertTrue(pts and not fail)
+        warn = [{"severity": "warning", "code": "w", "message": "m"}]
+        self.assertTrue(run(rep(diagnostics=warn))[0])
+        for bad in (rep(status="inconclusive"), rep(status="weird"), rep(status=None),
+                    rep(diagnostics=[{"severity": "error", "code": "e", "message": "m"}]),
+                    rep(diagnostics=[{"code": "e", "message": "no severity"}]),
+                    rep(diagnostics=["junk"])):
+            pts, miss, fail, _ = run(bad)
+            self.assertEqual(pts, {})
+            self.assertEqual(len(fail), 1)
+        r = rep(); del r["corners"][0]["status"]
+        self.assertEqual(len(run(r)[2]), 1)
 
     def test_corner_id_parsing(self):
         self.assertEqual(fc.parse_klt_corner_id("bjt_ff/2.970V/-40C"), ("bjt_ff", 2.97, -40.0))

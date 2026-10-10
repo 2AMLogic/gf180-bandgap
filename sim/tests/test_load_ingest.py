@@ -400,6 +400,19 @@ class Assess(TmpCase):
         self.assertEqual(len(res["missing"]), 81)
         self.assertEqual(len(res["invalid"]), 81)
 
+    def test_finite_values_with_invalid_execution_are_incomplete(self):
+        f = self.fx()
+        c = f.reports["sweep"]["corners"][0]
+        c["diagnostics"] = [{"severity": "error", "code": "simulation_failed", "message": "kaboom"}]
+        res = f.assess()
+        self.assertEqual(res["overall"], "INCOMPLETE")
+        self.assertTrue(any("kaboom" in why for _, why in res["failed"]))
+        c["diagnostics"] = []
+        c["status"] = "inconclusive"
+        res = f.assess()
+        self.assertEqual(res["overall"], "INCOMPLETE")
+        self.assertTrue(res["failed"])
+
     def test_duplicate_and_unexpected_corners(self):
         f = self.fx()
         cs = f.reports["sweep"]["corners"]
