@@ -22,9 +22,9 @@ from __future__ import annotations
 import datetime as _dt
 import getpass
 import math
+import os
 import platform
 import re
-import shutil
 import socket
 import subprocess
 import sys
@@ -138,24 +138,61 @@ def record_stamp(record: str) -> _dt.datetime:
         raise ValueError(f"malformed record id {record!r}: {exc}") from exc
 
 
+RESERVATIONS_DIR = ".reservations"
+
+
+def _record_id_occupied(experiment_dir: Path, records_dir: Path, record_id: str) -> bool:
+    """True if *any* artifact of ``record_id`` exists (summary, raw-log
+    directory/file, or frozen snapshot) -- an interrupted run's orphan log or
+    snapshot occupies its id even though no summary was ever written."""
+    return any(
+        p.exists() or p.is_symlink()
+        for p in (
+            records_dir / f"{record_id}.md",
+            experiment_dir / CORNERS_DIR / record_id,
+            experiment_dir / SNAPSHOT_DIR / f"{record_id}.spice",
+        )
+    )
+
+
 def allocate_record_id(
     repo_root: Path,
     records_dir: Path,
     when: _dt.datetime | None = None,
     git: dict | None = None,
 ) -> str:
-    """Mint a fresh, unused ``<record-id>``.
+    """Mint and *reserve* a fresh, unused ``<record-id>``.
 
-    Append-only: if a record with this id already exists (same second, same
-    commit) we advance the timestamp until the id is free rather than
-    overwriting or inventing a non-conforming suffix.
+    Append-only: if any artifact of this id already exists (record, corner-log
+    directory, netlist snapshot -- same second, same commit) we advance the
+    timestamp until the id is free rather than overwriting or inventing a
+    non-conforming suffix.
+
+    The id is reserved by exclusively creating (``O_EXCL``)
+    ``<experiment>/.reservations/<record-id>``, so two concurrent allocations
+    with an identical timestamp and sha can never both own one id. The marker
+    is never removed: it is a tiny, gitignored, local ownership token, and a
+    run interrupted after allocation leaves its artifacts (and the marker) in
+    place for diagnosis -- a retry simply gets a fresh id.
     """
     when = when or _dt.datetime.now(_dt.timezone.utc)
     short_sha = (git or git_provenance(repo_root))["short"]
+    experiment_dir = records_dir.parent
+    reservations = experiment_dir / RESERVATIONS_DIR
+    reservations.mkdir(parents=True, exist_ok=True)
     while True:
         record_id = format_record_id(short_sha, when)
-        if not (records_dir / f"{record_id}.md").exists():
-            return record_id
+        if not _record_id_occupied(experiment_dir, records_dir, record_id):
+            try:
+                with open(reservations / record_id, "x", encoding="utf-8") as fh:
+                    fh.write(f"reserved by pid {os.getpid()}\n")
+            except FileExistsError:
+                pass  # another allocation owns it -- advance
+            else:
+                # Re-check after winning the marker: an artifact may have been
+                # created by a writer that predates reservation markers.
+                if not _record_id_occupied(experiment_dir, records_dir, record_id):
+                    return record_id
         when += _dt.timedelta(seconds=1)
 
 
@@ -410,6 +447,27 @@ class RecordExists(RuntimeError):
     """Refused to overwrite an existing append-only record."""
 
 
+def _write_exclusive(path: Path, text: str | bytes, what: str) -> None:
+    """Create ``path`` with ``text``, atomically refusing if it exists.
+
+    Exclusive creation (open mode ``'x'`` / ``O_EXCL``) rather than an
+    exists-then-write check, so a racing writer cannot slip in between and the
+    pre-existing bytes are never touched. ``RecordExists`` on collision.
+    """
+    try:
+        if isinstance(text, bytes):
+            fh = open(path, "xb")
+        else:
+            fh = open(path, "x", encoding="utf-8")
+        with fh:
+            fh.write(text)
+    except FileExistsError:
+        raise RecordExists(
+            f"refusing to overwrite existing {what} {path} -- sim/ is append-only; "
+            "a re-run must mint a new record ID"
+        ) from None
+
+
 def write_netlist_snapshot(tb: Testbench, experiment_dir: Path, record_id: str) -> Path:
     """Freeze the DUT netlist for this record.
 
@@ -420,8 +478,6 @@ def write_netlist_snapshot(tb: Testbench, experiment_dir: Path, record_id: str) 
     out_dir = experiment_dir / SNAPSHOT_DIR
     out_dir.mkdir(parents=True, exist_ok=True)
     path = out_dir / f"{record_id}.spice"
-    if path.exists():
-        raise RecordExists(f"{path} already exists; append-only evidence is never rewritten")
     header = "\n".join(
         [
             f"* Frozen netlist snapshot for record {record_id}",
@@ -449,7 +505,7 @@ def write_netlist_snapshot(tb: Testbench, experiment_dir: Path, record_id: str) 
                 tb.dut.read_text(),
             ]
         )
-    path.write_text(header + body)
+    _write_exclusive(path, header + body, "netlist snapshot")
     return path
 
 
@@ -631,11 +687,11 @@ def write_record(record: dict, experiment_dir: Path) -> Path:
     out_dir = experiment_dir / RECORDS_DIR
     out_dir.mkdir(parents=True, exist_ok=True)
     path = out_dir / f"{record['record_id']}.md"
-    if path.exists():
+    if path.exists():  # fast refusal before rendering; the exclusive write below is the real guard
         raise RecordExists(
             f"{path} already exists; records are append-only -- mint a new record-id"
         )
-    path.write_text(render_record(record, experiment_dir.name))
+    _write_exclusive(path, render_record(record, experiment_dir.name), "record")
     return path
 
 
@@ -799,7 +855,7 @@ def write_device_corner_log(
     out_dir = corners_dir / record
     out_dir.mkdir(parents=True, exist_ok=True)
     path = out_dir / f"{cid}.log"
-    path.write_text(header + log, encoding="utf-8")
+    _write_exclusive(path, header + log, "corner log")
     return path
 
 
@@ -811,7 +867,7 @@ def write_device_netlist_snapshot(snapshot_dir: Path, record: str, deck: Path) -
     """
     snapshot_dir.mkdir(parents=True, exist_ok=True)
     path = snapshot_dir / f"{record}.spice"
-    shutil.copyfile(deck, path)
+    _write_exclusive(path, deck.read_bytes(), "netlist snapshot")
     return path
 
 
@@ -825,12 +881,7 @@ def device_write_record(records_dir: Path, record: str, body: str) -> Path:
     """
     records_dir.mkdir(parents=True, exist_ok=True)
     path = records_dir / f"{record}.md"
-    if path.exists():
-        raise RuntimeError(
-            f"refusing to overwrite existing record {path} -- sim/ is append-only; "
-            "a re-run must mint a new record ID"
-        )
-    path.write_text(body, encoding="utf-8")
+    _write_exclusive(path, body, "record")
     return path
 
 

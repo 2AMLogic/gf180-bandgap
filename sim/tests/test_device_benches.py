@@ -477,5 +477,82 @@ class RunDeviceExperiment(unittest.TestCase):
                 self._run(Path(tmp), extract=bad)
 
 
+class EvidenceReservationTests(unittest.TestCase):
+    """#319: collision-safe allocation and exclusive artifact creation."""
+
+    WHEN = datetime(2026, 7, 29, 15, 30, 0, tzinfo=timezone.utc)
+    GIT = {"short": "abc1234"}
+
+    def _alloc(self, exp, when=None):
+        return harness_report.allocate_record_id(
+            SIM, exp / "records", when or self.WHEN, git=self.GIT
+        )
+
+    def test_same_timestamp_and_sha_never_share_an_id(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            exp = Path(tmp)
+            ids = [self._alloc(exp) for _ in range(5)]
+            self.assertEqual(len(set(ids)), 5)
+            self.assertEqual(ids[0], "20260729-153000-abc1234")
+
+    def test_independent_processes_get_distinct_ids(self):
+        import subprocess
+
+        code = (
+            "import sys, datetime as d; from pathlib import Path; "
+            "sys.path.insert(0, sys.argv[1]); from harness import report; "
+            "print(report.allocate_record_id(Path(sys.argv[1]), Path(sys.argv[2]) / 'records', "
+            "d.datetime(2026,7,29,15,30,0,tzinfo=d.timezone.utc), git={'short':'abc1234'}))"
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            procs = [
+                subprocess.Popen(
+                    [sys.executable, "-c", code, str(SIM), tmp], stdout=subprocess.PIPE, text=True
+                )
+                for _ in range(4)
+            ]
+            ids = [p.communicate()[0].strip() for p in procs]
+            self.assertTrue(all(p.returncode == 0 for p in procs))
+            self.assertEqual(len(set(ids)), 4, ids)
+
+    def test_orphan_log_or_snapshot_occupies_its_id(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            exp = Path(tmp)
+            (exp / "corners" / "20260729-153000-abc1234").mkdir(parents=True)
+            self.assertEqual(self._alloc(exp), "20260729-153001-abc1234")
+            (exp / "netlist-snapshots").mkdir()
+            (exp / "netlist-snapshots" / "20260729-153002-abc1234.spice").write_text("x")
+            self.assertEqual(self._alloc(exp), "20260729-153003-abc1234")
+
+    def test_writers_refuse_collisions_and_preserve_bytes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            exp = Path(tmp)
+            rec = "20260729-153000-abc1234"
+            deck = exp / "deck.spice"
+            deck.write_text("new deck\n")
+            log = harness_report.write_device_corner_log(exp / "corners", rec, "c", "H\n", "old\n")
+            snap = harness_report.write_device_netlist_snapshot(exp / "netlist-snapshots", rec, deck)
+            md = harness_report.device_write_record(exp / "records", rec, "old record\n")
+            before = [p.read_bytes() for p in (log, snap, md)]
+            with self.assertRaises(harness_report.RecordExists):
+                harness_report.write_device_corner_log(exp / "corners", rec, "c", "H\n", "new\n")
+            deck.write_text("different\n")
+            with self.assertRaises(harness_report.RecordExists):
+                harness_report.write_device_netlist_snapshot(exp / "netlist-snapshots", rec, deck)
+            with self.assertRaises(RuntimeError):
+                harness_report.device_write_record(exp / "records", rec, "new\n")
+            self.assertEqual(before, [p.read_bytes() for p in (log, snap, md)])
+
+    def test_interrupted_run_artifacts_survive_and_retry_gets_fresh_id(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            exp = Path(tmp)
+            first = self._alloc(exp)
+            log = harness_report.write_device_corner_log(exp / "corners", first, "c", "", "partial\n")
+            # run dies here: no snapshot, no summary
+            retry = self._alloc(exp)
+            self.assertNotEqual(first, retry)
+            self.assertEqual(log.read_text(), "partial\n")
+
+
 if __name__ == "__main__":
     unittest.main()
