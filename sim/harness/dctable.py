@@ -16,6 +16,12 @@ def parse_dc_table(log: str) -> tuple[list[str], list[list[float]]]:
 
     Returns (column names excluding the Index column, rows). The leading
     `v-sweep` column is kept as the first data column.
+
+    Column names must be unique (issue #322): a repeated name -- whether
+    its values agree or conflict -- makes lookup ambiguous, so it raises
+    ValueError naming the column. Identity is the exact header token, the
+    same case-sensitive comparison `column()` uses for lookup; no case
+    normalization is applied.
     """
     lines = log.splitlines()
     header_idx = None
@@ -26,6 +32,7 @@ def parse_dc_table(log: str) -> tuple[list[str], list[list[float]]]:
     if header_idx is None:
         raise ValueError("no DC table header ('Index ...') found in ngspice log")
     columns = lines[header_idx].split()[1:]
+    _check_unique_columns(columns)
     rows: list[list[float]] = []
     for line in lines[header_idx + 1 :]:
         parts = line.split()
@@ -48,7 +55,29 @@ def parse_dc_table(log: str) -> tuple[list[str], list[list[float]]]:
     return columns, rows
 
 
+def _check_unique_columns(columns: list[str]) -> None:
+    seen: set[str] = set()
+    for name in columns:
+        if name in seen:
+            raise ValueError(
+                f"duplicate DC table column {name!r} "
+                f"({columns.count(name)} occurrences in header); "
+                "column lookup would be ambiguous"
+            )
+        seen.add(name)
+
+
 def column(columns: list[str], rows: list[list[float]], name: str) -> list[float]:
+    """Return the values of column `name` (exact, case-sensitive match).
+
+    Raises ValueError if `name` is absent, or if it appears more than once
+    in `columns` (ambiguous; issue #322) rather than picking the first.
+    """
+    count = columns.count(name)
+    if count > 1:
+        raise ValueError(
+            f"ambiguous DC table column {name!r}: {count} occurrences in header"
+        )
     idx = columns.index(name)
     return [row[idx] for row in rows]
 
