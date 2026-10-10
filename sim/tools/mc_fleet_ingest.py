@@ -168,6 +168,7 @@ def assess(run, plan: dict, reports: dict[str, dict], *, dut_sha: str | None, tb
             missing.append(((name,), "no report.json returned for this request"))
             continue
         problems += [f"{name}: {p}" for p in fc.provenance_problems(rep, plan, require_remote=require_remote)]
+        problems += [f"{name}: {p}" for p in fc.report_identity_problems(rep, entry.get("deck_sha256"))]
         exp = expected_keys(run, entry, entry["n"] if isinstance(entry.get("n"), int) else n)
         pts, miss, fail, probs = fc.collect_units(rep, exp, mk.MEAS_NAMES, key_of)
         missing += [((name,) + k, why) for k, why in miss]

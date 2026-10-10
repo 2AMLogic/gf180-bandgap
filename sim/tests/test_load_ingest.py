@@ -101,8 +101,10 @@ class Fixture:
                 vals = {"vref_min": 1.0, "vref_max": 1.3}
             corners.append({"corner_id": cid, "status": "pass", "diagnostics": [],
                             "measurements": [{"name": k, "value": v} for k, v in vals.items()], "artifacts": art})
-        return {"corners": corners, "environment": {"engine": "ngspice", "engine_version": "46", "remote": dict(REMOTE)},
-                "provenance": {"klt_version": "0.7.0+gtest", "pdk": {"name": "gf180mcuD", "version": "x"}}}
+        return {"corners": corners, "environment": {"engine": "ngspice", "engine_version": "46", "remote": dict(REMOTE),
+                                "netlist_sha256": r["deck_sha256"]},
+                "provenance": {"klt_version": "0.7.0+gtest", "pdk": {"name": "gf180mcuD", "version": "x"},
+                               "input": {"content_hash": "sha256:" + r["deck_sha256"], "role": "netlist"}}}
 
     def decks(self):
         return {"sweep": (self.tmp / "sweep" / "body.spice").read_text()}

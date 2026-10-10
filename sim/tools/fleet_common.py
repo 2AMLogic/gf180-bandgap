@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import hashlib
 import math
+import re
 from pathlib import Path
 
 #: ``runner_compatibility`` values `klt sim --backend batch` can report
@@ -182,6 +183,62 @@ def collect_units(report: dict, expected: list, required, key_of):
             continue
         points[key] = {k: v for k, v in vals.items() if is_finite_number(v)}
     return points, missing, failed, problems
+
+
+_HEX64 = re.compile(r"[0-9a-fA-F]{64}")
+
+
+def _norm_sha256(value, label: str) -> tuple[str | None, str | None]:
+    """-> (lowercase 64-hex, None) or (None, problem). Only an explicit ``sha256:`` prefix is stripped."""
+    if not isinstance(value, str):
+        return None, f"{label} is not a string ({value!r})"
+    text = value[len("sha256:"):] if value.startswith("sha256:") else value
+    if not _HEX64.fullmatch(text):
+        return None, f"{label} {value!r} is not a SHA-256 (64 hex digits, optional 'sha256:' prefix)"
+    return text.lower(), None
+
+
+def report_identity_problems(report: dict, expected_sha256: str) -> list[str]:
+    """Why the returned report cannot be bound to the frozen generated deck.
+
+    Root-input identity is ``environment.netlist_sha256`` (bare hex) and/or
+    ``provenance.input.content_hash`` (``sha256:``-prefixed); at least one must
+    be present, all present ones must be valid and agree, and the value must
+    equal ``expected_sha256``. ``provenance.deck.content_hash`` names the PDK
+    model deck, never the simulation deck, and is deliberately ignored.
+    Returns problems; never raises on malformed report data.
+    """
+    env = report.get("environment") if isinstance(report, dict) else None
+    prov = report.get("provenance") if isinstance(report, dict) else None
+    inp = prov.get("input") if isinstance(prov, dict) else None
+    fields = []
+    if isinstance(env, dict) and "netlist_sha256" in env:
+        fields.append(("environment.netlist_sha256", env["netlist_sha256"]))
+    if isinstance(inp, dict) and "content_hash" in inp:
+        fields.append(("provenance.input.content_hash", inp["content_hash"]))
+    if not fields:
+        return ["report carries no root-input identity (environment.netlist_sha256 / "
+                "provenance.input.content_hash): cannot bind it to the frozen deck"]
+    probs: list[str] = []
+    seen: dict[str, str] = {}
+    for label, value in fields:
+        norm, why = _norm_sha256(value, label)
+        if why:
+            probs.append(why)
+        else:
+            seen[label] = norm
+    if probs:
+        return probs
+    if len(set(seen.values())) > 1:
+        return ["report root-input identity fields disagree: " + "; ".join(f"{k}={v}" for k, v in seen.items())]
+    want, why = _norm_sha256(expected_sha256, "expected deck sha256")
+    if why:
+        return [why]
+    got = next(iter(seen.values()))
+    if got != want:
+        return [f"report was produced from a different deck: root-input sha256 {got[:12]} "
+                f"differs from the frozen deck's {want[:12]}"]
+    return []
 
 
 def provenance_problems(report: dict, plan: dict | None, *, require_remote: bool = True) -> list[str]:

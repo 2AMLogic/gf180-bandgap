@@ -263,6 +263,7 @@ def assess(tb: dict, plan: dict, reports: dict, work: Path, *, dut_sha: str | No
             missing += [((REQUEST,) + k, "no report.json for this request") for k in fi._expected_keys(req)]
         else:
             problems += [f"{REQUEST}: {p}" for p in fc.provenance_problems(rep, plan, require_remote=require_remote)]
+            problems += [f"{REQUEST}: {p}" for p in fc.report_identity_problems(rep, req.get("deck_sha256"))]
             pts, mi, fa, pr = fc.collect_units(rep, fi._expected_keys(req), req["measurements"], fi._unit_key(req))
             missing += [((REQUEST,) + k, why) for k, why in mi]
             failed += [((REQUEST,) + k, why) for k, why in fa]

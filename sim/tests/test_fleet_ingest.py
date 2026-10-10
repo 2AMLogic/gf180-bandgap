@@ -149,8 +149,10 @@ class Fixture:
                 "measurements": [{"name": k, "value": v} for k, v in self.unit_vals(r, p, s, t).items()],
                 "artifacts": art,
             })
-        return {"corners": corners, "environment": {"engine": "ngspice", "engine_version": "46", "remote": dict(REMOTE)},
-                "provenance": {"klt_version": "0.7.0+gtest", "pdk": {"name": "gf180mcuD", "version": "x"}}}
+        return {"corners": corners, "environment": {"engine": "ngspice", "engine_version": "46", "remote": dict(REMOTE),
+                                "netlist_sha256": r["deck_sha256"]},
+                "provenance": {"klt_version": "0.7.0+gtest", "pdk": {"name": "gf180mcuD", "version": "x"},
+                               "input": {"content_hash": "sha256:" + r["deck_sha256"], "role": "netlist"}}}
 
     def decks(self):
         return {r["name"]: (self.tmp / r["name"] / "body.spice").read_text() for r in self.plan["requests"]}
@@ -268,8 +270,10 @@ class NoiseFixture(Fixture):
                 "measurements": [{"name": k, "value": v, "unit": u.get(k)} for k, v in self.corner_raw(r, i).items()],
                 "artifacts": art,
             })
-        return {"corners": corners, "environment": {"engine": "ngspice", "engine_version": "46", "remote": dict(REMOTE)},
-                "provenance": {"klt_version": "0.7.0+gtest", "pdk": {"name": "gf180mcuD", "version": "x"}}}
+        return {"corners": corners, "environment": {"engine": "ngspice", "engine_version": "46", "remote": dict(REMOTE),
+                                "netlist_sha256": r["deck_sha256"]},
+                "provenance": {"klt_version": "0.7.0+gtest", "pdk": {"name": "gf180mcuD", "version": "x"},
+                               "input": {"content_hash": "sha256:" + r["deck_sha256"], "role": "netlist"}}}
 
     def assess(self, **kw):
         kw.setdefault("dut_sha", fc.sha256_file(self.dut))
