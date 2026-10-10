@@ -4,6 +4,21 @@ Chronological record of recently merged pull requests and closed issues, maintai
 
 ### 2026-10-10
 
+- **PR #297**: sim: validate the complete PSRR AC frequency axis before accepting fleet evidence
+- **PR #295**: sim: bind returned fleet reports to frozen deck identities (#293)
+- **PR #292**: sim: reject ambiguous duplicate measurement names in fleet reports
+- **PR #289**: sim: refuse rejected fleet provenance from becoming suite-valid logs (#284)
+- **PR #287**: sim: fail closed on corner status and error diagnostics in fleet ingest (#283)
+- **PR #286**: sim: verify frozen request JSON hashes during fleet ingestion (#282)
+- **Issue #296** (closed): sim: validate the complete PSRR frequency axis before accepting fleet evidence
+- **Issue #293** (closed): sim: bind returned fleet reports to frozen deck identities
+- **Issue #290** (closed): sim: reject ambiguous duplicate measurement names in fleet reports
+- **Issue #284** (closed): sim: prevent rejected fleet provenance from becoming suite-valid logs
+- **Issue #283** (closed): sim: validate fleet corner execution status and error diagnostics
+- **Issue #282** (closed): sim: verify frozen request JSON hashes during fleet ingestion
+
+### 2026-10-10
+
 - **PR #280**: sim: fleet request + ingestion for output-noise (#268)
 - **Issue #268** (closed): sim: add fleet request and ingestion support for output-noise
 

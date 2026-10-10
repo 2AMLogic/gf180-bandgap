@@ -25,13 +25,17 @@ _None._
 
 Issues currently being built (`loom:building`).
 
-_None._
+- **#281**: docs: document guard-compatible evidence copies and assignment-chain reproduction
+- **#288**: sim: classify reduced corner-set suite runs as diagnostic subsets
+- **#291**: sim: validate Monte Carlo process and mismatch seed components
+- **#294**: sim: reject duplicate waveform columns before deriving verdicts
+- **#298**: sim: validate standalone TC outer temperature before corner aggregation
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
-_None._
+- **#299**: sim: validate standalone TC outer corner identity (#298)
 
 ## Approved (Awaiting Merge)
 
@@ -47,13 +51,11 @@ Issues carrying `loom:curated`.
 - **#203**: DR-0007 phase A: measure array ratio and finalize schematic PVT evidence *(curated)*
 - **#239**: DR-0007: execute final-DUT fleet suite and mismatch evidence run *(curated)*
 - **#243**: docs: remove stale hard-coded harness unit-test count (40 vs 256) *(curated)*
+- **#281**: docs: document guard-compatible evidence copies and assignment-chain reproduction *(curated)*
 
 ## Proposed (Architect / Hermit)
 
 - **#219**: sim harness: share the batch-backend guard and cap default local --jobs *(architect)*
-- **#282**: sim: verify frozen request JSON hashes during fleet ingestion *(architect)*
-- **#283**: sim: validate fleet corner execution status and error diagnostics *(architect)*
-- **#284**: sim: prevent rejected fleet provenance from becoming suite-valid logs *(architect)*
 
 ## Epics
 
@@ -68,10 +70,10 @@ Issues carrying `loom:curated`.
 | Operator merge-risk holds | 1 |
 | Operator priority | 0 |
 | Ready (`loom:issue`) | 0 |
-| In Progress (`loom:building`) | 0 |
-| PRs awaiting review | 0 |
+| In Progress (`loom:building`) | 5 |
+| PRs awaiting review | 1 |
 | Approved PRs awaiting merge | 1 |
-| Curated | 4 |
-| Architect / Hermit proposals | 4 |
+| Curated | 5 |
+| Architect / Hermit proposals | 1 |
 | Active epics | 3 |
 <!-- guide:plan-body:end -->
