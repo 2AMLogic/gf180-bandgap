@@ -162,7 +162,9 @@ workflow writes evidence records; those are minted deliberately, never by CI.
 
 ```bash
 npm run lint        # same lint the CI lint job runs
-npm run check:ci    # lint + harness self-test (the whole PR gate, locally)
+npm run check:ci    # lint (incl. manifest load) + harness self-test + unit tests: the PR gate, locally
+                    # (CI alone adds --require-shellcheck --require-append-only, so a missing
+                    # shellcheck or unresolvable origin/main SKIPs locally but fails in CI)
 ```
 
 ## History
