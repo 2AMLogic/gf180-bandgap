@@ -17,8 +17,11 @@ Pure functions, stdlib only: no PDK, ngspice, fleet or network.
 from __future__ import annotations
 
 import hashlib
+import json
 import math
 import re
+import shutil
+from datetime import datetime, timezone
 from pathlib import Path
 
 #: ``runner_compatibility`` values `klt sim --backend batch` can report
@@ -306,3 +309,66 @@ def hash_problems(plan: dict, *, dut_sha: str | None, tb_sha: str, manifest_sha:
         elif sha256_bytes(requests[r["name"]].encode()) != want:
             probs.append(f"request {r['name']!r}: request.json sha256 differs from the plan (edited after generation?)")
     return probs
+
+
+# --------------------------------------------------------------------------
+# evidence-minting scaffolding shared by the ingestors (issue #301)
+# --------------------------------------------------------------------------
+
+
+def fmt_num(x, n: int = 6) -> str:
+    """Record-table number: ``-`` for None, else ``n`` significant digits."""
+    return "-" if x is None else f"{x:.{n}g}"
+
+
+def load_work(work: Path) -> tuple[dict, dict, dict, dict]:
+    """Read a fleet work dir: ``(plan, reports, decks, requests)``.
+
+    ``reports`` are parsed ``<request>/report.json``, ``decks`` the
+    ``body.spice`` text, ``requests`` the raw ``request.json`` text; each is
+    keyed by request name and omits requests whose file is absent."""
+    work = Path(work)
+    plan = json.loads((work / "plan.json").read_text())
+    reports, decks, requests = {}, {}, {}
+    for r in plan.get("requests", []):
+        d = work / r["name"]
+        if (d / "report.json").exists():
+            reports[r["name"]] = json.loads((d / "report.json").read_text())
+        if (d / "body.spice").exists():
+            decks[r["name"]] = (d / "body.spice").read_text()
+        if (d / "request.json").exists():
+            requests[r["name"]] = (d / "request.json").read_text()
+    return plan, reports, decks, requests
+
+
+def begin_evidence(exp_dir: Path, *, repo: Path, git=None, stamp: datetime | None = None):
+    """Start minting a record: provenance, a fresh record-id, its UTC stamp
+    and the ``corners/<record>`` path. Returns ``(record, stamp, cdir, git)``.
+
+    The caller must already have refused (ValueError, nothing written) on its
+    own condition -- ``result["problems"]`` or an INCOMPLETE grid -- before
+    calling this, so a refused run never allocates a record-id."""
+    from harness import report as hreport
+
+    git = git or hreport.git_provenance(repo)
+    record = hreport.allocate_record_id(repo, exp_dir / "records", when=stamp, git=git)
+    st = datetime.strptime(record[:15], "%Y%m%d-%H%M%S").replace(tzinfo=timezone.utc)
+    return record, st, exp_dir / "corners" / record, git
+
+
+def copy_request_artifacts(
+    work: Path, cdir: Path, names, reports: dict, *, compact_reports: bool = False, require_reports: bool = False
+) -> None:
+    """Copy ``plan.json`` and, per request name, ``request.json`` ->
+    ``request-<name>.json`` and the report -> ``report-<name>.json`` into
+    ``cdir``. Reports are re-serialised (indent 2, or compact when
+    ``compact_reports``); a missing report is skipped unless
+    ``require_reports`` (then KeyError)."""
+    cdir.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(work / "plan.json", cdir / "plan.json")
+    for name in names:
+        shutil.copyfile(work / name / "request.json", cdir / f"request-{name}.json")
+        if name in reports or require_reports:
+            text = (json.dumps(reports[name], separators=(",", ":")) if compact_reports
+                    else json.dumps(reports[name], indent=2))
+            (cdir / f"report-{name}.json").write_text(text + "\n")

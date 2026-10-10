@@ -571,7 +571,7 @@ class CommandLine(unittest.TestCase):
                 p.write_text(text)
             for name, rep in fx.reports.items():
                 (work / name / "report.json").write_text(json.dumps(rep))
-            plan, reports, decks, requests = mi.load_work(work)
+            plan, reports, decks, requests = fc.load_work(work)
             self.assertEqual(set(reports), set(fx.reports))
             res = mi.assess(RUN, plan, reports, dut_sha=fx.dut_sha, tb_sha=fx.tb_sha, decks=decks, requests=requests)
         self.assertEqual(res["overall"], "PASS")
