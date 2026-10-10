@@ -2,6 +2,11 @@
 
 Chronological record of recently merged pull requests and closed issues, maintained by the Loom Guide role. Newest entries appear first.
 
+### 2026-10-10
+
+- **PR #280**: sim: fleet request + ingestion for output-noise (#268)
+- **Issue #268** (closed): sim: add fleet request and ingestion support for output-noise
+
 ### 2026-10-09
 
 - **PR #278**: sim: fix output-noise unit contract (#252)
