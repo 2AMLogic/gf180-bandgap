@@ -25,7 +25,7 @@ _None._
 
 Issues currently being built (`loom:building`).
 
-- **#268**: sim: add fleet request and ingestion support for output-noise
+_None._
 
 ## PRs Awaiting Review
 
@@ -47,11 +47,13 @@ Issues carrying `loom:curated`.
 - **#203**: DR-0007 phase A: measure array ratio and finalize schematic PVT evidence *(curated)*
 - **#239**: DR-0007: execute final-DUT fleet suite and mismatch evidence run *(curated)*
 - **#243**: docs: remove stale hard-coded harness unit-test count (40 vs 256) *(curated)*
-- **#268**: sim: add fleet request and ingestion support for output-noise *(curated)*
 
 ## Proposed (Architect / Hermit)
 
 - **#219**: sim harness: share the batch-backend guard and cap default local --jobs *(architect)*
+- **#282**: sim: verify frozen request JSON hashes during fleet ingestion *(architect)*
+- **#283**: sim: validate fleet corner execution status and error diagnostics *(architect)*
+- **#284**: sim: prevent rejected fleet provenance from becoming suite-valid logs *(architect)*
 
 ## Epics
 
@@ -66,10 +68,10 @@ Issues carrying `loom:curated`.
 | Operator merge-risk holds | 1 |
 | Operator priority | 0 |
 | Ready (`loom:issue`) | 0 |
-| In Progress (`loom:building`) | 1 |
+| In Progress (`loom:building`) | 0 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 1 |
-| Curated | 5 |
-| Architect / Hermit proposals | 1 |
+| Curated | 4 |
+| Architect / Hermit proposals | 4 |
 | Active epics | 3 |
 <!-- guide:plan-body:end -->
