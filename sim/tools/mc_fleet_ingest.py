@@ -52,6 +52,15 @@ CONTROL_SIGMA_MAX_V = 1e-9
 #: vref_lo / vref_hi come from a one-point sweep and must agree.
 SWEEP_AGREE_REL = 1e-9
 SWEEP_AGREE_ABS = 1e-12
+#: Pinned `klt sim` 0.7.0 contract (klayout_tools/sim.py): every reported seed component is
+#: `int.from_bytes(sha256(...)[:4]) % _MC_SEED_MODULUS`, i.e. an int in [0, 2**31 - 2].
+MC_SEED_MODULUS = 2_147_483_647
+SAMPLE_INDEX_MAX = 2**31
+
+
+def is_seed_int(v, modulus: int = MC_SEED_MODULUS) -> bool:
+    """A real int (bool excluded) in [0, modulus)."""
+    return isinstance(v, int) and not isinstance(v, bool) and 0 <= v < modulus
 
 
 def corner_cid(run, group: str, temp: float) -> str:
@@ -123,22 +132,34 @@ def sample_problems(entry: dict, report: dict, units: dict) -> list[str]:
     for k, want in (("n", entry["n"]), ("seed", entry["seed"]), ("vary", entry["vary"])):
         if mc.get(k) != want:
             probs.append(f"{entry['name']}: environment.monte_carlo.{k} is {mc.get(k)!r}, requested {want!r}")
-    seeds, procs = [], set()
+    seeds, procs, mms = [], [], []
     for c in report.get("corners", []):
         try:
             key = key_of(c["corner_id"])
         except Exception:
             continue
         meta = c.get("monte_carlo")
-        if not isinstance(meta, dict) or meta.get("sample_index") != key[3]:
-            probs.append(f"{entry['name']}: {c['corner_id']} sample_index does not match its id")
+        idx = meta.get("sample_index") if isinstance(meta, dict) else None
+        if not is_seed_int(idx, SAMPLE_INDEX_MAX) or idx != key[3] or idx >= entry["n"]:
+            probs.append(f"{entry['name']}: {c['corner_id']} sample_index does not match its id "
+                         f"(an int in 0..{entry['n'] - 1} equal to the id's index; bool is not accepted)")
             continue
-        seeds.append((key[3], meta.get("seed")))
-        procs.add(meta.get("process_seed"))
+        bad = [f for f in ("seed", "process_seed", "mismatch_seed") if not is_seed_int(meta.get(f))]
+        if bad:
+            probs.append(f"{entry['name']}: {c['corner_id']} monte_carlo.{'/'.join(bad)} missing or not an "
+                         f"int in 0..{MC_SEED_MODULUS - 1} (the pinned klt seed range; bool/null/float rejected)")
+            continue
+        seeds.append((idx, meta["seed"]))
+        procs.append(meta["process_seed"])
+        mms.append(meta["mismatch_seed"])
     if len({s for _, s in seeds}) != len(seeds):
         probs.append(f"{entry['name']}: sample seeds are not distinct (the sampler did not vary)")
-    if len(procs) > 1:
-        probs.append(f"{entry['name']}: process_seed varies across samples although vary={entry['vary']!r}")
+    if entry["vary"] == "mismatch":
+        if len(set(procs)) > 1:
+            probs.append(f"{entry['name']}: process_seed varies across samples although vary={entry['vary']!r}")
+        if len(set(mms)) != len(mms):
+            probs.append(f"{entry['name']}: mismatch_seed values are not distinct across samples "
+                         f"(mismatch was not varied although vary={entry['vary']!r})")
     return probs
 
 
@@ -159,6 +180,7 @@ def assess(run, plan: dict, reports: dict[str, dict], *, dut_sha: str | None, tb
     stats: dict[str, dict[float, dict]] = {g: {} for g in run.GROUPS}
     samples: dict[tuple, list] = {}
     rndseeds: dict[str, dict[int, int]] = {}
+    rndcomps: dict[str, dict[int, tuple]] = {}
     n = plan.get("n") if isinstance(plan.get("n"), int) else 0
     for entry in plan.get("requests", []):
         name, group, temp = entry["name"], entry["group"], float(entry["temp_c"])
@@ -189,6 +211,10 @@ def assess(run, plan: dict, reports: dict[str, dict], *, dut_sha: str | None, tb
             c["monte_carlo"]["sample_index"]: c["monte_carlo"].get("seed")
             for c in rep.get("corners", []) if isinstance(c.get("monte_carlo"), dict)
         }
+        rndcomps[name] = {
+            c["monte_carlo"]["sample_index"]: (c["monte_carlo"].get("process_seed"), c["monte_carlo"].get("mismatch_seed"))
+            for c in rep.get("corners", []) if isinstance(c.get("monte_carlo"), dict)
+        }
         samples[(group, temp)] = rows
         if len(rows) == entry.get("n") and len(rows) >= mk.MIN_SAMPLES:
             vref = [r[1] for r in rows]
@@ -204,6 +230,10 @@ def assess(run, plan: dict, reports: dict[str, dict], *, dut_sha: str | None, tb
     for other in names[1:]:
         if rndseeds[other] != rndseeds[names[0]] and rndseeds[other] and rndseeds[names[0]]:
             problems.append(f"{other}: per-sample seeds differ from {names[0]} (common random numbers broken)")
+    for other in names[1:]:
+        if rndcomps[other] != rndcomps[names[0]] and rndcomps[other] and rndcomps[names[0]]:
+            problems.append(f"{other}: per-sample process_seed/mismatch_seed differ from {names[0]} "
+                            "(common random numbers broken at component level)")
     # Group sanity: control exactly deterministic, mismatch groups actually varying.
     for group, by_temp in stats.items():
         for temp, st in by_temp.items():

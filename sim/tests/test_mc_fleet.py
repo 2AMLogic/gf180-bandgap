@@ -426,6 +426,58 @@ class Ingest(unittest.TestCase):
         corners[9]["monte_carlo"]["seed"] = corners[8]["monte_carlo"]["seed"]
         self.assertTrue(any("not distinct" in p for p in self.fx.assess()["problems"]))
 
+    def _assert_incomplete(self, needle):
+        res = self.fx.assess()
+        self.assertEqual(res["overall"], "INCOMPLETE")
+        self.assertTrue(any(needle in p for p in res["problems"]), res["problems"])
+
+    def test_process_seed_absent_or_null_is_incomplete(self):
+        for how in ("absent", "null"):
+            with self.subTest(how=how):
+                self.setUp()
+                _e, corners = self._first()
+                for c in corners:
+                    if how == "absent":
+                        c["monte_carlo"].pop("process_seed")
+                    else:
+                        c["monte_carlo"]["process_seed"] = None
+                self._assert_incomplete("process_seed")
+
+    def test_constant_mismatch_seed_is_incomplete(self):
+        _e, corners = self._first()
+        for c in corners:
+            c["monte_carlo"]["mismatch_seed"] = 5000
+        self._assert_incomplete("mismatch_seed values are not distinct")
+
+    def test_malformed_component_types_and_ranges_are_incomplete(self):
+        for field in ("seed", "process_seed", "mismatch_seed", "sample_index"):
+            for bad in (True, 1.5, "7", -1, 2_147_483_647):
+                with self.subTest(field=field, bad=bad):
+                    self.setUp()
+                    _e, corners = self._first()
+                    corners[1]["monte_carlo"][field] = bad
+                    res = self.fx.assess()
+                    self.assertEqual(res["overall"], "INCOMPLETE")
+                    self.assertTrue(any(field in p for p in res["problems"]), res["problems"])
+
+    def test_component_maps_must_agree_across_groups_and_temperatures(self):
+        for group, temp in (("mm_res", 27.0), ("mm_all", 125.0)):
+            for field in ("process_seed", "mismatch_seed"):
+                with self.subTest(group=group, temp=temp, field=field):
+                    self.setUp()
+                    _e, corners = self._first(group, temp)
+                    for c in corners:
+                        c["monte_carlo"][field] += 1  # top-level seed map untouched
+                    self._assert_incomplete("component level")
+
+    def test_valid_baseline_and_measured_spec_fail_still_grade(self):
+        self.assertEqual(self.fx.assess()["overall"], "PASS")
+        self.setUp()
+        for t in (-40.0, 27.0, 125.0):
+            e = self.fx.entry("mm_all", t)
+            self.fx.reports[e["name"]] = fake_report(e, sigma=0.02, nominal=NOMINAL[t])
+        self.assertEqual(self.fx.assess()["overall"], "FAIL")
+
     def test_seeds_must_be_common_across_requests(self):
         e = self.fx.entry("mm_res", 27.0)
         self.fx.reports[e["name"]] = fake_report(e, sigma=SIGMA["mm_res"], nominal=NOMINAL[27.0], seed_offset=1)
