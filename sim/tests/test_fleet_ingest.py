@@ -1375,7 +1375,7 @@ class SuiteIntegration(TmpCase):
 
 class SharedHelpers(unittest.TestCase):
     def test_tc_ingest_still_uses_the_shared_helpers(self):
-        self.assertIs(ti.sha256.__module__, "tc_ingest")
+        self.assertFalse(hasattr(ti, "sha256"))
         rep = {"corners": [{"corner_id": "tt/3.300V/27C", "status": "pass",
                             "measurements": [{"name": n, "value": float("nan")} for n in ti.REQUIRED]}]}
         pts, miss, fail, prob = ti.collect(rep, [("tt", 3.3)])

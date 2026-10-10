@@ -51,7 +51,7 @@ import math
 import re
 import shutil
 import sys
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -728,7 +728,7 @@ def assess_bench(bench: str, tb: dict, plan: dict, reports: dict, work: Path, *,
             got = spread_pct([r["measures"][name] for k, r in rows.items() if k not in invalid and name in r["measures"]])
             spreads[name] = (got, chk["min_spread_pct"])
             if got is None or got < chk["min_spread_pct"]:
-                problems.append(f"{name}: spread over the valid corners is {_f(got, 4)} %, below the "
+                problems.append(f"{name}: spread over the valid corners is {fc.fmt_num(got, 4)} %, below the "
                                 f"{chk['min_spread_pct']:g} % floor (the PVT sweep may not have taken effect)")
     spec_fail = [k for k, r in rows.items() if k not in invalid and not all(r["spec"].values())]
     incomplete = bool(problems or missing or failed or invalid)
@@ -809,10 +809,6 @@ def write_corner_logs(cdir: Path, work: Path, plan: dict, result: dict, record: 
             json.dump(cols, fh)
 
 
-def _f(x, n=6):
-    return "-" if x is None else f"{x:.{n}g}"
-
-
 def build_record(record: str, stamp: datetime, bench: str, tb: dict, plan: dict, result: dict, reports: dict,
                  dut_label: str, issue, supersedes, note, git=None) -> str:
     overall = result["overall"]
@@ -879,7 +875,7 @@ def build_record(record: str, stamp: datetime, bench: str, tb: dict, plan: dict,
         add("  - Integrated total and `vref_op` come from the full-precision waveform artifact (the printed expr is a "
             "cross-check); spot densities and frequency indices are printed expr values (7 significant digits).")
         for name, (got, lim) in result.get("spreads", {}).items():
-            add(f"  - Grid spread of `{name}` over valid corners: {_f(got, 4)} % (floor {lim:g} %).")
+            add(f"  - Grid spread of `{name}` over valid corners: {fc.fmt_num(got, 4)} % (floor {lim:g} %).")
     if overall == "INCOMPLETE":
         add("  - **INCOMPLETE.**")
         for k, why in result["missing"]:
@@ -904,10 +900,10 @@ def build_record(record: str, stamp: datetime, bench: str, tb: dict, plan: dict,
             continue
         okspec = all(row["spec"].values())
         if bench in MEASUREMENT_BENCHES:
-            add(f"  | `{corner_id(key)}` | " + " | ".join(_f(row["measures"].get(c)) for c in cols)
+            add(f"  | `{corner_id(key)}` | " + " | ".join(fc.fmt_num(row["measures"].get(c)) for c in cols)
                 + f" | n/a | {MEASURED} |")
             continue
-        add(f"  | `{corner_id(key)}` | " + " | ".join(_f(row["measures"].get(c)) for c in cols)
+        add(f"  | `{corner_id(key)}` | " + " | ".join(fc.fmt_num(row["measures"].get(c)) for c in cols)
             + f" | {'ok' if okspec else 'FAIL'} | {'PASS' if okspec else 'FAIL'} |")
     add("")
     w = worst(result, tb)
@@ -971,40 +967,18 @@ def write_evidence(exp_dir: Path, work: Path, bench: str, tb: dict, plan: dict, 
         raise ValueError("refusing to mint evidence with run-level problems: " + "; ".join(result["problems"][:5]))
     from harness import report as hreport
 
-    git = git or hreport.git_provenance(repo)
-    record = hreport.allocate_record_id(repo, exp_dir / "records", when=stamp, git=git)
-    st = datetime.strptime(record[:15], "%Y%m%d-%H%M%S").replace(tzinfo=timezone.utc)
-    cdir = exp_dir / "corners" / record
+    record, st, cdir, git = fc.begin_evidence(exp_dir, repo=repo, git=git, stamp=stamp)
     write_corner_logs(cdir, work, plan, result, record)
-    shutil.copyfile(work / "plan.json", cdir / "plan.json")
+    fc.copy_request_artifacts(work, cdir, [r["name"] for r in plan["requests"]], reports)
     snap = exp_dir / "netlist-snapshots"
     snap.mkdir(parents=True, exist_ok=True)
     for r in plan["requests"]:
-        shutil.copyfile(work / r["name"] / "request.json", cdir / f"request-{r['name']}.json")
-        if r["name"] in reports:
-            (cdir / f"report-{r['name']}.json").write_text(json.dumps(reports[r["name"]], indent=2) + "\n")
         shutil.copyfile(work / r["name"] / "body.spice", snap / f"{record}.{r['name']}.spice")
     text = build_record(record, st, bench, tb, plan, result, reports, dut_label, issue, supersedes, note, git)
     return hreport.device_write_record(exp_dir / "records", record, text)
 
 
 # --------------------------------------------------------------------------
-
-
-def load_work(work: Path) -> tuple[dict, dict, dict, dict]:
-    plan = json.loads((work / "plan.json").read_text())
-    reports, decks, requests = {}, {}, {}
-    for r in plan.get("requests", []):
-        rp = work / r["name"] / "report.json"
-        if rp.exists():
-            reports[r["name"]] = json.loads(rp.read_text())
-        bp = work / r["name"] / "body.spice"
-        if bp.exists():
-            decks[r["name"]] = bp.read_text()
-        qp = work / r["name"] / "request.json"
-        if qp.exists():
-            requests[r["name"]] = qp.read_text()
-    return plan, reports, decks, requests
 
 
 def main() -> int:
@@ -1020,7 +994,7 @@ def main() -> int:
 
     work = Path(a.workdir).resolve()
     tb = load_tb(a.bench)
-    plan, reports, decks, requests = load_work(work)
+    plan, reports, decks, requests = fc.load_work(work)
     dut = Path(a.dut) if Path(a.dut).is_absolute() else REPO / a.dut
     result = assess_bench(
         a.bench, tb, plan, reports, work, dut_sha=fc.sha256_file(dut), decks=decks, requests=requests,

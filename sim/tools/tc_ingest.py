@@ -423,10 +423,6 @@ def write_corner_logs(cdir: Path, work: Path, report: dict, points: dict, record
             shutil.copyfile(deck, cdir / f"{corner_id_at(p, 27, v)}.cir")
 
 
-def sha256(p: Path) -> str:
-    return fc.sha256_file(p)
-
-
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("workdir", help="dir with request.json, report.json, body.spice, out/")
@@ -446,7 +442,7 @@ def main() -> int:
     req = json.loads((work / "request.json").read_text())
     tb = load_tb()
     expected = expected_points(tb)
-    points, missing, failed, problems = collect(report, expected, deck_sha256=sha256(work / "body.spice"))
+    points, missing, failed, problems = collect(report, expected, deck_sha256=fc.sha256_file(work / "body.spice"))
     verdict = assess(points, missing, failed, problems, tb)
     w = worst(points, verdict["rows"])
     print(f"overall={verdict['overall']} points={len(points)}/{len(expected)} "
@@ -470,17 +466,16 @@ def main() -> int:
     shutil.copyfile(work / "body.spice", snap / f"{record}.spice")
 
     if a.dut_rev:
-        import hashlib
         import subprocess
 
         blob = subprocess.run(["git", "show", f"{a.dut_rev}:{a.dut}"], cwd=REPO, check=True, capture_output=True).stdout
-        dut_sha = hashlib.sha256(blob).hexdigest()
+        dut_sha = fc.sha256_bytes(blob)
     else:
-        dut_sha = sha256(Path(a.dut) if Path(a.dut).is_absolute() else REPO / a.dut)
+        dut_sha = fc.sha256_file(Path(a.dut) if Path(a.dut).is_absolute() else REPO / a.dut)
     dut_label = a.dut_label or (f"{a.dut} @ {a.dut_rev}" if a.dut_rev else a.dut)
     text = build_record(
         record, stamp, report, req, tb, expected, points, missing, failed, problems, verdict,
-        dut_label, dut_sha, sha256(exp_dir / "testbench" / tb["netlist"]), sha256(work / "body.spice"),
+        dut_label, dut_sha, fc.sha256_file(exp_dir / "testbench" / tb["netlist"]), fc.sha256_file(work / "body.spice"),
         a.issue, a.supersedes, a.note, git,
     )
     path = hreport.device_write_record(exp_dir / "records", record, text)

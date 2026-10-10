@@ -56,7 +56,7 @@ import gzip
 import json
 import shutil
 import sys
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -331,10 +331,6 @@ def extremes(result: dict) -> dict:
 # --------------------------------------------------------------------------
 
 
-def _f(x, n=6):
-    return "-" if x is None else f"{x:.{n}g}"
-
-
 def build_record(record: str, stamp: datetime, tb: dict, plan: dict, result: dict, reports: dict,
                  issue, supersedes, note, git=None) -> str:
     overall = result["overall"]
@@ -405,7 +401,7 @@ def build_record(record: str, stamp: datetime, tb: dict, plan: dict, result: dic
         if row is None or key in result["invalid"]:
             add(f"  | `{fi.corner_id(key)}` | " + " | ".join("-" for _ in cols) + " | **INVALID** |")
             continue
-        add(f"  | `{fi.corner_id(key)}` | " + " | ".join(_f(row["measures"].get(c)) for c in cols) + " | valid |")
+        add(f"  | `{fi.corner_id(key)}` | " + " | ".join(fc.fmt_num(row["measures"].get(c)) for c in cols) + " | valid |")
     add("")
     ex = extremes(result)
     if ex:
@@ -471,10 +467,7 @@ def write_evidence(exp_dir: Path, work: Path, tb: dict, plan: dict, result: dict
         raise ValueError("refusing to mint evidence with run-level problems: " + "; ".join(result["problems"][:5]))
     from harness import report as hreport
 
-    git = git or hreport.git_provenance(repo)
-    record = hreport.allocate_record_id(repo, exp_dir / "records", when=stamp, git=git)
-    st = datetime.strptime(record[:15], "%Y%m%d-%H%M%S").replace(tzinfo=timezone.utc)
-    cdir = exp_dir / "corners" / record
+    record, st, cdir, git = fc.begin_evidence(exp_dir, repo=repo, git=git, stamp=stamp)
     # Per-corner logs in the suite-readable shape. The sweep series go FLAT in
     # corners/<record-id>/ (`<corner-id>.series.json.gz`): the evidence linter
     # (sim/harness/evidence_lint.py) allows one directory level under corners/.
@@ -482,10 +475,7 @@ def write_evidence(exp_dir: Path, work: Path, tb: dict, plan: dict, result: dict
     for key, cols in result["series"].items():
         with gzip.open(cdir / f"{fi.corner_id(key)}.series.json.gz", "wt") as fh:
             json.dump(cols, fh)
-    shutil.copyfile(work / "plan.json", cdir / "plan.json")
-    shutil.copyfile(work / REQUEST / "request.json", cdir / f"request-{REQUEST}.json")
-    if REQUEST in reports:
-        (cdir / f"report-{REQUEST}.json").write_text(json.dumps(reports[REQUEST], indent=2) + "\n")
+    fc.copy_request_artifacts(work, cdir, [REQUEST], reports)
     snap = exp_dir / "netlist-snapshots"
     snap.mkdir(parents=True, exist_ok=True)
     target = snap / f"{record}.spice"
@@ -512,7 +502,7 @@ def main() -> int:
 
     work = Path(a.workdir).resolve()
     tb = fi.load_tb(BENCH)
-    plan, reports, decks, requests = fi.load_work(work)
+    plan, reports, decks, requests = fc.load_work(work)
     dut = (Path(a.dut) if Path(a.dut).is_absolute() else REPO / a.dut).resolve()
     try:
         label = str(dut.relative_to(REPO))  # the form mk_klt_fleet_request.py froze into the plan

@@ -32,9 +32,8 @@ from __future__ import annotations
 import argparse
 import json
 import math
-import shutil
 import sys
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -338,10 +337,7 @@ def write_evidence(run, exp_dir: Path, work: Path, plan: dict, result: dict, rep
 
     if result["overall"] == "INCOMPLETE":
         raise ValueError("refusing to mint a record for an INCOMPLETE grid (no verdict is claimed)")
-    git = git or hreport.git_provenance(repo)
-    record = hreport.allocate_record_id(repo, exp_dir / "records", when=stamp, git=git)
-    st = datetime.strptime(record[:15], "%Y%m%d-%H%M%S").replace(tzinfo=timezone.utc)
-    cdir = exp_dir / "corners" / record
+    record, st, cdir, git = fc.begin_evidence(exp_dir, repo=repo, git=git, stamp=stamp)
     for (group, temp), rows in result["samples"].items():
         cid = corner_cid(run, group, temp)
         header = (
@@ -354,10 +350,9 @@ def write_evidence(run, exp_dir: Path, work: Path, plan: dict, result: dict, rep
             "* ====================================================================\n"
         )
         hreport.write_device_corner_log(exp_dir / "corners", record, cid, "", log_body(rows, header))
-    shutil.copyfile(work / "plan.json", cdir / "plan.json")
+    fc.copy_request_artifacts(work, cdir, [r["name"] for r in plan["requests"]], reports,
+                              compact_reports=True, require_reports=True)
     for r in plan["requests"]:
-        shutil.copyfile(work / r["name"] / "request.json", cdir / f"request-{r['name']}.json")
-        (cdir / f"report-{r['name']}.json").write_text(json.dumps(reports[r["name"]], separators=(",", ":")) + "\n")
         (cdir / f"deck-{r['name']}.spice").write_text(decks[r["name"]])
     snap = exp_dir / "netlist-snapshots"
     snap.mkdir(parents=True, exist_ok=True)
@@ -367,20 +362,6 @@ def write_evidence(run, exp_dir: Path, work: Path, plan: dict, result: dict, rep
         + decks[mm_deck])
     text = build_evidence_record(run, plan, result, reports, record, st, dut_label, dut_path, issue, supersedes, git)
     return hreport.device_write_record(exp_dir / "records", record, text)
-
-
-def load_work(work: Path) -> tuple[dict, dict, dict, dict]:
-    plan = json.loads((work / "plan.json").read_text())
-    reports, decks, requests = {}, {}, {}
-    for r in plan.get("requests", []):
-        d = work / r["name"]
-        if (d / "report.json").exists():
-            reports[r["name"]] = json.loads((d / "report.json").read_text())
-        if (d / "body.spice").exists():
-            decks[r["name"]] = (d / "body.spice").read_text()
-        if (d / "request.json").exists():
-            requests[r["name"]] = (d / "request.json").read_text()
-    return plan, reports, decks, requests
 
 
 def main() -> int:
@@ -394,7 +375,7 @@ def main() -> int:
 
     run = mk.load_run_module()
     work = Path(a.workdir).resolve()
-    plan, reports, decks, requests = load_work(work)
+    plan, reports, decks, requests = fc.load_work(work)
     dut = Path(a.dut) if Path(a.dut).is_absolute() else REPO / a.dut
     result = assess(run, plan, reports, dut_sha=fc.sha256_file(dut), tb_sha=fc.sha256_file(mk.TB_PATH),
                     decks=decks, requests=requests)
