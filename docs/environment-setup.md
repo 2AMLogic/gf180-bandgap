@@ -211,3 +211,95 @@ write a testbench manifest, and why `sim/smoke_test/` (this document's
 install check) and `sim/smoke-bias/` (the harness's own acceptance test) are
 two different things -- is [`sim/harness/README.md`](../sim/harness/README.md).
 The record format it writes into is [`sim/README.md`](../sim/README.md).
+
+## 8. Troubleshooting: Loom guard denies an evidence copy
+
+Agents running under Loom have a Bash `PreToolUse` guard
+(`.loom/hooks/guard-destructive-generic.sh`) that confines writes to the
+issue worktree. A copy of probe artifacts into `sim/` can be denied with a
+message like `write target '$E/probe.raw' is an unexpanded shell variable
+from the path root down`
+(logged as `worktree-write-confinement-unresolved-var` in
+`.loom/logs/guard-decisions.log`). The denial is deliberate fail-closed
+behaviour: if the guard cannot tell where a write lands, it refuses. Do not
+disable the guard or its isolation setting; use one of the recipes below.
+
+Replace `/literal/worktree` with the actual absolute path of the issue
+worktree (e.g. `<checkout>/.loom/worktrees/issue-NNN`).
+
+```bash
+# 1. Explicit literal destination (preferred)
+cp /tmp/probe.raw /literal/worktree/sim/probe.raw
+
+# 2. Direct literal assignment in the same command
+E=/literal/worktree/sim; cp /tmp/probe.raw "$E/probe.raw"
+```
+
+This form is **not** resolved by the installed single-pass resolver, because
+`E` is derived from another variable:
+
+```bash
+W=/literal/worktree; E=$W/sim; cp /tmp/probe.raw "$E/probe.raw"   # denied
+```
+
+Unknown variables, destinations in the main checkout, and the historical
+operations that wrote into shared klayout-tools installs or removed caches
+outside the checkout remain denied (and should be). Evidence under `sim/` is
+append-only; follow the record rules in [`sim/README.md`](../sim/README.md).
+
+### Minimal hook-only reproduction
+
+This stages the guard in a throwaway git repository and feeds it the command
+strings as Bash `PreToolUse` JSON. The commands are only data in the JSON;
+nothing is copied, and nothing in this repository (including `sim/`) is
+touched. Requires only `bash`, `git` and `jq`. Literal temporary paths are
+used on purpose: building the fixture with chained shell variables is itself
+subject to the same guard.
+
+```bash
+# Run from the root of this repository (or an issue worktree of it).
+mkdir -p /tmp/loom-repro/.loom/hooks /tmp/loom-repro/.loom/scripts/lib \
+         /tmp/loom-repro/.loom/worktrees/issue-1 /tmp/loom-repro/sim
+cp .loom/hooks/guard-destructive-generic.sh /tmp/loom-repro/.loom/hooks/
+cp .loom/scripts/lib/config-resolver.sh .loom/scripts/lib/canonical-path.sh \
+   /tmp/loom-repro/.loom/scripts/lib/
+touch /tmp/loom-repro/.loom/worktrees/issue-1/.loom-managed
+git init -q /tmp/loom-repro
+
+cat > /tmp/loom-repro/check.sh <<'SCRIPT'
+#!/usr/bin/env bash
+# usage: check.sh '<command string>'  -- prints the hook decision only
+jq -n --arg c "$1" --arg d /tmp/loom-repro/.loom/worktrees/issue-1 \
+  '{tool_name:"Bash",tool_input:{command:$c},cwd:$d}' \
+  | (cd /tmp/loom-repro/.loom/worktrees/issue-1 \
+     && bash /tmp/loom-repro/.loom/hooks/guard-destructive-generic.sh) 2>/dev/null \
+  | jq -r '.hookSpecificOutput // {} | "\(.permissionDecision) \(.permissionDecisionReason)"' \
+  | cut -c1-200
+SCRIPT
+
+WT=/tmp/loom-repro/.loom/worktrees/issue-1
+bash /tmp/loom-repro/check.sh "cp /tmp/probe.raw $WT/sim/probe.raw"                          # literal
+bash /tmp/loom-repro/check.sh "E=$WT/sim; cp /tmp/probe.raw \"\$E/probe.raw\""               # direct
+bash /tmp/loom-repro/check.sh "W=$WT; E=\$W/sim; cp /tmp/probe.raw \"\$E/probe.raw\""        # chained
+bash /tmp/loom-repro/check.sh 'cp /tmp/probe.raw "$UNKNOWN/probe.raw"'                       # unknown var
+bash /tmp/loom-repro/check.sh "cp /tmp/probe.raw /tmp/loom-repro/sim/probe.raw"              # main checkout
+rm -rf /tmp/loom-repro
+```
+
+Observed with the guard from Loom v0.19.1009 (2026-10-10):
+
+| Command shape | Decision |
+| --- | --- |
+| literal destination in the worktree | no output (allowed) |
+| `E=/literal/worktree/sim; cp ... "$E/probe.raw"` | no output (allowed) |
+| `W=/literal/worktree; E=$W/sim; cp ... "$E/probe.raw"` | `deny`, unresolved write target `$E/probe.raw` |
+| `cp ... "$UNKNOWN/probe.raw"` | `deny`, unresolved write target `$UNKNOWN/probe.raw` |
+| literal destination in the main checkout | `deny`, resolves to the main checkout |
+
+The chained-assignment case looks like a resolver limitation rather than an
+unsafe command, but resolving it is a change to the generated guard, which
+belongs upstream and is not made in this repository. Related upstream parser
+work: [rjwalters/loom#11113](https://github.com/rjwalters/loom/issues/11113).
+That issue is an umbrella for shared parser weaknesses; it is not a confirmed
+fix for, and does not name, this assignment-chain case. Until upstream
+changes, use the literal forms above.
