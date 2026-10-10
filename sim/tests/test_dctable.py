@@ -65,6 +65,57 @@ class NonFiniteParseTests(unittest.TestCase):
         self.assertEqual(rows, [[1.0, 2.0]])
 
 
+class DuplicateColumnTests(unittest.TestCase):
+    """Issue #322: repeated header names are ambiguous evidence."""
+
+    def test_conflicting_duplicate_rejected_either_order(self):
+        for a, b in (("1.2 9.9", "1.3 8.8"), ("9.9 1.2", "8.8 1.3")):
+            log = f"Index v-sweep v(a) v(a)\n0 0 {a}\n1 1 {b}\n"
+            with self.assertRaisesRegex(ValueError, r"duplicate.*'v\(a\)'"):
+                parse_dc_table(log)
+
+    def test_identical_duplicate_rejected(self):
+        log = "Index v-sweep v(a) v(a)\n0 0 1.2 1.2\n1 1 1.3 1.3\n"
+        with self.assertRaisesRegex(ValueError, r"duplicate.*'v\(a\)'"):
+            parse_dc_table(log)
+
+    def test_repeated_v_sweep_rejected(self):
+        log = "Index v-sweep v(a) v-sweep\n0 0 1.2 0\n1 1 1.3 1\n"
+        with self.assertRaisesRegex(ValueError, r"duplicate.*'v-sweep'"):
+            parse_dc_table(log)
+
+    def test_rejected_before_rows_parsed(self):
+        # Duplicate header with no valid rows still reports the duplicate,
+        # not "no data rows".
+        with self.assertRaisesRegex(ValueError, "duplicate"):
+            parse_dc_table("Index v-sweep v(a) v(a)\n---\n")
+
+    def test_case_distinct_names_are_distinct(self):
+        # Identity follows the exact-match lookup contract: no normalization.
+        cols, rows = parse_dc_table("Index v-sweep v(a) V(A)\n0 0 1 2\n")
+        self.assertEqual(column(cols, rows, "v(a)"), [1.0])
+        self.assertEqual(column(cols, rows, "V(A)"), [2.0])
+
+    def test_direct_column_call_ambiguous_rejected(self):
+        cols = ["v-sweep", "v(a)", "v(a)"]
+        rows = [[0.0, 1.2, 9.9], [1.0, 1.3, 8.8]]
+        with self.assertRaisesRegex(ValueError, r"ambiguous.*'v\(a\)'"):
+            column(cols, rows, "v(a)")
+        # Unambiguous names in the same list still resolve.
+        self.assertEqual(column(cols, rows, "v-sweep"), [0.0, 1.0])
+
+    def test_pagination_header_repeat_still_ok(self):
+        # ngspice repeats the header on page breaks; only the first is the
+        # column header and later ones are skipped as non-data lines.
+        log = (
+            "Index v-sweep v(a)\n0 0 1\n"
+            "Index v-sweep v(a)\n---\n1 1 2\n"
+        )
+        cols, rows = parse_dc_table(log)
+        self.assertEqual(cols, ["v-sweep", "v(a)"])
+        self.assertEqual(rows, [[0.0, 1.0], [1.0, 2.0]])
+
+
 class InterpTests(unittest.TestCase):
     xs = [0.0, 1.0, 2.0]
     ys = [0.0, 10.0, 30.0]
