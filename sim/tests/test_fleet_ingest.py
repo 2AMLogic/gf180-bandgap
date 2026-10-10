@@ -433,6 +433,64 @@ class Psrr(TmpCase):
         res = self.fx("psrr-dc", wave=wave).assess()
         self.assertEqual(res["overall"], "INCOMPLETE")
 
+    def _bad_axis(self, mutate):
+        def wave(r, p, s, t):
+            if r["role"] != "ac":
+                return None
+            w = ac_wave()
+            w["frequency"] = mutate(list(w["frequency"]))
+            return w
+        res = self.fx("psrr-dc", wave=wave).assess()
+        self.assertNotEqual(res["overall"], "PASS")
+        self.assertEqual(len(res["invalid"]), 81)
+        self.assertFalse(any("fails" in str(p) for p in res["problems"]))
+        return res
+
+    def test_full_valid_grid_still_passes(self):
+        res = self.fx("psrr-dc").assess()
+        self.assertEqual(res["overall"], "PASS")
+
+    def test_repro_two_distinct_frequencies(self):
+        self._bad_axis(lambda f: [1.0] * 80 + [1000.0] * 81)
+
+    def test_duplicated_points(self):
+        def m(f):
+            f[70] = f[69]
+            return f
+        self._bad_axis(m)
+
+    def test_reordered_points(self):
+        def m(f):
+            f[70], f[71] = f[71], f[70]
+            return f
+        self._bad_axis(m)
+
+    def test_endpoint_substitutions(self):
+        def lo(f):
+            f[0] = 0.05
+            return f
+        def hi(f):
+            f[-1] = 2e7
+            return f
+        self._bad_axis(lo)
+        self._bad_axis(hi)
+
+    def test_interior_perturbation_keeps_count_and_spot_frequencies(self):
+        def m(f):
+            f[100] *= 1.01  # still increasing; f[20]=1 Hz and f[80]=1 kHz untouched
+            return f
+        self._bad_axis(m)
+
+    def test_nonpositive_or_nonfinite_axis(self):
+        def neg(f):
+            f[5] = -1.0
+            return f
+        def nan(f):
+            f[5] = float("nan")
+            return f
+        self._bad_axis(neg)
+        self._bad_axis(nan)
+
 
 # ---------------------------------------------------------------- line regulation
 
