@@ -4,6 +4,20 @@ Chronological record of recently merged pull requests and closed issues, maintai
 
 ### 2026-10-10
 
+- **PR #312**: sim: reject duplicate waveform columns before deriving verdicts
+- **PR #311**: sim: validate Monte Carlo process and mismatch seed components (#291)
+- **PR #310**: docs: guard-compatible evidence copies and assignment-chain reproduction
+- **PR #307**: sim: classify reduced corner-set suite runs as diagnostic subsets
+- **PR #305**: sim tools: consolidate evidence-minting scaffolding into fleet_common
+- **PR #304**: ci: make check:ci match the CI gate (manifest check in lint.sh) (#302)
+- **PR #299**: sim: validate standalone TC outer corner identity (#298)
+- **Issue #294** (closed): sim: reject duplicate waveform columns before deriving verdicts
+- **Issue #291** (closed): sim: validate Monte Carlo process and mismatch seed components
+- **Issue #281** (closed): docs: document guard-compatible evidence copies and assignment-chain reproduction
+- **Issue #288** (closed): sim: classify reduced corner-set suite runs as diagnostic subsets
+- **Issue #301** (closed): sim tools: consolidate duplicated evidence-minting scaffolding into fleet_common
+- **Issue #302** (closed): ci: make npm run check:ci actually match the CI gate (manifest check, duplicate script)
+- **Issue #298** (closed): sim: validate standalone TC outer temperature before corner aggregation
 - **PR #297**: sim: validate the complete PSRR AC frequency axis before accepting fleet evidence
 - **PR #295**: sim: bind returned fleet reports to frozen deck identities (#293)
 - **PR #292**: sim: reject ambiguous duplicate measurement names in fleet reports
