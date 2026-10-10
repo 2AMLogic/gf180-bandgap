@@ -176,11 +176,15 @@ def provenance_problems(report: dict, plan: dict | None, *, require_remote: bool
     return probs
 
 
-def hash_problems(plan: dict, *, dut_sha: str | None, tb_sha: str, manifest_sha: str, deck_sha: dict) -> list[str]:
+def hash_problems(plan: dict, *, dut_sha: str | None, tb_sha: str, manifest_sha: str, deck_sha: dict,
+                  requests: dict[str, str] | None = None) -> list[str]:
     """Hash mismatches between what the plan froze and what is on disk now.
 
     ``deck_sha`` maps request name -> sha256 of the body.spice that is
-    actually in the work dir (what the fleet was handed)."""
+    actually in the work dir (what the fleet was handed). ``requests`` maps
+    request name -> exact text of its request.json; when supplied every
+    planned request must be present and byte-identical to its frozen
+    ``request_sha256`` (None skips the check, for callers with no work dir)."""
     probs = []
     if dut_sha is not None and plan.get("dut", {}).get("sha256") != dut_sha:
         probs.append(f"DUT sha256 {dut_sha[:12]} differs from the plan's {str(plan.get('dut', {}).get('sha256'))[:12]}")
@@ -192,4 +196,13 @@ def hash_problems(plan: dict, *, dut_sha: str | None, tb_sha: str, manifest_sha:
         got = deck_sha.get(r["name"])
         if got != r.get("deck_sha256"):
             probs.append(f"request {r['name']!r}: deck sha256 differs from the plan (edited after generation?)")
+        if requests is None:
+            continue
+        want = r.get("request_sha256")
+        if not want:
+            probs.append(f"request {r['name']!r}: plan has no request_sha256 to verify request.json against")
+        elif r["name"] not in requests:
+            probs.append(f"request {r['name']!r}: request.json missing, cannot verify it against the plan")
+        elif sha256_bytes(requests[r["name"]].encode()) != want:
+            probs.append(f"request {r['name']!r}: request.json sha256 differs from the plan (edited after generation?)")
     return probs
