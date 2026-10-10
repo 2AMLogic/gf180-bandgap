@@ -315,6 +315,24 @@ class Ingest(unittest.TestCase):
         self.assertEqual(res["overall"], "INCOMPLETE")
         self.assertEqual(len(res["failed"]), 1)
 
+    def test_duplicate_measurement_names_are_rejected_and_mint_nothing(self):
+        for first, second in ((None, 1.0), (1.0, None), (2.0, 2.0)):
+            fx = copy.deepcopy(self.fx)
+            e = fx.entry("mm_fetbjt", -40.0)
+            ms = fx.reports[e["name"]]["corners"][3]["measurements"]
+            name = ms[0]["name"]
+            ms[0:1] = [{"name": name, "value": first}, {"name": name, "value": second}]
+            res = fx.assess()
+            self.assertEqual(res["overall"], "INCOMPLETE", (first, second))
+            self.assertEqual(len(res["failed"]), 1)
+            self.assertIn("duplicate measurement", res["failed"][0][1])
+            with tempfile.TemporaryDirectory() as tmp:
+                exp = Path(tmp) / "mc-dup"
+                with self.assertRaises(ValueError):
+                    mi.write_evidence(RUN, exp, Path(tmp), fx.plan, res, fx.reports, fx.decks, dut_label="x",
+                                      dut_path=DUT, issue=290, git=GIT)
+                self.assertFalse(exp.exists())
+
     def test_a_whole_request_that_errored_out_is_incomplete(self):
         e = self.fx.entry("mm_all", 27.0)
         self.fx.reports[e["name"]]["corners"] = []

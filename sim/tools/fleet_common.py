@@ -132,7 +132,8 @@ def collect_units(report: dict, expected: list, required, key_of):
               measurement (null / absent / NaN / inf), whatever klt's status.
     failed  : [(key, reason)] units whose execution is untrusted: klt status
               ``error`` / ``inconclusive`` / missing / unknown (only ``pass``
-              and ``fail`` are accepted), or any error/fatal diagnostic.
+              and ``fail`` are accepted), any error/fatal diagnostic, or
+              repeated measurement names (ambiguous payload, even if identical).
     problems: report-level issues (duplicate / unexpected / unparseable ids).
     """
     points, failed, missing, problems = {}, [], [], []
@@ -154,6 +155,11 @@ def collect_units(report: dict, expected: list, required, key_of):
         c = seen.get(key)
         if c is None:
             missing.append((key, "absent from report"))
+            continue
+        names = [m["name"] for m in c.get("measurements", [])]
+        dups = sorted({n for n in names if names.count(n) > 1}, key=str)
+        if dups:
+            failed.append((key, "ambiguous report: duplicate measurement name(s) " + ", ".join(map(repr, dups))))
             continue
         vals = {m["name"]: m.get("value") for m in c.get("measurements", [])}
         nonfinite = sorted(
