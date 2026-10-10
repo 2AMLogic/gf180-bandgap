@@ -9,6 +9,7 @@ No PDK, ngspice or fleet required:
 from __future__ import annotations
 
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -203,6 +204,59 @@ class Completeness(unittest.TestCase):
         del v["vref_t125"]
         errs = ti.sweep_consistency(v)
         self.assertTrue(any("span" in e for e in errs))
+
+
+class OuterIdentity(unittest.TestCase):
+    """The returned unit's FULL corner id must match the request (outer 27 C)."""
+
+    BAD_IDS = ["tt/{v}/-40C", "tt/{v}/125C", "tt/{v}/garbage", "tt/{v}/27", "tt/{v}/nanC",
+               "tt/{v}/infC", "tt/{v}/27.5C", "tt/nanV/27C", "tt/infV/27C", "tt/novdd/27C", "tt/{v}"]
+
+    def _swap(self, cid_fmt):
+        key = ("tt", 2.97)
+        self.assertIn(key, EXPECTED)
+        c = corner(key, good_vals())
+        c["corner_id"] = cid_fmt.format(v="2.970V")
+        return key, report(override={key: c})
+
+    def test_collect_rejects_bad_outer_identity(self):
+        for fmt in self.BAD_IDS:
+            with self.subTest(cid=fmt):
+                key, rep = self._swap(fmt)
+                pts, miss, fail, prob, res = run(rep)
+                self.assertNotIn(key, pts)
+                self.assertIn(key, [k for k, _ in miss])
+                self.assertEqual(res["overall"], "INCOMPLETE")
+                self.assertTrue(any(fmt.format(v="2.970V") in p and "27C" in p for p in prob), prob)
+
+    def test_valid_27c_still_passes(self):
+        pts, miss, fail, prob, res = run(report())
+        self.assertEqual((miss, fail, prob), ([], [], []))
+        self.assertEqual(res["overall"], "PASS")
+
+    def test_log_export_skips_bad_ids_and_round_trips_good(self):
+        good = report()
+        pts, *_ = ti.collect(good, EXPECTED)
+        key, bad = self._swap("tt/{v}/125C")
+        with tempfile.TemporaryDirectory() as d:
+            d = Path(d)
+            ti.write_corner_logs(d / "bad", d, bad, pts, "rec")
+            names = {p.name for p in (d / "bad").glob("*.log")}
+            self.assertNotIn("tt_125c_2.97v.log", names)
+            self.assertNotIn("tt_27c_2.97v.log", names)
+            self.assertEqual(len(names), 3 * (len(EXPECTED) - 1))
+            ti.write_corner_logs(d / "good", d, good, pts, "rec")
+            self.assertEqual(len(list((d / "good").glob("*.log"))), 3 * len(EXPECTED))
+            self.assertIn("m_vref =", (d / "good" / "tt_27c_2.97v.log").read_text())
+
+    def test_log_export_malformed_ids_write_nothing(self):
+        pts, *_ = ti.collect(report(), EXPECTED)
+        for fmt in self.BAD_IDS:
+            with self.subTest(cid=fmt), tempfile.TemporaryDirectory() as d:
+                key, rep = self._swap(fmt)
+                rep = {"corners": [c for c in rep["corners"] if c["corner_id"] == fmt.format(v="2.970V")]}
+                ti.write_corner_logs(Path(d) / "c", Path(d), rep, pts, "rec")
+                self.assertEqual(list((Path(d) / "c").glob("*")), [])
 
 
 class Reconstruct(unittest.TestCase):

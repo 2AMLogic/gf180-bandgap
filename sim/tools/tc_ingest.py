@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import re
 import shutil
 import sys
@@ -60,7 +61,31 @@ def load_tb() -> dict:
     return json.loads(TB_JSON.read_text())
 
 
-corner_key = fc.corner_key  # 'tt/2.970V/27C' -> ('tt', 2.97); shared with fleet_ingest.py
+OUTER_TEMP_C = 27.0  # mk_klt_request.py fixes corners.temperature_c = [27]; the sweep is internal
+
+
+def corner_key(corner_id) -> tuple[str, float]:
+    """'tt/2.970V/27C' -> ('tt', 2.97), validating the FULL returned identity.
+
+    Unlike the process/supply-only `fleet_common.corner_key`, the outer
+    temperature axis must be present, finite and equal the requested 27 C, and
+    the supply must be finite. Raises ValueError (naming the offending id and
+    the expected axis) otherwise."""
+    expect = "expected '<process>/<supply>V/27C'"
+    if not isinstance(corner_id, str):
+        raise ValueError(f"corner id {corner_id!r} is not a string; {expect}")
+    try:
+        process, supply, temp = fc.parse_klt_corner_id(corner_id)
+    except ValueError as e:
+        raise ValueError(f"corner id {corner_id!r} malformed ({e}); {expect}") from None
+    if supply is None or not math.isfinite(supply) or supply <= 0:
+        raise ValueError(f"corner id {corner_id!r} has no finite positive supply; {expect}")
+    if not math.isfinite(temp):
+        raise ValueError(f"corner id {corner_id!r} has non-finite temperature; {expect}")
+    if temp != OUTER_TEMP_C:
+        raise ValueError(f"corner id {corner_id!r} has outer temperature {temp:g} C; "
+                         f"the request fixes {OUTER_TEMP_C:g} C ({expect})")
+    return process, supply
 
 
 def expected_points(tb: dict | None = None) -> list[tuple[str, float]]:
@@ -98,10 +123,18 @@ def collect(report: dict, expected: list[tuple[str, float]], deck_sha256: str | 
              backend gave.
     problems: report-level issues (duplicate corners, unexpected corners).
     """
+    bad_ids, kept = [], []
+    for c in report.get("corners", []):
+        try:
+            corner_key(c["corner_id"])
+            kept.append(c)
+        except Exception as e:
+            bad_ids.append(f"rejected corner identity: {e}")
     points, missing, failed, problems = fc.collect_units(
-        report, expected, REQUIRED,
+        dict(report, corners=kept), expected, REQUIRED,
         lambda cid: (lambda k: (k[0], round(k[1], 4)))(corner_key(cid)),
     )
+    problems = bad_ids + list(problems)
     if deck_sha256 is not None:
         problems = list(problems) + fc.report_identity_problems(report, deck_sha256)
     return points, missing, failed, problems
@@ -363,7 +396,7 @@ def write_corner_logs(cdir: Path, work: Path, report: dict, points: dict, record
         try:
             p, v = corner_key(c["corner_id"])
         except Exception:
-            continue
+            continue  # wrong/malformed outer identity: never export suite-readable logs
         key = (p, round(v, 4))
         art = c.get("artifacts") or {}
         src = work / (art.get("log") or "")
