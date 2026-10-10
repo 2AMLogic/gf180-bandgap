@@ -498,5 +498,98 @@ class CompletenessTests(unittest.TestCase):
                 self.assertEqual(cli.main(["--only", "iq", "--no-write", "--quiet"]), code)
 
 
+    # --- reduced / overridden corner grids (issue #288) -----------------------
+
+    def _run_main(self, argv, drop=None):
+        """Run ``cli.main`` with a mocked runner that passes at every corner it
+        was asked for; ``drop`` removes one corner id from a bench's samples."""
+        import contextlib
+        import io
+        from unittest import mock
+
+        from suite import cli
+
+        def fake_run(slug, lines, extra, quiet=False, expected_corners=None):
+            if not any(l.limits for l in lines):
+                b = BenchRun(slug=slug, lines=lines, status="ok", returncode=0,
+                             expected_corners=expected_corners)
+                b.outcomes = [analysis.evaluate_line(l, {}) for l in lines]
+                return b
+            samples = self._good_samples(slug, expected_corners)
+            if drop and slug == drop[0]:
+                samples.pop(drop[1])
+            return self._bench(slug, samples, expected=expected_corners)
+
+        def fake_combined(benches):
+            bench = next(b for b in benches if b.slug == "output-voltage-tc")
+            return self._combined(list(bench.samples))
+
+        out = io.StringIO()
+        with mock.patch.object(cli, "run_bench", fake_run), \
+                mock.patch.object(cli, "combined_accuracy", fake_combined), \
+                contextlib.redirect_stdout(out):
+            code = cli.main([*argv, "--no-write", "--quiet"])
+        return code, out.getvalue()
+
+    def test_full_index_reduced_corner_set_is_a_subset_not_complete(self):
+        code, text = self._run_main(["--corner-set", "tt"])
+        self.assertEqual(code, 0)
+        self.assertIn("Subset run", text)
+        self.assertIn("reduced corner grid omits acceptance coverage", text)
+        self.assertIn("`iq`", text)
+        self.assertIn("reduced corner set mode", text)
+        self.assertNotIn("Simulation-complete**", text)
+        self.assertNotIn("full PVT mode", text)
+
+    def test_reduced_mos_override_cannot_certify_full_manifests(self):
+        code, text = self._run_main(["--corner-set", "mos"])
+        self.assertEqual(code, 0)
+        self.assertIn("Subset run", text)
+        self.assertNotIn("Simulation-complete**", text)
+
+    def test_default_and_equivalent_full_override_stay_eligible_for_completion(self):
+        for argv in ([], ["--corner-set", "full"]):
+            with self.subTest(argv=argv):
+                code, text = self._run_main(argv)
+                self.assertEqual(code, 0, text[-2000:])
+                self.assertIn("**Simulation-complete**", text)
+                self.assertIn("full PVT mode", text)
+
+    def test_coverage_not_flag_presence_decides_reduction(self):
+        a = BenchRun(slug="iq", lines=spec.by_slug()["iq"],
+                     expected_corners=["a", "b", "c"], acceptance_corners=["a", "b"])
+        b = BenchRun(slug="iq", lines=spec.by_slug()["iq"],
+                     expected_corners=["a"], acceptance_corners=["a", "b"])
+        for bench, reduced in ((a, False), (b, True)):
+            bench.status = "ok"
+            bench.outcomes = []
+            done = completeness.assess([bench], None, ["iq"])
+            self.assertEqual(bool(done.uncovered), reduced)
+
+    def test_missing_requested_corner_under_reduced_grid_still_blocks(self):
+        code, text = self._run_main(["--corner-set", "tt"], drop=("iq", "tt_27c_3.30v"))
+        self.assertEqual(code, 2)
+        self.assertIn("NOT simulation-complete", text)
+
+    def test_spec_violation_under_reduced_grid_still_fails(self):
+        import contextlib
+        import io
+        from unittest import mock
+
+        from suite import cli
+
+        def fake_run(slug, lines, extra, quiet=False, expected_corners=None):
+            samples = self._good_samples(slug, expected_corners)
+            if slug == "iq":
+                for row in samples.values():
+                    row["iq_ua"] = 500.0
+            return self._bench(slug, samples, expected=expected_corners)
+
+        with mock.patch.object(cli, "run_bench", fake_run), \
+                contextlib.redirect_stdout(io.StringIO()):
+            code = cli.main(["--only", "iq", "--corner-set", "tt", "--no-write", "--quiet"])
+        self.assertEqual(code, 1)
+
+
 if __name__ == "__main__":
     unittest.main()

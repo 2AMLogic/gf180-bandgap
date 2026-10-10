@@ -12,7 +12,8 @@ Three outcomes:
   gated measurement and the combined row is present and PASS. The only state
   that may claim "simulation-complete".
 - ``subset``: nothing requested is wrong, but the run is deliberately not the
-  whole suite (``--only`` omitted benches, or ``--smoke``). Useful for
+  whole suite (``--only`` omitted benches, ``--smoke``, or a reduced corner grid that
+  leaves out manifest-required acceptance corners). Useful for
   debugging, exits 0, asserts nothing about completeness.
 - ``blocked``: something requested is failing or its evidence is missing
   (absent bench, runner failure, gated NO DATA, a measurement missing at a
@@ -39,6 +40,10 @@ class Completeness:
     #: Index slugs this run did not request (empty for a full-suite run).
     omitted: list[str] = field(default_factory=list)
     smoke: bool = False
+    #: ``{slug: [acceptance corner ids the requested grid did not cover]}``.
+    #: Intentional omission (a diagnostic override), distinct from ``missing``,
+    #: which is requested-but-absent evidence.
+    uncovered: dict = field(default_factory=dict)
     #: Reasons the evidence is missing or the run broke (exit 2).
     missing: list[str] = field(default_factory=list)
     #: Spec violations (exit 1).
@@ -126,6 +131,26 @@ def assess(benches, combined, required_slugs, smoke: bool = False) -> Completene
     if result.omitted:
         result.subset_reasons.append(
             "benches not requested: " + ", ".join(f"`{s}`" for s in result.omitted)
+        )
+    for bench in benches:
+        if smoke or bench.status == "missing":
+            continue  # smoke already carries its own subset reason
+        acceptance = getattr(bench, "acceptance_corners", None)
+        requested = bench.expected_corners
+        if acceptance is None or requested is None:
+            continue
+        have = set(requested)
+        absent = [c for c in acceptance if c not in have]
+        if absent:
+            result.uncovered[bench.slug] = absent
+    if result.uncovered:
+        parts = [
+            f"`{slug}` ({len(absent)} manifest-required corner(s) not requested, "
+            f"e.g. {_corner_list(absent, limit=2)})"
+            for slug, absent in result.uncovered.items()
+        ]
+        result.subset_reasons.append(
+            "reduced corner grid omits acceptance coverage: " + ", ".join(parts)
         )
     if smoke:
         result.subset_reasons.append("smoke run covers one nominal corner, not the full PVT matrix")

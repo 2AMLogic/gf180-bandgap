@@ -75,6 +75,10 @@ class BenchRun:
     #: Corner ids the run should have produced (manifest grid + suite
     #: overrides); ``None`` when it cannot be derived.
     expected_corners: list[str] | None = None
+    #: Corner ids the bench's manifest requires for an acceptance claim (no
+    #: suite overrides). Compared with ``expected_corners`` (what was
+    #: requested) to tell a reduced diagnostic grid from a full one.
+    acceptance_corners: list[str] | None = None
 
     @property
     def available(self) -> bool:
@@ -127,7 +131,11 @@ def run_bench(
     expected_corners: list[str] | None = None,
 ) -> BenchRun:
     """Run one bench through ``sim/run_corners.py`` and read back its evidence."""
-    bench = BenchRun(slug=slug, lines=lines, expected_corners=expected_corners)
+    bench = BenchRun(
+        slug=slug,
+        lines=lines,
+        expected_corners=expected_corners,
+    )
     if not _bench_manifest(slug).is_file():
         bench.status = "missing"
         bench.message = f"sim/{slug}/testbench/tb.json does not exist yet"
@@ -393,7 +401,7 @@ def _reference_section(benches: list[BenchRun]) -> list[str]:
 
 def _completeness_section(done: Completeness) -> list[str]:
     lines: list[str] = []
-    if done.omitted or done.smoke or done.missing or done.failures:
+    if done.omitted or done.smoke or done.uncovered or done.missing or done.failures:
         lines += ["", "## Completeness", ""]
     if done.subset_reasons:
         lines.append("Not the full suite: " + "; ".join(done.subset_reasons) + ".")
@@ -442,8 +450,8 @@ def render_summary(
         verdict = (
             f"**Subset run — no completeness claim**: the requested checks pass "
             f"({tally}), but {'; '.join(done.subset_reasons)}. "
-            "Simulation-complete is not asserted; only a full-suite, full-PVT "
-            "run with every row PASS can claim it."
+            "Simulation-complete is not asserted; only a full-suite run "
+            "covering every manifest-required corner (full PVT) with every row PASS can claim it."
         )
     else:
         verdict = (
@@ -630,6 +638,10 @@ def main(argv: list[str] | None = None) -> int:
         )
         for slug in targets
     ]
+    # Acceptance grid (manifest only) is tracked apart from the requested grid
+    # so a reduced override is classified, not mistaken for missing evidence.
+    for bench in benches:
+        bench.acceptance_corners = expected_corner_ids(bench.slug)
 
     combined = (
         combined_accuracy(benches)
@@ -642,7 +654,11 @@ def main(argv: list[str] | None = None) -> int:
         benches,
         started=started,
         git=git,
-        mode="smoke" if args.smoke else "full PVT",
+        mode=(
+            "smoke"
+            if args.smoke
+            else "reduced corner set" if completeness.uncovered else "full PVT"
+        ),
         wrote_evidence=not no_write,
         combined=combined,
         completeness=completeness,
