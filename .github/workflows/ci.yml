@@ -16,7 +16,7 @@ name: CI
 # | harness unit tests (`sim/tests/`)             | python3      | `test` (here)      |
 # | layout unit tests (`layout/**/test_*.py`)     | python3      | `test` (here)      |
 # | signoff validator unit tests (`signoff/tests/`)| python3     | `test` (here)      |
-# | `sim/run_corners.py --list` manifest load     | python3      | `test` (here)      |
+# | `sim/run_corners.py --list` manifest load     | python3      | `lint` (here)      |
 # | `sim/selftest.sh` stages 1-2                  | python3      | `test` (here)      |
 # | `sim/selftest.sh` stage 3 (81-point PVT run)  | ngspice+PDK  | `sim-pdk.yml`      |
 # | `sim/smoke_test/run_smoke_test.sh`            | xschem+PDK   | EXCLUDED (below)   |
@@ -86,19 +86,6 @@ jobs:
           # dependency matrix to sweep -- one modern interpreter is the check.
           python-version: '3.12'
 
-      - name: Testbench manifests load
-        # `--list` deliberately keeps listing after a bad manifest, printing
-        # `!!` instead of exiting non-zero, so grep for that marker: a malformed
-        # tb.json must fail the PR, not surface at simulation time.
-        run: |
-          set -euo pipefail
-          out="$(python3 sim/run_corners.py --list)"
-          echo "$out"
-          if grep -q '!!' <<<"$out"; then
-            echo "::error::a testbench manifest failed to load (see the '!!' line above)"
-            exit 1
-          fi
-
       - name: Harness self-test
         # Stage 1 (the harness unit tests) always runs. Stage 2 probes for
         # ngspice + the PDK and, finding neither on this runner, prints SKIP
@@ -138,7 +125,7 @@ jobs:
     #
     # The PDK-free half of the same check (pins vs. committed artifacts,
     # manifest/record consistency) runs in the `lint` job with no network --
-    # see .github/scripts/lint.sh step 6/6. If this job is ever unavailable,
+    # see .github/scripts/lint.sh step 6/9. If this job is ever unavailable,
     # that half still gates every PR.
     steps:
       - uses: actions/checkout@v7
