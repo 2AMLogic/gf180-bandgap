@@ -300,6 +300,21 @@ class Ingest(unittest.TestCase):
         self.assertEqual(len(res["failed"]), 1)
         self.assertIn("singular matrix", res["failed"][0][1])
 
+    def test_finite_values_with_invalid_execution_are_never_measured(self):
+        e = self.fx.entry("mm_fetbjt", -40.0)
+        c = self.fx.reports[e["name"]]["corners"][3]
+        c["diagnostics"] = [{"severity": "error", "code": "simulation_failed", "message": "kaboom"}]
+        res = self.fx.assess()
+        self.assertEqual(res["overall"], "INCOMPLETE")
+        self.assertNotEqual(res["overall"], "MEASURED")
+        self.assertEqual(len(res["failed"]), 1)
+        self.assertIn("kaboom", res["failed"][0][1])
+        c["diagnostics"] = []
+        del c["status"]
+        res = self.fx.assess()
+        self.assertEqual(res["overall"], "INCOMPLETE")
+        self.assertEqual(len(res["failed"]), 1)
+
     def test_a_whole_request_that_errored_out_is_incomplete(self):
         e = self.fx.entry("mm_all", 27.0)
         self.fx.reports[e["name"]]["corners"] = []

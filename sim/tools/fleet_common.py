@@ -79,8 +79,42 @@ def parse_klt_mc_corner_id(corner_id: str) -> tuple[str, float | None, float, in
 
 
 def diagnostics_text(c: dict, limit: int = 300) -> str:
-    diag = "; ".join(f"{d.get('code')}: {d.get('message')}" for d in c.get("diagnostics", []) or [])
+    diag = "; ".join(
+        (f"{d.get('code')}: {d.get('message')}" if isinstance(d, dict) else f"malformed diagnostic {d!r}")
+        for d in c.get("diagnostics", []) or []
+    )
     return diag[:limit]
+
+
+ACCEPTED_CORNER_STATUSES = ("pass", "fail")  # fail = legitimate spec miss; still graded
+FATAL_SEVERITIES = ("error", "fatal")
+
+
+def _is_fatal_diag(d) -> bool:
+    """Missing / non-dict / non-string severity is treated as fatal (fail closed)."""
+    if not isinstance(d, dict):
+        return True
+    sev = d.get("severity")
+    return not isinstance(sev, str) or sev.strip().lower() in FATAL_SEVERITIES
+
+
+def execution_rejection(c: dict) -> str | None:
+    """Why a corner's execution cannot be trusted, or None.
+
+    Status must be exactly ``pass`` or ``fail``; independently, any error/fatal
+    (or severity-less) diagnostic rejects. Warnings are retained, not fatal."""
+    status = c.get("status")
+    reasons = []
+    if not isinstance(status, str) or status not in ACCEPTED_CORNER_STATUSES:
+        reasons.append(f"status={status!r}" + ("" if status in ("error", "inconclusive") else " (unknown corner status)"))
+    fatal = [d for d in (c.get("diagnostics") or []) if _is_fatal_diag(d)]
+    if fatal:
+        txt = "; ".join(
+            f"{d.get('code')}: {d.get('message')}" if isinstance(d, dict) else f"malformed diagnostic {d!r}"
+            for d in fatal
+        )
+        reasons.append(f"error diagnostic {txt}"[:300])
+    return "; ".join(reasons) if reasons else None
 
 
 def collect_units(report: dict, expected: list, required, key_of):
@@ -96,7 +130,9 @@ def collect_units(report: dict, expected: list, required, key_of):
               measurement.
     missing : [(key, reason)] absent units, or units lacking a finite required
               measurement (null / absent / NaN / inf), whatever klt's status.
-    failed  : [(key, reason)] units klt itself reported as ``error``.
+    failed  : [(key, reason)] units whose execution is untrusted: klt status
+              ``error`` / ``inconclusive`` / missing / unknown (only ``pass``
+              and ``fail`` are accepted), or any error/fatal diagnostic.
     problems: report-level issues (duplicate / unexpected / unparseable ids).
     """
     points, failed, missing, problems = {}, [], [], []
@@ -126,8 +162,9 @@ def collect_units(report: dict, expected: list, required, key_of):
         bad = [n for n in required if not is_finite_number(vals.get(n))]
         status = c.get("status")
         diag = diagnostics_text(c)
-        if status == "error":
-            failed.append((key, f"status={status}" + (f" ({diag})" if diag else "")))
+        rej = execution_rejection(c)
+        if rej:
+            failed.append((key, rej + (f" ({diag})" if diag and status == "error" and "error diagnostic" not in rej else "")))
             continue
         if bad:
             why = f"status={status}; measurement(s) without a finite value: " + ", ".join(bad)

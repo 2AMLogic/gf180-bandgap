@@ -153,6 +153,15 @@ class Completeness(unittest.TestCase):
         self.assertIn("boom", fail[0][1])
         self.assertEqual(res["overall"], "INCOMPLETE")
 
+    def test_finite_values_with_invalid_execution_give_no_verdict(self):
+        for kw in ({"status": "weird"}, {"status": "inconclusive"},
+                   {"diag": [{"severity": "error", "code": "simulation_failed", "message": "boom"}]}):
+            bad = corner(EXPECTED[1], good_vals(), **kw)
+            pts, miss, fail, prob, res = run(report(override={EXPECTED[1]: bad}))
+            self.assertEqual([k for k, _ in fail], [EXPECTED[1]])
+            self.assertNotIn(EXPECTED[1], pts)
+            self.assertEqual(res["overall"], "INCOMPLETE")
+
     def test_null_measurement_is_missing(self):
         v = good_vals()
         v["vref_box_min"] = None
