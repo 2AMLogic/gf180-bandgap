@@ -1177,6 +1177,72 @@ class SuiteIntegration(TmpCase):
         with self.assertRaises(RuntimeError):
             hreport.device_write_record(exp / "records", r1.stem, "overwrite")
 
+    # ---- run-level rejection must not become suite-valid evidence (#284)
+
+    def _tree(self, root: Path) -> list:
+        return sorted(str(p.relative_to(root)) for p in root.rglob("*") if p.is_file())
+
+    def _assert_rejected(self, bench, fx, res):
+        self.assertEqual(res["overall"], "INCOMPLETE")
+        self.assertTrue(res["problems"])
+        exp = self.tmp / "exp" / bench
+        before = self._tree(self.tmp)
+        with self.assertRaises(ValueError) as cm:
+            fi.write_evidence(exp, self.tmp, bench, fx.tb, fx.plan, res, fx.reports,
+                              dut_label="sim/dut/bandgap_top.spice", issue=284, git=GIT)
+        self.assertIn("run-level problems", str(cm.exception))
+        self.assertFalse(exp.exists())  # no record, corner or snapshot files
+        self.assertEqual(self._tree(self.tmp), before)  # diagnostics in the work dir untouched
+        # direct log export fails closed too: nothing a suite could grade
+        cdir = self.tmp / "direct"
+        with self.assertRaises(ValueError):
+            fi.write_corner_logs(cdir, self.tmp, fx.plan, res, "rec")
+        self.assertFalse(cdir.exists())
+        if cdir.exists():
+            run = bench_run_from(bench, cdir)
+            self.assertNotIn("PASS", [o.status for o in run.outcomes])
+
+    def test_run_level_rejections_write_nothing_and_cannot_pass(self):
+        def runner(fx):
+            fx.reports["sweep"]["environment"]["remote"]["runner_compatibility"] = "mismatch"
+            return fx.assess()
+
+        def dut(fx):
+            return fx.assess(dut_sha="0" * 64)
+
+        def deck(fx):
+            d = fx.decks()
+            d["sweep"] += "* tampered\n"
+            return fx.assess(decks=d)
+
+        def manifest(fx):
+            return fx.assess(manifest_sha="1" * 64)
+
+        def dup(fx):
+            cs = fx.reports["sweep"]["corners"]
+            cs.append(copy.deepcopy(cs[0]))
+            extra = copy.deepcopy(cs[0])
+            extra["corner_id"] = extra["corner_id"].replace(cs[0]["corner_id"].split("/")[0], "zz", 1)
+            cs.append(extra)
+            return fx.assess()
+
+        for name, mut in [("runner", runner), ("dut", dut), ("deck", deck), ("manifest", manifest), ("dup", dup)]:
+            with self.subTest(case=name):
+                self.setUp()
+                fx = self.fx("line-regulation")
+                self._assert_rejected("line-regulation", fx, mut(fx))
+
+    def test_valid_spec_failure_is_still_recorded_as_fail(self):
+        fx = self.fx("line-regulation", vals=lambda r, p, s, t: {
+            "vref_min": 1.19, "vref_max": 1.2, "v_lo_check": 2.97, "v_hi_check": 3.63},
+            wave=lambda *a: {"x": [2.97 + 0.005 * i for i in range(133)], "v(vref)": [1.19] * 66 + [1.2] * 67})
+        res, exp, rec = self.ingest("line-regulation", fx)
+        self.assertEqual(res["problems"], [])
+        self.assertEqual(res["overall"], "FAIL")
+        self.assertIn("FAIL", rec.read_text())
+        self.assertTrue(list((exp / "netlist-snapshots").glob("*.spice")))
+
+
     def test_suite_index_and_manifests_agree_with_spec_checks(self):
         for bench in mk.BENCHES:
             tb = fi.load_tb(bench)

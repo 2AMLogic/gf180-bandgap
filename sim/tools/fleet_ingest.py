@@ -754,7 +754,13 @@ def _unit_logs(result: dict, plan: dict, work: Path, key) -> str:
 def write_corner_logs(cdir: Path, work: Path, plan: dict, result: dict, record: str) -> None:
     """One log per expected harness corner, in the suite-readable shape. A
     corner without valid data gets the INVALID POINT trailer (suite: NO DATA);
-    a corner absent from the report still gets a visible invalid log."""
+    a corner absent from the report still gets a visible invalid log.
+
+    Fails closed (ValueError, nothing written) when the run has a run-level
+    problem -- provenance, hash, plan or manifest mismatch: numeric logs of a
+    rejected run must not be exportable as suite-readable data."""
+    if result.get("problems"):
+        raise ValueError("refusing to export corner logs with run-level problems: " + "; ".join(result["problems"][:5]))
     cdir.mkdir(parents=True, exist_ok=True)
     for key in result["grid"]:
         head = f"* record-id : {record}\n* bench : {result['bench']}\n* corner : {corner_id(key)}\n"
@@ -927,7 +933,13 @@ def write_evidence(exp_dir: Path, work: Path, bench: str, tb: dict, plan: dict, 
                    dut_label: str, issue, supersedes=None, note=None, git=None, repo: Path = REPO,
                    stamp: datetime | None = None) -> Path:
     """Write record + logs + frozen decks + request/report copies under ``exp_dir``
-    (``sim/<bench>``; a temp dir in tests). Refuses to overwrite (append-only)."""
+    (``sim/<bench>``; a temp dir in tests). Refuses to overwrite (append-only).
+
+    Refuses (ValueError, nothing written) when the run has a run-level problem;
+    diagnostics stay in ``work``. Missing/invalid corners and genuine spec
+    failures are still recorded."""
+    if result["problems"]:
+        raise ValueError("refusing to mint evidence with run-level problems: " + "; ".join(result["problems"][:5]))
     from harness import report as hreport
 
     git = git or hreport.git_provenance(repo)
@@ -993,8 +1005,12 @@ def main() -> int:
         print("  problem:", p)
     if a.dry_run:
         return 0 if result["overall"] in ("PASS", MEASURED) else 2
-    path = write_evidence(SIM / a.bench, work, a.bench, tb, plan, result, reports, dut_label=a.dut,
-                          issue=a.issue, supersedes=a.supersedes, note=a.note)
+    try:
+        path = write_evidence(SIM / a.bench, work, a.bench, tb, plan, result, reports, dut_label=a.dut,
+                              issue=a.issue, supersedes=a.supersedes, note=a.note)
+    except ValueError as e:
+        print(f"REFUSED: {e}\n(diagnostics remain in {work}; nothing written)")
+        return 2
     print(f"wrote {path}")
     return 0 if result["overall"] in ("PASS", MEASURED) else 2
 
