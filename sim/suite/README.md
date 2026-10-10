@@ -23,6 +23,20 @@ claim". A missing bench, runner failure, gated NO DATA, or a measurement
 missing at any corner prints "NOT simulation-complete" and exits 2 (spec
 violations exit 1).
 
+**Corner-grid overrides.** The suite tracks two grids per bench: the
+*acceptance grid* derived from the bench's own manifest, and the *requested
+grid* actually run (manifest, or `--corner-set` / `--smoke`). Requested
+coverage detects missing measurements and runner errors (still exit 2);
+comparing it with acceptance coverage decides whether completion may be
+claimed. A `--corner-set` that leaves out any manifest-required corner
+(e.g. `tt` or `mos` against a bench requiring `full`) is a diagnostic subset:
+exit 0 if the requested checks pass, summary mode "reduced corner set", the
+omitted coverage named under Completeness, and no "Simulation-complete"
+claim. Coverage, not flag presence, decides: an override that covers every
+acceptance corner (e.g. `--corner-set full` where each bench already needs
+`full`, or any superset grid) stays eligible for completion. Spec violations
+still exit 1. Overrides never relax ratified thresholds.
+
 The suite simulates nothing itself. It drives `sim/run_corners.py` once per
 experiment slug — so every bench mints an ordinary append-only record under
 `sim/<slug>/records/` in the format `sim/README.md` ratifies — and then reads
