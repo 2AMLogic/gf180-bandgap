@@ -8,6 +8,8 @@ which were byte-identical private copies of this logic in each file
 
 from __future__ import annotations
 
+import math
+
 
 def parse_dc_table(log: str) -> tuple[list[str], list[list[float]]]:
     """Parse the tabular output of `print v1 v2 ...` after a `dc` analysis.
@@ -34,6 +36,12 @@ def parse_dc_table(log: str) -> tuple[list[str], list[list[float]]]:
         except ValueError:
             continue
         if len(values) == len(columns):
+            for j, v in enumerate(values):
+                if not math.isfinite(v):
+                    raise ValueError(
+                        f"non-finite value {parts[j + 1]!r} in DC table row "
+                        f"{parts[0]} column {columns[j]!r}"
+                    )
             rows.append(values)
     if not rows:
         raise ValueError("DC table header found but no data rows parsed")
@@ -54,7 +62,25 @@ def interp_at(
     default this raises ValueError so a missing crossing cannot be recorded
     as a plausible-looking endpoint value (issue #249); pass `clamp=True` to
     get the endpoint y instead.
+
+    Non-finite query, x-series or y-series values, and non-finite results,
+    raise ValueError in both clamp modes (issue #317).
     """
+    if not math.isfinite(x):
+        raise ValueError(f"non-finite interpolation query x={x!r}")
+    for i, v in enumerate(xs):
+        if not math.isfinite(v):
+            raise ValueError(f"non-finite x-series value xs[{i}]={v!r}")
+    for i, v in enumerate(ys):
+        if not math.isfinite(v):
+            raise ValueError(f"non-finite y-series value ys[{i}]={v!r}")
+    result = _interp_checked(xs, ys, x, clamp)
+    if not math.isfinite(result):
+        raise ValueError(f"non-finite interpolation result at x={x!r}")
+    return result
+
+
+def _interp_checked(xs: list[float], ys: list[float], x: float, clamp: bool) -> float:
     if x < xs[0] or x > xs[-1]:
         if not clamp:
             raise ValueError(
@@ -69,5 +95,8 @@ def interp_at(
             y0, y1 = ys[i - 1], ys[i]
             if x1 == x0:
                 return y0
-            return y0 + (y1 - y0) * (x - x0) / (x1 - x0)
+            try:
+                return y0 + (y1 - y0) * (x - x0) / (x1 - x0)
+            except OverflowError:
+                return math.inf
     return ys[-1]

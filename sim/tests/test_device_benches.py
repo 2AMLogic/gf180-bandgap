@@ -150,6 +150,22 @@ class PnpVbeExtract(unittest.TestCase):
         )
 
 
+class PnpVbeNanBeta(unittest.TestCase):
+    def test_nonpositive_base_current_fails_extraction(self):
+        # Zero base current -> NaN beta entry -> extraction must fail (#317).
+        lines = pnp_log(27.0).splitlines()
+        icol = next(iter(pnp_vbe.DEVICES.values()))[2]
+        header = next(l for l in lines if l.strip().startswith("Index"))
+        idx = header.split()[1:].index(icol) + 1
+        for n, line in enumerate(lines):
+            parts = line.split()
+            if parts and parts[0].isdigit():
+                parts[idx] = "0.0"
+                lines[n] = " ".join(parts)
+        with self.assertRaisesRegex(ValueError, "non-finite"):
+            pnp_vbe.extract("\n".join(lines), 27.0)
+
+
 class PnpVbeRecord(unittest.TestCase):
     def test_record_passes_lint(self):
         results = {
