@@ -201,8 +201,6 @@ def derive_psrr(ac_vals: dict, wave: dict | None, op_vals: dict | None, supply_i
     else:
         try:
             freq = column(wave, "frequency")
-            for name, target in (("f_dc_hz", 1.0), ("f_band_edge_hz", 1e3)):
-                m[name] = min(freq, key=lambda f: abs(math.log10(f) - math.log10(target)))
             args = next(c for c in tb["analyses"] if c.startswith("ac ")).split()
             per_dec, f0, f1 = int(args[2]), float(args[3].replace("meg", "e6")), float(args[4].replace("meg", "e6"))
             want = round(per_dec * math.log10(f1 / f0)) + 1
@@ -210,6 +208,11 @@ def derive_psrr(ac_vals: dict, wave: dict | None, op_vals: dict | None, supply_i
                 errs.append(f"ac grid has {len(freq)} points, the bench's `ac` card implies {want}")
             else:
                 errs.extend(ac_axis_errors(freq, per_dec, f0, f1))
+            # spot lookup needs log10: skip it on a non-positive / non-finite axis
+            # (the corner is already invalid via the checks above).
+            if all(fc.is_finite_number(f) and f > 0 for f in freq):
+                for name, target in (("f_dc_hz", 1.0), ("f_band_edge_hz", 1e3)):
+                    m[name] = min(freq, key=lambda f: abs(math.log10(f) - math.log10(target)))
         except (ValueError, StopIteration) as exc:
             errs.append(f"ac waveform unusable: {exc}")
     if op_vals is None or f"vref_op_s{supply_index}" not in op_vals:
