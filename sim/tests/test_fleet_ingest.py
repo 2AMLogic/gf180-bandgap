@@ -648,6 +648,35 @@ class Fails(TmpCase):
             self.assertEqual(res["missing"], [])
             self.assertEqual(res["overall"], before)
 
+    def test_duplicate_measurement_names_are_rejected(self):
+        # ambiguity is rejected whichever value comes first, and when identical (#290)
+        for first, second in ((None, 1.0), (1.0, None), (1e9, 1.0), (1.0, 1e9), (2.0, 2.0)):
+            for f in self.each():
+                n = self.first_request(f)
+                ms = f.corner(n, 2)["measurements"]
+                if not ms:
+                    continue  # waveform-derived bench: no scalar measurements to duplicate
+                name = ms[0]["name"]
+                ms[0:1] = [{"name": name, "value": first}, {"name": name, "value": second}]
+                res = f.assess()
+                self.assertEqual(res["overall"], "INCOMPLETE", (first, second))
+                self.assertEqual(len(res["failed"]), 1, (first, second))
+                self.assertIn("duplicate measurement", res["failed"][0][1])
+                self.assertIn(name, res["failed"][0][1])
+                # nothing graded is minted for the ambiguous unit: its log is an INVALID POINT
+                cdir = self.tmp / "logs"
+                fi.write_corner_logs(cdir, self.tmp, f.plan, res, "rec")
+                logs = [p.read_text() for p in sorted(cdir.glob("*.log"))]
+                bad = [t for t in logs if fi.INVALID_POINT_MARKER in t]
+                self.assertGreaterEqual(len(bad), 1)
+                self.assertEqual(len(bad), len(res["invalid"]))
+                self.assertTrue(all("derived by" not in t for t in bad))
+
+    def test_uniquely_named_measurements_are_unaffected(self):
+        for f in self.each():
+            res = f.assess()
+            self.assertFalse(any("duplicate measurement" in w for _, w in res["failed"]))
+
     def test_null_and_nonfinite_measurements(self):
         for f in self.each():
             n = self.first_request(f)
@@ -1285,6 +1314,19 @@ class SharedHelpers(unittest.TestCase):
             self.assertEqual(len(fail), 1)
         r = rep(); del r["corners"][0]["status"]
         self.assertEqual(len(run(r)[2]), 1)
+
+    def test_collect_units_rejects_duplicate_measurement_names(self):
+        def run(ms):
+            r = {"corners": [{"corner_id": "tt/3.300V/27C", "status": "pass", "diagnostics": [], "measurements": ms}]}
+            return fc.collect_units(r, [("tt", 3.3)], ["a"], lambda cid: fc.parse_klt_corner_id(cid)[:2])
+        a = lambda v: {"name": "a", "value": v}
+        pts, miss, fail, _ = run([a(1.0), {"name": "b", "value": 2.0}])
+        self.assertEqual(pts, {("tt", 3.3): {"a": 1.0, "b": 2.0}})
+        for ms in ([a(None), a(1.2)], [a(1.2), a(None)], [a(1.0), a(1.0)], [a(9e9), a(1.0)], [a(1.0), a(9e9)]):
+            pts, miss, fail, _ = run(ms)
+            self.assertEqual(pts, {})
+            self.assertEqual(len(fail), 1)
+            self.assertIn("'a'", fail[0][1])
 
     def test_corner_id_parsing(self):
         self.assertEqual(fc.parse_klt_corner_id("bjt_ff/2.970V/-40C"), ("bjt_ff", 2.97, -40.0))
