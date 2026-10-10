@@ -11,11 +11,11 @@ uv run --with klayout python3 layout/bandgap_top/area_report.py
 
 | Quantity | Value |
 |---|---|
-| Drawn GDS bounding box (incl. guard ring) | **222.10 × 281.43 µm** |
-| Drawn GDS area | **62,505.60 µm² (0.06251 mm²)** |
-| Originally ratified target (`README.md` "Target specification", DR-0003, issue #1/#35) | 50,000 µm² (0.05 mm²) — FAIL, 12,505.60 µm² (25.0 %) over |
+| Drawn GDS bounding box (incl. guard ring) | **222.10 × 281.52 µm** |
+| Drawn GDS area | **62,526.26 µm² (0.06253 mm²)** |
+| Originally ratified target (`README.md` "Target specification", DR-0003, issue #1/#35) | 50,000 µm² (0.05 mm²) — FAIL, 12,526.26 µm² (25.1 %) over |
 | Current interim ceiling (`RATIFIED_TARGET_UM2`, DR-0006 — proposed, see Finding 7) | 66,000 µm² (0.066 mm²) |
-| Margin against the current interim ceiling | **PASS — 3,494.40 µm² (5.3 %) of headroom** |
+| Margin against the current interim ceiling | **PASS — 3,473.74 µm² (5.3 %) of headroom** |
 | Device body area, current netlist | 25,327.78 µm² |
 | Realised overhead multiplier | **2.47× body area** |
 | `floorplan.md` §8 body-area estimate | 10,425.45 µm² |
@@ -270,10 +270,10 @@ study explicitly declared rather than any modelling error:
   **zero**: `route_rows` places each row's Metal3 rails *inside* the row's
   own device-content height, and `draw_mos`'s new local Contact + Metal1 gate
   pad sits inside the gate poly's existing `POLY_EXT` tip, so nothing has to
-  grow above the row at all. Drawn height **281.43 µm** vs. the estimate's
-  296.43 µm — exactly 15.00 µm, the whole band. (Both on the estimate's own
+  grow above the row at all. Drawn height **281.52 µm** vs. the estimate's
+  296.43 µm — 14.91 µm, essentially the whole band. (Both on the estimate's own
   basis, i.e. including the guard ring's 0.40 µm/axis Pplus marker overhang;
-  `build()`'s own bbox is 221.70 × 281.03 µm.)
+  `build()`'s own bbox is 221.70 × 281.12 µm.)
 - **the 0.20 µm left margin (the old `vss` spine's own half-width)** — study
   §5 kept it "conservatively" while noting it disappears too. It did. Drawn
   width **222.10 µm** vs. the estimate's 222.30 µm.
@@ -307,7 +307,7 @@ table for the committed report IDs.
 proposes an interim `< 0.085 mm²` ceiling and `README.md`'s ratified Area row
 still says `< 0.05 mm²`; neither is edited here, and `RATIFIED_TARGET_UM2`
 still reports FAIL honestly. Study §7's own conclusion holds — a realised
-62,505.60 µm² would justify *narrowing* the interim ceiling (to ≈0.066 mm²
+62,526.26 µm² would justify *narrowing* the interim ceiling (to ≈0.066 mm²
 on DR-0005's own ~5 % margin convention, tighter than the ≈0.070 mm² the
 study projected), but per `spec/decision-records/TEMPLATE.md` that is a
 **successor record**, not an edit to DR-0005, and it is out of scope for
