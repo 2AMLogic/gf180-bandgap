@@ -20,7 +20,6 @@ _None._
 Human-approved issues ready for implementation (`loom:issue`).
 
 - **#308**: ci: fail when committed bandgap_top.gds differs from generate.py output
-- **#326**: layout/bandgap_top: routing-budget S1 area disagrees with committed GDS bbox (klayout-gated test fails on main)
 
 ## In Progress
 
@@ -69,7 +68,7 @@ Issues carrying `loom:curated`.
 |------|-------|
 | Operator merge-risk holds | 1 |
 | Operator priority | 0 |
-| Ready (`loom:issue`) | 2 |
+| Ready (`loom:issue`) | 1 |
 | In Progress (`loom:building`) | 0 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 1 |
