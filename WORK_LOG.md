@@ -4,6 +4,21 @@ Chronological record of recently merged pull requests and closed issues, maintai
 
 ### 2026-10-10
 
+- **PR #327**: layout: parse m2m3 probe resistors by model and position, not R$ prefix (#303)
+- **PR #325**: sim: validate interpolation series shape and reject backward sweep axes
+- **PR #323**: sim: reject ambiguous duplicate DC table columns
+- **PR #321**: sim: reserve device evidence IDs and prevent artifact overwrite
+- **PR #320**: sim: reject non-finite DC-sweep data and interpolation inputs
+- **PR #316**: ci: test the documented Python 3.9 floor and pin volare (#309)
+- **PR #318**: tests: unit-cover mk_extracted_dut.py (#315)
+- **Issue #329** (closed): Guard telemetry: unresolved worktree variables block scoped evidence writes
+- **Issue #303** (closed): Build/runtime failure on main: m2m3_stack_probe netlist test depends on klt netlist device-line format
+- **Issue #324** (closed): sim: validate interpolation series shape and reject backward sweep axes
+- **Issue #322** (closed): sim: reject ambiguous duplicate DC table columns
+- **Issue #319** (closed): sim: reserve device evidence IDs and prevent artifact overwrite
+- **Issue #317** (closed): sim: reject non-finite DC-sweep data and interpolation inputs
+- **Issue #309** (closed): ci: test the documented Python 3.9 floor and pin volare in sim-pdk.yml
+- **Issue #315** (closed): tests: unit-cover mk_extracted_dut.py (post-layout netlist transforms have no tests)
 - **PR #312**: sim: reject duplicate waveform columns before deriving verdicts
 - **PR #311**: sim: validate Monte Carlo process and mismatch seed components (#291)
 - **PR #310**: docs: guard-compatible evidence copies and assignment-chain reproduction
