@@ -9,9 +9,15 @@ Judge-approved PRs stuck under a `loom:operator` merge-risk hold — implementat
 
 - **#244**: docs: remove stale hard-coded harness unit-test count
 
-## Operator Priority
+## Very Important
 
-Issues the operator starred (`loom:operator-priority`); land these first.
+`loom:very-important` (one counts per workspace); every stage takes these first.
+
+_None._
+
+## Important
+
+`loom:important`; taken before unlabelled work.
 
 _None._
 
@@ -64,10 +70,11 @@ Issues carrying `loom:curated`.
 
 ## Backlog Balance
 
-| Tier | Count |
+| Bucket | Count |
 |------|-------|
 | Operator merge-risk holds | 1 |
-| Operator priority | 0 |
+| Very important | 0 |
+| Important | 0 |
 | Ready (`loom:issue`) | 1 |
 | In Progress (`loom:building`) | 0 |
 | PRs awaiting review | 0 |
