@@ -7,7 +7,7 @@ This roadmap is generated from the current GitHub label state by the Loom Guide 
 
 Judge-approved PRs stuck under a `loom:operator` merge-risk hold — implementation work is done, only a human merge decision is missing.
 
-- **#244**: docs: remove stale hard-coded harness unit-test count
+_None._
 
 ## Very Important
 
@@ -43,7 +43,7 @@ _None._
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
-- **#244**: docs: remove stale hard-coded harness unit-test count
+_None._
 
 ## Proposed
 
@@ -52,7 +52,6 @@ Issues carrying `loom:curated`.
 - **#87**: Layout's 4x unit-PNP array for core.Q2 gives an effective dVBE ratio of 4.03, not the schematic's 3.63 — floorplan 4.1 asserts the opposite *(curated)*
 - **#203**: DR-0007 phase A: measure array ratio and finalize schematic PVT evidence *(curated)*
 - **#239**: DR-0007: execute final-DUT fleet suite and mismatch evidence run *(curated)*
-- **#243**: docs: remove stale hard-coded harness unit-test count (40 vs 256) *(curated)*
 - **#308**: ci: fail when committed bandgap_top.gds differs from generate.py output *(curated)*
 - **#326**: layout/bandgap_top: routing-budget S1 area disagrees with committed GDS bbox (klayout-gated test fails on main) *(curated)*
 
@@ -72,14 +71,14 @@ Issues carrying `loom:curated`.
 
 | Bucket | Count |
 |------|-------|
-| Operator merge-risk holds | 1 |
+| Operator merge-risk holds | 0 |
 | Very important | 0 |
 | Important | 0 |
 | Ready (`loom:issue`) | 1 |
 | In Progress (`loom:building`) | 0 |
 | PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 1 |
-| Curated | 6 |
+| Approved PRs awaiting merge | 0 |
+| Curated | 5 |
 | Architect / Hermit proposals | 3 |
 | Active epics | 3 |
 <!-- guide:plan-body:end -->
