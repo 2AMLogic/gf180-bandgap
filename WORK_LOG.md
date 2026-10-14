@@ -2,6 +2,10 @@
 
 Chronological record of recently merged pull requests and closed issues, maintained by the Loom Guide role. Newest entries appear first.
 
+### 2026-10-14
+
+- **Issue #243** (closed): docs: remove stale hard-coded harness unit-test count (40 vs 256)
+
 ### 2026-10-10
 
 - **PR #327**: layout: parse m2m3 probe resistors by model and position, not R$ prefix (#303)
