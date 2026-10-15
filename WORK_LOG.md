@@ -2,6 +2,10 @@
 
 Chronological record of recently merged pull requests and closed issues, maintained by the Loom Guide role. Newest entries appear first.
 
+### 2026-10-15
+
+- **PR #337**: Bump Repo Skills 0.19.5 -> 0.24.1
+
 ### 2026-10-14
 
 - **PR #244**: docs: remove stale hard-coded harness unit-test count
