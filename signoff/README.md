@@ -37,6 +37,11 @@ treats 3 as failure cannot run on a block that is not already finished.
 - **klt revision this repo grades against**: pinned in
   [`klt-pin.txt`](klt-pin.txt) — floating `main` would make the committed
   record disagree with a re-run for reasons unrelated to this block's evidence.
+  `check_signoff.py --run-klt` resolves that revision through `uvx` (as
+  `regenerate.sh` does) and ignores any `klt` on `PATH`; it fails clearly if
+  `uvx` or the pin is missing. `KLT_SIGNOFF_CMD` (e.g. `klt`) is the explicit
+  override — whoever sets it owns revision selection. CI sets it after
+  installing `klt` at the pin.
 
 ## Block kind: `analog`
 
@@ -259,7 +264,7 @@ CI runs both halves (`.github/workflows/ci.yml`):
 | Check | Where | Needs |
 |---|---|---|
 | Manifest shape, pins vs. committed artifacts, record consistency | `lint` job, via `.github/scripts/lint.sh` | python3 only |
-| Re-grade with the pinned `klt` and diff against the committed record | `signoff` job | network (installs `klt` at `klt-pin.txt`'s revision) |
+| Re-grade with the pinned `klt` and diff against the committed record | `signoff` job | network (installs `klt` at `klt-pin.txt`'s revision; runs it via `KLT_SIGNOFF_CMD=klt`) |
 
 So a manifest citing an artifact that has since changed, a record that no
 longer matches what `klt` would say today, and a mis-keyed evidence entry that

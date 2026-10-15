@@ -159,4 +159,8 @@ jobs:
         # is this block's current state and not an error -- check_signoff.py
         # knows that, and fails only on a real error or on any drift between
         # the fresh grade and the committed record.
+        # The step above pip-installed klt at klt-pin.txt's revision, so the
+        # explicit override selects that same revision (no uvx on the runner).
+        env:
+          KLT_SIGNOFF_CMD: klt
         run: python3 signoff/check_signoff.py --run-klt
