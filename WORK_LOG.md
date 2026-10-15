@@ -4,6 +4,7 @@ Chronological record of recently merged pull requests and closed issues, maintai
 
 ### 2026-10-14
 
+- **PR #244**: docs: remove stale hard-coded harness unit-test count
 - **Issue #243** (closed): docs: remove stale hard-coded harness unit-test count (40 vs 256)
 
 ### 2026-10-10
