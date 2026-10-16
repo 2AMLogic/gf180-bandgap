@@ -25,7 +25,6 @@ _None._
 
 Human-approved issues ready for implementation (`loom:issue`).
 
-- **#328**: signoff: use the repository klt pin for default local re-grading
 - **#308**: ci: fail when committed bandgap_top.gds differs from generate.py output
 
 ## In Progress
@@ -74,7 +73,7 @@ Issues carrying `loom:curated`.
 | Operator merge-risk holds | 1 |
 | Very important | 0 |
 | Important | 1 |
-| Ready (`loom:issue`) | 2 |
+| Ready (`loom:issue`) | 1 |
 | In Progress (`loom:building`) | 0 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 1 |
