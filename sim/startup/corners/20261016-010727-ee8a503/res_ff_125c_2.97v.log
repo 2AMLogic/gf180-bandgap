@@ -1,0 +1,68 @@
+* record-id : 20261016-010727-ee8a503
+* bench : startup
+* corner : res_ff_125c_2.97v
+* ---- ngspice log of request 'vdd_2p970' (res_ff/novdd/125C, status pass) ----
+
+Note: No compatibility mode selected!
+
+
+Circuit: * klt sim -- generated corner deck, do not edit
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+vdd                                          0
+xtop.xx1.d1                        5.98739e-59
+xtop.fb                            2.21171e-36
+xtop.sns1                          8.08454e-59
+xtop.casc                          7.92647e-79
+xtop.xx1.d2                       -5.91982e-51
+xtop.sns2                         -1.00325e-50
+xtop.xx1.e2                       -1.00325e-50
+xtop.xx1.xr2.11                   -1.00325e-50
+xtop.xx1.xr2.21                   -1.00325e-50
+xtop.xx1.d3                        2.20392e-60
+vref                               2.94593e-60
+xtop.xx1.e3                        2.94594e-60
+xtop.xx1.xr1.11                    2.94594e-60
+xtop.xx1.xr1.21                    2.94593e-60
+xtop.xx1.d4                       -1.11041e-84
+xtop.ibias                         1.69629e-82
+xtop.xx2.a3                         1.3563e-37
+xtop.xx2.nd1                       2.30234e-36
+xtop.xx2.a4                        1.66613e-37
+xtop.xx2.pbias                    -9.6106e-108
+xtop.xx2.ncasc                     1.96793e-87
+xtop.xx2.n1                        2.31769e-36
+xtop.xx2.n2                        2.25626e-36
+xtop.xx2.tail                     -5.81343e-36
+xtop.xx2.nb1                      -3.18905e-87
+xtop.vdd_su                                  0
+xtop.xx3.det                      -1.57737e-88
+xtop.xx3.xrpu.11                  -1.57734e-88
+xtop.xx3.xrpu.21                  -2.86313e-93
+v.xtop.vsu_sense#branch            1.04299e-94
+vsup#branch                         5.6984e-48
+
+
+No. of Data Rows : 3052
+ASCII raw file "/var/tmp/eda-job-klt-sim-65f1d9a69c86/outputs/artifacts/res_ff_novdd_125C/waveform.raw"
+ngspice-46 done
+
+* ---- derived by sim/tools/fleet_ingest.py from the fleet measurements/waveform ----
+m_startup_time_s = 2.2683639308e-05
+m_vref_final_v = 1.2062153043e+00
+m_iq_total_final_ua = 3.3068016161e+01
+m_iq_startup_branch_final_ua = 1.9514191007e+00
+m_det_final_v = 1.8757772498e-02
+m_t0_s = 1.0000000000e-06
+m_t_settle_s = 2.3683639308e-05
+m_vdd_final_v = 2.9700000000e+00
