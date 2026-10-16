@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Ingest finished fleet `klt sim` runs of psrr-dc / line-regulation / startup (#237) and output-noise (#268).
+"""Ingest finished fleet `klt sim` runs of psrr-dc / line-regulation / startup (#237), iq (#344) and output-noise (#268).
 
 Sibling of `sim/tools/tc_ingest.py` and following its conventions:
 
@@ -63,7 +63,7 @@ sys.path.insert(0, str(HERE))
 import fleet_common as fc  # noqa: E402
 from harness import corners as hc  # noqa: E402
 
-BENCHES = ("psrr-dc", "line-regulation", "startup")
+BENCHES = ("psrr-dc", "line-regulation", "startup", "iq")
 NOISE_BENCH = "output-noise"
 #: No ratified threshold: verdict is MEASURED / INCOMPLETE, never PASS / FAIL.
 MEASUREMENT_BENCHES = (NOISE_BENCH,)
@@ -77,8 +77,15 @@ SPEC_CHECKS = {
     "psrr-dc": {"psrr_1hz_db", "psrr_1khz_db"},
     "line-regulation": {"linereg_mv_per_v", "vref_min", "vref_max"},
     "startup": {"startup_time_s"},
+    "iq": {"iq_ua"},
     NOISE_BENCH: frozenset(),  # A6 threshold open: every tb.json check is a sanity check
 }
+
+#: Checks whose tb.json ``max`` is the ratified spec limit but whose ``min`` is a
+#: sanity floor (iq: "not a spec line ... fails any corner that collapsed into
+#: the degenerate near-zero-current state"). A value under the floor is an
+#: uninterpretable corner -- INVALID, bench INCOMPLETE -- not a spec FAIL.
+SPEC_MAX_ONLY = {"iq": {"iq_ua"}}
 
 PSRR_TAGS = ("1hz", "10hz", "100hz", "1khz", "10khz", "100khz", "1mhz")
 LINEREG_REQUIRED = ("vref_min", "vref_max", "v_lo_check", "v_hi_check")
@@ -241,6 +248,13 @@ def op_values(wave: dict | None, supplies: list[float]) -> dict:
             raise ValueError(f"sweep has no point at {v} V")
         out[f"vref_op_s{i}"] = vref[j]
     return out
+
+
+def derive_iq(vals: dict, tp: dict):
+    """-> (measures, errs). ``iq_ua = -isup * 1e6`` (the supply source's current
+    is negative when it delivers) and the Vref sanity figure, both read from the
+    `.meas dc ... FIND ... AT=<T>` cards of the ``dc temp`` sweep unit."""
+    return {"iq_ua": -vals[tp["isup"]] * 1e6, "vref": vals[tp["vref"]]}, []
 
 
 def _linereg_span(tb: dict) -> float:
@@ -538,7 +552,7 @@ def plan_problems(bench: str, tb: dict, plan: dict) -> list[str]:
     if plan.get("schema") != "gf180-bandgap/fleet-plan/1" or plan.get("bench") != bench:
         probs.append("plan is not a fleet plan for this bench")
         return probs
-    from mk_klt_fleet_request import expected_units
+    from mk_klt_fleet_request import expected_units, iq_temp_points, iq_units
 
     vdds = hc.supply_points(tb["nominal_supply_v"], tb.get("supply_tolerance", 0.0))
     if plan.get("supplies_v") != vdds:
@@ -553,6 +567,18 @@ def plan_problems(bench: str, tb: dict, plan: dict) -> list[str]:
         if plan.get("noise") != json.loads(json.dumps(nspec)):
             probs.append("plan noise contract (requests / measures / conversions) differs from tb.json's")
         want = {name: expected_units(tb, vdds) for name in nspec["requests"]}
+    elif bench == "iq":
+        want = {"temp": iq_units(tb, vdds)}
+        from mk_klt_request import build_request
+
+        ref = build_request("iq", tb)
+        for r in plan.get("requests", []):
+            if r.get("analysis") != ref["analysis"]:
+                probs.append(f"request {r.get('name')!r}: analysis {r.get('analysis')!r} is not the bench's {ref['analysis']!r}")
+            if r.get("temp_points") != iq_temp_points(tb):
+                probs.append(f"request {r.get('name')!r}: plan temperature points differ from tb.json's")
+            if sorted(r.get("measurements", [])) != sorted(m["name"] for m in ref["measurements"]):
+                probs.append(f"request {r.get('name')!r}: plan measurements differ from the bench's request")
     else:
         want = {
             "psrr-dc": {"ac": expected_units(tb, vdds), "op": expected_units(tb, [None])},
@@ -701,6 +727,17 @@ def assess_bench(bench: str, tb: dict, plan: dict, reports: dict, work: Path, *,
                             series[key] = {"sweep": x, "v(vref)": column(w, "v(vref)", "vref")}
                         except ValueError:
                             pass
+            elif bench == "iq":
+                entry = req.get("temp")
+                tp = next((t for t in (entry or {}).get("temp_points", []) if t["temp_c"] == float(temp)), None)
+                u = pts.get("temp", {}).get((proc, round(sup, 4), entry["expected_units"][0][2])) if entry else None
+                if tp is None:
+                    errs.append(f"plan has no sweep reading for {temp:g} C")
+                elif u is None:
+                    errs.append("dc temp sweep unit unavailable")
+                else:
+                    derived, e = derive_iq(u, tp)
+                    errs += e
             elif bench == NOISE_BENCH:
                 nspec = plan.get("noise") or {}
                 ukey = (proc, sup, temp)
@@ -736,6 +773,9 @@ def assess_bench(bench: str, tb: dict, plan: dict, reports: dict, work: Path, *,
             bucket = "spec" if name in SPEC_CHECKS[bench] else "sanity"
             if name not in derived:
                 row["errs"].append(f"check measurement {name!r} unavailable")
+            elif name in SPEC_MAX_ONLY.get(bench, ()):
+                row["spec"][name] = check_ok({k: v for k, v in spec.items() if k == "max"}, derived[name])
+                row["sanity"][name] = check_ok({k: v for k, v in spec.items() if k == "min"}, derived[name])
             else:
                 row[bucket][name] = check_ok(spec, derived[name])
         rows[key] = row
@@ -773,6 +813,8 @@ def worst(result: dict, tb: dict) -> dict:
     out = {}
     for name in SPEC_CHECKS[result["bench"]]:
         spec = tb["checks"][name]
+        if name in SPEC_MAX_ONLY.get(result["bench"], ()):
+            spec = {"max": spec["max"]}
         vals = [(r["measures"][name], k) for k, r in result["rows"].items() if k not in result["invalid"]]
         if vals:
             out[name] = (min(vals) if "min" in spec else max(vals))
@@ -788,6 +830,8 @@ def _unit_logs(result: dict, plan: dict, work: Path, key) -> str:
     raw = []
     for r in plan.get("requests", []):
         proc, temp, sup = key
+        if result["bench"] == "iq":
+            temp = r["expected_units"][0][2]  # one sweep unit per (process, supply) carries every temperature
         candidates = [(proc, round(sup, 4), temp), (proc, None, temp)]
         if r.get("supply_v") is not None:
             if abs(r["supply_v"] - sup) > 1e-6:
@@ -880,6 +924,15 @@ def build_record(record: str, stamp: datetime, bench: str, tb: dict, plan: dict,
         add("  - t0 = first time vdd reaches 90 % of its final value; settled = start of the last unbroken stretch inside "
             "+/-1 % of vref's final value (backward scan over the returned waveform; a first-crossing approximation is "
             "not equivalent); a negative value means the loop was in band before vdd reached 90 %.")
+    if bench == "iq":
+        floor = tb["checks"]["iq_ua"].get("min")
+        add("  - Each klt unit is one (process, supply) `dc temp -40 125 1` sweep with the corner `.temp` fixed at 27 C; "
+            "the bench's -40 / 27 / 125 C points are `.meas dc ... FIND ... AT=<T>` readings of that sweep "
+            "(printed by ngspice at 6-7 significant digits), so each unit supplies three of the "
+            f"{len(result['grid'])} PVT points. `iq_ua` = -isup x 1e6. Only the ratified `< "
+            f"{tb['checks']['iq_ua']['max']:g} uA` limit is graded; a value under the {floor:g} uA collapse floor, or "
+            "a Vref outside its sanity window, makes that point INVALID and the record INCOMPLETE (not a spec FAIL, "
+            "never a PASS). No waveform is requested, so the sweep itself is not re-verified here.")
     if bench == NOISE_BENCH:
         nspec = plan.get("noise") or {}
         add(f"  - **Measurement only.** {plan.get('scope', '')}. `{MEASURED}` means every corner of every request came "
@@ -938,6 +991,8 @@ def build_record(record: str, stamp: datetime, bench: str, tb: dict, plan: dict,
         for name in spec:
             if name in w:
                 lim = tb["checks"][name]
+                if name in SPEC_MAX_ONLY.get(bench, ()):
+                    lim = {"max": lim["max"]}
                 add(f"  - `{name}`: **{w[name][0]:.6g}** at `{corner_id(w[name][1])}` (limit {', '.join(f'{k} {v:g}' for k, v in lim.items() if k in ('min', 'max'))})")
         add("")
     add(f"  - **Overall: {overall}**")

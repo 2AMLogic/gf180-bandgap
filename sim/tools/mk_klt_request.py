@@ -101,21 +101,8 @@ def hc_pdk():
     return hp.find_pdk()
 
 
-def main() -> int:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("bench", choices=sorted(BENCH))
-    ap.add_argument("outdir")
-    ap.add_argument("--dut", default="sim/dut/bandgap_top.spice")
-    ap.add_argument("--curve", action="store_true", help="add Vref(T) sample points every 5 C (retuning aid)")
-    a = ap.parse_args()
-
-    tb = json.loads((SIM / a.bench / "testbench" / "tb.json").read_text())
-    out = Path(a.outdir).resolve()
-    out.mkdir(parents=True, exist_ok=True)
-    rel = lambda p: str(Path(p).resolve().relative_to(REPO))  # noqa: E731
-
-    dut = (REPO / a.dut).resolve()
-    design_inc = hc_pdk().design_include
+def build_body(bench: str, tb: dict, dut: Path, design_inc: Path) -> str:
+    """The self-contained fleet deck (``body.spice``) for ``bench``."""
     head = [
         f".param vdd_nom={tb['nominal_supply_v']!r}",
         f".param vdd_val={tb['nominal_supply_v']!r}",
@@ -128,16 +115,17 @@ def main() -> int:
         # workstation whose ~/.spiceinit may already set it.
         ".options wnflag=1",
     ]
-    deck = inline_netlist(dut, SIM / a.bench / "testbench" / tb["netlist"], design_inc, a.bench)
-    body = [deck[0]] + head + deck[1:] + [""]
-    (out / "body.spice").write_text("\n".join(body))
+    deck = inline_netlist(dut, SIM / bench / "testbench" / tb["netlist"], design_inc, bench)
+    return "\n".join([deck[0]] + head + deck[1:] + [""])
 
-    names = tb["corners"]
-    corners = hc.resolve_corners(names)
+
+def build_request(bench: str, tb: dict, curve: bool = False) -> dict:
+    """The `klt sim` request for ``bench`` (corner list and supplies from tb.json / corners.py)."""
+    corners = hc.resolve_corners(tb["corners"])
     process = [{"name": c.name, "sections": list(c.sections)} for c in corners]
     vdds = hc.supply_points(tb["nominal_supply_v"], tb.get("supply_tolerance", 0.0))
-    analysis, meas = BENCH[a.bench]
-    meas = list(meas) + (curve_meas() if a.curve and a.bench == "output-voltage-tc" else [])
+    analysis, meas = BENCH[bench]
+    meas = list(meas) + (curve_meas() if curve and bench == "output-voltage-tc" else [])
     req = {
         "netlist": "body.spice",
         "engine": "ngspice",
@@ -153,6 +141,25 @@ def main() -> int:
     }
     for name, card, unit in meas:
         req["measurements"].append({"name": name, "spice": card, "unit": unit})
+    return req
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("bench", choices=sorted(BENCH))
+    ap.add_argument("outdir")
+    ap.add_argument("--dut", default="sim/dut/bandgap_top.spice")
+    ap.add_argument("--curve", action="store_true", help="add Vref(T) sample points every 5 C (retuning aid)")
+    a = ap.parse_args()
+
+    tb = json.loads((SIM / a.bench / "testbench" / "tb.json").read_text())
+    out = Path(a.outdir).resolve()
+    out.mkdir(parents=True, exist_ok=True)
+
+    dut = (REPO / a.dut).resolve()
+    (out / "body.spice").write_text(build_body(a.bench, tb, dut, hc_pdk().design_include))
+    req = build_request(a.bench, tb, curve=a.curve)
+    corners, vdds = req["corners"]["process"], req["corners"]["supply_v"][SUPPLY_SOURCE]
     (out / "request.json").write_text(json.dumps(req, indent=2) + "\n")
     print(f"wrote {out}/request.json ({len(corners)} corners x {len(vdds)} supply)")
     return 0
