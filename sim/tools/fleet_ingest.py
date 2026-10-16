@@ -827,10 +827,9 @@ def write_corner_logs(cdir: Path, work: Path, plan: dict, result: dict, record: 
             tail = (f"\n{INVALID_POINT_MARKER} -- {result['invalid'].get(key, 'no data')} ***\n"
                     "*** no valid measurement set for this corner ***\n")
         (cdir / f"{corner_id(key)}.log").write_text(head + body + tail)
-    sdir = cdir / "series"
+    # corners/<record>/ is flat (evidence_lint): the series ride beside the logs
     for key, cols in result["series"].items():
-        sdir.mkdir(exist_ok=True)
-        with gzip.open(sdir / f"{corner_id(key)}.json.gz", "wt") as fh:
+        with gzip.open(cdir / f"series-{corner_id(key)}.json.gz", "wt") as fh:
             json.dump(cols, fh)
 
 
@@ -857,7 +856,7 @@ def build_record(record: str, stamp: datetime, bench: str, tb: dict, plan: dict,
             "(exact at tt/27 C only; -0.18 % / +0.27 % at -40 / 125 C; res_ff/res_ss not exercised), so this is not a "
             "simulation of the canonical netlist itself.")
     for r in plan["requests"]:
-        add(f"  - frozen fleet deck `{r['name']}` sha256 `{r['deck_sha256']}` (`netlist-snapshots/{record}.{r['name']}.spice`)")
+        add(f"  - frozen fleet deck `{r['name']}` sha256 `{r['deck_sha256']}` (`corners/{record}/deck-{r['name']}.spice`, also in `netlist-snapshots/{record}.spice`)")
     add("- **Corner matrix run**:")
     procs = sorted({k[0] for k in result["grid"]}, key=[k[0] for k in result["grid"]].index)
     add(f"  - Process: {', '.join(procs)}")
@@ -944,7 +943,7 @@ def build_record(record: str, stamp: datetime, bench: str, tb: dict, plan: dict,
     add(f"  - **Overall: {overall}**")
     add("- **Links**:")
     add(f"  - Testbench: `sim/{bench}/testbench/{tb['netlist']}`, `sim/{bench}/testbench/tb.json`")
-    add(f"  - Raw logs: `sim/{bench}/corners/{record}/` (also `plan.json`, `request-<name>.json`, `report-<name>.json`, `series/`)")
+    add(f"  - Raw logs: `sim/{bench}/corners/{record}/` (also `plan.json`, `request-<name>.json`, `report-<name>.json`, `deck-<name>.spice`, `series-<corner>.json.gz`)")
     add("  - Request adapter: `sim/tools/mk_klt_fleet_request.py`; ingestion: `sim/tools/fleet_ingest.py`")
     for name, rep in reports.items():
         remote = (rep.get("environment") or {}).get("remote") or {}
@@ -997,8 +996,15 @@ def write_evidence(exp_dir: Path, work: Path, bench: str, tb: dict, plan: dict, 
     fc.copy_request_artifacts(work, cdir, [r["name"] for r in plan["requests"]], reports)
     snap = exp_dir / "netlist-snapshots"
     snap.mkdir(parents=True, exist_ok=True)
+    # evidence_lint wants exactly one flat netlist-snapshots/<record>.spice: it holds every
+    # request's frozen deck (headed by name + sha256); each exact deck is also kept
+    # byte-for-byte in corners/<record>/deck-<request>.spice.
+    parts = []
     for r in plan["requests"]:
-        shutil.copyfile(work / r["name"] / "body.spice", snap / f"{record}.{r['name']}.spice")
+        body = work / r["name"] / "body.spice"
+        shutil.copyfile(body, cdir / f"deck-{r['name']}.spice")
+        parts.append(f"* ==== frozen fleet deck: {r['name']} sha256 {r['deck_sha256']} ====\n" + body.read_text())
+    (snap / f"{record}.spice").write_text("\n".join(parts))
     text = build_record(record, st, bench, tb, plan, result, reports, dut_label, issue, supersedes, note, git)
     return hreport.device_write_record(exp_dir / "records", record, text)
 

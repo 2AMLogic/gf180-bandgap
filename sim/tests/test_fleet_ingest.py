@@ -1180,7 +1180,10 @@ class NoiseIngest(TmpCase):
         samples = analysis.read_corner_logs(cdir)
         self.assertEqual(len(samples), 81)
         self.assertIn("onoise_int_0p1_10hz_uvrms", next(iter(samples.values())))
-        self.assertEqual(len(list((exp / "netlist-snapshots").glob("*.spice"))), 3)
+        # evidence_lint: one flat snapshot per record; per-request decks live in corners/<record>/
+        self.assertEqual(len(list((exp / "netlist-snapshots").glob("*.spice"))), 1)
+        self.assertEqual(len(list(cdir.glob("deck-*.spice"))), 3)
+        self.assertEqual([p for p in cdir.iterdir() if p.is_dir()], [])
 
 
 class NoiseFails(Fails):
@@ -1286,7 +1289,9 @@ class SuiteIntegration(TmpCase):
         self.assertEqual(len(samples), 81)
         self.assertIn("startup_time_s", next(iter(samples.values())))
         self.assertTrue((cdir / "plan.json").exists())
-        self.assertTrue(any((exp / "netlist-snapshots").glob("*.vdd_*.spice")))
+        self.assertEqual(len(list((exp / "netlist-snapshots").glob("*.spice"))), 1)
+        self.assertTrue(any(cdir.glob("deck-vdd_*.spice")))
+        self.assertEqual([p for p in cdir.iterdir() if p.is_dir()], [])  # corners/<record>/ is flat
 
     def test_append_only_second_ingest_mints_a_new_record(self):
         fx = self.fx("line-regulation")
