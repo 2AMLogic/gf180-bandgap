@@ -2,6 +2,13 @@
 
 Chronological record of recently merged pull requests and closed issues, maintained by the Loom Guide role. Newest entries appear first.
 
+### 2026-10-16
+
+- **PR #346**: sim: ingest iq fleet runs into a gated record via fleet_ingest
+- **PR #345**: sim: final-DUT fleet evidence for TC, MC, PSRR, line regulation and startup; iq pending
+- **PR #343**: Bump Repo Skills 0.24.1 -> 0.24.3
+- **Issue #344** (closed): sim: add an iq fleet ingestion adapter (record + verdict) for the batch-fleet iq run
+
 ### 2026-10-15
 
 - **PR #337**: Bump Repo Skills 0.19.5 -> 0.24.1
