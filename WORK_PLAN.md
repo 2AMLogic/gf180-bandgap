@@ -25,7 +25,7 @@ _None._
 
 Human-approved issues ready for implementation (`loom:issue`).
 
-- **#239**: DR-0007: execute final-DUT fleet suite and mismatch evidence run
+- **#328**: signoff: use the repository klt pin for default local re-grading
 - **#308**: ci: fail when committed bandgap_top.gds differs from generate.py output
 
 ## In Progress
