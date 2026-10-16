@@ -90,3 +90,18 @@ have produced invalid or unlintable evidence:
   locally.
 - `klt-sim-48e2a2da3ef7` is an intermediate iq run (27 C only) superseded by the
   full-span run above.
+
+## Update (#344): Iq ingested
+
+The "Iq — raw only" and "Not performed: Iq ingestion" items above are
+superseded by #344, which added the `iq` bench to `sim/tools/fleet_ingest.py` /
+`mk_klt_fleet_request.py` and ingested the archived run (no new fleet run, no
+local grid):
+
+- Record `sim/iq/records/20261016-015234-71a0fef.md` — PASS, 81/81 points valid
+  (27 fleet units x 3 sweep temperatures); worst Iq 33.8425 uA at
+  `ff_125c_3.63v` vs the 50 uA limit.
+- Roll-up over the pinned records, Iq included:
+  `sim/suite/summaries/20261016-015258-1c4f2a2.md` — reports all 6 indexed
+  spec lines passing. The caveats above (embedded-core Startup, `par_r`
+  sensitivity in the combined accuracy report) are unchanged by this.
