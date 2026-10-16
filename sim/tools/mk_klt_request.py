@@ -10,7 +10,8 @@ corner list, supply points, DUT and measurement expressions are the
 harness's, not a second hand-maintained copy.
 
 Scope: benches whose analysis is one card (`op`, or one `dc temp ...` sweep).
-Every bench becomes one `dc temp` sweep (`iq` a degenerate 27..27 one): the
+Every bench becomes one `dc temp` sweep (`iq` a minimal 27..28 one: ngspice 46 rejects
+`FIND ... AT=27` on a single-point sweep as "out of interval"): the
 outer temperature axis is dropped (corner `.temp` fixed at 27 C) and the
 quantities at -40/27/125 C are read from the sweep -- the same numbers
 `sim/run_suite.py` cross-checks against the outer-axis op points.
@@ -48,7 +49,7 @@ BENCH = {
         ],
     ),
     "iq": (
-        {"kind": "dc", "args": "temp 27 27 1"},
+        {"kind": "dc", "args": "temp 27 28 1"},
         [
             ("isup", ".meas dc isup FIND i(vsup) AT=27", "A"),
             ("vref", ".meas dc vref FIND v(vref) AT=27", "V"),
