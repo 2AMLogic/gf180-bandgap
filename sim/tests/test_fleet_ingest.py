@@ -556,11 +556,11 @@ class LineReg(TmpCase):
         self.assertEqual(res["overall"], "INCOMPLETE")
 
     def test_small_disagreement_beyond_print_precision_is_incomplete(self):
-        # 1e-5 V at 1.2 V is ~8e-6 relative: well past 7-digit rounding (<= 5e-7)
+        # 5e-5 V at 1.2 V is ~4e-5 relative: well past 6-digit rounding (<= 5e-6)
         w = dc_wave()
         hi, lo = max(w["v(vref)"]), min(w["v(vref)"])
         def vals(r, p, s, t):
-            return {"vref_min": lo, "vref_max": hi + 1e-5, "v_lo_check": 2.97, "v_hi_check": 3.63}
+            return {"vref_min": lo, "vref_max": hi + 5e-5, "v_lo_check": 2.97, "v_hi_check": 3.63}
         res = self.fx("line-regulation", vals=vals).assess()
         self.assertEqual(res["overall"], "INCOMPLETE")
 
@@ -590,7 +590,9 @@ class LineReg(TmpCase):
     def test_meas_agrees_tolerance_is_print_precision(self):
         for x in (1.200348979, 1.200342379, 2.0726349036795e-3, 3.63, 0.0):
             self.assertTrue(fi.meas_agrees(float(f"{x:e}"), x))
-        self.assertFalse(fi.meas_agrees(1.200349, 1.200349 + 3e-6))
+            # ngspice 46 (batch fleet) prints 6 significant digits
+            self.assertTrue(fi.meas_agrees(float(f"{x:.5e}"), x))
+        self.assertFalse(fi.meas_agrees(1.20035, 1.20035 + 3e-5))
 
     def test_sweep_endpoint_sanity(self):
         def vals(r, p, s, t):

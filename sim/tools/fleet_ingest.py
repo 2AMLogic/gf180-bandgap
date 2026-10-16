@@ -83,20 +83,21 @@ SPEC_CHECKS = {
 PSRR_TAGS = ("1hz", "10hz", "100hz", "1khz", "10khz", "100khz", "1mhz")
 LINEREG_REQUIRED = ("vref_min", "vref_max", "v_lo_check", "v_hi_check")
 #: .meas vs waveform cross-check tolerance. klt reads `.meas` results from
-#: ngspice's stdout line, which ngspice prints with `%e` (7 significant
-#: digits), while the waveform comes from the rawfile at ~16 digits. A
-#: correctly rounded 7-digit print is within 0.5 ulp of the 7th digit, i.e.
-#: <= 5e-7 relative; MEAS_REL_TOL = 1e-6 (one unit in the 7th digit) covers
-#: that with a factor-2 margin and nothing more. MEAS_ABS_TOL only guards
-#: values at/near zero. Gated values never come from `.meas` when a waveform
-#: is available; this is a consistency check only.
-MEAS_REL_TOL = 1e-6
+#: ngspice's stdout line, which ngspice prints with `%e` at 7 significant
+#: digits (ngspice 42) or 6 (ngspice 46, the batch fleet's engine), while the
+#: waveform comes from the rawfile at ~16 digits. A correctly rounded 6-digit
+#: print is within 0.5 ulp of the 6th digit, i.e. <= 5e-6 relative;
+#: MEAS_REL_TOL = 1e-5 (one unit in the 6th digit) covers that with a factor-2
+#: margin and nothing more. MEAS_ABS_TOL only guards values at/near zero.
+#: Gated values never come from `.meas` when a waveform is available; this is
+#: a consistency check only.
+MEAS_REL_TOL = 1e-5
 MEAS_ABS_TOL = 1e-12
 
 
 def meas_agrees(meas: float, full: float) -> bool:
     """True when a printed `.meas` value is the full-precision ``full`` up to
-    ngspice's 7-significant-digit print rounding."""
+    ngspice's 6-significant-digit print rounding."""
     return abs(meas - full) <= MEAS_REL_TOL * max(abs(meas), abs(full)) + MEAS_ABS_TOL
 STARTUP_REACH_TOL = 1e-3  # relative: vdd_final must be the requested rail
 
@@ -287,7 +288,7 @@ def derive_linereg(vals: dict, wave: dict | None, tb: dict, sweep: dict):
     for name in ("vref_max", "vref_min"):
         if not meas_agrees(vals[name], m[name]):
             errs.append(f"{name} {vals[name]:.9f} (.meas) disagrees with the waveform's {m[name]:.9f} "
-                        f"beyond ngspice's 7-digit print precision")
+                        f"beyond ngspice's print precision")
     return m, errs
 
 
