@@ -31,7 +31,7 @@ Human-approved issues ready for implementation (`loom:issue`).
 
 Issues currently being built (`loom:building`).
 
-_None._
+- **#239**: DR-0007: execute final-DUT fleet suite and mismatch evidence run
 
 ## PRs Awaiting Review
 
@@ -59,7 +59,6 @@ Issues carrying `loom:curated`.
 
 - **#219**: sim harness: share the batch-backend guard and cap default local --jobs *(architect)*
 - **#306**: ci: run klayout/klt-gated layout tests in the signoff job and fail on skips *(architect)*
-- **#328**: signoff: use the repository klt pin for default local re-grading *(architect)*
 
 ## Epics
 
@@ -75,10 +74,10 @@ Issues carrying `loom:curated`.
 | Very important | 0 |
 | Important | 1 |
 | Ready (`loom:issue`) | 1 |
-| In Progress (`loom:building`) | 0 |
+| In Progress (`loom:building`) | 1 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 1 |
 | Curated | 5 |
-| Architect / Hermit proposals | 3 |
+| Architect / Hermit proposals | 2 |
 | Active epics | 3 |
 <!-- guide:plan-body:end -->
