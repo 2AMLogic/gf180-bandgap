@@ -101,7 +101,11 @@ commands (below) against your own installed `klt` if it is newer.
 From the repo root, in order:
 
 ```bash
-# 1. Draw the layout (byte-for-byte deterministic -- git diff stays empty)
+# 1. Draw the layout (byte-for-byte deterministic -- git diff stays empty;
+#    CI enforces this: `python3 layout/bandgap_top/check_freshness.py`
+#    regenerates into a temp dir and fails if the committed GDS differs.
+#    Remedy: re-run this step, commit the GDS, then refresh the signoff pins
+#    and run signoff/regenerate.sh)
 uv run --with klayout python3 layout/bandgap_top/generate.py
 
 # 2. Check the drawn geometry against floorplan.md §0's matching plan
