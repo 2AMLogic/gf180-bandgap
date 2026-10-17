@@ -2,6 +2,11 @@
 
 Chronological record of recently merged pull requests and closed issues, maintained by the Loom Guide role. Newest entries appear first.
 
+### 2026-10-17
+
+- **PR #359**: feat(signoff): attest T1 items 9 and 10 with klt --attest
+- **Issue #356** (closed): T1 items 9 and 10: bump the klt pin and attest with tool-produced envelopes (items 1 and 2 after #204)
+
 ### 2026-10-16
 
 - **PR #346**: sim: ingest iq fleet runs into a gated record via fleet_ingest
