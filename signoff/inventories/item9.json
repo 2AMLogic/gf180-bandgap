@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "kind": "t1-attestation-inventory",
+  "t1_item": 9,
+  "description": "Every testbench file under sim/<slug>/testbench/, the PDK-free cold-start check, and the pinned PDK/tool revisions (docs/environment-setup.md section 1). Regenerate the testbench list with `git ls-files 'sim/*/testbench/*'`; signoff/check_signoff.py fails if it drifts.",
+  "testbenches": [
+    "sim/amp-loop-stability/testbench/tb.json",
+    "sim/amp-loop-stability/testbench/tb_loop_stability.spice",
+    "sim/amp-offset-sensitivity/testbench/tb.json",
+    "sim/amp-offset-sensitivity/testbench/tb_offset_sensitivity.spice",
+    "sim/amp-psrr/testbench/tb.json",
+    "sim/amp-psrr/testbench/tb_psrr.spice",
+    "sim/bandgap-loop-smoke/testbench/bandgap_loop_smoke.spice",
+    "sim/bandgap-loop-smoke/testbench/tb.json",
+    "sim/core-mirror-sensitivity/testbench/tb.json",
+    "sim/core-mirror-sensitivity/testbench/tb_core_mirror_sensitivity.spice",
+    "sim/core-psrr-ideal-amp/testbench/tb.json",
+    "sim/core-psrr-ideal-amp/testbench/tb_core_psrr_ideal_amp.spice",
+    "sim/device-mos-mismatch/testbench/tb.json",
+    "sim/device-mos-mismatch/testbench/tb_mos_mismatch.spice",
+    "sim/device-mos-vth/testbench/tb.json",
+    "sim/device-mos-vth/testbench/tb_mos_vth.spice",
+    "sim/device-pnp-array/testbench/tb_pnp_array.spice",
+    "sim/device-pnp-mismatch/testbench/tb.json",
+    "sim/device-pnp-mismatch/testbench/tb_pnp_mismatch.spice",
+    "sim/device-pnp-vbe/testbench/tb.json",
+    "sim/device-pnp-vbe/testbench/tb_pnp_vbe.spice",
+    "sim/device-resistor-tc/testbench/tb.json",
+    "sim/device-resistor-tc/testbench/tb_resistor_tc.spice",
+    "sim/iq/testbench/tb.json",
+    "sim/iq/testbench/tb_iq.spice",
+    "sim/line-regulation/testbench/tb.json",
+    "sim/line-regulation/testbench/tb_line_regulation.spice",
+    "sim/mc-untrimmed/testbench/tb_mc_untrimmed.spice",
+    "sim/output-load-sensitivity/testbench/tb.json",
+    "sim/output-load-sensitivity/testbench/tb_output_load.spice",
+    "sim/output-noise/testbench/tb.json",
+    "sim/output-noise/testbench/tb_output_noise.spice",
+    "sim/output-voltage-tc/testbench/tb.json",
+    "sim/output-voltage-tc/testbench/tb_output_voltage_tc.spice",
+    "sim/psrr-dc/testbench/tb.json",
+    "sim/psrr-dc/testbench/tb_psrr_dc.spice",
+    "sim/smoke-bias/testbench/smoke_bias.spice",
+    "sim/smoke-bias/testbench/tb.json",
+    "sim/startup-disabled-control/testbench/bandgap_startup_disabled.spice",
+    "sim/startup-disabled-control/testbench/tb.json",
+    "sim/startup-extracted/testbench/bandgap_startup_ramp_extracted.spice",
+    "sim/startup-extracted/testbench/tb.json",
+    "sim/startup-slow-ramp/testbench/bandgap_startup_ramp.spice",
+    "sim/startup-slow-ramp/testbench/tb.json",
+    "sim/startup-state-search-extracted/testbench/bandgap_state_search_extracted.spice",
+    "sim/startup-state-search-extracted/testbench/tb.json",
+    "sim/startup-state-search/testbench/bandgap_startup_state_search.spice",
+    "sim/startup-state-search/testbench/tb.json",
+    "sim/startup/testbench/bandgap_startup_ramp.spice",
+    "sim/startup/testbench/tb.json",
+    "sim/trim-coverage/testbench/tb.json",
+    "sim/trim-coverage/testbench/tb_trim_coverage.spice"
+  ],
+  "cold_start": {
+    "argv": [
+      "bash",
+      "-o",
+      "pipefail",
+      "-c",
+      "out=$(python3 sim/run_corners.py --list) && ! grep -q '!!' <<<\"$out\""
+    ]
+  },
+  "pins": {
+    "pdk": {
+      "name": "gf180mcu",
+      "revision": "c6d73a35f524070e85faff4a6a9eef49553ebc2b"
+    },
+    "tools": {
+      "ngspice": "46_1",
+      "volare": "0.20.6",
+      "xschem": "3.4.7"
+    }
+  }
+}

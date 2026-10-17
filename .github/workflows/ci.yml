@@ -12,7 +12,8 @@ name: CI
 # | `.github/scripts/lint.sh`                     | python3      | `lint` (here)      |
 # | evidence-record format + append-only          | python3+git  | `lint` (here)      |
 # | T1 signoff pins vs. committed artifacts       | python3      | `lint` (here)      |
-# | T1 signoff re-grade vs. committed record      | klt+network  | `signoff` (here)   |
+# | T1 attested files vs. attestation envelopes   | python3      | `lint` (here)      |
+# | T1 signoff re-grade + `--attest --check`      | klt+network  | `signoff` (here)   |
 # | harness unit tests (`sim/tests/`)             | python3      | `test` (here)      |
 # | layout unit tests (`layout/**/test_*.py`)     | python3      | `test` (here)      |
 # | signoff validator unit tests (`signoff/tests/`)| python3     | `test` (here)      |
