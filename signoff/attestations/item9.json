@@ -1,0 +1,427 @@
+{
+  "schema_version": 1,
+  "kind": "generic",
+  "status": "pass",
+  "t1_item": 9,
+  "summary": "T1 item 9 (Testbenches shipped): 55/55 attestation checks passed (klt signoff --attest)",
+  "source": "signoff/inventories/item9.json",
+  "attestation": {
+    "producer": "klt signoff --attest",
+    "inventory_schema_version": 1,
+    "hash_algorithm": "sha256-raw-bytes",
+    "check_count": 55,
+    "passed_count": 55,
+    "checks": [
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/amp-loop-stability/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:f56f392787f852c646a32c122114d9202dbbe353404629eb550e5e66016f1b7d"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/amp-loop-stability/testbench/tb_loop_stability.spice",
+        "passed": true,
+        "content_hash": "sha256:8d98daae4af450721bb34de55c41c32c0ad69ad478eafdd08d8ba9fab18737b2"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/amp-offset-sensitivity/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:22ad648d614dd5de3f83dc70ea43479058ca2cd4591e73d6a5f827a9a1c5e065"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/amp-offset-sensitivity/testbench/tb_offset_sensitivity.spice",
+        "passed": true,
+        "content_hash": "sha256:06f7ac7765623c871bab4411eb6134f0b11324f4efe3857c15293bd0bff57be5"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/amp-psrr/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:7351d7e8c684f6108841a6a0de2328a8f465dc0dbaf57519d473681bda0dffa7"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/amp-psrr/testbench/tb_psrr.spice",
+        "passed": true,
+        "content_hash": "sha256:e97dd1b5d699bd39bc7a9382c124831601ced8dae552090c77f49378876aaa41"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/bandgap-loop-smoke/testbench/bandgap_loop_smoke.spice",
+        "passed": true,
+        "content_hash": "sha256:eb9d6b72858ad86df0277d91e2a8f9ef14ef4fe231a450621a7f8ac4742b91d4"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/bandgap-loop-smoke/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:b960062c2471d387fd968ba702d405f0358366f91282f24e7a6ea4a59ba0a34c"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/core-mirror-sensitivity/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:e7daf62a8678802aeaef61110db449adf0c92be558b5acd5a60e115b0e690553"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/core-mirror-sensitivity/testbench/tb_core_mirror_sensitivity.spice",
+        "passed": true,
+        "content_hash": "sha256:7bc8792d43be33b4537214a86643fda9e7fbbc43a515b28d3684ccc7530b6aac"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/core-psrr-ideal-amp/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:07d6529991aa058ec380d2ba1dfb725a9e7bb15d681dcc17ae630b217e760fb2"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/core-psrr-ideal-amp/testbench/tb_core_psrr_ideal_amp.spice",
+        "passed": true,
+        "content_hash": "sha256:86884cf971ec9d527d0237bb5a685ce4b899b4dbb61b507d85d193a22cabca4a"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/device-mos-mismatch/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:fa792e05e6ad760565173ca9eb400b0b9df884bafa888c9b1a5f7882184633fd"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/device-mos-mismatch/testbench/tb_mos_mismatch.spice",
+        "passed": true,
+        "content_hash": "sha256:1487369dc35f8b7b83dbc351e2a2167b3333dbd285af14efabc93aa5376bfa0c"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/device-mos-vth/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:59c3955f886e4c04b5d2e5dd317c7e89134d9ceb0dce6e9581c051624b0bfb2a"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/device-mos-vth/testbench/tb_mos_vth.spice",
+        "passed": true,
+        "content_hash": "sha256:ddcb1a86eeffe784404291af70ec06fe93b11190583c5c1ca34794598f107641"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/device-pnp-array/testbench/tb_pnp_array.spice",
+        "passed": true,
+        "content_hash": "sha256:3d6a4d31817b58fede3ac542795dbeee904dab031d8df063e983546defde470f"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/device-pnp-mismatch/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:d4a8261f10f12fe563b2246076d9ba98fcf1298eacd88d801a0a457236460d35"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/device-pnp-mismatch/testbench/tb_pnp_mismatch.spice",
+        "passed": true,
+        "content_hash": "sha256:3090b0dcfd594f07cb4ec6807a734a0b1b1ed40775fe0fbd70ba149aa00b2414"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/device-pnp-vbe/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:724b0a5511a4106fae6ba1f13892c7684af59049d52190d85895c8cdcbf4e9ae"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/device-pnp-vbe/testbench/tb_pnp_vbe.spice",
+        "passed": true,
+        "content_hash": "sha256:bc68c425cfe8e1a02b59526bcdb4fdb8a99ed1ec3c07ff16dba6f634b39c5092"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/device-resistor-tc/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:c42bd59c06cc87789991b19ac6ab60983928370066df59e0ded19adcd6e77ca4"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/device-resistor-tc/testbench/tb_resistor_tc.spice",
+        "passed": true,
+        "content_hash": "sha256:84d488038a53b7e3dc4b834344d95a4520825e2719b40f3ddf9bf15c8069b514"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/iq/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:3b0a30863abe517bbd8c11e886bc734d0d2d34c807425bde56bd0b645a01903d"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/iq/testbench/tb_iq.spice",
+        "passed": true,
+        "content_hash": "sha256:ab3ee993f173d4cea9911f5c543d3559d571aab464c8ed7ddbd4758f7549f894"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/line-regulation/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:d7525c1a09e958795205cacca7f9edbf0914add8b6c2f373cbdb0181ed2b63bc"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/line-regulation/testbench/tb_line_regulation.spice",
+        "passed": true,
+        "content_hash": "sha256:6c4742c6fb62d5a9adfcce53f299043b527d63bc0b9be0f51d377f756d670e7e"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/mc-untrimmed/testbench/tb_mc_untrimmed.spice",
+        "passed": true,
+        "content_hash": "sha256:2d3cf1568e25dd124d872663f8368d8eccb828a2b7c939aa44536d6332b49977"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/output-load-sensitivity/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:a8bf482f9a40618f38727bda23716d8a29e9ae3f306b59b0dc197fa688c4d24e"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/output-load-sensitivity/testbench/tb_output_load.spice",
+        "passed": true,
+        "content_hash": "sha256:b35f19bb8942e540264167f9a2a3575565770e5e82c5ca56d8163953f0d91037"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/output-noise/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:b533fe5dcf28fb12978ce19ae502bfe4d3bdb586e2ffc43b46de99b58a96ed86"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/output-noise/testbench/tb_output_noise.spice",
+        "passed": true,
+        "content_hash": "sha256:fb41b906f23c887cb0b97814a76f2ea2e4a9e54944c1f97b77984e652688e32f"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/output-voltage-tc/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:9b35742f5062c45b5934509e434c218a0c0884006fcb25e97cb3521938ef60a4"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/output-voltage-tc/testbench/tb_output_voltage_tc.spice",
+        "passed": true,
+        "content_hash": "sha256:ad8fd45d5689a9ede5dbe706b00ccb73cf79c7fcca5c534ef0fbe6ea92098f58"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/psrr-dc/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:833c4406f4fb7f0be4c0a4a008e78763b611cfdb4d7f1d2c933ad32e911765cf"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/psrr-dc/testbench/tb_psrr_dc.spice",
+        "passed": true,
+        "content_hash": "sha256:3a675bf0ad74546b5159e566bb57b57b03c4bc1602e720a85ebb637ddc52121e"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/smoke-bias/testbench/smoke_bias.spice",
+        "passed": true,
+        "content_hash": "sha256:beb7685f5719b89fa1c7db5b30478679dc1a12ff325fcae0f7592bdc1d154bef"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/smoke-bias/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:381ff236536c3f1ab0a89edf21c6c740f68e0bd5d9b893f7b6adbaafea634a47"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/startup-disabled-control/testbench/bandgap_startup_disabled.spice",
+        "passed": true,
+        "content_hash": "sha256:f510d741331e303520872c6c1aac214946455a96a87faaa91b812fe7fdf54386"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/startup-disabled-control/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:fa436d18841a7f070cba351c6e40fadcd45542800880ad9b4492359bdc7bcccb"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/startup-extracted/testbench/bandgap_startup_ramp_extracted.spice",
+        "passed": true,
+        "content_hash": "sha256:e185d5717312e5082a71b3648210fad2bc7518a9906066bb1aa0c7a1a0ce0954"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/startup-extracted/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:37da94db201a276aaf86a33b0a0e5599ffc541f9f3c21cfb360bca444fccfcd5"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/startup-slow-ramp/testbench/bandgap_startup_ramp.spice",
+        "passed": true,
+        "content_hash": "sha256:721df6e98d3bd5fb9c3ccec1d5a4e5ba3a6ecae5e9edd9341232a46120dafeed"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/startup-slow-ramp/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:09955916fa12b92e0f16179b640b9fe6e18dbb7e7ecc29a82b170f96e01f53a5"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/startup-state-search-extracted/testbench/bandgap_state_search_extracted.spice",
+        "passed": true,
+        "content_hash": "sha256:9361a63ac108e050c7028dd37ed4bc3c69dcbd75c9fcc8dc5507e1dfb9a17f58"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/startup-state-search-extracted/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:adbb72bb4b565ac718e4588a7c076b7f03842ec5db8bf8de1ee34a7869824e7c"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/startup-state-search/testbench/bandgap_startup_state_search.spice",
+        "passed": true,
+        "content_hash": "sha256:f17440ec5bbbfabb4a340347ca4715395a5ce0fe408f5dfc28e83d89ac764545"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/startup-state-search/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:6f72aed67a2c3148bebb25042a9a3c096bf5b635099aa2ccf8485dc56f5fc89a"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/startup/testbench/bandgap_startup_ramp.spice",
+        "passed": true,
+        "content_hash": "sha256:721df6e98d3bd5fb9c3ccec1d5a4e5ba3a6ecae5e9edd9341232a46120dafeed"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/startup/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:8523c353cd71e90ff355a563fbbab6c90dbb77f375321dd9d3cad7e24b2f2227"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/trim-coverage/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:1d639454e6d7b5e329071f87dd573006552c652398e267bc30fc7038cf2da595"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/trim-coverage/testbench/tb_trim_coverage.spice",
+        "passed": true,
+        "content_hash": "sha256:4e2219c85d7d57d3a1359c07a75f4fe859e211d33c7c4737251e30a3af38a8f9"
+      },
+      {
+        "check": "command",
+        "role": "cold_start",
+        "argv": [
+          "bash",
+          "-o",
+          "pipefail",
+          "-c",
+          "out=$(python3 sim/run_corners.py --list) && ! grep -q '!!' <<<\"$out\""
+        ],
+        "cwd": ".",
+        "exit_status": 0,
+        "passed": true
+      },
+      {
+        "check": "pin",
+        "role": "pdk",
+        "passed": true,
+        "value": {
+          "name": "gf180mcu",
+          "revision": "c6d73a35f524070e85faff4a6a9eef49553ebc2b"
+        }
+      },
+      {
+        "check": "pin",
+        "role": "tools",
+        "passed": true,
+        "value": {
+          "ngspice": "46_1",
+          "volare": "0.20.6",
+          "xschem": "3.4.7"
+        }
+      }
+    ]
+  },
+  "provenance": {
+    "klt_version": "0.7.1.dev1413+g67e684ed9b2b",
+    "klayout_version": null,
+    "pdk": null,
+    "deck": null,
+    "input": {
+      "path": {
+        "path": "signoff/inventories/item9.json",
+        "scope": "repo"
+      },
+      "content_hash": "sha256:740d07596bd70d8d4af5f7e919012f51c6b2aec698da23890062f2c576d21f40"
+    }
+  }
+}
