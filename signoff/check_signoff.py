@@ -324,28 +324,40 @@ def klt_pin() -> str | None:
     return None
 
 
+class KltUnavailable(Exception):
+    """The pinned `klt` cannot be resolved; carries an actionable message."""
+
+
 def klt_command() -> list[str]:
     """How to invoke `klt`, pinned.
 
-    `$KLT_SIGNOFF_CMD` (shell-style, space separated) overrides. Otherwise a
-    `klt` on PATH is used when present, and failing that `uvx` runs the pinned
-    revision in a throwaway environment -- the same revision CI installs, so a
-    local re-grade and a CI re-grade compare the same checklist.
+    `$KLT_SIGNOFF_CMD` (shell-style, space separated) overrides, and its
+    caller owns revision selection. Otherwise `uvx` runs the revision in
+    `klt-pin.txt` in a throwaway environment -- the same revision CI installs
+    and `regenerate.sh` uses, so a local re-grade and a CI re-grade compare the
+    same checklist. A `klt` on PATH is deliberately NOT consulted: an arbitrary
+    installed revision can grade a different checklist. Raises `KltUnavailable`
+    when `uvx` or the pin is missing.
     """
     override = os.environ.get("KLT_SIGNOFF_CMD", "").strip()
     if override:
         return override.split()
-    if _which("klt"):
-        return ["klt"]
     pin = klt_pin()
-    if pin and _which("uvx"):
-        return [
-            "uvx",
-            "--from",
-            f"git+https://github.com/2AMLogic/klayout-tools@{pin}",
-            "klt",
-        ]
-    return ["klt"]
+    if not pin:
+        raise KltUnavailable(
+            f"{KLT_PIN.name} names no revision; fix it or set KLT_SIGNOFF_CMD"
+        )
+    if not _which("uvx"):
+        raise KltUnavailable(
+            "uvx not found; install uv (https://docs.astral.sh/uv/) or set "
+            "KLT_SIGNOFF_CMD to a klt command (you then own revision selection)"
+        )
+    return [
+        "uvx",
+        "--from",
+        f"git+https://github.com/2AMLogic/klayout-tools@{pin}",
+        "klt",
+    ]
 
 
 def _which(binary: str) -> str | None:
@@ -358,7 +370,12 @@ def _which(binary: str) -> str | None:
 
 def run_klt(report_doc, failures: Failures) -> None:
     """Re-grade the manifest with klt and diff against the committed report."""
-    command = klt_command() + [
+    try:
+        base = klt_command()
+    except KltUnavailable as exc:
+        failures.add(f"klt re-grade: {exc}")
+        return
+    command = base + [
         "signoff",
         "--manifest",
         str(MANIFEST.relative_to(REPO_ROOT)),
@@ -454,7 +471,7 @@ def main(argv: list[str]) -> int:
         "--run-klt",
         action="store_true",
         help="also re-run `klt signoff --manifest` and diff it against the "
-        "committed report (needs klt, or uvx + network)",
+        "committed report (needs uvx + network for the pinned klt, or KLT_SIGNOFF_CMD)",
     )
     args = parser.parse_args(argv)
 
