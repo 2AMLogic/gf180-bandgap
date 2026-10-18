@@ -54,6 +54,7 @@ Issues carrying `loom:curated`.
 - **#239**: DR-0007: execute final-DUT fleet suite and mismatch evidence run *(curated)*
 - **#308**: ci: fail when committed bandgap_top.gds differs from generate.py output *(curated)*
 - **#326**: layout/bandgap_top: routing-budget S1 area disagrees with committed GDS bbox (klayout-gated test fails on main) *(curated)*
+- **#358**: T1 item 11: declare ERC well/substrate ties now that klayout-tools#2169 is fixed, then cite item 11 *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -78,7 +79,7 @@ Issues carrying `loom:curated`.
 | In Progress (`loom:building`) | 0 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 1 |
-| Curated | 5 |
+| Curated | 6 |
 | Architect / Hermit proposals | 3 |
 | Active epics | 3 |
 <!-- guide:plan-body:end -->
