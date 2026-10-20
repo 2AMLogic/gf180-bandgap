@@ -60,7 +60,6 @@ Issues carrying `loom:curated`.
 
 - **#219**: sim harness: share the batch-backend guard and cap default local --jobs *(architect)*
 - **#306**: ci: run klayout/klt-gated layout tests in the signoff job and fail on skips *(architect)*
-- **#353**: Remove verify_mim_routing.py: unwired guard that passes trivially *(hermit)*
 
 ## Epics
 
@@ -80,6 +79,6 @@ Issues carrying `loom:curated`.
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 1 |
 | Curated | 6 |
-| Architect / Hermit proposals | 3 |
+| Architect / Hermit proposals | 2 |
 | Active epics | 3 |
 <!-- guide:plan-body:end -->
