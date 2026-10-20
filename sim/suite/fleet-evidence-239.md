@@ -59,6 +59,7 @@ as a gated PASS.
   (`sim/embedded-core-inventory.md`). Those are diagnostic/reference evidence,
   never gated rows. `sim/tools/check_embedded_cores.py` (static) reports
   10/10 embedded cores in sync with the canonical DUT.
+  Preparation plan for those reruns: `sim/diagnostic-bench-fleet-plan.md` (#362).
 - Noise and Load remain unclaimed (operator-owned thresholds).
 - Handoff to #204: not done — it requires complete schematic evidence.
 
