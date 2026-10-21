@@ -4,6 +4,8 @@ Chronological record of recently merged pull requests and closed issues, maintai
 
 ### 2026-10-21
 
+- **PR #369**: ci: pin test job to ubuntu-24.04 for the py3.9 leg
+- **Issue #368** (closed): ci: py3.9 harness self-test fails on ubuntu-latest (26.04 has no Python 3.9)
 - **PR #366**: Bump Repo Skills 0.24.3 -> 0.24.7
 
 ### 2026-10-17
