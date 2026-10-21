@@ -39,13 +39,14 @@ Issues currently being built (`loom:building`).
 
 PRs waiting on Judge (`loom:review-requested`).
 
-- **#364**: docs(sim): add fleet rerun preparation plan for six diagnostic benches
+_None._
 
 ## Approved (Awaiting Merge)
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
 - **#340**: fix(signoff): default re-grade uses the repo klt pin via uvx
+- **#364**: docs(sim): add fleet rerun preparation plan for six diagnostic benches
 
 ## Proposed
 
@@ -79,8 +80,8 @@ Issues carrying `loom:curated`.
 | Important | 1 |
 | Ready (`loom:issue`) | 0 |
 | In Progress (`loom:building`) | 3 |
-| PRs awaiting review | 1 |
-| Approved PRs awaiting merge | 1 |
+| PRs awaiting review | 0 |
+| Approved PRs awaiting merge | 2 |
 | Curated | 7 |
 | Architect / Hermit proposals | 2 |
 | Active epics | 3 |
