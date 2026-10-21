@@ -2,6 +2,10 @@
 
 Chronological record of recently merged pull requests and closed issues, maintained by the Loom Guide role. Newest entries appear first.
 
+### 2026-10-21
+
+- **PR #366**: Bump Repo Skills 0.24.3 -> 0.24.7
+
 ### 2026-10-17
 
 - **PR #359**: feat(signoff): attest T1 items 9 and 10 with klt --attest
