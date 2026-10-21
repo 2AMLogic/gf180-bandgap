@@ -76,7 +76,9 @@ jobs:
 
   test:
     name: Harness self-test (no PDK, py${{ matrix.python-version }})
-    runs-on: ubuntu-latest
+    # Pinned, not ubuntu-latest: setup-python ships no CPython 3.9 for
+    # ubuntu-26.04 (as of 2026-10-21). Revisit when the 3.9 floor is retired.
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
