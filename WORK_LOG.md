@@ -2,6 +2,11 @@
 
 Chronological record of recently merged pull requests and closed issues, maintained by the Loom Guide role. Newest entries appear first.
 
+### 2026-10-22
+
+- **PR #364**: docs(sim): add fleet rerun preparation plan for six diagnostic benches
+- **Issue #362** (closed): Prepare the six diagnostic-bench fleet adapter and rerun plan (part of #239)
+
 ### 2026-10-21
 
 - **PR #369**: ci: pin test job to ubuntu-24.04 for the py3.9 leg
