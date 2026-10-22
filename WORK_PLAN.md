@@ -33,7 +33,6 @@ Issues currently being built (`loom:building`).
 
 - **#308**: ci: fail when committed bandgap_top.gds differs from generate.py output
 - **#328**: signoff: use the repository klt pin for default local re-grading
-- **#362**: Prepare the six diagnostic-bench fleet adapter and rerun plan (part of #239)
 
 ## PRs Awaiting Review
 
@@ -46,7 +45,6 @@ _None._
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
 - **#340**: fix(signoff): default re-grade uses the repo klt pin via uvx
-- **#364**: docs(sim): add fleet rerun preparation plan for six diagnostic benches
 
 ## Proposed
 
@@ -58,7 +56,6 @@ Issues carrying `loom:curated`.
 - **#308**: ci: fail when committed bandgap_top.gds differs from generate.py output *(curated)*
 - **#326**: layout/bandgap_top: routing-budget S1 area disagrees with committed GDS bbox (klayout-gated test fails on main) *(curated)*
 - **#358**: T1 item 11: declare ERC well/substrate ties now that klayout-tools#2169 is fixed, then cite item 11 *(curated)*
-- **#362**: Prepare the six diagnostic-bench fleet adapter and rerun plan (part of #239) *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -79,10 +76,10 @@ Issues carrying `loom:curated`.
 | Very important | 0 |
 | Important | 1 |
 | Ready (`loom:issue`) | 0 |
-| In Progress (`loom:building`) | 3 |
+| In Progress (`loom:building`) | 2 |
 | PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 2 |
-| Curated | 7 |
+| Approved PRs awaiting merge | 1 |
+| Curated | 6 |
 | Architect / Hermit proposals | 2 |
 | Active epics | 3 |
 <!-- guide:plan-body:end -->
