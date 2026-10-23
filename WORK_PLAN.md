@@ -33,6 +33,7 @@ Issues currently being built (`loom:building`).
 
 - **#308**: ci: fail when committed bandgap_top.gds differs from generate.py output
 - **#328**: signoff: use the repository klt pin for default local re-grading
+- **#373**: Adopt the common artifact store for sim evidence (manifests in git, bytes via klt artifact)
 
 ## PRs Awaiting Review
 
@@ -77,7 +78,7 @@ Issues carrying `loom:curated`.
 | Very important | 0 |
 | Important | 1 |
 | Ready (`loom:issue`) | 0 |
-| In Progress (`loom:building`) | 2 |
+| In Progress (`loom:building`) | 3 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 1 |
 | Curated | 7 |
