@@ -2,6 +2,29 @@
 
 Chronological record of recently merged pull requests and closed issues, maintained by the Loom Guide role. Newest entries appear first.
 
+### 2026-10-22
+
+- **PR #364**: docs(sim): add fleet rerun preparation plan for six diagnostic benches
+- **Issue #362** (closed): Prepare the six diagnostic-bench fleet adapter and rerun plan (part of #239)
+
+### 2026-10-21
+
+- **PR #369**: ci: pin test job to ubuntu-24.04 for the py3.9 leg
+- **Issue #368** (closed): ci: py3.9 harness self-test fails on ubuntu-latest (26.04 has no Python 3.9)
+- **PR #366**: Bump Repo Skills 0.24.3 -> 0.24.7
+
+### 2026-10-17
+
+- **PR #359**: feat(signoff): attest T1 items 9 and 10 with klt --attest
+- **Issue #356** (closed): T1 items 9 and 10: bump the klt pin and attest with tool-produced envelopes (items 1 and 2 after #204)
+
+### 2026-10-16
+
+- **PR #346**: sim: ingest iq fleet runs into a gated record via fleet_ingest
+- **PR #345**: sim: final-DUT fleet evidence for TC, MC, PSRR, line regulation and startup; iq pending
+- **PR #343**: Bump Repo Skills 0.24.1 -> 0.24.3
+- **Issue #344** (closed): sim: add an iq fleet ingestion adapter (record + verdict) for the batch-fleet iq run
+
 ### 2026-10-15
 
 - **PR #337**: Bump Repo Skills 0.19.5 -> 0.24.1

@@ -1,0 +1,177 @@
+{
+  "schema": "gf180-bandgap/fleet-plan/1",
+  "bench": "line-regulation",
+  "submitting_klt_version": "0.7.1.dev556+gf310bfa46bff",
+  "dut": {
+    "path": "sim/dut/bandgap_top.spice",
+    "sha256": "9ef5f8c5ab2a61b518befd347c84d7ef0ffe3ea429e94ec3465f66d209ea4560"
+  },
+  "embedded_core": false,
+  "tb_netlist_sha256": "6c4742c6fb62d5a9adfcce53f299043b527d63bc0b9be0f51d377f756d670e7e",
+  "manifest_sha256": "d7525c1a09e958795205cacca7f9edbf0914add8b6c2f373cbdb0181ed2b63bc",
+  "nominal_supply_v": 3.3,
+  "supplies_v": [
+    3.3
+  ],
+  "requests": [
+    {
+      "name": "sweep",
+      "role": "sweep",
+      "supply_v": null,
+      "analysis": {
+        "kind": "dc",
+        "args": "vsup 2.97 3.63 0.005"
+      },
+      "measurements": [
+        "vref_min",
+        "vref_max",
+        "v_lo_check",
+        "v_hi_check"
+      ],
+      "expected_units": [
+        [
+          "tt",
+          3.3,
+          -40.0
+        ],
+        [
+          "tt",
+          3.3,
+          27.0
+        ],
+        [
+          "tt",
+          3.3,
+          125.0
+        ],
+        [
+          "ff",
+          3.3,
+          -40.0
+        ],
+        [
+          "ff",
+          3.3,
+          27.0
+        ],
+        [
+          "ff",
+          3.3,
+          125.0
+        ],
+        [
+          "ss",
+          3.3,
+          -40.0
+        ],
+        [
+          "ss",
+          3.3,
+          27.0
+        ],
+        [
+          "ss",
+          3.3,
+          125.0
+        ],
+        [
+          "fs",
+          3.3,
+          -40.0
+        ],
+        [
+          "fs",
+          3.3,
+          27.0
+        ],
+        [
+          "fs",
+          3.3,
+          125.0
+        ],
+        [
+          "sf",
+          3.3,
+          -40.0
+        ],
+        [
+          "sf",
+          3.3,
+          27.0
+        ],
+        [
+          "sf",
+          3.3,
+          125.0
+        ],
+        [
+          "res_ff",
+          3.3,
+          -40.0
+        ],
+        [
+          "res_ff",
+          3.3,
+          27.0
+        ],
+        [
+          "res_ff",
+          3.3,
+          125.0
+        ],
+        [
+          "res_ss",
+          3.3,
+          -40.0
+        ],
+        [
+          "res_ss",
+          3.3,
+          27.0
+        ],
+        [
+          "res_ss",
+          3.3,
+          125.0
+        ],
+        [
+          "bjt_ff",
+          3.3,
+          -40.0
+        ],
+        [
+          "bjt_ff",
+          3.3,
+          27.0
+        ],
+        [
+          "bjt_ff",
+          3.3,
+          125.0
+        ],
+        [
+          "bjt_ss",
+          3.3,
+          -40.0
+        ],
+        [
+          "bjt_ss",
+          3.3,
+          27.0
+        ],
+        [
+          "bjt_ss",
+          3.3,
+          125.0
+        ]
+      ],
+      "deck_sha256": "20eb977eaebaec74754d19d4874fb91a496510dcf86c756127034828e566b796",
+      "request_sha256": "be228ecedd8d94b910edd5a8b3c6d3be37cdd1b85470fb9e94fe08b243dfd379",
+      "sweep": {
+        "lo": 2.97,
+        "hi": 3.63,
+        "step": 0.005
+      }
+    }
+  ]
+}

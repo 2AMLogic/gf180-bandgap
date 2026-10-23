@@ -1,0 +1,65 @@
+* record-id : 20261016-013458-999e5cf
+* bench : psrr-dc
+* corner : res_ff_125c_3.63v
+* ---- ngspice log of request 'ac' (res_ff/3.630V/125C, status pass) ----
+
+Note: No compatibility mode selected!
+
+
+Circuit: * klt sim -- generated corner deck, do not edit
+
+Warning : IC on non-existent node - xdut.xx1.casc, ignored
+   Please check line .ic v(xdut.fb)=1.0 v(xdut.sns1)=0.6 v(xdut.sns2)=0.6 v(vref)=1.2 v(xdut.ibias)=0.6 v(xdut.xx1.casc)=1.8
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+
+No. of Data Rows : 161
+
+  Measurements for AC Analysis
+
+vdb_1hz             =  -8.42657e+01
+vdb_10hz            =  -8.42656e+01
+vdb_100hz           =  -8.42619e+01
+vdb_1khz            =  -8.39064e+01
+vdb_10khz           =  -7.35017e+01
+vdb_100khz          =  -4.15501e+01
+vdb_1mhz            =  -3.31066e+01
+
+ASCII raw file "/var/tmp/eda-job-klt-sim-610ff16ed2e5/outputs/artifacts/res_ff_3p630V_125C/waveform.raw"
+ngspice-46 done
+
+* ---- ngspice log of request 'op' (res_ff/novdd/125C, status pass) ----
+
+Note: No compatibility mode selected!
+
+
+Circuit: * klt sim -- generated corner deck, do not edit
+
+Warning : IC on non-existent node - xdut.xx1.casc, ignored
+   Please check line .ic v(xdut.fb)=1.0 v(xdut.sns1)=0.6 v(xdut.sns2)=0.6 v(vref)=1.2 v(xdut.ibias)=0.6 v(xdut.xx1.casc)=1.8
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+
+No. of Data Rows : 3
+ASCII raw file "/var/tmp/eda-job-klt-sim-a41bfd33698c/outputs/artifacts/res_ff_novdd_125C/waveform.raw"
+ngspice-46 done
+
+* ---- derived by sim/tools/fleet_ingest.py from the fleet measurements/waveform ----
+m_psrr_1hz_db = 8.4265700000e+01
+m_psrr_10hz_db = 8.4265600000e+01
+m_psrr_100hz_db = 8.4261900000e+01
+m_psrr_1khz_db = 8.3906400000e+01
+m_psrr_10khz_db = 7.3501700000e+01
+m_psrr_100khz_db = 4.1550100000e+01
+m_psrr_1mhz_db = 3.3106600000e+01
+m_f_dc_hz = 1.0000000000e+00
+m_f_band_edge_hz = 1.0000000000e+03
+m_vref_op = 1.2072893397e+00

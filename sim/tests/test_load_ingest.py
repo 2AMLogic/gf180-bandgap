@@ -240,8 +240,8 @@ class Requests(TmpCase):
             Fixture(self.tmp, dut=d, dut_rel="layout/netlist/inc.spice")
 
     def test_existing_benches_unchanged(self):
-        self.assertEqual(mk.BENCHES, ("psrr-dc", "line-regulation", "startup"))
-        self.assertEqual(fi.BENCHES, ("psrr-dc", "line-regulation", "startup"))
+        self.assertEqual(mk.BENCHES, ("psrr-dc", "line-regulation", "startup", "iq"))
+        self.assertEqual(fi.BENCHES, ("psrr-dc", "line-regulation", "startup", "iq"))
 
 
 # ---------------------------------------------------------------- derivation

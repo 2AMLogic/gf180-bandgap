@@ -7,7 +7,7 @@ This roadmap is generated from the current GitHub label state by the Loom Guide 
 
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
 
-_None._
+- **#340**: fix(signoff): default re-grade uses the repo klt pin via uvx
 
 ## Very Important
 
@@ -25,13 +25,14 @@ _None._
 
 Human-approved issues ready for implementation (`loom:issue`).
 
-- **#308**: ci: fail when committed bandgap_top.gds differs from generate.py output
+_None._
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
-_None._
+- **#308**: ci: fail when committed bandgap_top.gds differs from generate.py output
+- **#328**: signoff: use the repository klt pin for default local re-grading
 
 ## PRs Awaiting Review
 
@@ -43,7 +44,7 @@ _None._
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
-_None._
+- **#340**: fix(signoff): default re-grade uses the repo klt pin via uvx
 
 ## Proposed
 
@@ -54,12 +55,13 @@ Issues carrying `loom:curated`.
 - **#239**: DR-0007: execute final-DUT fleet suite and mismatch evidence run *(curated)*
 - **#308**: ci: fail when committed bandgap_top.gds differs from generate.py output *(curated)*
 - **#326**: layout/bandgap_top: routing-budget S1 area disagrees with committed GDS bbox (klayout-gated test fails on main) *(curated)*
+- **#358**: T1 item 11: declare ERC well/substrate ties now that klayout-tools#2169 is fixed, then cite item 11 *(curated)*
+- **#373**: Adopt the common artifact store for sim evidence (manifests in git, bytes via klt artifact) *(curated)*
 
 ## Proposed (Architect / Hermit)
 
 - **#219**: sim harness: share the batch-backend guard and cap default local --jobs *(architect)*
 - **#306**: ci: run klayout/klt-gated layout tests in the signoff job and fail on skips *(architect)*
-- **#328**: signoff: use the repository klt pin for default local re-grading *(architect)*
 
 ## Epics
 
@@ -71,14 +73,14 @@ Issues carrying `loom:curated`.
 
 | Bucket | Count |
 |------|-------|
-| Operator merge-risk holds | 0 |
+| Operator merge-risk holds | 1 |
 | Very important | 0 |
 | Important | 1 |
-| Ready (`loom:issue`) | 1 |
-| In Progress (`loom:building`) | 0 |
+| Ready (`loom:issue`) | 0 |
+| In Progress (`loom:building`) | 2 |
 | PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 0 |
-| Curated | 5 |
-| Architect / Hermit proposals | 3 |
+| Approved PRs awaiting merge | 1 |
+| Curated | 7 |
+| Architect / Hermit proposals | 2 |
 | Active epics | 3 |
 <!-- guide:plan-body:end -->

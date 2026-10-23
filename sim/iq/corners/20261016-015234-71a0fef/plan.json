@@ -1,0 +1,193 @@
+{
+  "schema": "gf180-bandgap/fleet-plan/1",
+  "bench": "iq",
+  "submitting_klt_version": "0.7.1.dev556+gf310bfa46bff",
+  "dut": {
+    "path": "sim/dut/bandgap_top.spice",
+    "sha256": "9ef5f8c5ab2a61b518befd347c84d7ef0ffe3ea429e94ec3465f66d209ea4560"
+  },
+  "embedded_core": false,
+  "tb_netlist_sha256": "ab3ee993f173d4cea9911f5c543d3559d571aab464c8ed7ddbd4758f7549f894",
+  "manifest_sha256": "3b0a30863abe517bbd8c11e886bc734d0d2d34c807425bde56bd0b645a01903d",
+  "nominal_supply_v": 3.3,
+  "supplies_v": [
+    2.97,
+    3.3,
+    3.63
+  ],
+  "requests": [
+    {
+      "name": "temp",
+      "role": "iq_sweep",
+      "supply_v": null,
+      "analysis": {
+        "kind": "dc",
+        "args": "temp -40 125 1"
+      },
+      "measurements": [
+        "isup_m40",
+        "isup_27",
+        "isup_125",
+        "vref_m40",
+        "vref_27",
+        "vref_125"
+      ],
+      "expected_units": [
+        [
+          "tt",
+          2.97,
+          27.0
+        ],
+        [
+          "tt",
+          3.3,
+          27.0
+        ],
+        [
+          "tt",
+          3.63,
+          27.0
+        ],
+        [
+          "ff",
+          2.97,
+          27.0
+        ],
+        [
+          "ff",
+          3.3,
+          27.0
+        ],
+        [
+          "ff",
+          3.63,
+          27.0
+        ],
+        [
+          "ss",
+          2.97,
+          27.0
+        ],
+        [
+          "ss",
+          3.3,
+          27.0
+        ],
+        [
+          "ss",
+          3.63,
+          27.0
+        ],
+        [
+          "fs",
+          2.97,
+          27.0
+        ],
+        [
+          "fs",
+          3.3,
+          27.0
+        ],
+        [
+          "fs",
+          3.63,
+          27.0
+        ],
+        [
+          "sf",
+          2.97,
+          27.0
+        ],
+        [
+          "sf",
+          3.3,
+          27.0
+        ],
+        [
+          "sf",
+          3.63,
+          27.0
+        ],
+        [
+          "res_ff",
+          2.97,
+          27.0
+        ],
+        [
+          "res_ff",
+          3.3,
+          27.0
+        ],
+        [
+          "res_ff",
+          3.63,
+          27.0
+        ],
+        [
+          "res_ss",
+          2.97,
+          27.0
+        ],
+        [
+          "res_ss",
+          3.3,
+          27.0
+        ],
+        [
+          "res_ss",
+          3.63,
+          27.0
+        ],
+        [
+          "bjt_ff",
+          2.97,
+          27.0
+        ],
+        [
+          "bjt_ff",
+          3.3,
+          27.0
+        ],
+        [
+          "bjt_ff",
+          3.63,
+          27.0
+        ],
+        [
+          "bjt_ss",
+          2.97,
+          27.0
+        ],
+        [
+          "bjt_ss",
+          3.3,
+          27.0
+        ],
+        [
+          "bjt_ss",
+          3.63,
+          27.0
+        ]
+      ],
+      "deck_sha256": "d1741c4efe574be8f045c273b8af3c55d76dd32c4029bfb03a017193cf44eda8",
+      "request_sha256": "687a87923b35332a6fb63814b2f3ddee00dcc6b3223c09818a466268deed1294",
+      "temp_points": [
+        {
+          "temp_c": -40.0,
+          "isup": "isup_m40",
+          "vref": "vref_m40"
+        },
+        {
+          "temp_c": 27.0,
+          "isup": "isup_27",
+          "vref": "vref_27"
+        },
+        {
+          "temp_c": 125.0,
+          "isup": "isup_125",
+          "vref": "vref_125"
+        }
+      ]
+    }
+  ]
+}

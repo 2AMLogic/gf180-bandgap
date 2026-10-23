@@ -51,6 +51,14 @@ Mapping:
                      is deliberately NOT inlined (that would redefine
                      `bandgap_top`); the plan records both identities.
 
+``iq``               the request `sim/tools/mk_klt_request.py iq` emits, byte for byte
+                     (built by the same functions), plus a plan so it can be ingested
+                     (#344). One request ``temp``: an internal ``dc temp -40 125 1``
+                     sweep x process x supply (``alter vsup``) with the corner
+                     ``.temp`` fixed at 27 C; the -40/27/125 C figures are `.meas dc
+                     ... FIND ... AT=<T>` cards, so one klt unit carries three of the
+                     bench's PVT points (the plan's ``temp_points`` maps them).
+
 ``output-load-sensitivity``  CHARACTERIZATION ONLY (#269; no spec threshold, no
                      load rating). One request: the bench's internal ``dc iload
                      -1u 2u 10n`` load-current sweep x process x supply (``alter
@@ -118,7 +126,7 @@ from harness import corners as hc  # noqa: E402
 GENERATOR = "sim/tools/mk_klt_fleet_request.py"
 SUPPLY_SOURCE = "vsup"
 PLAN_SCHEMA = "gf180-bandgap/fleet-plan/1"
-BENCHES = ("psrr-dc", "line-regulation", "startup")
+BENCHES = ("psrr-dc", "line-regulation", "startup", "iq")
 #: Benches that characterize rather than verify: no ratified row, no spec
 #: check, never PASS/FAIL. Kept apart from BENCHES so nothing that grades
 #: spec rows (fleet_ingest.SPEC_CHECKS, the suite) can pick them up.
@@ -194,6 +202,27 @@ def dut_provenance_class(dut_rel: str) -> str:
     if "/frozen/" in dut_rel:
         return "frozen schematic"
     return "schematic"
+
+
+def temp_tag(t: float) -> str:
+    """-40 -> 'm40', 27 -> '27': the suffix `mk_klt_request.BENCH` gives its `.meas` names."""
+    return f"{t:g}".replace("-", "m")
+
+
+def iq_units(tb: dict, supplies: list[float]) -> list[list]:
+    """[[process, supply, 27.0], ...]: klt units of the iq request. The bench's
+    three temperatures are read inside each unit (:func:`iq_temp_points`), so the
+    unit's own corner ``.temp`` is the fixed one `mk_klt_request.build_request` sets."""
+    from mk_klt_request import build_request
+
+    t_fixed = float(build_request("iq", tb)["corners"]["temperature_c"][0])
+    return [[c.name, v, t_fixed] for c in hc.resolve_corners(tb["corners"]) for v in supplies]
+
+
+def iq_temp_points(tb: dict) -> list[dict]:
+    """The bench's temperatures as read from the internal `dc temp` sweep: [{temp_c, isup, vref}]."""
+    return [{"temp_c": float(t), "isup": f"isup_{temp_tag(t)}", "vref": f"vref_{temp_tag(t)}"}
+            for t in tb["temperatures_c"]]
 
 
 def load_sweep_spec(tb: dict) -> dict:
@@ -479,6 +508,15 @@ def build_plan(bench: str, tb: dict, *, design_include: Path, dut: Path, tb_netl
         oreq = _req_common(tb, {"kind": "dc", "args": dc_args}, opmeas, None, timeout_s=300)
         files["op/body.spice"], files["op/request.json"] = otext, json.dumps(oreq, indent=2) + "\n"
         requests.append(_entry("op", "op", None, oreq, otext, expected_units(tb, [None]), [], supplies=vdds))
+    elif bench == "iq":
+        from mk_klt_request import build_body, build_request
+
+        text = build_body("iq", tb, dut, design_include)
+        req = build_request("iq", tb)
+        units = iq_units(tb, vdds)
+        files["temp/body.spice"], files["temp/request.json"] = text, json.dumps(req, indent=2) + "\n"
+        requests.append(_entry("temp", "iq_sweep", None, req, text, units, [m["name"] for m in req["measurements"]],
+                               temp_points=iq_temp_points(tb)))
     elif bench == "line-regulation":
         dc = pick_analysis(tb, "dc")
         lo, hi, step = (float(x) for x in dc["args"].split()[1:4])
@@ -568,6 +606,9 @@ def main() -> int:
     ap.add_argument("outdir")
     ap.add_argument("--dut", default="sim/dut/bandgap_top.spice",
                     help="DUT to inline (repo-relative), e.g. a regenerated extracted netlist under layout/")
+    ap.add_argument("--klt-version", default=None,
+                    help="record this as the submitting klt version instead of `klt --version` "
+                         "(to plan for a request already submitted by another client build)")
     a = ap.parse_args()
 
     from mk_klt_request import hc_pdk
@@ -578,7 +619,7 @@ def main() -> int:
         a.bench, tb,
         design_include=hc_pdk().design_include, dut=dut,
         tb_netlist=SIM / a.bench / "testbench" / tb["netlist"],
-        dut_rel=str(dut.relative_to(REPO)), submitting_klt_version=klt_version(),
+        dut_rel=str(dut.relative_to(REPO)), submitting_klt_version=a.klt_version or klt_version(),
     )
     out = Path(a.outdir).resolve()
     for rel, text in files.items():

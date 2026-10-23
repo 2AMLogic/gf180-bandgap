@@ -59,22 +59,56 @@ renders `wrong_kind`, not `met`.
 
 ## What the manifest cites, and what it deliberately does not
 
-Two items are cited today (3 and 4). Everything else is uncited and renders
-`no_evidence` — an accurate machine-readable statement that no `klt`-gradable
-check backs that claim in this repo yet. That is the honest result, not a
-placeholder: citing a passing envelope that does not actually support an item
-would turn a row green while proving nothing.
+Four items are cited today (3, 4, 9 and 10). Everything else is uncited and
+renders `no_evidence` — an accurate machine-readable statement that no
+`klt`-gradable check backs that claim in this repo yet. That is the honest
+result, not a placeholder: citing a passing envelope that does not actually
+support an item would turn a row green while proving nothing.
 
-**Items 1, 2, 9 and 10 are uncited on purpose.** They have no `klt` verb
-behind them, so the grader scores them on "some passing envelope was cited at
-all", never on topical relevance — citing the DRC report for "Repo hygiene"
-would render `MET` and the tool would have no basis to object. This repo does
-have the artifacts those items describe (schematics + regenerated netlists,
-a committed generated GDS, 16 manifest-driven testbenches with a documented
-cold-start invocation and a pinned PDK, a README/license/CI), but asserting
-them through an unrelated citation would make the record say something it did
-not check. `klayout-tools/docs/cli/signoff.md` recommends exactly this
-default.
+**Items 9 and 10 are cited through `klt signoff --attest`.** They have no
+dedicated `klt` verb, so the grader's artifact-anchored generic envelope
+(klayout-tools#2718) is the only way to grade them, and the envelope is
+**tool-produced** rather than hand-written
+(klayout-tools#2844): `klt` runs the checks a versioned inventory declares and
+derives the envelope's `status` from them.
+
+| Item | Inventory | Envelope (cited in the manifest) | Checks it runs |
+|---|---|---|---|
+| 9 Testbenches shipped | [`inventories/item9.json`](inventories/item9.json) | [`attestations/item9.json`](attestations/item9.json) | every file under `sim/*/testbench/` exists; the PDK-free cold start (`sim/run_corners.py --list`, failing on any `!!` manifest-load marker) exits 0; PDK and tool pins are declared |
+| 10 Repo hygiene | [`inventories/item10.json`](inventories/item10.json) | [`attestations/item10.json`](attestations/item10.json) | README, LICENSE and the CI workflow exist; `.github/scripts/lint.sh` and the `signoff/tests` unit tests exit 0 |
+
+The cold start is deliberately the list/manifest-load form: a full
+simulation needs ngspice and the PDK, which the attest producer runs on a bare
+runner, and appends evidence records. It proves every manifest loads, **not**
+that the testbenches simulate — that is items 5/6, not this one. Never loosen
+a command to make an attestation pass; an unmet check is recorded as unmet.
+
+To refresh after changing an inventoried file or an inventory:
+
+```bash
+klt signoff --attest 9  --inventory signoff/inventories/item9.json  -o signoff/attestations/item9.json
+klt signoff --attest 10 --inventory signoff/inventories/item10.json -o signoff/attestations/item10.json
+# if an inventory itself changed, first put its new sha256 into block-manifest.json
+# (the envelope's provenance.input.content_hash) -- the lint audit in item 10 runs
+# check_signoff.py, which fails on a stale pin -- then run the two commands above.
+python3 signoff/check_signoff.py
+bash signoff/regenerate.sh
+```
+
+The envelope pins the *inventory*; the files the inventory lists are covered
+by the per-file hashes recorded inside the envelope. `check_signoff.py`
+re-hashes those in the offline lint job (and requires item 9's inventory to
+list every tracked testbench file), and `--run-klt` re-runs
+`klt signoff --attest N --inventory … --check` in the CI `signoff` job, which
+re-executes the commands and fails on any drifted file or flipped outcome.
+
+**Items 1 and 2 are uncited on purpose, and wait for
+[#204](https://github.com/2AMLogic/gf180-bandgap/issues/204)** (DR-0007 phase
+B), which regenerates the schematic, netlist and GDS they bind to. Attesting
+them now would pin artifacts that are about to change. Item 1 will then use
+`klt signoff --attest 1` the same way; item 2 is **not** attestable
+(`--attest` accepts only 1, 9 and 10), so it needs an artifact-anchored
+envelope of the other kinds `klt signoff` accepts for the committed GDS.
 
 **Items 5, 6 and 8 are uncited because this repo's evidence is not in a
 gradable shape.** `sim/` holds append-only Markdown records (per
@@ -264,7 +298,8 @@ CI runs both halves (`.github/workflows/ci.yml`):
 | Check | Where | Needs |
 |---|---|---|
 | Manifest shape, pins vs. committed artifacts, record consistency | `lint` job, via `.github/scripts/lint.sh` | python3 only |
-| Re-grade with the pinned `klt` and diff against the committed record | `signoff` job | network (installs `klt` at `klt-pin.txt`'s revision; runs it via `KLT_SIGNOFF_CMD=klt`) |
+| Attested files vs. the hashes in `attestations/*.json` (item 9 also: inventory lists every tracked testbench) | `lint` job, via `.github/scripts/lint.sh` | python3 only |
+| Re-grade with the pinned `klt` and diff against the committed record; `klt signoff --attest N --check` for each attestation | `signoff` job | network (installs `klt` at `klt-pin.txt`'s revision; runs it via `KLT_SIGNOFF_CMD=klt`) |
 
 So a manifest citing an artifact that has since changed, a record that no
 longer matches what `klt` would say today, and a mis-keyed evidence entry that

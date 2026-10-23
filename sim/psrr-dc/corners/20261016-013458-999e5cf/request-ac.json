@@ -1,0 +1,169 @@
+{
+  "netlist": "body.spice",
+  "engine": "ngspice",
+  "models": {
+    "pdk": "gf180mcuD",
+    "lib": "libs.tech/ngspice/sm141064.ngspice"
+  },
+  "corners": {
+    "process": [
+      {
+        "name": "tt",
+        "sections": [
+          "typical",
+          "res_typical",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ]
+      },
+      {
+        "name": "ff",
+        "sections": [
+          "ff",
+          "res_ff",
+          "bjt_ff",
+          "diode_ff",
+          "moscap_ff",
+          "mimcap_ff"
+        ]
+      },
+      {
+        "name": "ss",
+        "sections": [
+          "ss",
+          "res_ss",
+          "bjt_ss",
+          "diode_ss",
+          "moscap_ss",
+          "mimcap_ss"
+        ]
+      },
+      {
+        "name": "fs",
+        "sections": [
+          "fs",
+          "res_typical",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ]
+      },
+      {
+        "name": "sf",
+        "sections": [
+          "sf",
+          "res_typical",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ]
+      },
+      {
+        "name": "res_ff",
+        "sections": [
+          "typical",
+          "res_ff",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ]
+      },
+      {
+        "name": "res_ss",
+        "sections": [
+          "typical",
+          "res_ss",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ]
+      },
+      {
+        "name": "bjt_ff",
+        "sections": [
+          "typical",
+          "res_typical",
+          "bjt_ff",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ]
+      },
+      {
+        "name": "bjt_ss",
+        "sections": [
+          "typical",
+          "res_typical",
+          "bjt_ss",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ]
+      }
+    ],
+    "temperature_c": [
+      -40,
+      27,
+      125
+    ],
+    "supply_v": {
+      "vsup": [
+        2.97,
+        3.3,
+        3.63
+      ]
+    }
+  },
+  "analysis": {
+    "kind": "ac",
+    "args": "dec 20 0.1 10meg"
+  },
+  "measurements": [
+    {
+      "name": "vdb_1hz",
+      "spice": ".meas ac vdb_1hz FIND vdb(vref) AT=1",
+      "unit": "dB"
+    },
+    {
+      "name": "vdb_10hz",
+      "spice": ".meas ac vdb_10hz FIND vdb(vref) AT=10",
+      "unit": "dB"
+    },
+    {
+      "name": "vdb_100hz",
+      "spice": ".meas ac vdb_100hz FIND vdb(vref) AT=100",
+      "unit": "dB"
+    },
+    {
+      "name": "vdb_1khz",
+      "spice": ".meas ac vdb_1khz FIND vdb(vref) AT=1000",
+      "unit": "dB"
+    },
+    {
+      "name": "vdb_10khz",
+      "spice": ".meas ac vdb_10khz FIND vdb(vref) AT=10000",
+      "unit": "dB"
+    },
+    {
+      "name": "vdb_100khz",
+      "spice": ".meas ac vdb_100khz FIND vdb(vref) AT=100000",
+      "unit": "dB"
+    },
+    {
+      "name": "vdb_1mhz",
+      "spice": ".meas ac vdb_1mhz FIND vdb(vref) AT=1e+06",
+      "unit": "dB"
+    }
+  ],
+  "options": {
+    "timeout_s": 300,
+    "keep_artifacts": true,
+    "waveforms": true
+  }
+}
