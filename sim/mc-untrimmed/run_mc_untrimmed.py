@@ -104,6 +104,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
 
 from harness import corners as harness_corners  # noqa: E402
+from harness import evidence_store as harness_evidence_store  # noqa: E402
 from harness import pdk as harness_pdk  # noqa: E402
 from harness import report as harness_report  # noqa: E402
 from harness import stats as harness_stats  # noqa: E402
@@ -937,6 +938,12 @@ def main() -> int:
     stamp = datetime.strptime(record[:15], "%Y%m%d-%H%M%S").replace(tzinfo=timezone.utc)
     deck = HERE / "testbench" / "tb_mc_untrimmed.spice"
 
+    evidence = harness_evidence_store.EvidenceRun(HERE.name, record, repo_root=root)
+    try:
+        evidence.start()
+    except harness_evidence_store.StoreUnavailable as exc:
+        sys.exit(f"ERROR: artifact store unavailable: {exc}")
+
     total_points = len(GROUPS) * len(TEMPS)
     print(
         f"record {record}: {len(GROUPS)} groups x {len(TEMPS)} temperatures "
@@ -962,7 +969,7 @@ def main() -> int:
             cid = harness_corners.device_corner_id(group, temp, SUPPLY_ID)
             log = future.result()
             harness_report.write_device_corner_log(
-                HERE / "corners",
+                evidence.corners_root,
                 record,
                 cid,
                 log_header(pdk, deck, group, cfg, temp, record, stamp, ngspice),
@@ -984,10 +991,11 @@ def main() -> int:
         raise RuntimeError(f"refusing to overwrite existing snapshot {snap_path}")
     snap_path.write_text(dut_mm, encoding="utf-8")
 
-    path = harness_report.device_write_record(
+    path = harness_report.device_write_stored_record(
         HERE / "records",
         record,
         build_record(record, stamp, pdk, ngspice, dut_path, injected, results),
+        evidence,
     )
     print(f"wrote {path}")
     return 0

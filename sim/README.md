@@ -148,6 +148,27 @@ editing it.
 
 ## Enforcement
 
+## Manifest-forward raw outputs (new runs)
+
+New runs do **not** commit `corners/<record-id>/` logs. The harness
+(`sim/harness/evidence_store.py`) stages them under the git-ignored
+`sim/.work/.stage/<experiment>-<record-id>/`, uploads them with
+`klt artifact put`, and commits only
+
+- `manifests/artifacts/<experiment>-<record-id>.manifest.json` (`artifact:`
+  URIs + sha256), and
+- the usual record, whose **Links → Raw logs** points at the manifest and which
+  gains a `## Stored evidence` table (name, size, sha256).
+
+The store is fail-closed. Before anything is simulated the harness requires
+`$KLT_ARTIFACT_BROKER` to be set, `klt artifact put` to exist, and the broker
+to answer; otherwise it exits non-zero and writes nothing. There is no flag that
+commits the bytes instead. Verify a record's evidence with
+`klt artifact verify manifests/artifacts/<experiment>-<record-id>.manifest.json`.
+Records minted before this change are unchanged and keep their in-tree logs.
+Not yet covered: the fleet-ingest tools (`sim/tools/*_ingest.py`), which still
+commit their logs.
+
 This convention is checked, not merely documented. `sim/check_records.py`
 (implementation: `sim/harness/evidence_lint.py`) runs as step 4 of
 `.github/scripts/lint.sh`, so `npm run lint` and the CI `lint` job both

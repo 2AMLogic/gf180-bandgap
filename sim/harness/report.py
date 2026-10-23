@@ -385,6 +385,8 @@ def build_record(
     subset_reason: str = "",
     notes: str = "",
     git: dict | None = None,
+    stored_lines: list[str] | None = None,
+    stored_manifest: str = "",
 ) -> dict:
     measure_names = list(tb.measure)
     summary = summarize(results, measure_names)
@@ -422,6 +424,8 @@ def build_record(
         "statistical_convention": statistical_convention,
         "subset_reason": subset_reason,
         "notes": notes,
+        "stored_lines": list(stored_lines or []),
+        "stored_manifest": stored_manifest,
         "matrix": matrix_conformance(tb, points),
         "testbench": tb.provenance(),
         "environment": environment(pdk, ngspice, repo_root, git),
@@ -636,7 +640,11 @@ def render_record(record: dict, experiment: str) -> str:
         lines.append(f"  - DUT netlist: `{tb['dut']}`")
     lines += [
         f"  - Netlist snapshot: `sim/{experiment}/{SNAPSHOT_DIR}/{record_id}.spice`",
-        f"  - Raw logs: `sim/{experiment}/{CORNERS_DIR}/{record_id}/`",
+        (
+            f"  - Raw logs: artifact store, manifest `{record['stored_manifest']}`"
+            if record.get("stored_manifest")
+            else f"  - Raw logs: `sim/{experiment}/{CORNERS_DIR}/{record_id}/`"
+        ),
         f"- **Timestamp / author**: {record['started_utc']}, {env['user']}",
         f"- **Supersedes**: {record['supersedes'] or '(none)'}",
         "",
@@ -670,6 +678,7 @@ def render_record(record: dict, experiment: str) -> str:
             "",
             record["notes"],
         ]
+    lines += record.get("stored_lines") or []
     lines += [
         "",
         "---",
@@ -885,6 +894,30 @@ def device_write_record(records_dir: Path, record: str, body: str) -> Path:
     return path
 
 
+_RAW_LOGS_LINE_RE = re.compile(r"^(\s*-\s*Raw logs:).*$", re.MULTILINE)
+
+
+def device_write_stored_record(
+    records_dir: Path, record: str, body: str, evidence
+) -> Path:
+    """Upload the staged logs, then write the record and commit the manifest.
+
+    ``evidence`` is a started :class:`~harness.evidence_store.EvidenceRun`.
+    The body's ``Raw logs:`` link is pointed at the manifest and the stored
+    evidence table appended; the manifest only lands in ``manifests/`` once
+    the record is written, so a failed run leaves nothing behind.
+    """
+    evidence.finalize()
+    body = _RAW_LOGS_LINE_RE.sub(
+        lambda m: f"{m.group(1)} artifact store, manifest `{evidence.manifest_rel}`",
+        body,
+    )
+    body = body.rstrip("\n") + "\n" + "\n".join(evidence.stored_lines())
+    path = device_write_record(records_dir, record, body)
+    evidence.commit()
+    return path
+
+
 def run_device_experiment(
     here: Path,
     deck_name: str,
@@ -900,6 +933,7 @@ def run_device_experiment(
     ngspice: str | None = None,
     git: dict | None = None,
     root: Path | None = None,
+    store=None,
 ) -> int:
     """Shared ``main()`` for the single-device ``sim/device-*/run_*.py`` benches.
 
@@ -918,8 +952,9 @@ def run_device_experiment(
       ``(section, temp_c)``).
     * ``banner`` -- ``str.format`` template with ``{record}``.
 
-    ``pdk``/``ngspice``/``git``/``root`` default to the live lookups; tests
-    inject fakes.
+    ``pdk``/``ngspice``/``git``/``root``/``store`` default to the live
+    lookups (``store`` is the artifact store, preflighted before anything is
+    simulated); tests inject fakes.
     """
     from . import pdk as _pdk
     from .runner import ngspice_version
@@ -933,6 +968,17 @@ def run_device_experiment(
     stamp = record_stamp(record)
     deck = here / "testbench" / deck_name
 
+    from . import evidence_store
+
+    evidence = evidence_store.EvidenceRun(
+        here.name, record, store=store, repo_root=root
+    )
+    try:
+        evidence.start()
+    except evidence_store.StoreUnavailable as exc:
+        print(f"error: artifact store unavailable: {exc}", file=sys.stderr)
+        return 2
+
     print(banner.format(record=record))
     results: dict = {}
     failed: list[str] = []
@@ -940,7 +986,7 @@ def run_device_experiment(
         cid = device_corner_id(section, temp)
         log = run_corner(deck, pdk, section, temp)
         write_device_corner_log(
-            here / "corners",
+            evidence.corners_root,
             record,
             cid,
             device_log_header(pdk, deck, section, temp, record, stamp, ngspice),
@@ -967,8 +1013,11 @@ def run_device_experiment(
         return 1
 
     write_device_netlist_snapshot(here / "netlist-snapshots", record, deck)
-    path = device_write_record(
-        here / "records", record, build_record(record, stamp, pdk, ngspice, results)
+    path = device_write_stored_record(
+        here / "records",
+        record,
+        build_record(record, stamp, pdk, ngspice, results),
+        evidence,
     )
     print(f"wrote {path}")
     return 0

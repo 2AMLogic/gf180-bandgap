@@ -195,6 +195,19 @@ class RecordCheckTests(unittest.TestCase):
         paths = write_experiment(self.root)
         self.assertEqual(self.check(paths), [])
 
+    def test_manifest_backed_record_needs_no_in_tree_logs(self):
+        paths = write_experiment(self.root, logs=())
+        self.assertTrue(
+            any("no raw per-corner logs" in p for p in self.check(paths)), self.check(paths)
+        )
+        manifest = (
+            self.root / "manifests" / "artifacts"
+            / f"output-voltage-tc-{RECORD_ID}.manifest.json"
+        )
+        manifest.parent.mkdir(parents=True)
+        manifest.write_text("{}")
+        self.assertEqual(self.check(paths), [])
+
     def test_every_required_field_is_enforced(self):
         for name in evidence_lint.REQUIRED_FIELDS:
             with self.subTest(field=name):

@@ -63,6 +63,8 @@ from pathlib import Path
 RECORDS_DIR = "records"
 SNAPSHOT_DIR = "netlist-snapshots"
 CORNERS_DIR = "corners"
+#: Public artifact-store manifests (see sim/harness/evidence_store.py).
+MANIFEST_DIR = Path("manifests") / "artifacts"
 
 RECORD_SUFFIX = ".md"
 SNAPSHOT_SUFFIX = ".spice"
@@ -418,6 +420,11 @@ def check_record(
         )
 
     corner_dir = f"sim/{experiment.slug}/{CORNERS_DIR}/{record_id}/"
+    manifest = root / MANIFEST_DIR / f"{experiment.slug}-{record_id}.manifest.json"
+    if manifest.is_file():
+        # Manifest-forward record: raw logs live in the artifact store and
+        # are checked by scripts/check_artifact_manifests.py, not in-tree.
+        return problems
     names = experiment.corner_files.get(record_id, [])
     logs = [name for name in names if name.endswith(LOG_SUFFIX)]
     if not names:
