@@ -32,6 +32,7 @@ every filename in this directory on `main`, including superseded records).
 | [0005](decision-records/0005-area-target-overrun.md) | Area target overrun — escalated, revision proposed | Superseded by 0006 |
 | [0006](decision-records/0006-area-target-narrowed-post-166.md) | Area target narrowed post-#166 (ratification-via-PR) | Proposed |
 | [0007](decision-records/0007-q2-array-dvbe-ratio.md) | `core.Q2` realised as a 4× unit-PNP array — effective ΔVBE ratio input amended from 3.634 | Ratified (operator, 2026-10-02) |
+| [0008](decision-records/0008-par-r-mismatch-model-risk-successor.md) | `par_r` resistor-mismatch model risk — revised assessment (successor to 0004) | Proposed |
 
 Status is one of `proposed`, `ratified` or `superseded by NNNN` (free-text
 suffix allowed); `python3 spec/check_decision_records.py` (lint step 7/7)
