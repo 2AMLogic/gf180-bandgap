@@ -1,0 +1,27 @@
+layout: ../../../bandgap_top/bandgap_top.gds
+reference: ../../bandgap_top.ref-tied.spice
+top: bandgap_top
+reference top: BANDGAP_TOP
+engine: klayout
+status: match
+mismatches: 9
+errors: 0
+  nets: layout=82  reference=82  matched=82
+  devices: layout=164  reference=164  matched=164
+  pins: layout=3  reference=3  matched=3
+power_connectivity: unchecked
+  (reference.form is 'plain-element', whose reference netlist carries its own power/ground pins and nets -- they take part in the ordinary compare, so this check (which exists to cover the signal-only 'gate-level-verilog' form) does not apply)
+
+category_counts:
+  device.geometry_not_compared: 3
+  topology: 6
+
+[warning] device.geometry_not_compared  (both)  device class 'cap_mim_2f0_m4m5_noshield' is a capacitor class, whose ['A', 'P'] parameter(s) KLayout declares *secondary*: kdb.NetlistComparer compares primary parameters only, so none of them took part in this compare and each is NOT verified -- this capacitor's geometry could differ between the two sides by any amount and this run would still report 'match'. The compared parameter(s) were ['C']. Name them in options.compare_parameters to compare them (see docs/cli/lvs.md, 'device.geometry_not_compared')
+[warning] device.geometry_not_compared  (both)  device class 'ppolyf_u' is a resistor class, whose ['A', 'L', 'P', 'W'] parameter(s) KLayout declares *secondary*: kdb.NetlistComparer compares primary parameters only, so none of them took part in this compare and each is NOT verified -- this resistor's geometry could differ between the two sides by any amount and this run would still report 'match'. The compared parameter(s) were ['R']. Name them in options.compare_parameters to compare them (see docs/cli/lvs.md, 'device.geometry_not_compared')
+[warning] device.geometry_not_compared  (both)  device class 'ppolyf_u_1k' is a resistor class, whose ['A', 'L', 'P', 'W'] parameter(s) KLayout declares *secondary*: kdb.NetlistComparer compares primary parameters only, so none of them took part in this compare and each is NOT verified -- this resistor's geometry could differ between the two sides by any amount and this run would still report 'match'. The compared parameter(s) were ['R']. Name them in options.compare_parameters to compare them (see docs/cli/lvs.md, 'device.geometry_not_compared')
+[warning] topology  (both)  nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)
+[warning] topology  (both)  nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)
+[warning] topology  (both)  nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)
+[warning] topology  (both)  nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)
+[warning] topology  (both)  nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)
+[warning] topology  (both)  nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)
