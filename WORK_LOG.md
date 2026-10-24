@@ -2,6 +2,11 @@
 
 Chronological record of recently merged pull requests and closed issues, maintained by the Loom Guide role. Newest entries appear first.
 
+### 2026-10-24
+
+- **PR #379**: docs(lvs): root-cause unreproducible item-4 LVS match; add tie-aware reference and envelope
+- **Issue #378** (closed): LVS: pinned klt cannot reproduce item 4's match on the unchanged baseline GDS (10 net.merged)
+
 ### 2026-10-23
 
 - **PR #376**: feat(sim): store new raw run output in the artifact store, commit only manifests
