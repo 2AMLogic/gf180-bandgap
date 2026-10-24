@@ -1,0 +1,793 @@
+{
+  "schema_version": 1,
+  "engine": "klayout",
+  "layout": "../../../bandgap_top/bandgap_top.gds",
+  "reference": "../../bandgap_top.ref-tied.spice",
+  "top": "bandgap_top",
+  "reference_top": "BANDGAP_TOP",
+  "parameter_tolerance": null,
+  "options": {
+    "combine_devices": false,
+    "combine_devices_per_circuit": null,
+    "combine_devices_max_attempts": 5,
+    "flatten_layout": false,
+    "flatten_reference": false,
+    "netgen_setup": null,
+    "parameter_tolerance": null,
+    "compare_parameters": null,
+    "power_connectivity": null,
+    "anchor_top_level_pins": null,
+    "strict_top_level_pin_count": false,
+    "supply_nets": [
+      "GND",
+      "VCC",
+      "VDD",
+      "VGND",
+      "VPWR",
+      "VSS"
+    ],
+    "finfet_bulk": null
+  },
+  "hints_applied": null,
+  "constant_nets_applied": null,
+  "status": "match",
+  "power_connectivity": {
+    "status": "unchecked",
+    "reason": "reference.form is 'plain-element', whose reference netlist carries its own power/ground pins and nets -- they take part in the ordinary compare, so this check (which exists to cover the signal-only 'gate-level-verilog' form) does not apply",
+    "power_pins": [],
+    "power_pins_derivation": null,
+    "instance_count": 0,
+    "expected_nets": null,
+    "unchecked_expected_pins": [],
+    "findings": [],
+    "finding_count": 0
+  },
+  "body_verification": {
+    "status": "verified",
+    "reason": null,
+    "device_classes": [],
+    "device_count": 0,
+    "findings": [],
+    "finding_count": 0
+  },
+  "device_parameter_coverage": [
+    {
+      "class": "cap_mim_2f0_m4m5_noshield",
+      "device_kind": "capacitor",
+      "layout_devices": 1,
+      "reference_devices": 1,
+      "compared": [
+        "C"
+      ],
+      "not_compared": [
+        {
+          "parameter": "A",
+          "reason": "secondary"
+        },
+        {
+          "parameter": "P",
+          "reason": "secondary"
+        }
+      ]
+    },
+    {
+      "class": "ppolyf_u",
+      "device_kind": "resistor",
+      "layout_devices": 65,
+      "reference_devices": 65,
+      "compared": [
+        "R"
+      ],
+      "not_compared": [
+        {
+          "parameter": "L",
+          "reason": "secondary"
+        },
+        {
+          "parameter": "W",
+          "reason": "secondary"
+        },
+        {
+          "parameter": "A",
+          "reason": "secondary"
+        },
+        {
+          "parameter": "P",
+          "reason": "secondary"
+        }
+      ]
+    },
+    {
+      "class": "ppolyf_u_1k",
+      "device_kind": "resistor",
+      "layout_devices": 1,
+      "reference_devices": 1,
+      "compared": [
+        "R"
+      ],
+      "not_compared": [
+        {
+          "parameter": "L",
+          "reason": "secondary"
+        },
+        {
+          "parameter": "W",
+          "reason": "secondary"
+        },
+        {
+          "parameter": "A",
+          "reason": "secondary"
+        },
+        {
+          "parameter": "P",
+          "reason": "secondary"
+        }
+      ]
+    }
+  ],
+  "mismatch_count": 9,
+  "error_count": 0,
+  "category_counts": {
+    "device.geometry_not_compared": 3,
+    "topology": 6
+  },
+  "category_error_counts": {},
+  "counts": {
+    "nets": {
+      "layout": 82,
+      "reference": 82,
+      "matched": 82
+    },
+    "devices": {
+      "layout": 164,
+      "reference": 164,
+      "matched": 164
+    },
+    "pins": {
+      "layout": 3,
+      "reference": 3,
+      "matched": 3
+    }
+  },
+  "device_classes": [
+    "nfet",
+    "pfet",
+    "bjt",
+    "cap_mim_2f0_m4m5_noshield",
+    "resistor",
+    "diode_nd2ps_06v0",
+    "diode_pd2nw_06v0"
+  ],
+  "environment": {
+    "engine": "klayout",
+    "engine_version": "0.30.12",
+    "netgen_binary": null,
+    "layout_sha256": "3e1af18ef32dd461172a9d9d00a62ade323725de9a0f90ded08161237dcc1ae0",
+    "reference_sha256": "a9118c8879f5f13d426a63ef18abfed6275bb37fac076e98bd79adba89a3cd7b",
+    "extracted_netlist": null
+  },
+  "provenance": {
+    "klt_version": "0.7.1.dev1413+g67e684ed9b2b",
+    "klayout_version": "0.30.12",
+    "pdk": null,
+    "deck": {
+      "name": "gf180mcu",
+      "content_hash": "sha256:44a33c72f3a3d4a7ac2fc3c0ec47b41ba8c61cf18c7b20f27aa3479529d5f128",
+      "released": false,
+      "options": {
+        "metal_top": "9K",
+        "mim_cap": "cap_mim_2f0_m4m5_noshield",
+        "poly_res": "1k"
+      },
+      "options_explicit": {
+        "metal_top": false,
+        "mim_cap": false,
+        "poly_res": false
+      },
+      "options_hash": "sha256:6a7dc7660a470994263c5ca8ace6d8ac8c605d77e6876a9c5490949de6e7cb05"
+    },
+    "input": {
+      "content_hash": "sha256:3e1af18ef32dd461172a9d9d00a62ade323725de9a0f90ded08161237dcc1ae0",
+      "role": "layout"
+    },
+    "klayout_version_mismatch": false
+  },
+  "mismatches": [
+    {
+      "category": "device.geometry_not_compared",
+      "severity": "warning",
+      "description": "device class 'cap_mim_2f0_m4m5_noshield' is a capacitor class, whose ['A', 'P'] parameter(s) KLayout declares *secondary*: kdb.NetlistComparer compares primary parameters only, so none of them took part in this compare and each is NOT verified -- this capacitor's geometry could differ between the two sides by any amount and this run would still report 'match'. The compared parameter(s) were ['C']. Name them in options.compare_parameters to compare them (see docs/cli/lvs.md, 'device.geometry_not_compared')",
+      "side": "both",
+      "net": null,
+      "device": {
+        "layout": null,
+        "reference": null,
+        "class": "cap_mim_2f0_m4m5_noshield"
+      },
+      "property": null,
+      "details": {
+        "device_kind": "capacitor",
+        "compared_parameters": [
+          "C"
+        ],
+        "not_compared_parameters": [
+          "A",
+          "P"
+        ],
+        "layout_devices": 1,
+        "reference_devices": 1
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "device.geometry_not_compared",
+      "severity": "warning",
+      "description": "device class 'ppolyf_u' is a resistor class, whose ['A', 'L', 'P', 'W'] parameter(s) KLayout declares *secondary*: kdb.NetlistComparer compares primary parameters only, so none of them took part in this compare and each is NOT verified -- this resistor's geometry could differ between the two sides by any amount and this run would still report 'match'. The compared parameter(s) were ['R']. Name them in options.compare_parameters to compare them (see docs/cli/lvs.md, 'device.geometry_not_compared')",
+      "side": "both",
+      "net": null,
+      "device": {
+        "layout": null,
+        "reference": null,
+        "class": "ppolyf_u"
+      },
+      "property": null,
+      "details": {
+        "device_kind": "resistor",
+        "compared_parameters": [
+          "R"
+        ],
+        "not_compared_parameters": [
+          "A",
+          "L",
+          "P",
+          "W"
+        ],
+        "layout_devices": 65,
+        "reference_devices": 65
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "device.geometry_not_compared",
+      "severity": "warning",
+      "description": "device class 'ppolyf_u_1k' is a resistor class, whose ['A', 'L', 'P', 'W'] parameter(s) KLayout declares *secondary*: kdb.NetlistComparer compares primary parameters only, so none of them took part in this compare and each is NOT verified -- this resistor's geometry could differ between the two sides by any amount and this run would still report 'match'. The compared parameter(s) were ['R']. Name them in options.compare_parameters to compare them (see docs/cli/lvs.md, 'device.geometry_not_compared')",
+      "side": "both",
+      "net": null,
+      "device": {
+        "layout": null,
+        "reference": null,
+        "class": "ppolyf_u_1k"
+      },
+      "property": null,
+      "details": {
+        "device_kind": "resistor",
+        "compared_parameters": [
+          "R"
+        ],
+        "not_compared_parameters": [
+          "A",
+          "L",
+          "P",
+          "W"
+        ],
+        "layout_devices": 1,
+        "reference_devices": 1
+      },
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "warning",
+      "description": "nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)",
+      "side": "both",
+      "net": {
+        "layout": "\\$27",
+        "reference": "CORE_TRIM_U2_0"
+      },
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "warning",
+      "description": "nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)",
+      "side": "both",
+      "net": {
+        "layout": "\\$29",
+        "reference": "CORE_TRIM_U2_2"
+      },
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "warning",
+      "description": "nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)",
+      "side": "both",
+      "net": {
+        "layout": "\\$30",
+        "reference": "CORE_TRIM_U3_0"
+      },
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "warning",
+      "description": "nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)",
+      "side": "both",
+      "net": {
+        "layout": "\\$36",
+        "reference": "CORE_TRIM_U3_6"
+      },
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "warning",
+      "description": "nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)",
+      "side": "both",
+      "net": {
+        "layout": "\\$37",
+        "reference": "CORE_TRIM_U4_0"
+      },
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    },
+    {
+      "category": "topology",
+      "severity": "warning",
+      "description": "nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)",
+      "side": "both",
+      "net": {
+        "layout": "\\$51",
+        "reference": "CORE_TRIM_U4_14"
+      },
+      "device": null,
+      "property": null,
+      "details": null,
+      "circuit": null,
+      "instance": null,
+      "subcircuit": null
+    }
+  ],
+  "net_correspondence": [
+    {
+      "layout": "\\$16",
+      "reference": "AMP_A3",
+      "pin": false
+    },
+    {
+      "layout": "\\$17",
+      "reference": "AMP_A4",
+      "pin": false
+    },
+    {
+      "layout": "\\$9",
+      "reference": "AMP_N1",
+      "pin": false
+    },
+    {
+      "layout": "\\$11",
+      "reference": "AMP_N2",
+      "pin": false
+    },
+    {
+      "layout": "\\$7",
+      "reference": "AMP_NB1",
+      "pin": false
+    },
+    {
+      "layout": "\\$8",
+      "reference": "AMP_NCASC",
+      "pin": false
+    },
+    {
+      "layout": "\\$10",
+      "reference": "AMP_ND1",
+      "pin": false
+    },
+    {
+      "layout": "\\$6",
+      "reference": "AMP_PBIAS",
+      "pin": false
+    },
+    {
+      "layout": "\\$5",
+      "reference": "AMP_TAIL",
+      "pin": false
+    },
+    {
+      "layout": "\\$3",
+      "reference": "CASC",
+      "pin": false
+    },
+    {
+      "layout": "\\$19",
+      "reference": "CORE_D1",
+      "pin": false
+    },
+    {
+      "layout": "\\$20",
+      "reference": "CORE_D2",
+      "pin": false
+    },
+    {
+      "layout": "\\$21",
+      "reference": "CORE_D3",
+      "pin": false
+    },
+    {
+      "layout": "\\$18",
+      "reference": "CORE_D4",
+      "pin": false
+    },
+    {
+      "layout": "\\$23",
+      "reference": "CORE_E2",
+      "pin": false
+    },
+    {
+      "layout": "\\$24",
+      "reference": "CORE_E3",
+      "pin": false
+    },
+    {
+      "layout": "\\$25",
+      "reference": "CORE_TN0",
+      "pin": false
+    },
+    {
+      "layout": "\\$26",
+      "reference": "CORE_TRIM_U1_0",
+      "pin": false
+    },
+    {
+      "layout": "\\$27",
+      "reference": "CORE_TRIM_U2_0",
+      "pin": false
+    },
+    {
+      "layout": "\\$28",
+      "reference": "CORE_TRIM_U2_1",
+      "pin": false
+    },
+    {
+      "layout": "\\$29",
+      "reference": "CORE_TRIM_U2_2",
+      "pin": false
+    },
+    {
+      "layout": "\\$30",
+      "reference": "CORE_TRIM_U3_0",
+      "pin": false
+    },
+    {
+      "layout": "\\$31",
+      "reference": "CORE_TRIM_U3_1",
+      "pin": false
+    },
+    {
+      "layout": "\\$32",
+      "reference": "CORE_TRIM_U3_2",
+      "pin": false
+    },
+    {
+      "layout": "\\$33",
+      "reference": "CORE_TRIM_U3_3",
+      "pin": false
+    },
+    {
+      "layout": "\\$34",
+      "reference": "CORE_TRIM_U3_4",
+      "pin": false
+    },
+    {
+      "layout": "\\$35",
+      "reference": "CORE_TRIM_U3_5",
+      "pin": false
+    },
+    {
+      "layout": "\\$36",
+      "reference": "CORE_TRIM_U3_6",
+      "pin": false
+    },
+    {
+      "layout": "\\$37",
+      "reference": "CORE_TRIM_U4_0",
+      "pin": false
+    },
+    {
+      "layout": "\\$38",
+      "reference": "CORE_TRIM_U4_1",
+      "pin": false
+    },
+    {
+      "layout": "\\$47",
+      "reference": "CORE_TRIM_U4_10",
+      "pin": false
+    },
+    {
+      "layout": "\\$48",
+      "reference": "CORE_TRIM_U4_11",
+      "pin": false
+    },
+    {
+      "layout": "\\$49",
+      "reference": "CORE_TRIM_U4_12",
+      "pin": false
+    },
+    {
+      "layout": "\\$50",
+      "reference": "CORE_TRIM_U4_13",
+      "pin": false
+    },
+    {
+      "layout": "\\$51",
+      "reference": "CORE_TRIM_U4_14",
+      "pin": false
+    },
+    {
+      "layout": "\\$39",
+      "reference": "CORE_TRIM_U4_2",
+      "pin": false
+    },
+    {
+      "layout": "\\$40",
+      "reference": "CORE_TRIM_U4_3",
+      "pin": false
+    },
+    {
+      "layout": "\\$41",
+      "reference": "CORE_TRIM_U4_4",
+      "pin": false
+    },
+    {
+      "layout": "\\$42",
+      "reference": "CORE_TRIM_U4_5",
+      "pin": false
+    },
+    {
+      "layout": "\\$43",
+      "reference": "CORE_TRIM_U4_6",
+      "pin": false
+    },
+    {
+      "layout": "\\$44",
+      "reference": "CORE_TRIM_U4_7",
+      "pin": false
+    },
+    {
+      "layout": "\\$45",
+      "reference": "CORE_TRIM_U4_8",
+      "pin": false
+    },
+    {
+      "layout": "\\$46",
+      "reference": "CORE_TRIM_U4_9",
+      "pin": false
+    },
+    {
+      "layout": "\\$82",
+      "reference": "CORE_TRIM_U5_0",
+      "pin": false
+    },
+    {
+      "layout": "\\$81",
+      "reference": "CORE_TRIM_U5_1",
+      "pin": false
+    },
+    {
+      "layout": "\\$72",
+      "reference": "CORE_TRIM_U5_10",
+      "pin": false
+    },
+    {
+      "layout": "\\$71",
+      "reference": "CORE_TRIM_U5_11",
+      "pin": false
+    },
+    {
+      "layout": "\\$70",
+      "reference": "CORE_TRIM_U5_12",
+      "pin": false
+    },
+    {
+      "layout": "\\$69",
+      "reference": "CORE_TRIM_U5_13",
+      "pin": false
+    },
+    {
+      "layout": "\\$68",
+      "reference": "CORE_TRIM_U5_14",
+      "pin": false
+    },
+    {
+      "layout": "\\$67",
+      "reference": "CORE_TRIM_U5_15",
+      "pin": false
+    },
+    {
+      "layout": "\\$66",
+      "reference": "CORE_TRIM_U5_16",
+      "pin": false
+    },
+    {
+      "layout": "\\$65",
+      "reference": "CORE_TRIM_U5_17",
+      "pin": false
+    },
+    {
+      "layout": "\\$64",
+      "reference": "CORE_TRIM_U5_18",
+      "pin": false
+    },
+    {
+      "layout": "\\$63",
+      "reference": "CORE_TRIM_U5_19",
+      "pin": false
+    },
+    {
+      "layout": "\\$80",
+      "reference": "CORE_TRIM_U5_2",
+      "pin": false
+    },
+    {
+      "layout": "\\$62",
+      "reference": "CORE_TRIM_U5_20",
+      "pin": false
+    },
+    {
+      "layout": "\\$61",
+      "reference": "CORE_TRIM_U5_21",
+      "pin": false
+    },
+    {
+      "layout": "\\$60",
+      "reference": "CORE_TRIM_U5_22",
+      "pin": false
+    },
+    {
+      "layout": "\\$59",
+      "reference": "CORE_TRIM_U5_23",
+      "pin": false
+    },
+    {
+      "layout": "\\$58",
+      "reference": "CORE_TRIM_U5_24",
+      "pin": false
+    },
+    {
+      "layout": "\\$57",
+      "reference": "CORE_TRIM_U5_25",
+      "pin": false
+    },
+    {
+      "layout": "\\$56",
+      "reference": "CORE_TRIM_U5_26",
+      "pin": false
+    },
+    {
+      "layout": "\\$55",
+      "reference": "CORE_TRIM_U5_27",
+      "pin": false
+    },
+    {
+      "layout": "\\$54",
+      "reference": "CORE_TRIM_U5_28",
+      "pin": false
+    },
+    {
+      "layout": "\\$53",
+      "reference": "CORE_TRIM_U5_29",
+      "pin": false
+    },
+    {
+      "layout": "\\$79",
+      "reference": "CORE_TRIM_U5_3",
+      "pin": false
+    },
+    {
+      "layout": "\\$52",
+      "reference": "CORE_TRIM_U5_30",
+      "pin": false
+    },
+    {
+      "layout": "\\$78",
+      "reference": "CORE_TRIM_U5_4",
+      "pin": false
+    },
+    {
+      "layout": "\\$77",
+      "reference": "CORE_TRIM_U5_5",
+      "pin": false
+    },
+    {
+      "layout": "\\$76",
+      "reference": "CORE_TRIM_U5_6",
+      "pin": false
+    },
+    {
+      "layout": "\\$75",
+      "reference": "CORE_TRIM_U5_7",
+      "pin": false
+    },
+    {
+      "layout": "\\$74",
+      "reference": "CORE_TRIM_U5_8",
+      "pin": false
+    },
+    {
+      "layout": "\\$73",
+      "reference": "CORE_TRIM_U5_9",
+      "pin": false
+    },
+    {
+      "layout": "\\$12",
+      "reference": "FB",
+      "pin": false
+    },
+    {
+      "layout": "\\$2",
+      "reference": "IBIAS",
+      "pin": false
+    },
+    {
+      "layout": "\\$13",
+      "reference": "SNS1",
+      "pin": false
+    },
+    {
+      "layout": "\\$14",
+      "reference": "SNS2",
+      "pin": false
+    },
+    {
+      "layout": "\\$4",
+      "reference": "STARTUP_DET",
+      "pin": false
+    },
+    {
+      "layout": "vdd",
+      "reference": "VDD",
+      "pin": true
+    },
+    {
+      "layout": "vref",
+      "reference": "VREF",
+      "pin": true
+    },
+    {
+      "layout": "vss",
+      "reference": "VSS",
+      "pin": true
+    }
+  ]
+}
