@@ -4,6 +4,8 @@ Chronological record of recently merged pull requests and closed issues, maintai
 
 ### 2026-10-24
 
+- **PR #383**: chore: remove stale tracked .loom/manifest.json.tmp install leftover
+- **Issue #380** (closed): Remove tracked stale .loom/manifest.json.tmp (gitignored install leftover)
 - **PR #379**: docs(lvs): root-cause unreproducible item-4 LVS match; add tie-aware reference and envelope
 - **Issue #378** (closed): LVS: pinned klt cannot reproduce item 4's match on the unchanged baseline GDS (10 net.merged)
 
