@@ -33,12 +33,13 @@ Issues currently being built (`loom:building`).
 
 - **#308**: ci: fail when committed bandgap_top.gds differs from generate.py output
 - **#328**: signoff: use the repository klt pin for default local re-grading
+- **#386**: Prepare the revised par_r resistor-mismatch model-risk assessment and validation plan (part of #239)
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
-_None._
+- **#387**: docs: propose DR-0008 par_r model-risk successor and validation plan
 
 ## Approved (Awaiting Merge)
 
@@ -56,6 +57,7 @@ Issues carrying `loom:curated`.
 - **#308**: ci: fail when committed bandgap_top.gds differs from generate.py output *(curated)*
 - **#326**: layout/bandgap_top: routing-budget S1 area disagrees with committed GDS bbox (klayout-gated test fails on main) *(curated)*
 - **#358**: T1 item 11: declare ERC well/substrate ties now that klayout-tools#2169 is fixed, then cite item 11 *(curated)*
+- **#386**: Prepare the revised par_r resistor-mismatch model-risk assessment and validation plan (part of #239) *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -76,10 +78,10 @@ Issues carrying `loom:curated`.
 | Very important | 0 |
 | Important | 1 |
 | Ready (`loom:issue`) | 0 |
-| In Progress (`loom:building`) | 2 |
-| PRs awaiting review | 0 |
+| In Progress (`loom:building`) | 3 |
+| PRs awaiting review | 1 |
 | Approved PRs awaiting merge | 1 |
-| Curated | 6 |
+| Curated | 7 |
 | Architect / Hermit proposals | 2 |
 | Active epics | 3 |
 <!-- guide:plan-body:end -->
