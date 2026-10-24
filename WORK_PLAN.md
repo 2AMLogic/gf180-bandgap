@@ -33,7 +33,6 @@ Issues currently being built (`loom:building`).
 
 - **#308**: ci: fail when committed bandgap_top.gds differs from generate.py output
 - **#328**: signoff: use the repository klt pin for default local re-grading
-- **#378**: LVS: pinned klt cannot reproduce item 4's match on the unchanged baseline GDS (10 net.merged)
 
 ## PRs Awaiting Review
 
@@ -46,7 +45,6 @@ _None._
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
 - **#340**: fix(signoff): default re-grade uses the repo klt pin via uvx
-- **#379**: docs(lvs): root-cause unreproducible item-4 LVS match; add tie-aware reference and envelope
 
 ## Proposed
 
@@ -58,13 +56,11 @@ Issues carrying `loom:curated`.
 - **#308**: ci: fail when committed bandgap_top.gds differs from generate.py output *(curated)*
 - **#326**: layout/bandgap_top: routing-budget S1 area disagrees with committed GDS bbox (klayout-gated test fails on main) *(curated)*
 - **#358**: T1 item 11: declare ERC well/substrate ties now that klayout-tools#2169 is fixed, then cite item 11 *(curated)*
-- **#378**: LVS: pinned klt cannot reproduce item 4's match on the unchanged baseline GDS (10 net.merged) *(curated)*
 
 ## Proposed (Architect / Hermit)
 
 - **#219**: sim harness: share the batch-backend guard and cap default local --jobs *(architect)*
 - **#306**: ci: run klayout/klt-gated layout tests in the signoff job and fail on skips *(architect)*
-- **#380**: Remove tracked stale .loom/manifest.json.tmp (gitignored install leftover) *(hermit)*
 
 ## Epics
 
@@ -80,10 +76,10 @@ Issues carrying `loom:curated`.
 | Very important | 0 |
 | Important | 1 |
 | Ready (`loom:issue`) | 0 |
-| In Progress (`loom:building`) | 3 |
+| In Progress (`loom:building`) | 2 |
 | PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 2 |
-| Curated | 7 |
-| Architect / Hermit proposals | 3 |
+| Approved PRs awaiting merge | 1 |
+| Curated | 6 |
+| Architect / Hermit proposals | 2 |
 | Active epics | 3 |
 <!-- guide:plan-body:end -->
