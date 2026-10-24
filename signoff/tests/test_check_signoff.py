@@ -323,6 +323,39 @@ class KltCommandTests(QuietCase):
         with mock.patch.dict("os.environ", {"KLT_SIGNOFF_CMD": "foo  bar"}):
             self.assertEqual(cs.klt_command(), ["foo", "bar"])
 
+    def test_default_uses_pin_even_with_path_klt(self):
+        (self.signoff / "klt-pin.txt").write_text("abc123\n", encoding="utf-8")
+        with mock.patch.dict("os.environ", {"KLT_SIGNOFF_CMD": ""}), \
+                mock.patch.object(cs, "KLT_PIN", self.signoff / "klt-pin.txt"), \
+                mock.patch.object(cs, "_which", side_effect=lambda b: f"/bin/{b}"):
+            command = cs.klt_command()
+        self.assertEqual(command[0], "uvx")
+        self.assertIn("git+https://github.com/2AMLogic/klayout-tools@abc123", command)
+        self.assertEqual(command[-1], "klt")
+
+    def test_missing_uvx_fails_clearly_without_path_fallback(self):
+        (self.signoff / "klt-pin.txt").write_text("abc123\n", encoding="utf-8")
+        with mock.patch.dict("os.environ", {"KLT_SIGNOFF_CMD": ""}), \
+                mock.patch.object(cs, "KLT_PIN", self.signoff / "klt-pin.txt"), \
+                mock.patch.object(
+                    cs, "_which", side_effect=lambda b: "/bin/klt" if b == "klt" else None
+                ):
+            with self.assertRaisesRegex(cs.KltUnavailable, "uvx not found"):
+                cs.klt_command()
+
+    def test_missing_pin_fails_clearly(self):
+        (self.signoff / "klt-pin.txt").write_text("# only comments\n", encoding="utf-8")
+        with mock.patch.dict("os.environ", {"KLT_SIGNOFF_CMD": ""}), \
+                mock.patch.object(cs, "KLT_PIN", self.signoff / "klt-pin.txt"):
+            with self.assertRaisesRegex(cs.KltUnavailable, "names no revision"):
+                cs.klt_command()
+
+    def test_regrade_reports_unavailable_as_failure(self):
+        failures = cs.Failures()
+        with mock.patch.object(cs, "klt_command", side_effect=cs.KltUnavailable("nope")):
+            cs.run_klt({}, failures)
+        self.assertTrue(failures)
+
     def test_pin_parsing_skips_comments(self):
         (self.signoff / "klt-pin.txt").write_text("# c\n\nabc123\n", encoding="utf-8")
         self.assertEqual(cs.klt_pin(), "abc123")
@@ -533,6 +566,14 @@ class AttestationTests(QuietCase):
             "klt", "signoff", "--attest", "10", "--inventory",
             "signoff/inventories/item10.json", "--check", self.cited,
             "--format", "json"])
+
+    def test_check_reports_unavailable_klt_as_failure(self):
+        failures = cs.Failures()
+        with mock.patch.object(cs, "klt_command", side_effect=cs.KltUnavailable("nope")), \
+                mock.patch.object(cs.subprocess, "run") as run:
+            cs.run_attestations(self.evidence, failures)
+        run.assert_not_called()
+        self.assertFails(failures, "nope")
 
     def test_flipped_check_outcome_fails(self):
         drifted = {"status": "drifted", "fresh_status": "fail",
