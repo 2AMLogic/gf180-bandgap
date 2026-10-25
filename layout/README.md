@@ -932,100 +932,22 @@ are reported, not patched around:
 Per CLAUDE.md's friction protocol, every klayout-tools gap this work
 surfaced is tracked generically (tool capability, never this design's
 specifics) on the public
-[klayout-tools issue tracker](https://github.com/2AMLogic/klayout-tools/issues):
+[klayout-tools issue tracker](https://github.com/2AMLogic/klayout-tools/issues),
+which is the system of record for their status. The history of how this repo
+adopted each fix lives in `git log` and the gf180-bandgap issues cited in the
+sections above.
 
-- **Extraction decks recognise MOS only** — no resistor/bipolar/capacitor
-  device classes, so an analog block's LVS cannot be a full-device LVS:
-  [`#219`](https://github.com/2AMLogic/klayout-tools/issues/219) —
-  **resolved upstream** (#222/#223/#225); this block's reference netlist now
-  models all four classes.
-- **A curated deck's poly-resistor list covers one sheet-rho flavour of the
-  PDK's poly-resistor family** — any drawn instance of another flavour
-  collapses to a short:
-  [`#299`](https://github.com/2AMLogic/klayout-tools/issues/299) — **resolved
-  upstream** on 2026-08-02. The deck now carries a `ppolyf_u_1k` entry
-  (`SAB` + `Resistor` + `RES_MK`), and
-  [#78](https://github.com/2AMLogic/gf180-bandgap/issues/78) took it up:
-  `generate.py` now draws `RES_MK` on `startup.RPU`'s `high_rho` body too, so
-  it extracts as a real `ppolyf_u_1k` device at 1000 Ω/□ instead of a short
-  on either side of the comparison. The last remaining marker difference
-  between the two flavours' bodies is the base flavour's `Pplus`, which the
-  high-rho recogniser deliberately omits.
-- **A bipolar recogniser that keys off a bare diffusion layer cannot tell a
-  base-contact ring from the emitter it surrounds** — a curated deck that
-  models no implant layers recognised *two* bipolars per drawn vertical-PNP
-  unit cell (the real one, plus one whose "emitter" is the base ring):
-  [`#302`](https://github.com/2AMLogic/klayout-tools/issues/302) — **resolved
-  upstream** on 2026-08-02 by
-  [`#304`](https://github.com/2AMLogic/klayout-tools/issues/304) (deck commit
-  `be4b4f82`), which excludes `Nplus` from the emitter region so the n+ tie
-  ring is dropped. **This repo has taken it up** ([#84](https://github.com/2AMLogic/gf180-bandgap/issues/84)):
-  `make_reference.py` now emits one `bjt` card per drawn PNP unit, and the
-  committed LVS evidence was regenerated against the current (post-#304)
-  deck — see the resolved deck-pin finding above.
-- **gf180mcu extraction deck declares one metal level and no vias** — forced
-  single-metal routing on any block that wanted to LVS, at a real area cost:
-  [`#220`](https://github.com/2AMLogic/klayout-tools/issues/220) —
-  **resolved upstream** (the deck now carries the full Metal1–Metal5 stack
-  with vias). **This repo has taken it up**
-  ([#166](https://github.com/2AMLogic/gf180-bandgap/issues/166)): the block
-  is routed on Metal2/Metal3 today and the area cost that gap imposed is
-  measured and recovered — see "Routing style" above and
-  [`bandgap_top/AREA.md`](bandgap_top/AREA.md) Finding 6.
-- **`gf180mcu` deck coverage gap (well/tap, BJT-specific rules)** —
-  [`#157`](https://github.com/2AMLogic/klayout-tools/issues/157), filed from
-  the #15 DRC bring-up.
-- **Missing `klt lvs` / extraction capability** — the original gap
-  ([`#54`](https://github.com/2AMLogic/klayout-tools/issues/54), superseded
-  by epic [`#153`](https://github.com/2AMLogic/klayout-tools/issues/153)) —
-  **resolved upstream**, and this block's layout is the consumer that closed
-  the loop on it.
-- **`enclosing` check false-negatives on a shape drawn entirely outside the
-  enclosing layer, instead of flagging the under-enclosure** — found via the
-  `fb` top-plate tab above (#82):
-  [`#318`](https://github.com/2AMLogic/klayout-tools/issues/318) —
-  **resolved upstream** on 2026-08-02 by
-  [`#327`](https://github.com/2AMLogic/klayout-tools/issues/327); the current
-  deck now genuinely flags this layout's `fb` tab instead of false-negativing
-  it (see the #82 update above and gf180-bandgap#84).
-- **A recognised MiM cap's plate nets are isolated from the connectivity
-  stack**, so no via stack to either plate can ever be confirmed by `klt
-  extract`/`klt lvs` — the same limitation that made the `fb` tab's
-  workaround necessary in the first place:
-  [`#314`](https://github.com/2AMLogic/klayout-tools/issues/314) —
-  **resolved upstream** (joins a recognised plate to the ordinary metal
-  stack when its via lands on that plate). Its own follow-on gap — a
-  DRM-legal top-plate via still misread as a `vdd`/`fb` short — was filed as
-  [`#364`](https://github.com/2AMLogic/klayout-tools/issues/364) and fixed
-  by [`PR #368`](https://github.com/2AMLogic/klayout-tools/pull/368);
-  gf180-bandgap#88 redrew this layout's contact against it (see "Findings
-  and escalations" above) and is the consumer that closed the loop on both.
-- **klt-version DRC/LVS drift investigated, no new tool defect found**
-  ([#159](https://github.com/2AMLogic/gf180-bandgap/issues/159)): all four
-  findings (two new-but-intentional DRM rules this repo needed to adapt to,
-  one real pre-existing layout enclosure gap, one stale reference-side
-  capacitance model) root-caused to this repo's own `generate.py`/
-  `make_reference.py`, not to `klt`/klayout-tools — a measured refutation
-  of the "genuine klt bug" hypothesis rather than a filing. See the
-  "Expected results" table's "RESOLVED — klt-version drift..." note above
-  for the full root-cause breakdown.
-- **`klt erc`'s `ties[]` collapses a design into one electrical island**,
-  reporting false `erc.supply_short`/`erc.multiply_driven_net` findings and
-  making T1 item 11's `erc.missing_tie` half unsatisfiable:
-  [`#2169`](https://github.com/2AMLogic/klayout-tools/issues/2169) — filed
-  upstream from a routed standard-cell design, and **independently
-  reproduced here** on a hand-drawn analog layout with no standard cells and
-  no PDN (`gate_count` 10 → 1, three false shorts). The reproduction is
-  committed as [`erc/erc-tie-spec.known-gap.json`](erc/erc-tie-spec.known-gap.json)
-  plus its report, so this repo's decision to omit `ties[]` is a measured
-  one. Still open.
-- **`klt erc --pdk` has an antenna-ratio limit table for sky130 only**, so
-  every gf180mcu run reports `status: "not_checked"` / exit 4 no matter how
-  clean its connectivity rules came back — a passing structural supply read
-  is indistinguishable, by status and exit code, from a run that checked
-  nothing: [`#2179`](https://github.com/2AMLogic/klayout-tools/issues/2179).
-  Filed 2026-09-20. It does not block T1 item 11 (which grades the finding
-  rules, not the status), but it does block machine-grading one. Still open.
+- [`#219`](https://github.com/2AMLogic/klayout-tools/issues/219) — extraction decks recognised MOS only: resolved.
+- [`#299`](https://github.com/2AMLogic/klayout-tools/issues/299) — deck poly-resistor list covered one sheet-rho flavour: resolved (taken up in [#78](https://github.com/2AMLogic/gf180-bandgap/issues/78)).
+- [`#302`](https://github.com/2AMLogic/klayout-tools/issues/302) — bipolar recogniser could not tell a base-contact ring from the emitter: resolved by [`#304`](https://github.com/2AMLogic/klayout-tools/issues/304) (taken up in [#84](https://github.com/2AMLogic/gf180-bandgap/issues/84)).
+- [`#220`](https://github.com/2AMLogic/klayout-tools/issues/220) — deck declared one metal level and no vias: resolved (taken up in [#166](https://github.com/2AMLogic/gf180-bandgap/issues/166); see "Routing style" above and [`bandgap_top/AREA.md`](bandgap_top/AREA.md) Finding 6).
+- [`#157`](https://github.com/2AMLogic/klayout-tools/issues/157) — `gf180mcu` deck coverage gap (well/tap, BJT-specific rules), filed from the #15 DRC bring-up.
+- [`#54`](https://github.com/2AMLogic/klayout-tools/issues/54) / [`#153`](https://github.com/2AMLogic/klayout-tools/issues/153) — missing `klt lvs` / extraction capability: resolved.
+- [`#318`](https://github.com/2AMLogic/klayout-tools/issues/318) — `enclosing` check false-negative on a shape drawn entirely outside the enclosing layer: resolved by [`#327`](https://github.com/2AMLogic/klayout-tools/issues/327) (see the #82 update above and gf180-bandgap#84).
+- [`#314`](https://github.com/2AMLogic/klayout-tools/issues/314) — recognised MiM cap plate nets isolated from the connectivity stack: resolved; follow-on [`#364`](https://github.com/2AMLogic/klayout-tools/issues/364) fixed by [`PR #368`](https://github.com/2AMLogic/klayout-tools/pull/368) (gf180-bandgap#88; see "Findings and escalations" above).
+- [`#2169`](https://github.com/2AMLogic/klayout-tools/issues/2169) — `klt erc`'s `ties[]` collapses a design into one electrical island: **closed 2026-09-20**. Independently reproduced here; the reproduction is committed as [`erc/erc-tie-spec.known-gap.json`](erc/erc-tie-spec.known-gap.json) plus its report (append-only evidence, left untouched). Whether `ties[]` should now be declared is tracked in [#358](https://github.com/2AMLogic/gf180-bandgap/issues/358).
+- [`#2179`](https://github.com/2AMLogic/klayout-tools/issues/2179) — `klt erc --pdk` had an antenna-ratio limit table for sky130 only, so every gf180mcu run reported `not_checked` / exit 4: **closed 2026-09-20**.
+- klt-version DRC/LVS drift ([#159](https://github.com/2AMLogic/gf180-bandgap/issues/159)) was investigated and root-caused to this repo, not to the tool; no filing. See the "Expected results" table's "RESOLVED — klt-version drift..." note above.
 
 ## The `trivial_poly_res` DRC fixture (#15)
 
