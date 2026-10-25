@@ -2,6 +2,13 @@
 
 Chronological record of recently merged pull requests and closed issues, maintained by the Loom Guide role. Newest entries appear first.
 
+### 2026-10-25
+
+- **PR #390**: docs(layout): condense resolved friction list, mark klayout-tools#2169/#2179 closed
+- **PR #340**: fix(signoff): default re-grade uses the repo klt pin via uvx
+- **Issue #389** (closed): Condense resolved entries in layout/README.md 'Friction filed' and fix stale 'Still open' claims
+- **Issue #328** (closed): signoff: use the repository klt pin for default local re-grading
+
 ### 2026-10-24
 
 - **PR #383**: chore: remove stale tracked .loom/manifest.json.tmp install leftover

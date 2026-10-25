@@ -32,7 +32,6 @@ _None._
 Issues currently being built (`loom:building`).
 
 - **#308**: ci: fail when committed bandgap_top.gds differs from generate.py output
-- **#328**: signoff: use the repository klt pin for default local re-grading
 - **#386**: Prepare the revised par_r resistor-mismatch model-risk assessment and validation plan (part of #239)
 
 ## PRs Awaiting Review
@@ -45,7 +44,7 @@ PRs waiting on Judge (`loom:review-requested`).
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
-- **#340**: fix(signoff): default re-grade uses the repo klt pin via uvx
+_None._
 
 ## Proposed
 
@@ -78,9 +77,9 @@ Issues carrying `loom:curated`.
 | Very important | 0 |
 | Important | 1 |
 | Ready (`loom:issue`) | 0 |
-| In Progress (`loom:building`) | 3 |
+| In Progress (`loom:building`) | 2 |
 | PRs awaiting review | 1 |
-| Approved PRs awaiting merge | 1 |
+| Approved PRs awaiting merge | 0 |
 | Curated | 7 |
 | Architect / Hermit proposals | 2 |
 | Active epics | 3 |
