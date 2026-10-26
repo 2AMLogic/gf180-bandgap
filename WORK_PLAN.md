@@ -19,6 +19,7 @@ _None._
 
 `loom:important`; taken before unlabelled work.
 
+- **#203**: DR-0007 phase A: measure array ratio and finalize schematic PVT evidence
 - **#239**: DR-0007: execute final-DUT fleet suite and mismatch evidence run
 
 ## Ready
@@ -75,7 +76,7 @@ Issues carrying `loom:curated`.
 |------|-------|
 | Operator merge-risk holds | 0 |
 | Very important | 0 |
-| Important | 1 |
+| Important | 2 |
 | Ready (`loom:issue`) | 0 |
 | In Progress (`loom:building`) | 2 |
 | PRs awaiting review | 1 |
