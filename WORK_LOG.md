@@ -2,6 +2,11 @@
 
 Chronological record of recently merged pull requests and closed issues, maintained by the Loom Guide role. Newest entries appear first.
 
+### 2026-10-27
+
+- **PR #399**: chore(signoff): pin klayout-tools to PyPI 0.8.0 and regenerate record
+- **Issue #398** (closed): Bump klayout-tools pin 67e684ed9b2b → 0.8.0
+
 ### 2026-10-25
 
 - **PR #390**: docs(layout): condense resolved friction list, mark klayout-tools#2169/#2179 closed
