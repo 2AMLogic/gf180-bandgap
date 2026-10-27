@@ -70,11 +70,11 @@ layout/
 
 ## Install `klt`
 
-No PyPI release yet — install from the klayout-tools git repo:
+Install the pinned klayout-tools release from PyPI:
 
 ```bash
-uv tool install git+https://github.com/2AMLogic/klayout-tools
-# or: pip install git+https://github.com/2AMLogic/klayout-tools
+uv tool install klayout-tools==0.8.0
+# or: pip install klayout-tools==0.8.0
 
 klt --version
 klt drc --help

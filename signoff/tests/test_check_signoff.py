@@ -330,7 +330,7 @@ class KltCommandTests(QuietCase):
                 mock.patch.object(cs, "_which", side_effect=lambda b: f"/bin/{b}"):
             command = cs.klt_command()
         self.assertEqual(command[0], "uvx")
-        self.assertIn("git+https://github.com/2AMLogic/klayout-tools@abc123", command)
+        self.assertIn("klayout-tools==abc123", command)
         self.assertEqual(command[-1], "klt")
 
     def test_missing_uvx_fails_clearly_without_path_fallback(self):
