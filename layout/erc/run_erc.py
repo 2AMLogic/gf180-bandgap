@@ -42,7 +42,7 @@ run a pass. That is an antenna-coverage fact, not a power-delivery one.
 ``klt erc``'s exit 4 is therefore accepted here exactly like exit 0 and 3.
 
 Requires ``klt`` on ``PATH`` -- see ``layout/README.md`` for install
-instructions (no PyPI release yet; install from the klayout-tools git repo).
+instructions (install the pinned PyPI release of klayout-tools).
 
 Usage (from the repo root):
 
@@ -189,8 +189,8 @@ def main(argv: list[str] | None = None) -> int:
     if klt is None:
         print(
             "error: 'klt' not found on PATH. Install with:\n"
-            "  uv tool install git+https://github.com/2AMLogic/klayout-tools\n"
-            "(no PyPI release yet -- see layout/README.md)",
+            "  uv tool install klayout-tools==<pin in signoff/klt-pin.txt>\n"
+            "(see layout/README.md)",
             file=sys.stderr,
         )
         return 1
