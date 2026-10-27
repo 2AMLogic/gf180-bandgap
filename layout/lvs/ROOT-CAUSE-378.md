@@ -34,9 +34,9 @@ deck never connects Nwell to Contact").
 
 ## Proof the layout is otherwise unchanged
 
-`tie_reference.py` applies only those three aliases to the committed reference
-(and drops the now-redundant `vsubs` pin). Against that
-`bandgap_top.ref-tied.spice`, the **same GDS** gives `match` (82/82 nets,
+A one-off `tie_reference.py` (since folded into `make_reference.py`, #403)
+applied only those three aliases to the old-deck reference (and dropped the
+now-redundant `vsubs` pin). Against that tied reference, the **same GDS** gives `match` (82/82 nets,
 164/164 devices, 3/3 pins) under klt 0.3.0, 0.4.0, 0.5.0, 0.6.0, 0.7.0, host
 0.7.1.dev2573, pin `d5893304` and the current `signoff/klt-pin.txt` pin
 `67e684ed`. The appended envelope is
@@ -49,7 +49,18 @@ klayout 0.30.12).
 * `match` with `topology` warnings (6) and, on newer klt,
   `device.geometry_not_compared` (3) is the same status class the historical
   envelope reported (it carried 12 topology warnings); no error-severity item remains.
-* `make_reference.py` / `run_lvs.py` still emit and use the old-deck reference;
-  moving them to the tie-aware form is a separate change.
-* Resistor values (`Rcore_R1`/`R2`) in the committed reference were not
-  re-derived here; they are not flagged by the comparison.
+* **Resolved in #403:** `make_reference.py` now emits the tie-aware form
+  directly (`vsubs`/`nwl`/`nw_<unit>` -> `vss`/`vdd`/`vss`, three pins) and
+  `run_lvs.py` regenerates and uses only that; `tie_reference.py` and
+  `bandgap_top.ref-tied.spice` are deleted. The `lvs-tied` envelope above
+  remains as evidence.
+* **Open (pre-existing, tracked by #202):** the generator already emits the
+  DR-0007 `Rcore_R1`/`R2` values (78050 / 6859.3 Ω) while the committed GDS
+  still carries the pre-DR-0007 lengths (77594.3 / 6359.5 Ω). The committed
+  reference was stale in the same way; regenerating it (which `run_lvs.py`
+  does on every run) therefore makes `klt lvs` 0.8.0 abort with a KLayout
+  internal comparer error (`dbNetlistCompareCore.cc:1003`) on the unchanged
+  GDS, on both the old and new generator. With those two values set to the
+  GDS's, the #403 generator output is body-identical to the old tied
+  reference and gives `match` (82/82 nets, 164/164 devices, 3/3 pins) on
+  pin `0.8.0`. A fresh `run_lvs.py` envelope needs the GDS regenerated first.

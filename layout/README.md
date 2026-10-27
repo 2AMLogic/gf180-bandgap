@@ -472,10 +472,12 @@ none is a design simplification, and nothing in the reference is hand-written.
   ladder node, or the MIM cap's either plate wired to the wrong rail all now
   fail this check.
 - **Not covered** (each a tool-capability limit, each stated at its source):
-  - **Device body/well terminals.** The deck draws no substrate- or
-    well-tap layer, so every NMOS body compares against the synthesised
-    `vsubs` global and every PMOS body against one anonymous well net —
-    `klt lvs`'s own two `device.body_unverified` warnings.
+  - **Device body/well terminals.** Since klt 0.3.0 the deck derives taps
+    from the implants, so NMOS bodies / PNP bases compare against `vss` and
+    PMOS bodies against `vdd`; the reference is the single tie-aware form
+    ([#378](https://github.com/2AMLogic/gf180-bandgap/issues/378),
+    `layout/lvs/ROOT-CAUSE-378.md`). Whether a tie is physically adequate
+    (latch-up, tap spacing) is a DRC/ERC question LVS does not answer.
   - **RESOLVED — the MIM capacitor's top-plate net**
     ([#88](https://github.com/2AMLogic/gf180-bandgap/issues/88)). Until #88,
     klayout-tools#329's plate-to-`metals[]` join (see "Covered" above,
