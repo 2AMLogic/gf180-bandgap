@@ -34,7 +34,6 @@ Issues currently being built (`loom:building`).
 
 - **#308**: ci: fail when committed bandgap_top.gds differs from generate.py output
 - **#386**: Prepare the revised par_r resistor-mismatch model-risk assessment and validation plan (part of #239)
-- **#398**: Bump klayout-tools pin 67e684ed9b2b → 0.8.0
 
 ## PRs Awaiting Review
 
@@ -46,7 +45,7 @@ PRs waiting on Judge (`loom:review-requested`).
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
-- **#399**: chore(signoff): pin klayout-tools to PyPI 0.8.0 and regenerate record
+_None._
 
 ## Proposed
 
@@ -59,12 +58,12 @@ Issues carrying `loom:curated`.
 - **#326**: layout/bandgap_top: routing-budget S1 area disagrees with committed GDS bbox (klayout-gated test fails on main) *(curated)*
 - **#358**: T1 item 11: declare ERC well/substrate ties now that klayout-tools#2169 is fixed, then cite item 11 *(curated)*
 - **#386**: Prepare the revised par_r resistor-mismatch model-risk assessment and validation plan (part of #239) *(curated)*
-- **#398**: Bump klayout-tools pin 67e684ed9b2b → 0.8.0 *(curated)*
 
 ## Proposed (Architect / Hermit)
 
 - **#219**: sim harness: share the batch-backend guard and cap default local --jobs *(architect)*
 - **#306**: ci: run klayout/klt-gated layout tests in the signoff job and fail on skips *(architect)*
+- **#403**: Collapse the two LVS reference netlists: fold tie_reference.py into make_reference.py *(hermit)*
 
 ## Epics
 
@@ -80,10 +79,10 @@ Issues carrying `loom:curated`.
 | Very important | 0 |
 | Important | 2 |
 | Ready (`loom:issue`) | 0 |
-| In Progress (`loom:building`) | 3 |
+| In Progress (`loom:building`) | 2 |
 | PRs awaiting review | 1 |
-| Approved PRs awaiting merge | 1 |
-| Curated | 8 |
-| Architect / Hermit proposals | 2 |
+| Approved PRs awaiting merge | 0 |
+| Curated | 7 |
+| Architect / Hermit proposals | 3 |
 | Active epics | 3 |
 <!-- guide:plan-body:end -->
