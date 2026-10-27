@@ -357,7 +357,7 @@ def klt_command() -> list[str]:
     return [
         "uvx",
         "--from",
-        f"git+https://github.com/2AMLogic/klayout-tools@{pin}",
+        f"klayout-tools=={pin}",
         "klt",
     ]
 

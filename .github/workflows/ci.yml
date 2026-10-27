@@ -152,10 +152,10 @@ jobs:
         run: |
           set -euo pipefail
           pin="$(grep -v '^[[:space:]]*#' signoff/klt-pin.txt | grep -v '^[[:space:]]*$' | head -1)"
-          echo "klayout-tools @ ${pin}"
+          echo "klayout-tools==${pin}"
           python3 -m pip install --upgrade pip
-          python3 -m pip install "klayout-tools @ git+https://github.com/2AMLogic/klayout-tools@${pin}"
-          klt version || true
+          python3 -m pip install "klayout-tools==${pin}"
+          klt --version
 
       - name: Re-grade the block manifest
         # `klt signoff --manifest` exits 3 when the block is not yet T1, which
