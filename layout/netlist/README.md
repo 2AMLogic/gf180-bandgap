@@ -156,7 +156,7 @@ includes the resistor/BJT/MIM-cap device-class merges from
 klayout-tools#222/#223/#225 before relying on it"):
 
 ```bash
-uv tool install --force git+https://github.com/2AMLogic/klayout-tools
+uv tool install --force klayout-tools==<pin in signoff/klt-pin.txt>
 klt --version
 ```
 
@@ -177,8 +177,8 @@ The `klt` binary this repo had installed prior to this issue (reported
 commits) predated commit `37a1e53` (`#228`, resistor recognition) by 6
 commits — i.e. it did **not** yet include the resistor merge #17's own
 dependency history claims is "shipped". Builders re-running this script
-should reinstall from a fresh `klayout-tools` checkout (`uv tool install
---force git+https://github.com/2AMLogic/klayout-tools`) rather than trust a
+should reinstall the pinned release (`uv tool install
+--force klayout-tools==<pin in signoff/klt-pin.txt>`) rather than trust a
 cached `klt` install's `--version` string, which does not change between
 releases of this pre-1.0 tool.
 

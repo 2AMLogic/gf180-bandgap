@@ -232,7 +232,7 @@ def main() -> int:
     if klt is None:
         print(
             "error: 'klt' not found on PATH. Install with:\n"
-            "  uv tool install git+https://github.com/2AMLogic/klayout-tools\n"
+            "  uv tool install klayout-tools==<pin in signoff/klt-pin.txt>\n"
             "(see layout/README.md)",
             file=sys.stderr,
         )
