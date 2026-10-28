@@ -4,6 +4,8 @@ Chronological record of recently merged pull requests and closed issues, maintai
 
 ### 2026-10-27
 
+- **PR #407**: refactor: emit tie-aware LVS reference from make_reference.py, drop tie_reference.py
+- **Issue #403** (closed): Collapse the two LVS reference netlists: fold tie_reference.py into make_reference.py
 - **PR #405**: docs: point klt install hints at the PyPI pin instead of the git URL
 - **Issue #400** (closed): Doctor: update before push
 - **PR #399**: chore(signoff): pin klayout-tools to PyPI 0.8.0 and regenerate record
