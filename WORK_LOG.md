@@ -2,6 +2,11 @@
 
 Chronological record of recently merged pull requests and closed issues, maintained by the Loom Guide role. Newest entries appear first.
 
+### 2026-10-28
+
+- **PR #410**: fix: make bandgap_top DRC-clean under klt 0.8.0
+- **Issue #408** (closed): bandgap_top.gds fails pinned klt 0.8.0 DRC (grid/contact width); T1 item 3 cannot be re-pinned
+
 ### 2026-10-27
 
 - **PR #407**: refactor: emit tie-aware LVS reference from make_reference.py, drop tie_reference.py
