@@ -34,7 +34,6 @@ Issues currently being built (`loom:building`).
 
 - **#308**: ci: fail when committed bandgap_top.gds differs from generate.py output
 - **#386**: Prepare the revised par_r resistor-mismatch model-risk assessment and validation plan (part of #239)
-- **#408**: bandgap_top.gds fails pinned klt 0.8.0 DRC (grid/contact width); T1 item 3 cannot be re-pinned
 
 ## PRs Awaiting Review
 
@@ -59,7 +58,6 @@ Issues carrying `loom:curated`.
 - **#326**: layout/bandgap_top: routing-budget S1 area disagrees with committed GDS bbox (klayout-gated test fails on main) *(curated)*
 - **#358**: T1 item 11: declare ERC well/substrate ties now that klayout-tools#2169 is fixed, then cite item 11 *(curated)*
 - **#386**: Prepare the revised par_r resistor-mismatch model-risk assessment and validation plan (part of #239) *(curated)*
-- **#408**: bandgap_top.gds fails pinned klt 0.8.0 DRC (grid/contact width); T1 item 3 cannot be re-pinned *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -80,10 +78,10 @@ Issues carrying `loom:curated`.
 | Very important | 0 |
 | Important | 2 |
 | Ready (`loom:issue`) | 0 |
-| In Progress (`loom:building`) | 3 |
+| In Progress (`loom:building`) | 2 |
 | PRs awaiting review | 1 |
 | Approved PRs awaiting merge | 0 |
-| Curated | 8 |
+| Curated | 7 |
 | Architect / Hermit proposals | 2 |
 | Active epics | 3 |
 <!-- guide:plan-body:end -->
