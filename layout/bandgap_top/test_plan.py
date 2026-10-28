@@ -21,6 +21,42 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import plan  # noqa: E402
 
 
+class GridAlignmentTests(unittest.TestCase):
+    """Every drawn vertex sits on the deck's 0.005 um grid (``*.ongrid.1``, #408)."""
+
+    def test_contact_is_the_exact_deck_size(self) -> None:
+        self.assertEqual(plan.CT, 220)  # contact.width.1: fixed 0.22 x 0.22 um
+
+    def test_snap_grid(self) -> None:
+        self.assertEqual(plan.snap_grid(2772), 2770)
+        self.assertEqual(plan.snap_grid(-3103), -3105)
+        self.assertEqual(plan.snap_grid(15), 15)
+
+    def test_resistor_legs_and_trim_unit_are_grid_multiples(self) -> None:
+        _, rows = plan.load_plan()
+        for row in rows:
+            for item in row.items:
+                if isinstance(item, plan.ResItem):
+                    self.assertEqual(plan.res_geometry(item)[1] % plan.GRID_NM, 0, item.key)
+                if isinstance(item, plan.TrimLadderItem):
+                    self.assertEqual(item.unit_length_nm % plan.GRID_NM, 0, item.key)
+
+    def test_every_drawn_vertex_is_on_grid(self) -> None:
+        try:
+            import generate  # noqa: PLC0415 -- needs klayout
+        except ImportError:
+            self.skipTest("klayout not installed")
+        builder, _stats = generate.build()
+        cell = builder.cell
+        off = 0
+        for layer in builder.layout.layer_indexes():
+            for shape in cell.shapes(layer).each():
+                if shape.is_box() or shape.is_polygon():
+                    for pt in shape.polygon.each_point_hull():
+                        off += (pt.x % plan.GRID_NM != 0) or (pt.y % plan.GRID_NM != 0)
+        self.assertEqual(off, 0, f"{off} drawn vertices are off the {plan.GRID_NM} nm grid")
+
+
 class ResGeometryLengthTests(unittest.TestCase):
     """``res_geometry``'s leg length must reproduce the schematic ``r_length``.
 
@@ -65,10 +101,10 @@ class ResGeometryLengthTests(unittest.TestCase):
     def test_drawn_body_length_matches_schematic_r_length(self) -> None:
         """``res_body_area_nm2(item) / item.width_nm == item.length_nm``.
 
-        Tolerance is ``item.segments`` dbu (one dbu per fold), per #86's own
-        acceptance criteria -- the leg formula floor-divides, so up to
-        ``n - 1`` dbu of the schematic length can be lost to integer
-        rounding across ``n`` legs.
+        Tolerance is ``item.segments * GRID_NM`` dbu: the leg formula
+        floor-divides and then snaps each leg down to the 5 nm manufacturing
+        grid (#408), so up to ``GRID_NM - 1`` dbu of the schematic length can
+        be lost per leg across ``n`` legs.
         """
         for item in self.res_items:
             with self.subTest(item=item.key, segments=item.segments):
@@ -78,7 +114,7 @@ class ResGeometryLengthTests(unittest.TestCase):
                 delta = abs(drawn_length_nm - item.length_nm)
                 self.assertLessEqual(
                     delta,
-                    item.segments,
+                    item.segments * plan.GRID_NM,
                     f"{item.key}: drawn length {drawn_length_nm} nm vs "
                     f"schematic r_length {item.length_nm} nm (n={item.segments})",
                 )
