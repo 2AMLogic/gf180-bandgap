@@ -129,6 +129,8 @@ from plan import (  # noqa: E402
 from plan import (  # noqa: E402
     CT,
     ENC_CT,
+    GATE_IMPLANT_ENC,
+    GRID_NM,
     IMPLANT_ENC,
     MIM_PLATE_INSET,
     PNP_COL_GAP,
@@ -207,7 +209,7 @@ LAYER_NAMES = {
 # and imported above; their justifications are quoted there.
 # --------------------------------------------------------------------------- #
 CT_PITCH = 500  # contact.space.1 min 250 -> 260 space here
-SD_COL = 900  # source/drain column width
+SD_COL = plan_mod.SD_COL  # source/drain column width (defined in plan: tap strips size to it)
 POLY_EXT = 400  # gate poly2 extension past COMP
 STUB_W = 380  # poly2 stub width (>= CT + 2*70), used for every device's local
 # contact-widening pad (MOS gate, resistor/PNP/trim free ends)
@@ -222,6 +224,9 @@ BAR_TOP = 300  # Metal1 terminal-pad top, above the item's own edge -- just
 # terminals across ROW_GAP (gf180-bandgap#166).
 ISLAND_GAP = 500  # COMP-to-COMP between islands, comp.space.1 min 280
 ROW_GAP = 1100
+# Resistor-to-resistor: Pplus/SAB boxes (IMPLANT_ENC past each body) must keep
+# nplus/pplus.space.1 (0.4) and sab.space.1 (0.42) apart.
+RES_ISLAND_GAP = 2 * IMPLANT_ENC + 420
 NWELL_ENC = 600  # Nwell overlap of PMOS COMP, nwell.enclosing.comp.1 min 120
 NWELL_CLEAR = 2000  # Nwell edge -> unrelated COMP
 GUARD_W = 1600  # guard-ring COMP width
@@ -309,7 +314,7 @@ class Builder(BuilderBase):
         span = y1 - y0
         count = max(1, (span + CT_PITCH - CT) // CT_PITCH)
         used = count * CT + (count - 1) * (CT_PITCH - CT)
-        start = y0 + (span - used) // 2
+        start = plan_mod.snap_grid(y0 + (span - used) // 2)  # contact edges on the 5 nm grid
         for i in range(count):
             cy = start + i * CT_PITCH + CT // 2
             self.contact(cx, cy)
@@ -352,7 +357,13 @@ def draw_mos(b: Builder, item: MosItem, x0: int, y0: int) -> list[Terminal]:
 
     b.box(L_COMP, x0, y0, x1, y1)
     implant = L_PPLUS if item.kind == "pfet" else L_NPLUS
-    b.box(implant, x0 - IMPLANT_ENC, y0 - IMPLANT_ENC, x1 + IMPLANT_ENC, y1 + IMPLANT_ENC)
+    b.box(
+        implant,
+        x0 - GATE_IMPLANT_ENC,
+        y0 - GATE_IMPLANT_ENC,
+        x1 + GATE_IMPLANT_ENC,
+        y1 + GATE_IMPLANT_ENC,
+    )
 
     gate_x0 = x0 + SD_COL
     gate_x1 = gate_x0 + l
@@ -691,6 +702,43 @@ def draw_item(b: Builder, item: object, x: int, y: int) -> list[Terminal]:
 # --------------------------------------------------------------------------- #
 
 
+def _bridge_implants(
+    b: Builder,
+    left: tuple[object, int, int, int],
+    right: tuple[object, int, int, int],
+    y: int,
+) -> None:
+    """Merge the Pplus/Nplus of two neighbouring same-implant islands.
+
+    Two islands ``ISLAND_GAP`` apart leave their implants (``GATE_IMPLANT_ENC``
+    / ``IMPLANT_ENC`` past each COMP) a sliver apart -- narrower than the
+    deck's 0.4 um ``nplus/pplus.space.1`` -- so, where both islands carry the
+    same implant, fill the gap with it. Resistors are excluded: their
+    Pplus/SAB/RES_MK boxes are the recognised bodies and must stay separate
+    (see ``RES_ISLAND_GAP``).
+    """
+    (litem, lx, lw, lh), (ritem, rx, _rw, rh) = left, right
+
+    def layer_and_enc(item: object) -> tuple[tuple[int, int], int] | None:
+        if isinstance(item, MosItem):
+            return (L_PPLUS if item.kind == "pfet" else L_NPLUS), GATE_IMPLANT_ENC
+        if isinstance(item, PnpItem):
+            return L_PPLUS, IMPLANT_ENC
+        return None
+
+    lspec, rspec = layer_and_enc(litem), layer_and_enc(ritem)
+    if lspec is None or rspec is None or lspec[0] != rspec[0]:
+        return
+    enc = max(lspec[1], rspec[1])
+    b.box(
+        lspec[0],
+        lx + lw + lspec[1] - GRID_NM,
+        y - enc,
+        rx - rspec[1] + GRID_NM,
+        y + min(lh, rh) + enc,
+    )
+
+
 def place_rows(b: Builder, rows: list[plan_mod.Row]) -> list[dict]:
     """Place every row's items left to right, starting at the block's own
     left edge (``x = 0`` -- no reserved routing corridor, see the module
@@ -708,11 +756,17 @@ def place_rows(b: Builder, rows: list[plan_mod.Row]) -> list[dict]:
         x = 0
         terminals: list[Terminal] = []
         placements: list[tuple[object, int, int]] = []
-        for item, (w, _h) in zip(row.items, sizes):
+        prev: tuple[object, int, int, int] | None = None
+        for item, (w, h) in zip(row.items, sizes):
+            if prev is not None:
+                both_res = isinstance(prev[0], ResItem) and isinstance(item, ResItem)
+                x = prev[1] + prev[2] + (RES_ISLAND_GAP if both_res else ISLAND_GAP)
             terminals.extend(draw_item(b, item, x, y))
+            if prev is not None:
+                _bridge_implants(b, prev, (item, x, w, h), y)
+            prev = (item, x, w, h)
             placements.append((item, x, w))
-            x += w + ISLAND_GAP
-        row_right = x - ISLAND_GAP
+        row_right = prev[1] + prev[2]
         row_geometry.append(
             {
                 "row": row,
