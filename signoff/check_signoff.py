@@ -16,7 +16,9 @@ job (`.github/scripts/lint.sh`), and `--run-klt` adds the re-grade for the CI
 job that installs the pinned `klt` (`.github/workflows/ci.yml`).
 
   python3 signoff/check_signoff.py              # offline checks only
-  python3 signoff/check_signoff.py --run-klt    # + re-grade with klt, compare
+  python3 signoff/check_signoff.py --run-klt    # + re-grade with klt, compare,
+                                                #   + re-attest every `klt signoff
+                                                #   --attest` envelope (--check)
 
 Exit codes: 0 pass, 1 a check failed.
 """
@@ -324,28 +326,40 @@ def klt_pin() -> str | None:
     return None
 
 
+class KltUnavailable(Exception):
+    """The pinned `klt` cannot be resolved; carries an actionable message."""
+
+
 def klt_command() -> list[str]:
     """How to invoke `klt`, pinned.
 
-    `$KLT_SIGNOFF_CMD` (shell-style, space separated) overrides. Otherwise a
-    `klt` on PATH is used when present, and failing that `uvx` runs the pinned
-    revision in a throwaway environment -- the same revision CI installs, so a
-    local re-grade and a CI re-grade compare the same checklist.
+    `$KLT_SIGNOFF_CMD` (shell-style, space separated) overrides, and its
+    caller owns revision selection. Otherwise `uvx` runs the revision in
+    `klt-pin.txt` in a throwaway environment -- the same revision CI installs
+    and `regenerate.sh` uses, so a local re-grade and a CI re-grade compare the
+    same checklist. A `klt` on PATH is deliberately NOT consulted: an arbitrary
+    installed revision can grade a different checklist. Raises `KltUnavailable`
+    when `uvx` or the pin is missing.
     """
     override = os.environ.get("KLT_SIGNOFF_CMD", "").strip()
     if override:
         return override.split()
-    if _which("klt"):
-        return ["klt"]
     pin = klt_pin()
-    if pin and _which("uvx"):
-        return [
-            "uvx",
-            "--from",
-            f"git+https://github.com/2AMLogic/klayout-tools@{pin}",
-            "klt",
-        ]
-    return ["klt"]
+    if not pin:
+        raise KltUnavailable(
+            f"{KLT_PIN.name} names no revision; fix it or set KLT_SIGNOFF_CMD"
+        )
+    if not _which("uvx"):
+        raise KltUnavailable(
+            "uvx not found; install uv (https://docs.astral.sh/uv/) or set "
+            "KLT_SIGNOFF_CMD to a klt command (you then own revision selection)"
+        )
+    return [
+        "uvx",
+        "--from",
+        f"klayout-tools=={pin}",
+        "klt",
+    ]
 
 
 def _which(binary: str) -> str | None:
@@ -358,7 +372,12 @@ def _which(binary: str) -> str | None:
 
 def run_klt(report_doc, failures: Failures) -> None:
     """Re-grade the manifest with klt and diff against the committed report."""
-    command = klt_command() + [
+    try:
+        base = klt_command()
+    except KltUnavailable as exc:
+        failures.add(f"klt re-grade: {exc}")
+        return
+    command = base + [
         "signoff",
         "--manifest",
         str(MANIFEST.relative_to(REPO_ROOT)),
@@ -448,13 +467,160 @@ def run_klt(report_doc, failures: Failures) -> None:
         print("  ok  klt re-grade matches the committed report verbatim")
 
 
+def _attestation_inventory(envelope, failures: Failures, label: str):
+    """(item, inventory path) for a `klt signoff --attest` envelope, else None."""
+    if not isinstance(envelope, dict) or not isinstance(envelope.get("attestation"), dict):
+        return None
+    item = envelope.get("t1_item")
+    declared = (((envelope.get("provenance") or {}).get("input") or {}).get("path"))
+    inventory = declared.get("path") if isinstance(declared, dict) else declared
+    if not isinstance(item, int) or not isinstance(inventory, str):
+        failures.add(f"{label}: attestation envelope names no t1_item / inventory path")
+        return None
+    return item, inventory
+
+
+def _tracked_testbench_files() -> set[str] | None:
+    try:
+        completed = subprocess.run(
+            ["git", "ls-files", "-z", "--", "sim/*/testbench/*"],
+            cwd=str(REPO_ROOT), capture_output=True, text=True, timeout=60,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if completed.returncode != 0:
+        return None
+    return {name for name in completed.stdout.split("\0") if name}
+
+
+def check_attestations(manifest_evidence: dict, failures: Failures) -> None:
+    """Offline drift gate for `klt signoff --attest` envelopes.
+
+    The envelope pins the *inventory*; the files the inventory lists are only
+    covered by the per-file hashes recorded in `attestation.checks[]`. This
+    re-hashes each of them (so an edited README, workflow or testbench fails
+    the PR without needing klt), and for item 9 also insists the inventory
+    lists every tracked testbench file, so a new bench cannot slip in
+    unattested. Command outcomes are re-run by `--run-klt` (`run_attestations`).
+
+    Skipped when SIGNOFF_ATTESTING is set: item 10's attested lint command runs
+    this script, and a stale envelope would otherwise fail the very run that
+    regenerates it. `klt ... --check` still catches the drift.
+    """
+    if os.environ.get("SIGNOFF_ATTESTING"):
+        print("  skip  SIGNOFF_ATTESTING set (running inside `klt signoff --attest`)")
+        return
+    for key, entry in manifest_evidence.items():
+        cited = entry.get("file") if isinstance(entry, dict) else None
+        if not isinstance(cited, str) or not (REPO_ROOT / cited).is_file():
+            continue  # already reported by check_manifest
+        label = f"attestation evidence[{key!r}]"
+        envelope = load_json(REPO_ROOT / cited, failures, label)
+        found = _attestation_inventory(envelope, failures, label)
+        if found is None:
+            continue
+        item, inventory = found
+        if str(item) != key:
+            failures.add(f"{label}: envelope attests item {item}, cited for item {key}")
+        if envelope.get("status") != "pass":
+            failures.add(f"{label}: envelope status is {envelope.get('status')!r}, not 'pass'")
+
+        listed = set()
+        for check in envelope["attestation"].get("checks", []):
+            if not isinstance(check, dict) or check.get("check") != "present":
+                continue
+            path = check.get("path")
+            listed.add(path)
+            target = REPO_ROOT / path if isinstance(path, str) else None
+            if target is None or not target.is_file():
+                failures.add(f"{label}: inventoried file {path} no longer exists")
+            elif sha256_file(target) != check.get("content_hash"):
+                failures.add(
+                    f"{label}: {path} has changed since {cited} was attested\n"
+                    f"  attested: {check.get('content_hash')}\n"
+                    f"  actual:   {sha256_file(target)}\n"
+                    "  -> re-run `klt signoff --attest` for this item, then "
+                    "re-run signoff/regenerate.sh"
+                )
+
+        if item == 9:
+            tracked = _tracked_testbench_files()
+            if tracked is not None:
+                for missing in sorted(tracked - listed):
+                    failures.add(
+                        f"{label}: tracked testbench file {missing} is not in {inventory}"
+                    )
+        if not failures:
+            print(f"  ok  evidence[{key}] attests {len(listed)} file(s), all unchanged")
+
+
+def run_attestations(manifest_evidence: dict, failures: Failures) -> None:
+    """Re-attest every cited attestation envelope with `klt ... --check`.
+
+    Re-runs the inventory's commands (cold start, lint, ...), so a check whose
+    outcome flips, or an inventory edited without regenerating the envelope,
+    fails here. Exit 0 = still reproduces and still passes.
+    """
+    for key, entry in manifest_evidence.items():
+        cited = entry.get("file") if isinstance(entry, dict) else None
+        if not isinstance(cited, str) or not (REPO_ROOT / cited).is_file():
+            continue
+        try:
+            envelope = json.loads((REPO_ROOT / cited).read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue  # already reported
+        found = _attestation_inventory(envelope, failures, f"attest --check evidence[{key!r}]")
+        if found is None:
+            continue
+        item, inventory = found
+        try:
+            base = klt_command()
+        except KltUnavailable as exc:
+            failures.add(f"attest --check item {item}: {exc}")
+            continue
+        command = base + [
+            "signoff", "--attest", str(item), "--inventory", inventory,
+            "--check", cited, "--format", "json",
+        ]
+        print(f"  running: {' '.join(command)}")
+        try:
+            completed = subprocess.run(
+                command, cwd=str(REPO_ROOT), capture_output=True, text=True, timeout=900,
+            )
+        except OSError as exc:
+            failures.add(f"attest --check item {item}: could not run {command[0]} ({exc})")
+            continue
+        except subprocess.TimeoutExpired:
+            failures.add(f"attest --check item {item}: timed out after 900s")
+            continue
+        if completed.returncode == 0:
+            print(f"  ok  item {item} attestation reproduces and passes")
+            continue
+        detail = completed.stderr.strip()
+        try:
+            result = json.loads(completed.stdout)
+            drift = result.get("drift") if isinstance(result, dict) else None
+            detail = (
+                f"status={result.get('status')!r} fresh_status={result.get('fresh_status')!r}"
+                f" drift={json.dumps(drift)[:2000]}"
+            )
+        except ValueError:
+            pass
+        failures.add(
+            f"attest --check item {item}: exited {completed.returncode} -- {detail}\n"
+            f"  -> if intended, re-run `klt signoff --attest {item} --inventory "
+            f"{inventory} -o {cited}` and signoff/regenerate.sh"
+        )
+
+
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
         "--run-klt",
         action="store_true",
         help="also re-run `klt signoff --manifest` and diff it against the "
-        "committed report (needs klt, or uvx + network)",
+        "committed report, and re-attest every `--attest` envelope with "
+        "`--check` (needs uvx + network for the pinned klt, or KLT_SIGNOFF_CMD)",
     )
     args = parser.parse_args(argv)
 
@@ -472,6 +638,9 @@ def main(argv: list[str]) -> int:
     print(f"== pinned inputs ({rel(PINNED_INPUTS)}) ==")
     check_pins(manifest_evidence, failures)
 
+    print("== attestation envelopes (klt signoff --attest) ==")
+    check_attestations(manifest_evidence, failures)
+
     print(f"== verdict of record ({rel(REPORTS_DIR)}) ==")
     report_path = latest_report(failures)
     report_doc = None
@@ -487,6 +656,8 @@ def main(argv: list[str]) -> int:
             failures.add("klt re-grade: no committed report to compare against")
         else:
             run_klt(report_doc, failures)
+        print("== klt attest --check ==")
+        run_attestations(manifest_evidence, failures)
 
     print()
     if failures:

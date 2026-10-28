@@ -12,6 +12,7 @@ through sim/harness/evidence_lint.py. No PDK, ngspice or fleet required:
 from __future__ import annotations
 
 import importlib.util
+import json
 import math
 import sys
 import tempfile
@@ -26,6 +27,7 @@ from harness import corners as harness_corners  # noqa: E402
 from harness import evidence_lint  # noqa: E402
 from harness import report as harness_report  # noqa: E402
 from harness.pdk import Pdk  # noqa: E402
+from fake_store import FakeStore  # noqa: E402
 
 
 def _load(name: str, rel: str):
@@ -420,6 +422,7 @@ class RunDeviceExperiment(unittest.TestCase):
             ngspice=NGSPICE,
             git={"short": "abc1234", "branch": "t", "dirty": False},
             root=here,
+            store=kw.pop("store", None) or FakeStore(),
             **kw,
         )
         return rc, calls
@@ -433,7 +436,10 @@ class RunDeviceExperiment(unittest.TestCase):
             (rec,) = (here / "records").glob("*.md")
             record = rec.stem
             self.assertTrue((here / "netlist-snapshots" / f"{record}.spice").exists())
-            logs = sorted(p.name for p in (here / "corners" / record).iterdir())
+            self.assertFalse((here / "corners").exists())  # nothing committed to git
+            manifest = here / "manifests" / "artifacts" / f"{here.name}-{record}.manifest.json"
+            stored = json.loads(manifest.read_text())["entries"]
+            logs = sorted(Path(e["name"]).name for e in stored)
             self.assertEqual(
                 logs,
                 sorted(
@@ -441,12 +447,17 @@ class RunDeviceExperiment(unittest.TestCase):
                     for s, t in [("s1", -40.0), ("s1", 27.0), ("s2", 27.0)]
                 ),
             )
-            first = (here / "corners" / record / logs[0]).read_text()
+            first = (
+                here / "sim" / ".work" / ".stage" / f"{here.name}-{record}"
+                / "corners" / record / logs[0]
+            ).read_text()
             self.assertIn(record, first)
             self.assertIn("log s", first)
             text = rec.read_text()
             self.assertIn(harness_report.record_stamp(record).isoformat(), text)
             self.assertIn("('s1', -40.0)", text)
+            self.assertIn("## Stored evidence", text)
+            self.assertIn(f"Manifest: `manifests/artifacts/{here.name}-{record}", text)
 
     def test_custom_key(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -454,6 +465,24 @@ class RunDeviceExperiment(unittest.TestCase):
             self._run(here, key=lambda section, temp: temp)
             (rec,) = (here / "records").glob("*.md")
             self.assertIn("(27.0,", rec.read_text())
+
+    def test_preflight_failure_simulates_nothing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            here = Path(tmp)
+            rc, calls = self._run(here, store=FakeStore(fail_preflight="no broker"))
+            self.assertNotEqual(rc, 0)
+            self.assertEqual(calls, [])
+            self.assertFalse((here / "manifests").exists())
+            self.assertFalse((here / "records").exists())
+            self.assertFalse((here / "corners").exists())
+
+    def test_put_failure_leaves_no_manifest_or_record(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            here = Path(tmp)
+            with self.assertRaises(Exception):
+                self._run(here, store=FakeStore(fail_put=True))
+            self.assertFalse((here / "manifests").exists())
+            self.assertFalse((here / "records").exists())
 
     def test_extract_failure_writes_no_record(self):
         def bad(log, section, temp):

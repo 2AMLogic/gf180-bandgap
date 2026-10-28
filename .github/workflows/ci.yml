@@ -12,7 +12,8 @@ name: CI
 # | `.github/scripts/lint.sh`                     | python3      | `lint` (here)      |
 # | evidence-record format + append-only          | python3+git  | `lint` (here)      |
 # | T1 signoff pins vs. committed artifacts       | python3      | `lint` (here)      |
-# | T1 signoff re-grade vs. committed record      | klt+network  | `signoff` (here)   |
+# | T1 attested files vs. attestation envelopes   | python3      | `lint` (here)      |
+# | T1 signoff re-grade + `--attest --check`      | klt+network  | `signoff` (here)   |
 # | harness unit tests (`sim/tests/`)             | python3      | `test` (here)      |
 # | layout unit tests (`layout/**/test_*.py`)     | python3      | `test` (here)      |
 # | signoff validator unit tests (`signoff/tests/`)| python3     | `test` (here)      |
@@ -75,7 +76,9 @@ jobs:
 
   test:
     name: Harness self-test (no PDK, py${{ matrix.python-version }})
-    runs-on: ubuntu-latest
+    # Pinned, not ubuntu-latest: setup-python ships no CPython 3.9 for
+    # ubuntu-26.04 (as of 2026-10-21). Revisit when the 3.9 floor is retired.
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -149,14 +152,18 @@ jobs:
         run: |
           set -euo pipefail
           pin="$(grep -v '^[[:space:]]*#' signoff/klt-pin.txt | grep -v '^[[:space:]]*$' | head -1)"
-          echo "klayout-tools @ ${pin}"
+          echo "klayout-tools==${pin}"
           python3 -m pip install --upgrade pip
-          python3 -m pip install "klayout-tools @ git+https://github.com/2AMLogic/klayout-tools@${pin}"
-          klt version || true
+          python3 -m pip install "klayout-tools==${pin}"
+          klt --version
 
       - name: Re-grade the block manifest
         # `klt signoff --manifest` exits 3 when the block is not yet T1, which
         # is this block's current state and not an error -- check_signoff.py
         # knows that, and fails only on a real error or on any drift between
         # the fresh grade and the committed record.
+        # The step above pip-installed klt at klt-pin.txt's revision, so the
+        # explicit override selects that same revision (no uvx on the runner).
+        env:
+          KLT_SIGNOFF_CMD: klt
         run: python3 signoff/check_signoff.py --run-klt

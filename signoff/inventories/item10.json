@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "kind": "t1-attestation-inventory",
+  "t1_item": 10,
+  "description": "Repo hygiene: README, LICENSE, the CI workflow, and the commands CI runs for lint and unit tests. The lint audit sets SIGNOFF_ATTESTING=1 so signoff/check_signoff.py does not fail it on the very envelope being regenerated (a stale envelope would otherwise make it impossible to re-attest); drift is still caught by `--check`.",
+  "hygiene": [
+    "README.md",
+    "LICENSE",
+    ".github/workflows/ci.yml"
+  ],
+  "checks": [
+    {
+      "name": "lint",
+      "argv": [
+        "env",
+        "SIGNOFF_ATTESTING=1",
+        "bash",
+        ".github/scripts/lint.sh"
+      ]
+    },
+    {
+      "name": "signoff-unit-tests",
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "signoff/tests"
+      ]
+    }
+  ]
+}

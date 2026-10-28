@@ -1,0 +1,69 @@
+{
+  "netlist": "body.spice",
+  "engine": "ngspice",
+  "models": {
+    "pdk": "gf180mcuD",
+    "lib": "libs.tech/ngspice/sm141064.ngspice"
+  },
+  "corners": {
+    "process": [
+      {
+        "name": "tt",
+        "sections": [
+          "typical",
+          "res_typical",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ]
+      }
+    ],
+    "supply_v": {
+      "vsup": [
+        3.3
+      ]
+    },
+    "temperature_c": [
+      27.0
+    ]
+  },
+  "analysis": {
+    "kind": "dc",
+    "args": "vsup 3.3 3.3 1"
+  },
+  "measurements": [
+    {
+      "name": "vref_lo",
+      "spice": ".meas dc vref_lo MIN v(vref)",
+      "unit": "V"
+    },
+    {
+      "name": "vref_hi",
+      "spice": ".meas dc vref_hi MAX v(vref)",
+      "unit": "V"
+    },
+    {
+      "name": "isup_lo",
+      "spice": ".meas dc isup_lo MIN i(vsup)",
+      "unit": "A"
+    },
+    {
+      "name": "isup_hi",
+      "spice": ".meas dc isup_hi MAX i(vsup)",
+      "unit": "A"
+    }
+  ],
+  "monte_carlo": {
+    "n": 300,
+    "seed": 20260801,
+    "vary": "mismatch"
+  },
+  "options": {
+    "timeout_s": 120,
+    "keep_artifacts": false,
+    "ngspice_init": [
+      "set measureprec=10"
+    ]
+  }
+}

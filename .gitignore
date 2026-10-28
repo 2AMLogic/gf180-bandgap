@@ -18,6 +18,11 @@ sim/smoke_test/*.raw
 # Raw per-corner ngspice logs under sim/<experiment>/corners/<record-id>/ are
 # the evidence trail sim/README.md requires each record to link to -- they are
 # committed, not scratch, so they are exempted from the blanket *.log ignore.
+# New harness runs no longer write here: they stage under sim/.work/.stage/
+# (ignored) and store raw output in the artifact store, keeping only
+# manifests/artifacts/*.manifest.json (sim/harness/evidence_store.py). This
+# exemption remains for already-committed records and the fleet-ingest tools
+# (sim/tools/*_ingest.py), which still commit their logs.
 !sim/*/corners/**/*.log
 
 # Simulation harness scratch: generated ngspice decks. Disposable; the
@@ -58,17 +63,20 @@ sim/pdk.local.json
 .loom/claims/
 .loom/locks/
 .loom/signals/
+.loom/sweep-dispatch-tap/
 .loom/status/
 .loom/retry-state/
 .loom/exit-codes/
 .loom/sweep-checkpoint/
+.loom/private-jobs/
 .loom/sweep-run/
 .loom/targets/
 .loom/target*/
 .cargo-target*/
+.loom-target/
+/target-*/
 .loom/state/*
 !.loom/state/detect-unlabeled-epics-dismissed
-.loom/concierge/
 .loom/stats/
 .loom/diagnostics/
 .loom/guide-docs-state.json

@@ -2,8 +2,81 @@
 
 Chronological record of recently merged pull requests and closed issues, maintained by the Loom Guide role. Newest entries appear first.
 
+### 2026-10-27
+
+- **PR #405**: docs: point klt install hints at the PyPI pin instead of the git URL
+- **Issue #400** (closed): Doctor: update before push
+- **PR #399**: chore(signoff): pin klayout-tools to PyPI 0.8.0 and regenerate record
+- **Issue #398** (closed): Bump klayout-tools pin 67e684ed9b2b → 0.8.0
+
+### 2026-10-25
+
+- **PR #390**: docs(layout): condense resolved friction list, mark klayout-tools#2169/#2179 closed
+- **PR #340**: fix(signoff): default re-grade uses the repo klt pin via uvx
+- **Issue #389** (closed): Condense resolved entries in layout/README.md 'Friction filed' and fix stale 'Still open' claims
+- **Issue #328** (closed): signoff: use the repository klt pin for default local re-grading
+
+### 2026-10-24
+
+- **PR #383**: chore: remove stale tracked .loom/manifest.json.tmp install leftover
+- **Issue #380** (closed): Remove tracked stale .loom/manifest.json.tmp (gitignored install leftover)
+- **PR #379**: docs(lvs): root-cause unreproducible item-4 LVS match; add tie-aware reference and envelope
+- **Issue #378** (closed): LVS: pinned klt cannot reproduce item 4's match on the unchanged baseline GDS (10 net.merged)
+
+### 2026-10-23
+
+- **PR #376**: feat(sim): store new raw run output in the artifact store, commit only manifests
+- **Issue #373** (closed): Adopt the common artifact store for sim evidence (manifests in git, bytes via klt artifact)
+
+### 2026-10-22
+
+- **PR #364**: docs(sim): add fleet rerun preparation plan for six diagnostic benches
+- **Issue #362** (closed): Prepare the six diagnostic-bench fleet adapter and rerun plan (part of #239)
+
+### 2026-10-21
+
+- **PR #369**: ci: pin test job to ubuntu-24.04 for the py3.9 leg
+- **Issue #368** (closed): ci: py3.9 harness self-test fails on ubuntu-latest (26.04 has no Python 3.9)
+- **PR #366**: Bump Repo Skills 0.24.3 -> 0.24.7
+
+### 2026-10-17
+
+- **PR #359**: feat(signoff): attest T1 items 9 and 10 with klt --attest
+- **Issue #356** (closed): T1 items 9 and 10: bump the klt pin and attest with tool-produced envelopes (items 1 and 2 after #204)
+
+### 2026-10-16
+
+- **PR #346**: sim: ingest iq fleet runs into a gated record via fleet_ingest
+- **PR #345**: sim: final-DUT fleet evidence for TC, MC, PSRR, line regulation and startup; iq pending
+- **PR #343**: Bump Repo Skills 0.24.1 -> 0.24.3
+- **Issue #344** (closed): sim: add an iq fleet ingestion adapter (record + verdict) for the batch-fleet iq run
+
+### 2026-10-15
+
+- **PR #337**: Bump Repo Skills 0.19.5 -> 0.24.1
+
+### 2026-10-14
+
+- **PR #244**: docs: remove stale hard-coded harness unit-test count
+- **Issue #243** (closed): docs: remove stale hard-coded harness unit-test count (40 vs 256)
+
 ### 2026-10-10
 
+- **PR #327**: layout: parse m2m3 probe resistors by model and position, not R$ prefix (#303)
+- **PR #325**: sim: validate interpolation series shape and reject backward sweep axes
+- **PR #323**: sim: reject ambiguous duplicate DC table columns
+- **PR #321**: sim: reserve device evidence IDs and prevent artifact overwrite
+- **PR #320**: sim: reject non-finite DC-sweep data and interpolation inputs
+- **PR #316**: ci: test the documented Python 3.9 floor and pin volare (#309)
+- **PR #318**: tests: unit-cover mk_extracted_dut.py (#315)
+- **Issue #329** (closed): Guard telemetry: unresolved worktree variables block scoped evidence writes
+- **Issue #303** (closed): Build/runtime failure on main: m2m3_stack_probe netlist test depends on klt netlist device-line format
+- **Issue #324** (closed): sim: validate interpolation series shape and reject backward sweep axes
+- **Issue #322** (closed): sim: reject ambiguous duplicate DC table columns
+- **Issue #319** (closed): sim: reserve device evidence IDs and prevent artifact overwrite
+- **Issue #317** (closed): sim: reject non-finite DC-sweep data and interpolation inputs
+- **Issue #309** (closed): ci: test the documented Python 3.9 floor and pin volare in sim-pdk.yml
+- **Issue #315** (closed): tests: unit-cover mk_extracted_dut.py (post-layout netlist transforms have no tests)
 - **PR #312**: sim: reject duplicate waveform columns before deriving verdicts
 - **PR #311**: sim: validate Monte Carlo process and mismatch seed components (#291)
 - **PR #310**: docs: guard-compatible evidence copies and assignment-chain reproduction

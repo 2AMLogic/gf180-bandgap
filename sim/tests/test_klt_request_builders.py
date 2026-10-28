@@ -177,5 +177,17 @@ class LumpedR1(unittest.TestCase):
         self.assertEqual(cm.exception.code, 2)
 
 
+class IqSweep(unittest.TestCase):
+    """The fleet iq request must cover the binding corner (125 C) and a valid `AT=` interval."""
+
+    def test_iq_sweeps_full_temperature_span_and_reads_three_points(self):
+        analysis, meas = mk.BENCH["iq"]
+        self.assertEqual(analysis["args"], "temp -40 125 1")
+        names = {m[0] for m in meas}
+        self.assertEqual(names, {f"{q}_{t}" for q in ("isup", "vref") for t in ("m40", "27", "125")})
+        # a one-point sweep makes ngspice 46 fail `FIND ... AT=` ("out of interval")
+        self.assertNotRegex(analysis["args"], r"temp (\S+) \1 ")
+
+
 if __name__ == "__main__":
     unittest.main()

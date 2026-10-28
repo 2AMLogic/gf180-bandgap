@@ -107,7 +107,7 @@ pass — `status: "not_checked"`, exit `4`, on *every* gf180mcu `klt erc`
 run regardless of how clean its connectivity is. `run_erc.py` accepts exit
 `4` alongside `0` and `3` for exactly this reason and gates on the finding
 rules instead. Filed upstream as a tool gap:
-**klayout-tools#2179**.
+**klayout-tools#2179** (closed 2026-09-20).
 
 ### The LVS half of item 11
 
@@ -140,7 +140,8 @@ not evidence of absence**, and must not be cited as a well-tie verdict.
 
 Two independent reasons it is omitted, both measured:
 
-1. **klayout-tools#2169** — declaring any `ties[]` entry collapses the
+1. **klayout-tools#2169** (closed 2026-09-20; declaring `ties[]` is now tracked in
+   gf180-bandgap#358) — declaring any `ties[]` entry collapses the
    whole design into one electrical island and reports **false** shorts.
    `erc-tie-spec.known-gap.json` + its committed report are the
    reproduction on this block: `gate_count` 10 → 1, and all three declared
@@ -198,16 +199,16 @@ not a tie verdict.
 So: **no tool in this flow currently returns a well/substrate-tie verdict
 for this block.** Items (1)–(3) say the taps exist, are legal, and are
 strapped onto the right rails; none of them says every well and every
-substrate region *reaches* one. That gap closes when klayout-tools#2169 is
-fixed and `ties[]` becomes usable — and, for the substrate half, only if
+substrate region *reaches* one. That gap closes when `ties[]` is declared now that klayout-tools#2169 is
+fixed (gf180-bandgap#358) — and, for the substrate half, only if
 `ties[]` grows a way to name an undrawn native substrate.
 
 ## Friction filed
 
-| Upstream | What |
-| --- | --- |
-| [klayout-tools#2169](https://github.com/2AMLogic/klayout-tools/issues/2169) | `ties[]` collapses a design to one island (false `erc.supply_short`). Reproduced here on a hand-drawn analog layout — see `erc-tie-spec.known-gap.json`. |
-| [klayout-tools#2179](https://github.com/2AMLogic/klayout-tools/issues/2179) | `klt erc --pdk` has no antenna-ratio table outside sky130, so every non-sky130 run is `status: "not_checked"` / exit 4 even when its connectivity rules ran clean. |
+| Upstream | Status | What |
+| --- | --- | --- |
+| [klayout-tools#2169](https://github.com/2AMLogic/klayout-tools/issues/2169) | closed 2026-09-20 | `ties[]` collapses a design to one island (false `erc.supply_short`). Reproduced here on a hand-drawn analog layout — see `erc-tie-spec.known-gap.json`. |
+| [klayout-tools#2179](https://github.com/2AMLogic/klayout-tools/issues/2179) | closed 2026-09-20 | `klt erc --pdk` has no antenna-ratio table outside sky130, so every non-sky130 run is `status: "not_checked"` / exit 4 even when its connectivity rules ran clean. |
 
-Per `CLAUDE.md`'s friction protocol, both are filed against the tool as
+Per `CLAUDE.md`'s friction protocol, both were filed against the tool as
 generic tool gaps, with no design-specific detail from this repo.

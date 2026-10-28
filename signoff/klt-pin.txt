@@ -1,4 +1,5 @@
-# The klayout-tools revision `klt signoff --manifest` is graded with here.
+# The klayout-tools release (PyPI version) `klt signoff --manifest` is graded
+# with here; consumers install `klayout-tools==<this line>`.
 #
 # Pinned, not floating, for one reason: the T1 item skeleton is parsed out of
 # klayout-tools' own docs/design-evidence-tiers.md at run time, so the *number
@@ -11,5 +12,7 @@
 #
 # Bumping this pin is a deliberate act: bump the rev, re-run
 # signoff/regenerate.sh, commit the new report, and state in the PR what moved
-# in the checklist. One non-comment line: a full 40-hex git sha.
-d5893304afc2bfa6228609740e83292c44b854f3
+# in the checklist. One non-comment line: a PyPI version
+# (a git build reports a dev version and would not satisfy `==`,
+# klayout-tools#2823).
+0.8.0

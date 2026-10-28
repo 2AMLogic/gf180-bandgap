@@ -5,15 +5,22 @@ This roadmap is generated from the current GitHub label state by the Loom Guide 
 <!-- guide:plan-body:start -->
 ## Operator Attention: Merge-Risk-Hold Pileup
 
-Judge-approved PRs stuck under a `loom:operator` merge-risk hold — implementation work is done, only a human merge decision is missing.
-
-- **#244**: docs: remove stale hard-coded harness unit-test count
-
-## Operator Priority
-
-Issues the operator starred (`loom:operator-priority`); land these first.
+Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
 
 _None._
+
+## Very Important
+
+`loom:very-important` (one counts per workspace); every stage takes these first.
+
+_None._
+
+## Important
+
+`loom:important`; taken before unlabelled work.
+
+- **#203**: DR-0007 phase A: measure array ratio and finalize schematic PVT evidence
+- **#239**: DR-0007: execute final-DUT fleet suite and mismatch evidence run
 
 ## Ready
 
@@ -25,23 +32,20 @@ _None._
 
 Issues currently being built (`loom:building`).
 
-- **#281**: docs: document guard-compatible evidence copies and assignment-chain reproduction
-- **#288**: sim: classify reduced corner-set suite runs as diagnostic subsets
-- **#291**: sim: validate Monte Carlo process and mismatch seed components
-- **#294**: sim: reject duplicate waveform columns before deriving verdicts
-- **#298**: sim: validate standalone TC outer temperature before corner aggregation
+- **#308**: ci: fail when committed bandgap_top.gds differs from generate.py output
+- **#386**: Prepare the revised par_r resistor-mismatch model-risk assessment and validation plan (part of #239)
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
-- **#299**: sim: validate standalone TC outer corner identity (#298)
+- **#387**: docs: propose DR-0008 par_r model-risk successor and validation plan
 
 ## Approved (Awaiting Merge)
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
-- **#244**: docs: remove stale hard-coded harness unit-test count
+_None._
 
 ## Proposed
 
@@ -50,12 +54,16 @@ Issues carrying `loom:curated`.
 - **#87**: Layout's 4x unit-PNP array for core.Q2 gives an effective dVBE ratio of 4.03, not the schematic's 3.63 — floorplan 4.1 asserts the opposite *(curated)*
 - **#203**: DR-0007 phase A: measure array ratio and finalize schematic PVT evidence *(curated)*
 - **#239**: DR-0007: execute final-DUT fleet suite and mismatch evidence run *(curated)*
-- **#243**: docs: remove stale hard-coded harness unit-test count (40 vs 256) *(curated)*
-- **#281**: docs: document guard-compatible evidence copies and assignment-chain reproduction *(curated)*
+- **#308**: ci: fail when committed bandgap_top.gds differs from generate.py output *(curated)*
+- **#326**: layout/bandgap_top: routing-budget S1 area disagrees with committed GDS bbox (klayout-gated test fails on main) *(curated)*
+- **#358**: T1 item 11: declare ERC well/substrate ties now that klayout-tools#2169 is fixed, then cite item 11 *(curated)*
+- **#386**: Prepare the revised par_r resistor-mismatch model-risk assessment and validation plan (part of #239) *(curated)*
 
 ## Proposed (Architect / Hermit)
 
 - **#219**: sim harness: share the batch-backend guard and cap default local --jobs *(architect)*
+- **#306**: ci: run klayout/klt-gated layout tests in the signoff job and fail on skips *(architect)*
+- **#403**: Collapse the two LVS reference netlists: fold tie_reference.py into make_reference.py *(hermit)*
 
 ## Epics
 
@@ -65,15 +73,16 @@ Issues carrying `loom:curated`.
 
 ## Backlog Balance
 
-| Tier | Count |
+| Bucket | Count |
 |------|-------|
-| Operator merge-risk holds | 1 |
-| Operator priority | 0 |
+| Operator merge-risk holds | 0 |
+| Very important | 0 |
+| Important | 2 |
 | Ready (`loom:issue`) | 0 |
-| In Progress (`loom:building`) | 5 |
+| In Progress (`loom:building`) | 2 |
 | PRs awaiting review | 1 |
-| Approved PRs awaiting merge | 1 |
-| Curated | 5 |
-| Architect / Hermit proposals | 1 |
+| Approved PRs awaiting merge | 0 |
+| Curated | 7 |
+| Architect / Hermit proposals | 3 |
 | Active epics | 3 |
 <!-- guide:plan-body:end -->

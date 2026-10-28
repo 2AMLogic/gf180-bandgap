@@ -323,6 +323,39 @@ class KltCommandTests(QuietCase):
         with mock.patch.dict("os.environ", {"KLT_SIGNOFF_CMD": "foo  bar"}):
             self.assertEqual(cs.klt_command(), ["foo", "bar"])
 
+    def test_default_uses_pin_even_with_path_klt(self):
+        (self.signoff / "klt-pin.txt").write_text("abc123\n", encoding="utf-8")
+        with mock.patch.dict("os.environ", {"KLT_SIGNOFF_CMD": ""}), \
+                mock.patch.object(cs, "KLT_PIN", self.signoff / "klt-pin.txt"), \
+                mock.patch.object(cs, "_which", side_effect=lambda b: f"/bin/{b}"):
+            command = cs.klt_command()
+        self.assertEqual(command[0], "uvx")
+        self.assertIn("klayout-tools==abc123", command)
+        self.assertEqual(command[-1], "klt")
+
+    def test_missing_uvx_fails_clearly_without_path_fallback(self):
+        (self.signoff / "klt-pin.txt").write_text("abc123\n", encoding="utf-8")
+        with mock.patch.dict("os.environ", {"KLT_SIGNOFF_CMD": ""}), \
+                mock.patch.object(cs, "KLT_PIN", self.signoff / "klt-pin.txt"), \
+                mock.patch.object(
+                    cs, "_which", side_effect=lambda b: "/bin/klt" if b == "klt" else None
+                ):
+            with self.assertRaisesRegex(cs.KltUnavailable, "uvx not found"):
+                cs.klt_command()
+
+    def test_missing_pin_fails_clearly(self):
+        (self.signoff / "klt-pin.txt").write_text("# only comments\n", encoding="utf-8")
+        with mock.patch.dict("os.environ", {"KLT_SIGNOFF_CMD": ""}), \
+                mock.patch.object(cs, "KLT_PIN", self.signoff / "klt-pin.txt"):
+            with self.assertRaisesRegex(cs.KltUnavailable, "names no revision"):
+                cs.klt_command()
+
+    def test_regrade_reports_unavailable_as_failure(self):
+        failures = cs.Failures()
+        with mock.patch.object(cs, "klt_command", side_effect=cs.KltUnavailable("nope")):
+            cs.run_klt({}, failures)
+        self.assertTrue(failures)
+
     def test_pin_parsing_skips_comments(self):
         (self.signoff / "klt-pin.txt").write_text("# c\n\nabc123\n", encoding="utf-8")
         self.assertEqual(cs.klt_pin(), "abc123")
@@ -449,6 +482,107 @@ class MalformedShapeTests(QuietCase):
         (self.signoff / "pinned-inputs.json").write_text("[]", encoding="utf-8")
         code, _ = self.run_main()
         self.assertEqual(code, 1)
+
+
+class AttestationTests(QuietCase):
+    """`klt signoff --attest` envelopes: offline drift gate and `--check`."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        (self.root / "docs").mkdir()
+        self.hygiene = self.root / "docs" / "README.md"
+        self.hygiene.write_bytes(b"readme-bytes")
+        self.envelope = {
+            "kind": "generic", "status": "pass", "t1_item": 10,
+            "attestation": {"checks": [
+                {"check": "present", "role": "hygiene", "path": "docs/README.md",
+                 "passed": True, "content_hash": cs.sha256_file(self.hygiene)},
+            ]},
+            "provenance": {"input": {
+                "path": {"path": "signoff/inventories/item10.json", "scope": "repo"},
+                "content_hash": "sha256:00"}},
+        }
+        self.cited = "signoff/attestations/item10.json"
+        (self.signoff / "attestations").mkdir()
+        self.evidence = {"10": {"file": self.cited, "content_hash": "sha256:00"}}
+        self.write_envelope()
+
+    def write_envelope(self) -> None:
+        (self.root / self.cited).write_text(json.dumps(self.envelope), encoding="utf-8")
+
+    def offline(self) -> cs.Failures:
+        failures = cs.Failures()
+        with mock.patch.object(cs, "_tracked_testbench_files", return_value=None):
+            cs.check_attestations(self.evidence, failures)
+        return failures
+
+    def test_unchanged_files_pass(self):
+        self.assertFalse(self.offline())
+
+    def test_changed_inventoried_file_fails(self):
+        self.hygiene.write_bytes(b"edited")
+        self.assertFails(self.offline(), "docs/README.md has changed")
+
+    def test_skipped_while_attesting(self):
+        self.hygiene.write_bytes(b"edited")
+        with mock.patch.dict("os.environ", {"SIGNOFF_ATTESTING": "1"}):
+            self.assertFalse(self.offline())
+
+    def test_deleted_inventoried_file_fails(self):
+        self.hygiene.unlink()
+        self.assertFails(self.offline(), "no longer exists")
+
+    def test_failing_envelope_fails(self):
+        self.envelope["status"] = "fail"
+        self.write_envelope()
+        self.assertFails(self.offline(), "not 'pass'")
+
+    def test_envelope_cited_for_wrong_item_fails(self):
+        self.evidence = {"9": self.evidence["10"]}
+        self.assertFails(self.offline(), "attests item 10, cited for item 9")
+
+    def test_untracked_testbench_in_item9_inventory_fails(self):
+        self.envelope["t1_item"] = 9
+        self.write_envelope()
+        self.evidence = {"9": self.evidence["10"]}
+        failures = cs.Failures()
+        with mock.patch.object(cs, "_tracked_testbench_files",
+                               return_value={"docs/README.md", "sim/new/testbench/tb.json"}):
+            cs.check_attestations(self.evidence, failures)
+        self.assertFails(failures, "sim/new/testbench/tb.json is not in")
+
+    def check_run(self, returncode: int, stdout: str = "") -> cs.Failures:
+        failures = cs.Failures()
+        result = subprocess.CompletedProcess([], returncode, stdout, "")
+        with mock.patch.dict("os.environ", {"KLT_SIGNOFF_CMD": "klt"}), \
+                mock.patch.object(cs.subprocess, "run", return_value=result) as run:
+            cs.run_attestations(self.evidence, failures)
+        self.run_mock = run
+        return failures
+
+    def test_check_command_shape_and_match(self):
+        self.assertFalse(self.check_run(0, json.dumps({"status": "match"})))
+        self.assertEqual(self.run_mock.call_args[0][0], [
+            "klt", "signoff", "--attest", "10", "--inventory",
+            "signoff/inventories/item10.json", "--check", self.cited,
+            "--format", "json"])
+
+    def test_check_reports_unavailable_klt_as_failure(self):
+        failures = cs.Failures()
+        with mock.patch.object(cs, "klt_command", side_effect=cs.KltUnavailable("nope")), \
+                mock.patch.object(cs.subprocess, "run") as run:
+            cs.run_attestations(self.evidence, failures)
+        run.assert_not_called()
+        self.assertFails(failures, "nope")
+
+    def test_flipped_check_outcome_fails(self):
+        drifted = {"status": "drifted", "fresh_status": "fail",
+                   "drift": [{"path": "attestation.checks[3].passed"}]}
+        self.assertFails(self.check_run(3, json.dumps(drifted)),
+                         "exited 3", "attestation.checks[3].passed")
+
+    def test_unreadable_check_output_still_fails(self):
+        self.assertFails(self.check_run(1, "not json"), "exited 1")
 
 
 if __name__ == "__main__":

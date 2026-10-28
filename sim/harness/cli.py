@@ -9,7 +9,7 @@ import sys
 import time
 from pathlib import Path
 
-from . import HARNESS_VERSION, corners as corners_mod, report, runner, testbench as tb_mod
+from . import HARNESS_VERSION, corners as corners_mod, evidence_store, report, runner, testbench as tb_mod
 from .fmt import _fmt
 from .pdk import PdkNotFound, find_pdk
 from .runner import NgspiceMissing
@@ -269,7 +269,18 @@ def run(args: argparse.Namespace) -> int:
     git = report.git_provenance(REPO_ROOT)
     record_id = report.allocate_record_id(REPO_ROOT, records_dir, started, git=git)
     workdir = WORK_DIR / tb.experiment / record_id
-    log_dir = None if args.no_write else experiment_dir / report.CORNERS_DIR / record_id
+    evidence = None
+    log_dir = None
+    if not args.no_write:
+        # Fail closed before simulating anything: new raw output goes to the
+        # artifact store, never into git.
+        evidence = evidence_store.EvidenceRun(tb.experiment, record_id)
+        try:
+            evidence.start()
+        except evidence_store.StoreUnavailable as exc:
+            print(f"error: artifact store unavailable: {exc}", file=sys.stderr)
+            return EXIT_ENVIRONMENT
+        log_dir = evidence.log_dir
 
     if not args.quiet:
         print(f"experiment: {tb.experiment}"
@@ -323,6 +334,15 @@ def run(args: argparse.Namespace) -> int:
 
     notes = Path(args.notes_file).read_text() if args.notes_file else ""
 
+    stored_lines: list[str] = []
+    if evidence is not None:
+        try:
+            evidence.finalize()
+        except evidence_store.StoreUnavailable as exc:
+            print(f"error: artifact store unavailable: {exc}", file=sys.stderr)
+            return EXIT_ENVIRONMENT
+        stored_lines = evidence.stored_lines()
+
     record = report.build_record(
         tb=tb,
         pdk=pdk,
@@ -339,6 +359,8 @@ def run(args: argparse.Namespace) -> int:
         subset_reason=subset_reason,
         notes=notes,
         git=git,
+        stored_lines=stored_lines,
+        stored_manifest=evidence.manifest_rel if evidence is not None else "",
     )
 
     print()
@@ -363,10 +385,11 @@ def run(args: argparse.Namespace) -> int:
     if not args.no_write:
         snapshot = report.write_netlist_snapshot(tb, experiment_dir, record_id)
         record_path = report.write_record(record, experiment_dir)
+        evidence.commit()
         print()
         print(f"record    : {record_path}")
         print(f"snapshot  : {snapshot}")
-        print(f"raw logs  : {log_dir}")
+        print(f"manifest  : {evidence.manifest_path}")
     else:
         print()
         print("evidence  : not recorded (--no-write)")

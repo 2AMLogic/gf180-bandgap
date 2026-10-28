@@ -26,6 +26,7 @@ import fleet_common as fc  # noqa: E402
 import fleet_ingest as fi  # noqa: E402
 import mk_klt_fleet_request as mk  # noqa: E402
 import tc_ingest as ti  # noqa: E402
+from harness import evidence_lint  # noqa: E402
 from suite import analysis, completeness, spec  # noqa: E402
 from suite.cli import BenchRun, expected_corner_ids  # noqa: E402
 
@@ -60,6 +61,14 @@ def op_wave(vref=1.2):
 def dc_wave(slope=1e-5, n=133):
     x = [2.97 + 0.005 * i for i in range(n)]
     return {"v-sweep": x, "v(vref)": [1.2 + slope * (v - 3.3) for v in x], "v(vdd)": x}
+
+
+def iq_vals(iq_ua=(20.0, 25.0, 30.0), vref=1.2):
+    """isup/vref `.meas` readings of one iq sweep unit at -40 / 27 / 125 C (A, V; isup is negative)."""
+    out = {}
+    for tag, ua in zip(("m40", "27", "125"), iq_ua):
+        out[f"isup_{tag}"], out[f"vref_{tag}"] = -ua * 1e-6, vref
+    return out
 
 
 def tran_wave(supply, kind="clean", n=1000):
@@ -120,6 +129,8 @@ class Fixture:
             return {}
         if self.bench == "line-regulation":
             return {"vref_min": 1.2 - 3.3e-6, "vref_max": 1.2 + 3.3e-6, "v_lo_check": 2.97, "v_hi_check": 3.63}
+        if self.bench == "iq":
+            return iq_vals()
         return {}
 
     def unit_wave(self, r, p, s, t):
@@ -129,6 +140,8 @@ class Fixture:
             return ac_wave() if r["role"] == "ac" else op_wave()
         if self.bench == "line-regulation":
             return dc_wave()
+        if self.bench == "iq":
+            return None  # the iq request asks for no waveform: `.meas` readings only
         return tran_wave(r["supply_v"])
 
     def make_report(self, r):
@@ -304,6 +317,8 @@ class Requests(TmpCase):
                 for r in f.plan["requests"]:
                     req = json.loads((self.tmp / r["name"] / "request.json").read_text())
                     self.assertEqual([p["name"] for p in req["corners"]["process"]], names)
+                    if bench == "iq":  # the temperatures are read inside the dc temp sweep (IqRequests)
+                        continue
                     self.assertEqual(req["corners"]["temperature_c"], f.tb["temperatures_c"])
                     self.assertEqual({(p, t) for p, _, t in r["expected_units"]},
                                      {(n, float(t)) for n in names for t in f.tb["temperatures_c"]})
@@ -556,11 +571,11 @@ class LineReg(TmpCase):
         self.assertEqual(res["overall"], "INCOMPLETE")
 
     def test_small_disagreement_beyond_print_precision_is_incomplete(self):
-        # 1e-5 V at 1.2 V is ~8e-6 relative: well past 7-digit rounding (<= 5e-7)
+        # 5e-5 V at 1.2 V is ~4e-5 relative: well past 6-digit rounding (<= 5e-6)
         w = dc_wave()
         hi, lo = max(w["v(vref)"]), min(w["v(vref)"])
         def vals(r, p, s, t):
-            return {"vref_min": lo, "vref_max": hi + 1e-5, "v_lo_check": 2.97, "v_hi_check": 3.63}
+            return {"vref_min": lo, "vref_max": hi + 5e-5, "v_lo_check": 2.97, "v_hi_check": 3.63}
         res = self.fx("line-regulation", vals=vals).assess()
         self.assertEqual(res["overall"], "INCOMPLETE")
 
@@ -590,7 +605,9 @@ class LineReg(TmpCase):
     def test_meas_agrees_tolerance_is_print_precision(self):
         for x in (1.200348979, 1.200342379, 2.0726349036795e-3, 3.63, 0.0):
             self.assertTrue(fi.meas_agrees(float(f"{x:e}"), x))
-        self.assertFalse(fi.meas_agrees(1.200349, 1.200349 + 3e-6))
+            # ngspice 46 (batch fleet) prints 6 significant digits
+            self.assertTrue(fi.meas_agrees(float(f"{x:.5e}"), x))
+        self.assertFalse(fi.meas_agrees(1.20035, 1.20035 + 3e-5))
 
     def test_sweep_endpoint_sanity(self):
         def vals(r, p, s, t):
@@ -892,6 +909,8 @@ class Fails(TmpCase):
     def test_unsupported_analysis_never_yields_data(self):
         # a worker that dropped the waveform artifact (capability not delivered)
         for bench in self.BENCHES:
+            if bench == "iq":
+                continue  # `.meas` readings only: the iq request asks for no waveform
             with self.subTest(bench=bench):
                 self.setUp()
                 res = self.fx(bench, include_wave=False).assess()
@@ -1024,7 +1043,7 @@ class NoiseRequests(TmpCase):
         self.assertTrue(fi.plan_problems("output-noise", g.tb, g.plan))
 
     def test_existing_benches_keep_their_contract(self):
-        self.assertEqual(mk.BENCHES, ("psrr-dc", "line-regulation", "startup"))
+        self.assertEqual(mk.BENCHES, ("psrr-dc", "line-regulation", "startup", "iq"))
         self.assertEqual(fi.BENCHES, mk.BENCHES)
         self.assertNotIn("output-noise", mk.BENCHES)
         self.assertIn("output-noise", mk.SUPPORTED)
@@ -1178,7 +1197,10 @@ class NoiseIngest(TmpCase):
         samples = analysis.read_corner_logs(cdir)
         self.assertEqual(len(samples), 81)
         self.assertIn("onoise_int_0p1_10hz_uvrms", next(iter(samples.values())))
-        self.assertEqual(len(list((exp / "netlist-snapshots").glob("*.spice"))), 3)
+        # evidence_lint: one flat snapshot per record; per-request decks live in corners/<record>/
+        self.assertEqual(len(list((exp / "netlist-snapshots").glob("*.spice"))), 1)
+        self.assertEqual(len(list(cdir.glob("deck-*.spice"))), 3)
+        self.assertEqual([p for p in cdir.iterdir() if p.is_dir()], [])
 
 
 class NoiseFails(Fails):
@@ -1284,7 +1306,9 @@ class SuiteIntegration(TmpCase):
         self.assertEqual(len(samples), 81)
         self.assertIn("startup_time_s", next(iter(samples.values())))
         self.assertTrue((cdir / "plan.json").exists())
-        self.assertTrue(any((exp / "netlist-snapshots").glob("*.vdd_*.spice")))
+        self.assertEqual(len(list((exp / "netlist-snapshots").glob("*.spice"))), 1)
+        self.assertTrue(any(cdir.glob("deck-vdd_*.spice")))
+        self.assertEqual([p for p in cdir.iterdir() if p.is_dir()], [])  # corners/<record>/ is flat
 
     def test_append_only_second_ingest_mints_a_new_record(self):
         fx = self.fx("line-regulation")
@@ -1525,6 +1549,151 @@ class DuplicateWaveformColumns(TmpCase):
     def test_noise_clean_run_unchanged(self):
         res = self.fx("output-noise").assess()
         self.assertNotEqual(res["overall"], "INCOMPLETE", res["problems"])
+
+# ---------------------------------------------------------------- iq (#344)
+
+
+class IqRequests(TmpCase):
+    def test_request_is_the_one_mk_klt_request_emits(self):
+        import mk_klt_request as mkr
+
+        f = self.fx("iq")
+        self.assertEqual(json.loads((self.tmp / "temp" / "request.json").read_text()), mkr.build_request("iq", f.tb))
+        self.assertEqual((self.tmp / "temp" / "body.spice").read_text(),
+                         mkr.build_body("iq", f.tb, DUT, self.tmp / "design.ngspice"))
+
+    def test_plan_maps_each_bench_temperature_to_sweep_readings(self):
+        f = self.fx("iq")
+        (r,) = f.plan["requests"]
+        self.assertEqual(r["analysis"], {"kind": "dc", "args": "temp -40 125 1"})
+        self.assertEqual(len(r["expected_units"]), 27)  # 9 process x 3 supply; the temperatures are inside the sweep
+        self.assertEqual(len(f.assess()["grid"]), 81)  # 9 process x 3 temperature x 3 supply
+        self.assertEqual([t["isup"] for t in r["temp_points"]], ["isup_m40", "isup_27", "isup_125"])
+
+    def test_plan_drift_is_a_problem(self):
+        f = self.fx("iq")
+        f.plan["requests"][0]["temp_points"][0]["temp_c"] = -39.0
+        self.assertTrue(fi.plan_problems("iq", f.tb, f.plan))
+        g = self.fx("iq")
+        g.plan["requests"][0]["analysis"] = {"kind": "dc", "args": "temp -40 125 5"}
+        self.assertTrue(fi.plan_problems("iq", g.tb, g.plan))
+
+
+class IqIngest(TmpCase):
+    def run_iq(self, vals=None, **kw):
+        f = self.fx("iq", vals=vals)
+        return f, f.assess(**kw)
+
+    def at(self, bad):
+        """Per-unit values: ``bad`` overrides iq_ua at (-40, 27, 125) C for unit index 0 only."""
+        def vals(r, p, s, t):
+            first = (p, s) == tuple(r["expected_units"][0][:2])
+            return iq_vals(**bad) if first else iq_vals()
+        return vals
+
+    def test_complete_run_passes_with_81_points_and_worst_case_is_the_maximum(self):
+        f, res = self.run_iq(self.at({"iq_ua": (20.0, 25.0, 33.8)}))
+        self.assertEqual(res["overall"], "PASS", res["problems"] + list(map(str, res["invalid"].values())))
+        self.assertEqual(len(res["rows"]), 81)
+        self.assertEqual(res["missing"] + res["failed"] + list(res["invalid"]), [])
+        w = fi.worst(res, f.tb)["iq_ua"]
+        self.assertAlmostEqual(w[0], 33.8)  # the largest, not the smallest
+        self.assertEqual(w[1][1], 125.0)
+        key = next(k for k, r in res["rows"].items() if k[1] == -40.0)
+        self.assertAlmostEqual(res["rows"][key]["measures"]["iq_ua"], 20.0)
+
+    def test_over_limit_is_a_spec_fail(self):
+        f, res = self.run_iq(self.at({"iq_ua": (20.0, 25.0, 50.5)}))
+        self.assertEqual(res["overall"], "FAIL")
+        self.assertEqual({k[1] for k in res["spec_fail"]}, {125.0})
+        self.assertEqual(res["invalid"], {})
+
+    def test_exactly_the_limit_passes_and_collapse_floor_is_inclusive(self):
+        _, res = self.run_iq(self.at({"iq_ua": (1.0, 25.0, 50.0)}))
+        self.assertEqual(res["overall"], "PASS")
+
+    def test_collapsed_current_is_invalid_never_pass_or_fail(self):
+        f, res = self.run_iq(self.at({"iq_ua": (0.2, 25.0, 30.0)}))
+        self.assertEqual(res["overall"], "INCOMPLETE")
+        self.assertEqual(len(res["invalid"]), 1)
+        self.assertEqual(res["spec_fail"], [])
+        self.assertIn("iq_ua", next(iter(res["invalid"].values())))
+
+    def test_supply_current_with_the_wrong_sign_is_invalid(self):
+        _, res = self.run_iq(lambda r, p, s, t: {**iq_vals(), "isup_27": 25e-6})
+        self.assertEqual(res["overall"], "INCOMPLETE")
+        self.assertTrue(res["invalid"])
+
+    def test_vref_outside_the_sanity_window_is_invalid(self):
+        f = self.fx("iq", vals=lambda r, p, s, t: iq_vals(vref=0.3))
+        res = f.assess()
+        self.assertEqual(res["overall"], "INCOMPLETE")
+        self.assertEqual(len(res["invalid"]), 81)
+
+    def test_missing_unit_is_incomplete(self):
+        f = self.fx("iq")
+        f.reports["temp"]["corners"].pop(4)
+        res = f.assess()
+        self.assertEqual(res["overall"], "INCOMPLETE")
+        self.assertEqual(len(res["missing"]), 1)
+        self.assertEqual(len(res["invalid"]), 3)  # that unit carried three of the 81 points
+
+    def test_null_and_nonfinite_measurements_are_never_pass(self):
+        for bad in (None, float("nan"), float("inf")):
+            with self.subTest(bad=bad):
+                self.setUp()
+                f = self.fx("iq")
+                f.reports["temp"]["corners"][7]["measurements"][2]["value"] = bad  # isup_125
+                res = f.assess()
+                self.assertEqual(res["overall"], "INCOMPLETE")
+                self.assertEqual(len(res["invalid"]), 3)
+
+    def test_wrong_dut_is_incomplete(self):
+        _, res = self.run_iq(dut_sha="0" * 64)
+        self.assertEqual(res["overall"], "INCOMPLETE")
+        self.assertTrue(any("DUT sha256" in p for p in res["problems"]))
+
+    def test_limits_come_from_tb_json_unchanged(self):
+        f = self.fx("iq")
+        f.tb["checks"]["iq_ua"]["max"] = 25.0  # a tightened tb.json is honoured, not a hard-coded 50
+        res = f.assess()
+        self.assertEqual(res["overall"], "FAIL")
+
+    def test_evidence_is_suite_readable_and_lints_clean(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            fx = self.fx("iq", vals=self.at({"iq_ua": (20.0, 25.0, 33.8)}))
+            res = fx.assess()
+            exp = root / "sim" / "iq"
+            rec = fi.write_evidence(exp, self.tmp, "iq", fx.tb, fx.plan, res, fx.reports,
+                                    dut_label="sim/dut/bandgap_top.spice", issue=344, git=GIT, repo=root)
+            text = rec.read_text()
+            self.assertIn("Overall: PASS", text)
+            self.assertIn(fc.sha256_file(DUT), text)
+            self.assertIn("limit max 50", text)
+            self.assertNotIn("min 1", text)
+            (cdir,) = list((exp / "corners").iterdir())
+            run = bench_run_from("iq", cdir)
+            self.assertEqual(len(run.samples), 81)
+            self.assertEqual([o.status for o in run.outcomes], ["PASS"] * len(run.outcomes))
+            self.assertTrue((exp / "netlist-snapshots" / f"{rec.stem}.spice").exists())
+            paths, _ = evidence_lint.list_evidence_paths(root)
+            self.assertEqual(evidence_lint.check_experiments(root, evidence_lint.collect_experiments(paths)), [])
+
+    def test_incomplete_record_reads_as_no_data_in_the_suite(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            fx = self.fx("iq")
+            fx.reports["temp"]["corners"].pop(0)
+            res = fx.assess()
+            exp = root / "sim" / "iq"
+            rec = fi.write_evidence(exp, self.tmp, "iq", fx.tb, fx.plan, res, fx.reports,
+                                    dut_label="sim/dut/bandgap_top.spice", issue=344, git=GIT, repo=root)
+            self.assertIn("INCOMPLETE", rec.read_text())
+            (cdir,) = list((exp / "corners").iterdir())
+            run = bench_run_from("iq", cdir)
+            done = completeness.assess([run], None, ["iq"], smoke=True)
+            self.assertTrue(done.blocked)
 
 
 if __name__ == "__main__":

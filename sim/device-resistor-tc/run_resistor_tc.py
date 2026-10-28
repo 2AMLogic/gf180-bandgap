@@ -35,6 +35,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
 
 from harness import corners as harness_corners  # noqa: E402
+from harness import evidence_store as harness_evidence_store  # noqa: E402
 from harness import pdk as harness_pdk  # noqa: E402
 from harness import report as harness_report  # noqa: E402
 from harness.runner import ngspice_version  # noqa: E402
@@ -347,6 +348,12 @@ def main() -> int:
     stamp = harness_report.record_stamp(record)
     deck = HERE / "testbench" / "tb_resistor_tc.spice"
 
+    evidence = harness_evidence_store.EvidenceRun(HERE.name, record, repo_root=root)
+    try:
+        evidence.start()
+    except harness_evidence_store.StoreUnavailable as exc:
+        sys.exit(f"ERROR: artifact store unavailable: {exc}")
+
     print(f"record {record}: {len(SECTIONS) * len(TEMPS)} corner points + 2 well-bias")
     results: dict[tuple[str, float], dict[str, float]] = {}
     for section in SECTIONS:
@@ -356,7 +363,7 @@ def main() -> int:
                 deck, pdk, section, temp, f".param v_nwell = {NOMINAL_NWELL}"
             )
             harness_report.write_device_corner_log(
-                HERE / "corners",
+                evidence.corners_root,
                 record,
                 cid,
                 harness_report.device_log_header(
@@ -373,7 +380,7 @@ def main() -> int:
         cid = harness_corners.device_corner_id("res_typical", 27.0, tag)
         log = _run_corner(deck, pdk, "res_typical", 27.0, f".param v_nwell = {vnw}")
         harness_report.write_device_corner_log(
-            HERE / "corners",
+            evidence.corners_root,
             record,
             cid,
             harness_report.device_log_header(
@@ -387,10 +394,11 @@ def main() -> int:
     harness_report.write_device_netlist_snapshot(
         HERE / "netlist-snapshots", record, deck
     )
-    path = harness_report.device_write_record(
+    path = harness_report.device_write_stored_record(
         HERE / "records",
         record,
         build_record(record, stamp, pdk, ngspice, results, supply_check),
+        evidence,
     )
     print(f"wrote {path}")
     return 0

@@ -53,10 +53,9 @@ distribution.
 
 `bandgap_top`'s top-level netlist (`design/netlist/bandgap_top.spice`,
 `.subckt bandgap_top vdd vss vref`) exposes exactly **three functional
-pins** — there is no fourth physical pin; the LVS reference netlist's
-`vsubs` terminal is a deck-synthesized substrate net used only for
-extraction/LVS bookkeeping (`layout/lvs/bandgap_top.ref.spice`), not a drawn
-I/O.
+pins** — there is no fourth physical pin. The LVS reference netlist
+(`layout/lvs/bandgap_top.ref.spice`) declares the same three pins; its
+substrate and Nwell ties land on `vss`/`vdd`.
 
 | Pin | Direction | Function | Slot-budget mapping |
 |---|---|---|---|

@@ -101,12 +101,10 @@ class PnpJunctionParameterTests(unittest.TestCase):
 
 class TopLevelPinTests(unittest.TestCase):
     """The reference's declared pin list must equal the *actually
-    extractable* pin set (gf180-bandgap#111). ``nwl`` (the PMOS band's
-    Nwell) is never promoted to a top-level pin by the deck -- it never
-    connects Nwell to Contact, so the net carries no Metal1 label to
-    promote on -- yet the reference used to declare it unconditionally,
-    which netgen's stricter top-level pin-matching (unlike klayout's
-    tolerant comparer) flagged as a ``pin.unmatched`` mismatch.
+    extractable* pin set (gf180-bandgap#111). Only ``vdd``/``vss``/``vref``
+    carry a Metal1 label, and the substrate/Nwell ties land on ``vss``/``vdd``
+    (klayout-tools#1084), so there is no separate ``vsubs``/``nwl`` pin
+    (gf180-bandgap#378, #403).
     """
 
     @classmethod
@@ -118,14 +116,23 @@ class TopLevelPinTests(unittest.TestCase):
             raise AssertionError("expected a .SUBCKT bandgap_top header line")
         cls.declared_pins = match.group(1).split()
 
-    def test_nwl_is_not_a_declared_pin(self) -> None:
+    def test_no_body_pin_or_floating_well_net(self) -> None:
+        self.assertNotIn("vsubs", self.declared_pins)
         self.assertNotIn("nwl", self.declared_pins)
+        body = "\n".join(
+            l for l in self.reference_text.splitlines() if not l.startswith("*")
+        )
+        for gone in ("vsubs", "nwl", "nw_"):
+            self.assertNotIn(gone, body)
 
     def test_declared_pins_match_extractable_set(self) -> None:
-        # Verified against a real `klt extract` run of the committed GDS
-        # (20260804-151012-fefb292.lvs-netgen.json): counts.pins is
-        # layout=4 reference=4 matched=4 once nwl is dropped.
-        self.assertEqual(sorted(self.declared_pins), ["vdd", "vref", "vss", "vsubs"])
+        # Tie-aware form: 3/3 pins against klt >= 0.3.0 (ROOT-CAUSE-378.md).
+        self.assertEqual(sorted(self.declared_pins), ["vdd", "vref", "vss"])
+
+    def test_bodies_and_pnp_bases_tie_to_rails(self) -> None:
+        self.assertRegex(self.reference_text, r"(?m)^M\S+ \S+ \S+ \S+ vss nfet ")
+        self.assertRegex(self.reference_text, r"(?m)^M\S+ \S+ \S+ \S+ vdd pfet ")
+        self.assertRegex(self.reference_text, r"(?m)^Q\S+ vss vss \S+ bjt ")
 
     def test_meta_pins_agree_with_subckt_header(self) -> None:
         self.assertEqual(self.meta["pins"], self.declared_pins)

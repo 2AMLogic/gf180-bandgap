@@ -1,0 +1,710 @@
+{
+  "schema_version": 3,
+  "netlist": {
+    "path": null,
+    "scope": "external"
+  },
+  "status": "not_checked",
+  "corner_count": 27,
+  "passed": 27,
+  "failed": 0,
+  "errored": 0,
+  "inconclusive": 0,
+  "diagnostic_counts": {
+    "by_code": {},
+    "by_severity": {},
+    "corners_with_diagnostics": 0
+  },
+  "metrics": {
+    "sim__corner__count": 27,
+    "sim__corner__passed_count": 27,
+    "sim__corner__failed_count": 0,
+    "sim__corner__errored_count": 0,
+    "sim__corner__inconclusive_count": 0
+  },
+  "environment": {
+    "engine": "ngspice",
+    "engine_version": "46",
+    "ngspice_binary": "/usr/bin/ngspice",
+    "models_lib": {
+      "path": null,
+      "scope": "external"
+    },
+    "models_lib_sha256": "f6f4a96e18fc5ad11270ad3451aaecc7ac37fc81eb61e15b0d7d94c7bc594a24",
+    "netlist_sha256": "415d705e298ea18be4a53ceb652d5bf10d2ad12a11ac429fff15d8328b29f5cf",
+    "netlist_closure": [
+      {
+        "path": null,
+        "scope": "external",
+        "sha256": "415d705e298ea18be4a53ceb652d5bf10d2ad12a11ac429fff15d8328b29f5cf"
+      }
+    ],
+    "remote": {
+      "provider": "aws-batch-fleet",
+      "job_id": "klt-sim-a41bfd33698c",
+      "bucket": "2am-batch-jobs-221082181346",
+      "region": "us-east-1",
+      "instance_id": "i-081bea89138c59de6",
+      "instance_type": "c7i.8xlarge",
+      "availability_zone": "us-east-1a",
+      "ami_id": "ami-0e0bec04ad8e81877",
+      "lifecycle": "spot",
+      "spot": true,
+      "state": "failed",
+      "exit_code": "4",
+      "concurrency": "2",
+      "physical_cores": "16",
+      "elapsed_seconds": 25,
+      "runner_klt_version": "0.7.0",
+      "client_klt_version": "0.7.1.dev556+gf310bfa46bff",
+      "runner_compatibility": "match",
+      "worker_environment": {
+        "capture": "ok",
+        "simulator": {
+          "requested_binary": "ngspice",
+          "binary_source": "PATH",
+          "selected_path": "/usr/local/bin/ngspice",
+          "version_banner": "******\n** ngspice-46 : Circuit level simulation program\n** Compiled with KLU Direct Linear Solver\n** The U. C. Berkeley CAD Group\n** Copyright 1985-1994, Regents of the University of California.\n** Copyright 2001-2025, The ngspice team.\n** Please get your ngspice manual from https://ngspice.sourceforge.io/docs.html\n** Please file your bug-reports at http://ngspice.sourceforge.net/bugrep.html\n** Creation Date: Thu Oct  1 23:51:59 UTC 2026\n******\n",
+          "version_probe": "ok"
+        },
+        "pdk": {
+          "variant": "gf180mcuD",
+          "root": "/opt/pdk",
+          "stamp_scheme": "sources-sha256",
+          "stamp_sha256": "d5ac52956829da3fee35d0b307d4e6cb83ae0e6535b56dba2eefed61cdffaf9b",
+          "stamp_text": "open_pdks c6d73a35f524070e85faff4a6a9eef49553ebc2b",
+          "models_staged": false
+        },
+        "cpu_model": "Intel(R) Xeon(R) Platinum 8488C",
+        "omp_num_threads": null,
+        "image_manifest": null,
+        "diagnostics": [],
+        "pdk_stamp_comparison": {
+          "status": "not_comparable"
+        }
+      },
+      "job_ceiling": {
+        "basis": "conservative_serial_bound",
+        "unit_count": 27,
+        "per_unit_timeout_s": 300,
+        "overhead_s": 120.0,
+        "job_bound_s": 8220.0,
+        "max_job_seconds": 3600.0,
+        "max_job_seconds_source": "fleet_config",
+        "exceeds_ceiling": true,
+        "check": "warn",
+        "max_units_per_job": 11,
+        "recommended_hosts": 3,
+        "warning": "batch job bound 8220s (options.timeout_s 300s x 27 units + 120s; a conservative fully-serial upper bound, not a runtime estimate) exceeds the fleet's whole-job ceiling of 3600s (max_job_seconds from fleet_config); a job still running at the ceiling is killed and every unit is reported batch_job_timeout. Set request.remote.hosts to at least 3 to run one job per shard of at most 11 units, each within the ceiling"
+      }
+    }
+  },
+  "coverage": {
+    "corners_simulated": 27,
+    "measurements_declared": 0,
+    "measurements_with_limits": 0,
+    "unrecognized_limit_keys": [],
+    "schema_version": 1,
+    "known": true,
+    "checked": [],
+    "skipped": [
+      {
+        "id": "corner:[0,\"tt/novdd/-40C\"]",
+        "reason": "no_requested_measurements"
+      },
+      {
+        "id": "corner:[1,\"tt/novdd/27C\"]",
+        "reason": "no_requested_measurements"
+      },
+      {
+        "id": "corner:[10,\"fs/novdd/27C\"]",
+        "reason": "no_requested_measurements"
+      },
+      {
+        "id": "corner:[11,\"fs/novdd/125C\"]",
+        "reason": "no_requested_measurements"
+      },
+      {
+        "id": "corner:[12,\"sf/novdd/-40C\"]",
+        "reason": "no_requested_measurements"
+      },
+      {
+        "id": "corner:[13,\"sf/novdd/27C\"]",
+        "reason": "no_requested_measurements"
+      },
+      {
+        "id": "corner:[14,\"sf/novdd/125C\"]",
+        "reason": "no_requested_measurements"
+      },
+      {
+        "id": "corner:[15,\"res_ff/novdd/-40C\"]",
+        "reason": "no_requested_measurements"
+      },
+      {
+        "id": "corner:[16,\"res_ff/novdd/27C\"]",
+        "reason": "no_requested_measurements"
+      },
+      {
+        "id": "corner:[17,\"res_ff/novdd/125C\"]",
+        "reason": "no_requested_measurements"
+      },
+      {
+        "id": "corner:[18,\"res_ss/novdd/-40C\"]",
+        "reason": "no_requested_measurements"
+      },
+      {
+        "id": "corner:[19,\"res_ss/novdd/27C\"]",
+        "reason": "no_requested_measurements"
+      },
+      {
+        "id": "corner:[2,\"tt/novdd/125C\"]",
+        "reason": "no_requested_measurements"
+      },
+      {
+        "id": "corner:[20,\"res_ss/novdd/125C\"]",
+        "reason": "no_requested_measurements"
+      },
+      {
+        "id": "corner:[21,\"bjt_ff/novdd/-40C\"]",
+        "reason": "no_requested_measurements"
+      },
+      {
+        "id": "corner:[22,\"bjt_ff/novdd/27C\"]",
+        "reason": "no_requested_measurements"
+      },
+      {
+        "id": "corner:[23,\"bjt_ff/novdd/125C\"]",
+        "reason": "no_requested_measurements"
+      },
+      {
+        "id": "corner:[24,\"bjt_ss/novdd/-40C\"]",
+        "reason": "no_requested_measurements"
+      },
+      {
+        "id": "corner:[25,\"bjt_ss/novdd/27C\"]",
+        "reason": "no_requested_measurements"
+      },
+      {
+        "id": "corner:[26,\"bjt_ss/novdd/125C\"]",
+        "reason": "no_requested_measurements"
+      },
+      {
+        "id": "corner:[3,\"ff/novdd/-40C\"]",
+        "reason": "no_requested_measurements"
+      },
+      {
+        "id": "corner:[4,\"ff/novdd/27C\"]",
+        "reason": "no_requested_measurements"
+      },
+      {
+        "id": "corner:[5,\"ff/novdd/125C\"]",
+        "reason": "no_requested_measurements"
+      },
+      {
+        "id": "corner:[6,\"ss/novdd/-40C\"]",
+        "reason": "no_requested_measurements"
+      },
+      {
+        "id": "corner:[7,\"ss/novdd/27C\"]",
+        "reason": "no_requested_measurements"
+      },
+      {
+        "id": "corner:[8,\"ss/novdd/125C\"]",
+        "reason": "no_requested_measurements"
+      },
+      {
+        "id": "corner:[9,\"fs/novdd/-40C\"]",
+        "reason": "no_requested_measurements"
+      }
+    ],
+    "inapplicable": [],
+    "unknown": [],
+    "nothing_checked": true,
+    "nothing_checked_reasons": [
+      "no_requested_measurements"
+    ]
+  },
+  "provenance": {
+    "klt_version": "0.7.1.dev556+gf310bfa46bff",
+    "klayout_version": "0.30.12",
+    "pdk": {
+      "name": "gf180mcuD",
+      "source": "search root: ~/.ciel",
+      "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7",
+      "ambiguous_sources": [
+        "search root: ~/.volare"
+      ]
+    },
+    "deck": {
+      "name": "sm141064.ngspice",
+      "content_hash": "sha256:f6f4a96e18fc5ad11270ad3451aaecc7ac37fc81eb61e15b0d7d94c7bc594a24",
+      "released": false
+    },
+    "input": {
+      "content_hash": "sha256:415d705e298ea18be4a53ceb652d5bf10d2ad12a11ac429fff15d8328b29f5cf",
+      "role": "netlist"
+    }
+  },
+  "measurements": [],
+  "corners": [
+    {
+      "corner_id": "tt/novdd/-40C",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": -40,
+      "status": "pass",
+      "runtime_s": 12.378,
+      "measurements": [],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/tmp/i239-plans/batch2/request/tt_novdd_n40C/ngspice.log",
+        "raw": "/tmp/i239-plans/batch2/request/tt_novdd_n40C/waveform.raw",
+        "waveform": "/tmp/i239-plans/batch2/request/tt_novdd_n40C/waveform.raw.json",
+        "deck": "/tmp/i239-plans/batch2/request/tt_novdd_n40C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "tt/novdd/27C",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 27,
+      "status": "pass",
+      "runtime_s": 14.449,
+      "measurements": [],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/tmp/i239-plans/batch2/request/tt_novdd_27C/ngspice.log",
+        "raw": "/tmp/i239-plans/batch2/request/tt_novdd_27C/waveform.raw",
+        "waveform": "/tmp/i239-plans/batch2/request/tt_novdd_27C/waveform.raw.json",
+        "deck": "/tmp/i239-plans/batch2/request/tt_novdd_27C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "tt/novdd/125C",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 125,
+      "status": "pass",
+      "runtime_s": 10.982,
+      "measurements": [],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/tmp/i239-plans/batch2/request/tt_novdd_125C/ngspice.log",
+        "raw": "/tmp/i239-plans/batch2/request/tt_novdd_125C/waveform.raw",
+        "waveform": "/tmp/i239-plans/batch2/request/tt_novdd_125C/waveform.raw.json",
+        "deck": "/tmp/i239-plans/batch2/request/tt_novdd_125C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ff/novdd/-40C",
+      "process": "ff",
+      "supply_v": {},
+      "temperature_c": -40,
+      "status": "pass",
+      "runtime_s": 0.837,
+      "measurements": [],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/tmp/i239-plans/batch2/request/ff_novdd_n40C/ngspice.log",
+        "raw": "/tmp/i239-plans/batch2/request/ff_novdd_n40C/waveform.raw",
+        "waveform": "/tmp/i239-plans/batch2/request/ff_novdd_n40C/waveform.raw.json",
+        "deck": "/tmp/i239-plans/batch2/request/ff_novdd_n40C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ff/novdd/27C",
+      "process": "ff",
+      "supply_v": {},
+      "temperature_c": 27,
+      "status": "pass",
+      "runtime_s": 13.693,
+      "measurements": [],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/tmp/i239-plans/batch2/request/ff_novdd_27C/ngspice.log",
+        "raw": "/tmp/i239-plans/batch2/request/ff_novdd_27C/waveform.raw",
+        "waveform": "/tmp/i239-plans/batch2/request/ff_novdd_27C/waveform.raw.json",
+        "deck": "/tmp/i239-plans/batch2/request/ff_novdd_27C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ff/novdd/125C",
+      "process": "ff",
+      "supply_v": {},
+      "temperature_c": 125,
+      "status": "pass",
+      "runtime_s": 13.412,
+      "measurements": [],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/tmp/i239-plans/batch2/request/ff_novdd_125C/ngspice.log",
+        "raw": "/tmp/i239-plans/batch2/request/ff_novdd_125C/waveform.raw",
+        "waveform": "/tmp/i239-plans/batch2/request/ff_novdd_125C/waveform.raw.json",
+        "deck": "/tmp/i239-plans/batch2/request/ff_novdd_125C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ss/novdd/-40C",
+      "process": "ss",
+      "supply_v": {},
+      "temperature_c": -40,
+      "status": "pass",
+      "runtime_s": 14.954,
+      "measurements": [],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/tmp/i239-plans/batch2/request/ss_novdd_n40C/ngspice.log",
+        "raw": "/tmp/i239-plans/batch2/request/ss_novdd_n40C/waveform.raw",
+        "waveform": "/tmp/i239-plans/batch2/request/ss_novdd_n40C/waveform.raw.json",
+        "deck": "/tmp/i239-plans/batch2/request/ss_novdd_n40C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ss/novdd/27C",
+      "process": "ss",
+      "supply_v": {},
+      "temperature_c": 27,
+      "status": "pass",
+      "runtime_s": 11.821,
+      "measurements": [],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/tmp/i239-plans/batch2/request/ss_novdd_27C/ngspice.log",
+        "raw": "/tmp/i239-plans/batch2/request/ss_novdd_27C/waveform.raw",
+        "waveform": "/tmp/i239-plans/batch2/request/ss_novdd_27C/waveform.raw.json",
+        "deck": "/tmp/i239-plans/batch2/request/ss_novdd_27C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ss/novdd/125C",
+      "process": "ss",
+      "supply_v": {},
+      "temperature_c": 125,
+      "status": "pass",
+      "runtime_s": 11.576,
+      "measurements": [],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/tmp/i239-plans/batch2/request/ss_novdd_125C/ngspice.log",
+        "raw": "/tmp/i239-plans/batch2/request/ss_novdd_125C/waveform.raw",
+        "waveform": "/tmp/i239-plans/batch2/request/ss_novdd_125C/waveform.raw.json",
+        "deck": "/tmp/i239-plans/batch2/request/ss_novdd_125C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "fs/novdd/-40C",
+      "process": "fs",
+      "supply_v": {},
+      "temperature_c": -40,
+      "status": "pass",
+      "runtime_s": 13.132,
+      "measurements": [],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/tmp/i239-plans/batch2/request/fs_novdd_n40C/ngspice.log",
+        "raw": "/tmp/i239-plans/batch2/request/fs_novdd_n40C/waveform.raw",
+        "waveform": "/tmp/i239-plans/batch2/request/fs_novdd_n40C/waveform.raw.json",
+        "deck": "/tmp/i239-plans/batch2/request/fs_novdd_n40C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "fs/novdd/27C",
+      "process": "fs",
+      "supply_v": {},
+      "temperature_c": 27,
+      "status": "pass",
+      "runtime_s": 11.281,
+      "measurements": [],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/tmp/i239-plans/batch2/request/fs_novdd_27C/ngspice.log",
+        "raw": "/tmp/i239-plans/batch2/request/fs_novdd_27C/waveform.raw",
+        "waveform": "/tmp/i239-plans/batch2/request/fs_novdd_27C/waveform.raw.json",
+        "deck": "/tmp/i239-plans/batch2/request/fs_novdd_27C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "fs/novdd/125C",
+      "process": "fs",
+      "supply_v": {},
+      "temperature_c": 125,
+      "status": "pass",
+      "runtime_s": 11.17,
+      "measurements": [],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/tmp/i239-plans/batch2/request/fs_novdd_125C/ngspice.log",
+        "raw": "/tmp/i239-plans/batch2/request/fs_novdd_125C/waveform.raw",
+        "waveform": "/tmp/i239-plans/batch2/request/fs_novdd_125C/waveform.raw.json",
+        "deck": "/tmp/i239-plans/batch2/request/fs_novdd_125C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "sf/novdd/-40C",
+      "process": "sf",
+      "supply_v": {},
+      "temperature_c": -40,
+      "status": "pass",
+      "runtime_s": 14.3,
+      "measurements": [],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/tmp/i239-plans/batch2/request/sf_novdd_n40C/ngspice.log",
+        "raw": "/tmp/i239-plans/batch2/request/sf_novdd_n40C/waveform.raw",
+        "waveform": "/tmp/i239-plans/batch2/request/sf_novdd_n40C/waveform.raw.json",
+        "deck": "/tmp/i239-plans/batch2/request/sf_novdd_n40C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "sf/novdd/27C",
+      "process": "sf",
+      "supply_v": {},
+      "temperature_c": 27,
+      "status": "pass",
+      "runtime_s": 13.69,
+      "measurements": [],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/tmp/i239-plans/batch2/request/sf_novdd_27C/ngspice.log",
+        "raw": "/tmp/i239-plans/batch2/request/sf_novdd_27C/waveform.raw",
+        "waveform": "/tmp/i239-plans/batch2/request/sf_novdd_27C/waveform.raw.json",
+        "deck": "/tmp/i239-plans/batch2/request/sf_novdd_27C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "sf/novdd/125C",
+      "process": "sf",
+      "supply_v": {},
+      "temperature_c": 125,
+      "status": "pass",
+      "runtime_s": 11.836,
+      "measurements": [],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/tmp/i239-plans/batch2/request/sf_novdd_125C/ngspice.log",
+        "raw": "/tmp/i239-plans/batch2/request/sf_novdd_125C/waveform.raw",
+        "waveform": "/tmp/i239-plans/batch2/request/sf_novdd_125C/waveform.raw.json",
+        "deck": "/tmp/i239-plans/batch2/request/sf_novdd_125C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "res_ff/novdd/-40C",
+      "process": "res_ff",
+      "supply_v": {},
+      "temperature_c": -40,
+      "status": "pass",
+      "runtime_s": 0.88,
+      "measurements": [],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/tmp/i239-plans/batch2/request/res_ff_novdd_n40C/ngspice.log",
+        "raw": "/tmp/i239-plans/batch2/request/res_ff_novdd_n40C/waveform.raw",
+        "waveform": "/tmp/i239-plans/batch2/request/res_ff_novdd_n40C/waveform.raw.json",
+        "deck": "/tmp/i239-plans/batch2/request/res_ff_novdd_n40C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "res_ff/novdd/27C",
+      "process": "res_ff",
+      "supply_v": {},
+      "temperature_c": 27,
+      "status": "pass",
+      "runtime_s": 10.984,
+      "measurements": [],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/tmp/i239-plans/batch2/request/res_ff_novdd_27C/ngspice.log",
+        "raw": "/tmp/i239-plans/batch2/request/res_ff_novdd_27C/waveform.raw",
+        "waveform": "/tmp/i239-plans/batch2/request/res_ff_novdd_27C/waveform.raw.json",
+        "deck": "/tmp/i239-plans/batch2/request/res_ff_novdd_27C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "res_ff/novdd/125C",
+      "process": "res_ff",
+      "supply_v": {},
+      "temperature_c": 125,
+      "status": "pass",
+      "runtime_s": 10.865,
+      "measurements": [],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/tmp/i239-plans/batch2/request/res_ff_novdd_125C/ngspice.log",
+        "raw": "/tmp/i239-plans/batch2/request/res_ff_novdd_125C/waveform.raw",
+        "waveform": "/tmp/i239-plans/batch2/request/res_ff_novdd_125C/waveform.raw.json",
+        "deck": "/tmp/i239-plans/batch2/request/res_ff_novdd_125C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "res_ss/novdd/-40C",
+      "process": "res_ss",
+      "supply_v": {},
+      "temperature_c": -40,
+      "status": "pass",
+      "runtime_s": 6.515,
+      "measurements": [],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/tmp/i239-plans/batch2/request/res_ss_novdd_n40C/ngspice.log",
+        "raw": "/tmp/i239-plans/batch2/request/res_ss_novdd_n40C/waveform.raw",
+        "waveform": "/tmp/i239-plans/batch2/request/res_ss_novdd_n40C/waveform.raw.json",
+        "deck": "/tmp/i239-plans/batch2/request/res_ss_novdd_n40C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "res_ss/novdd/27C",
+      "process": "res_ss",
+      "supply_v": {},
+      "temperature_c": 27,
+      "status": "pass",
+      "runtime_s": 5.539,
+      "measurements": [],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/tmp/i239-plans/batch2/request/res_ss_novdd_27C/ngspice.log",
+        "raw": "/tmp/i239-plans/batch2/request/res_ss_novdd_27C/waveform.raw",
+        "waveform": "/tmp/i239-plans/batch2/request/res_ss_novdd_27C/waveform.raw.json",
+        "deck": "/tmp/i239-plans/batch2/request/res_ss_novdd_27C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "res_ss/novdd/125C",
+      "process": "res_ss",
+      "supply_v": {},
+      "temperature_c": 125,
+      "status": "pass",
+      "runtime_s": 5.895,
+      "measurements": [],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/tmp/i239-plans/batch2/request/res_ss_novdd_125C/ngspice.log",
+        "raw": "/tmp/i239-plans/batch2/request/res_ss_novdd_125C/waveform.raw",
+        "waveform": "/tmp/i239-plans/batch2/request/res_ss_novdd_125C/waveform.raw.json",
+        "deck": "/tmp/i239-plans/batch2/request/res_ss_novdd_125C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "bjt_ff/novdd/-40C",
+      "process": "bjt_ff",
+      "supply_v": {},
+      "temperature_c": -40,
+      "status": "pass",
+      "runtime_s": 5.847,
+      "measurements": [],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/tmp/i239-plans/batch2/request/bjt_ff_novdd_n40C/ngspice.log",
+        "raw": "/tmp/i239-plans/batch2/request/bjt_ff_novdd_n40C/waveform.raw",
+        "waveform": "/tmp/i239-plans/batch2/request/bjt_ff_novdd_n40C/waveform.raw.json",
+        "deck": "/tmp/i239-plans/batch2/request/bjt_ff_novdd_n40C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "bjt_ff/novdd/27C",
+      "process": "bjt_ff",
+      "supply_v": {},
+      "temperature_c": 27,
+      "status": "pass",
+      "runtime_s": 5.75,
+      "measurements": [],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/tmp/i239-plans/batch2/request/bjt_ff_novdd_27C/ngspice.log",
+        "raw": "/tmp/i239-plans/batch2/request/bjt_ff_novdd_27C/waveform.raw",
+        "waveform": "/tmp/i239-plans/batch2/request/bjt_ff_novdd_27C/waveform.raw.json",
+        "deck": "/tmp/i239-plans/batch2/request/bjt_ff_novdd_27C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "bjt_ff/novdd/125C",
+      "process": "bjt_ff",
+      "supply_v": {},
+      "temperature_c": 125,
+      "status": "pass",
+      "runtime_s": 5.45,
+      "measurements": [],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/tmp/i239-plans/batch2/request/bjt_ff_novdd_125C/ngspice.log",
+        "raw": "/tmp/i239-plans/batch2/request/bjt_ff_novdd_125C/waveform.raw",
+        "waveform": "/tmp/i239-plans/batch2/request/bjt_ff_novdd_125C/waveform.raw.json",
+        "deck": "/tmp/i239-plans/batch2/request/bjt_ff_novdd_125C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "bjt_ss/novdd/-40C",
+      "process": "bjt_ss",
+      "supply_v": {},
+      "temperature_c": -40,
+      "status": "pass",
+      "runtime_s": 5.643,
+      "measurements": [],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/tmp/i239-plans/batch2/request/bjt_ss_novdd_n40C/ngspice.log",
+        "raw": "/tmp/i239-plans/batch2/request/bjt_ss_novdd_n40C/waveform.raw",
+        "waveform": "/tmp/i239-plans/batch2/request/bjt_ss_novdd_n40C/waveform.raw.json",
+        "deck": "/tmp/i239-plans/batch2/request/bjt_ss_novdd_n40C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "bjt_ss/novdd/27C",
+      "process": "bjt_ss",
+      "supply_v": {},
+      "temperature_c": 27,
+      "status": "pass",
+      "runtime_s": 5.641,
+      "measurements": [],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/tmp/i239-plans/batch2/request/bjt_ss_novdd_27C/ngspice.log",
+        "raw": "/tmp/i239-plans/batch2/request/bjt_ss_novdd_27C/waveform.raw",
+        "waveform": "/tmp/i239-plans/batch2/request/bjt_ss_novdd_27C/waveform.raw.json",
+        "deck": "/tmp/i239-plans/batch2/request/bjt_ss_novdd_27C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "bjt_ss/novdd/125C",
+      "process": "bjt_ss",
+      "supply_v": {},
+      "temperature_c": 125,
+      "status": "pass",
+      "runtime_s": 4.759,
+      "measurements": [],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/tmp/i239-plans/batch2/request/bjt_ss_novdd_125C/ngspice.log",
+        "raw": "/tmp/i239-plans/batch2/request/bjt_ss_novdd_125C/waveform.raw",
+        "waveform": "/tmp/i239-plans/batch2/request/bjt_ss_novdd_125C/waveform.raw.json",
+        "deck": "/tmp/i239-plans/batch2/request/bjt_ss_novdd_125C/corner.cir"
+      },
+      "monte_carlo": null
+    }
+  ]
+}
