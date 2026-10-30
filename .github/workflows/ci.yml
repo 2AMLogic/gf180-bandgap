@@ -17,6 +17,7 @@ name: CI
 # | harness unit tests (`sim/tests/`)             | python3      | `test` (here)      |
 # | layout unit tests (`layout/**/test_*.py`)     | python3      | `test` (here)      |
 # | signoff validator unit tests (`signoff/tests/`)| python3     | `test` (here)      |
+# | layout unit tests, klayout/klt-gated, no skips| klt+network  | `signoff` (here)   |
 # | `sim/run_corners.py --list` manifest load     | python3      | `lint` (here)      |
 # | `sim/selftest.sh` stages 1-2                  | python3      | `test` (here)      |
 # | `sim/selftest.sh` stage 3 (81-point PVT run)  | ngspice+PDK  | `sim-pdk.yml`      |
@@ -156,6 +157,12 @@ jobs:
           python3 -m pip install --upgrade pip
           python3 -m pip install "klayout-tools==${pin}"
           klt --version
+
+      - name: Layout unit tests (klayout/klt present, no skips)
+        # The `test` job lets klayout/klt-gated tests skip on its bare runner.
+        # Here klt and its klayout dependency are installed, so those tests
+        # must actually run: --require-no-skips fails on any skipped test.
+        run: bash .github/scripts/test_layout.sh --require-no-skips
 
       - name: Re-grade the block manifest
         # `klt signoff --manifest` exits 3 when the block is not yet T1, which
