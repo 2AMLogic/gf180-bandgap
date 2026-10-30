@@ -12,16 +12,28 @@ if [ "${#dirs[@]}" -eq 0 ]; then
 fi
 
 total=0
+failed=()
 for d in "${dirs[@]}"; do
   echo "== $d"
   log="$(mktemp)"
-  python3 -m unittest discover -s "$d" -p 'test_*.py' 2>&1 | tee "$log"
+  # A failing directory must not hide the rest: record it and keep going.
+  rc=0
+  python3 -m unittest discover -s "$d" -p 'test_*.py' 2>&1 | tee "$log" || rc=$?
   n="$(sed -n 's/^Ran \([0-9]*\) test.*/\1/p' "$log" | tail -1)"
   rm -f "$log"
   if [ -z "$n" ] || [ "$n" -eq 0 ]; then
     echo "::error::zero tests collected in $d" >&2
-    exit 1
+    failed+=("$d")
+    continue
+  fi
+  if [ "$rc" -ne 0 ]; then
+    echo "::error::tests failed in $d" >&2
+    failed+=("$d")
   fi
   total=$((total + n))
 done
 echo "layout unit tests: $total run across ${#dirs[@]} directories"
+if [ "${#failed[@]}" -gt 0 ]; then
+  echo "::error::layout tests failed in: ${failed[*]}" >&2
+  exit 1
+fi
