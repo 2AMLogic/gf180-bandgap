@@ -2,6 +2,11 @@
 
 Chronological record of recently merged pull requests and closed issues, maintained by the Loom Guide role. Newest entries appear first.
 
+### 2026-10-30
+
+- **PR #413**: fix: re-measure AREA.md headline vs regenerated GDS; test_layout.sh continues past failures
+- **Issue #326** (closed): layout/bandgap_top: routing-budget S1 area disagrees with committed GDS bbox (klayout-gated test fails on main)
+
 ### 2026-10-28
 
 - **PR #410**: fix: make bandgap_top DRC-clean under klt 0.8.0
