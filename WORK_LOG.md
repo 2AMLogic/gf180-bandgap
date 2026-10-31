@@ -4,6 +4,8 @@ Chronological record of recently merged pull requests and closed issues, maintai
 
 ### 2026-10-30
 
+- **PR #415**: ci: run layout tests with klayout/klt in signoff job and fail on skips
+- **Issue #306** (closed): ci: run klayout/klt-gated layout tests in the signoff job and fail on skips
 - **PR #413**: fix: re-measure AREA.md headline vs regenerated GDS; test_layout.sh continues past failures
 - **Issue #326** (closed): layout/bandgap_top: routing-budget S1 area disagrees with committed GDS bbox (klayout-gated test fails on main)
 
