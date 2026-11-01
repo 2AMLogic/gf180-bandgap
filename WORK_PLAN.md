@@ -61,6 +61,7 @@ Issues carrying `loom:curated`.
 ## Proposed (Architect / Hermit)
 
 - **#219**: sim harness: share the batch-backend guard and cap default local --jobs *(architect)*
+- **#418**: Remove orphaned sim/tools/fleet_suite_summary.py (only its own test references it) *(hermit)*
 
 ## Epics
 
@@ -80,6 +81,6 @@ Issues carrying `loom:curated`.
 | PRs awaiting review | 1 |
 | Approved PRs awaiting merge | 0 |
 | Curated | 6 |
-| Architect / Hermit proposals | 1 |
+| Architect / Hermit proposals | 2 |
 | Active epics | 3 |
 <!-- guide:plan-body:end -->
