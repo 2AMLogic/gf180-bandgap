@@ -103,6 +103,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
 
+from harness import backend as harness_backend  # noqa: E402
 from harness import corners as harness_corners  # noqa: E402
 from harness import evidence_store as harness_evidence_store  # noqa: E402
 from harness import pdk as harness_pdk  # noqa: E402
@@ -125,8 +126,8 @@ SUPPLY_ID = "3.30v"
 #: are embarrassingly parallel and the result is bit-identical to running
 #: them one at a time (the sample set is fixed by `setseed` in the
 #: testbench, not by execution order). Capped the same way
-#: `sim/harness/cli.py` caps `run_corners.py -j`.
-DEFAULT_JOBS = min(8, os.cpu_count() or 2)
+#: `sim/harness/cli.py` caps `run_corners.py -j` (shared default: 2).
+DEFAULT_JOBS = harness_backend.default_jobs()
 
 # "tt" bundle per sim/harness/corners.py -- all device families typical.
 # This is a mismatch claim (sw_stat_global=0 throughout); global process
@@ -951,6 +952,7 @@ def main() -> int:
     )
     results: dict[str, dict[float, dict]] = {group: {} for group in GROUPS}
     points = [(group, cfg, temp) for group, cfg in GROUPS.items() for temp in TEMPS]
+    harness_backend.guard_local_grid(len(points))
     jobs = max(1, min(args.jobs, len(points)))
     if jobs > 1:
         print(f"  running {len(points)} points {jobs} at a time")

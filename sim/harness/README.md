@@ -105,6 +105,13 @@ python3 sim/run_corners.py smoke-bias --corners tt res_ss --temps -40 125
 python3 sim/run_corners.py smoke-bias --supply 5.0 --supply-tol 0.10   # 5 V flavor
 ```
 
+**Parallelism and the fleet guard.** `-j` defaults to `min(2, cpu_count)`; an
+explicit `-j N` is honoured. When `KLT_SIM_BACKEND` is `batch` or `remote`, a
+grid of more than one point is refused (no ngspice started, no local fallback)
+— submit it as a `klt sim` request, or export `KLT_SIM_BACKEND=local` to run
+locally on purpose. Unset/`local` behaves as before. `sim/mc-untrimmed` shares
+the guard and default.
+
 **Subsets need a reason.** `sim/README.md` requires every record's *Corner
 matrix run* field to be the full mandated matrix "unless the record states why
 a subset was used". The runner enforces that: if the grid you asked for is

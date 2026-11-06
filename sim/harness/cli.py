@@ -4,12 +4,11 @@ from __future__ import annotations
 
 import argparse
 import datetime as _dt
-import os
 import sys
 import time
 from pathlib import Path
 
-from . import HARNESS_VERSION, corners as corners_mod, evidence_store, report, runner, testbench as tb_mod
+from . import HARNESS_VERSION, backend, corners as corners_mod, evidence_store, report, runner, testbench as tb_mod
 from .fmt import _fmt
 from .pdk import PdkNotFound, find_pdk
 from .runner import NgspiceMissing
@@ -261,7 +260,8 @@ def run(args: argparse.Namespace) -> int:
     experiment_dir = tb.experiment_dir
     records_dir = experiment_dir / report.RECORDS_DIR
 
-    jobs = args.jobs or min(8, (os.cpu_count() or 2))
+    backend.guard_local_grid(len(points))
+    jobs = args.jobs or backend.default_jobs()
     started = _dt.datetime.now(_dt.timezone.utc)
     # Sample git state *before* the run: the harness writes its own per-corner
     # logs into the tracked evidence tree, so sampling afterwards would mark
