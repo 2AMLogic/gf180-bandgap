@@ -98,6 +98,12 @@ Mapping:
                      is the unit metadata the ingestor checks. Capability report:
                      ``sim/output-noise/fleet-capability/README.md``.
 
+Generic benches (#424): ``GENERIC_BENCHES`` are driven only by their tb.json
+(:func:`classify_bench`): one analysis card, each ``measure`` expression sent
+as ``measurements[].expr``. The refused benches and why are tabled in
+``sim/harness/README.md``. Reports map back to ``PointResult`` through
+``fleet_common.generic_point_results``.
+
 Tool-gap references (2AMLogic/klayout-tools): #2482 (one analysis per corner: the
 ac operating-point companion) and #2964 (no param/ramp supply axis; `.meas AT=`
 at sweep end points); for noise #2893 (expr after ``noise`` sees only the
@@ -136,7 +142,13 @@ NOISE_BENCH = "output-noise"
 #: measurement (complete or INCOMPLETE), never PASS/FAIL. Kept apart from
 #: BENCHES for the same reason as CHARACTERIZATION_BENCHES.
 MEASUREMENT_BENCHES = (NOISE_BENCH,)
-SUPPORTED = BENCHES + CHARACTERIZATION_BENCHES + MEASUREMENT_BENCHES
+#: tb.json-driven benches (#424): one analysis card, every figure a plain
+#: vector expression, evaluated by klt as ``measurements[].expr``. Kept in step
+#: with :func:`classify_bench` by sim/tests/test_fleet_requests.py.
+GENERIC_BENCHES = ("smoke-bias", "device-resistor-tc", "device-mos-vth", "device-pnp-vbe",
+                   "device-mos-mismatch", "device-pnp-mismatch")
+GENERIC_REQUEST = "run"
+SUPPORTED = BENCHES + CHARACTERIZATION_BENCHES + MEASUREMENT_BENCHES + GENERIC_BENCHES
 LOAD_BENCH = "output-load-sensitivity"
 #: The only tb.json checks the load bench may carry: measurement sanity
 #: (grid, baseline index, sense current), never a threshold on a load figure.
@@ -152,6 +164,38 @@ PSRR_SPOTS = {"1hz": 1.0, "10hz": 10.0, "100hz": 100.0, "1khz": 1e3, "10khz": 1e
 
 #: The pinned fleet model arguments, as in mk_klt_request.py.
 MODELS = {"pdk": "gf180mcuD", "lib": "libs.tech/ngspice/sm141064.ngspice"}
+
+
+def classify_bench(tb: dict, netlist_text: str) -> tuple[bool, str]:
+    """(supported, reason) for the generic ``tb.json``-driven fleet path (#424).
+
+    Supported: exactly one ``op``/``dc``/``ac``/``tran`` card and no ngspice
+    script around it, a manifest-defined DUT story (no undeclared
+    ``bandgap_top`` instance), and no PWL/PULSE/SIN supply (klt refuses
+    ``supply_v`` for those). The reason names why a bench is refused."""
+    cards = tb.get("analyses", [])
+    kinds = [c.split()[0].lower() for c in cards if c.split()]
+    script = [k for k in kinds if k in ("let", "while", "if", "end", "foreach", "alterparam", "reset", "set", "unset")]
+    if script:
+        return False, ("analysis section is an ngspice script (" + ", ".join(sorted(set(script))) +
+                       "); a klt request is one analysis card, and the script's reductions are not `.meas`/expr-expressible")
+    if len(cards) != 1:
+        return False, f"{len(cards)} analysis cards; a klt request carries exactly one"
+    if kinds[0] not in ("op", "dc", "ac", "tran"):
+        return False, f"analysis kind {kinds[0]!r} has no klt mapping"
+    if "dut" in tb:
+        return False, "manifest declares a DUT; DUT inlining is only done by the dedicated builders"
+    if re.search(r"^x\w+\s.*\bbandgap_top\b", netlist_text, re.I | re.M):
+        return False, "deck instantiates bandgap_top but the manifest declares no `dut`, so what to inline is undefined"
+    if re.search(r"^vsup\s.*\b(pwl|pulse|sin)\b", netlist_text, re.I | re.M):
+        return False, "supply is a PWL/PULSE/SIN source; klt refuses supply_v for it"
+    return True, "single analysis card with plain vector-expression measurements"
+
+
+def has_supply_source(netlist_text: str) -> bool:
+    """True when the deck has the ``vsup`` source klt's ``supply_v`` alters; a
+    supply-less bench (devices on an ideal current/voltage source) has no supply axis."""
+    return re.search(r"^vsup\s", netlist_text, re.I | re.M) is not None
 
 
 def split_analysis(card: str) -> dict:
@@ -478,11 +522,20 @@ def build_plan(bench: str, tb: dict, *, design_include: Path, dut: Path, tb_netl
         raise ValueError(f"DUT {dut_rel} .includes other files; the fleet stages only the deck -- flatten it first")
     nominal = tb["nominal_supply_v"]
     vdds = hc.supply_points(nominal, tb.get("supply_tolerance", 0.0))
+    generic = bench in GENERIC_BENCHES
+    if generic:
+        ok, why = classify_bench(tb, Path(tb_netlist).read_text())
+        if not ok:
+            raise ValueError(f"{bench} cannot be expressed as a klt request: {why}")
+        if not has_supply_source(Path(tb_netlist).read_text()):
+            vdds = [None]
     files: dict[str, str] = {}
     requests: list[dict] = []
     embedded = bench == "startup"
 
-    if embedded:
+    if generic:
+        parts = (("design.ngspice (PDK)", design_include), ("testbench", tb_netlist))
+    elif embedded:
         parts = (("design.ngspice (PDK)", design_include), ("testbench (embeds its own bandgap_top core)", tb_netlist))
     else:
         parts = (("design.ngspice (PDK)", design_include), ("DUT", dut), ("testbench", tb_netlist))
@@ -493,7 +546,17 @@ def build_plan(bench: str, tb: dict, *, design_include: Path, dut: Path, tb_netl
         body = inline_parts(f"{bench}/{name}", parts, GENERATOR)
         return "\n".join([body[0]] + head_lines(tb, vdd, extra) + body[1:] + [""])
 
-    if bench == "psrr-dc":
+    if generic:
+        analysis = split_analysis(tb["analyses"][0])
+        meas = [{"name": n, "expr": e, "unit": "1"} for n, e in tb["measure"].items()]
+        text = deck(GENERIC_REQUEST, nominal, tb.get("params"))
+        req = _noise_request(tb, analysis, meas, vdds[0] if vdds[0] is None else vdds, [])
+        del req["options"]["ngspice_init"]
+        files[f"{GENERIC_REQUEST}/body.spice"] = text
+        files[f"{GENERIC_REQUEST}/request.json"] = json.dumps(req, indent=2) + "\n"
+        requests.append(_entry(GENERIC_REQUEST, "point", None, req, text, expected_units(tb, vdds),
+                               [m["name"] for m in meas]))
+    elif bench == "psrr-dc":
         text = deck("ac", nominal)
         ac = pick_analysis(tb, "ac")
         meas = [(f"vdb_{tag}", f".meas ac vdb_{tag} FIND vdb(vref) AT={f:g}", "dB") for tag, f in PSRR_SPOTS.items()]
@@ -569,7 +632,7 @@ def build_plan(bench: str, tb: dict, *, design_include: Path, dut: Path, tb_netl
         "schema": PLAN_SCHEMA,
         "bench": bench,
         "submitting_klt_version": submitting_klt_version,
-        "dut": {"path": dut_rel, "sha256": fc.sha256_file(dut)},
+        "dut": {"path": None, "sha256": None} if generic else {"path": dut_rel, "sha256": fc.sha256_file(dut)},
         "embedded_core": embedded,
         "tb_netlist_sha256": fc.sha256_file(tb_netlist),
         "manifest_sha256": fc.sha256_bytes((SIM / bench / "testbench" / "tb.json").read_bytes()),
@@ -632,6 +695,8 @@ def main() -> int:
     if a.bench in MEASUREMENT_BENCHES:
         print(f"  measurement only (no threshold) -- ingest with: python3 sim/tools/fleet_ingest.py {a.bench} {out} "
               f"--dut {plan['dut']['path']}")
+    if a.bench in GENERIC_BENCHES:
+        print("  tb.json-driven bench -- map the report back with fleet_common.generic_point_results()")
     for r in plan["requests"]:
         n = len(r["expected_units"])
         print(f"  {r['name']}: {n} corner unit(s) -> klt sim --backend batch -o {out}/{r['name']}/out "

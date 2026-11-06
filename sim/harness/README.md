@@ -352,6 +352,35 @@ original grep evidence), migrated onto this pattern in issue #123.
 `sim/tools/devchar.py` has since been **deleted**: no experiment imports it
 any more.
 
+## Fleet requests for the remaining benches (#424)
+
+A fleet-configured host (`KLT_SIM_BACKEND=batch`) must not run a PVT grid
+itself. Besides the dedicated builders (`mk_klt_request.py`,
+`mk_klt_fleet_request.py` for psrr-dc / line-regulation / startup / iq /
+output-load-sensitivity / output-noise, `mk_klt_mc_request.py`,
+`mk_klt_device_request.py`), `mk_klt_fleet_request.py <bench> WORK` now builds a
+request straight from any bench's own `tb.json` when
+`classify_bench()` accepts it: exactly one `op`/`dc`/`ac`/`tran` card, no
+ngspice script around it, and every `measure` entry a plain vector expression
+(sent as `measurements[].expr`). Corners, temperatures and supply points come
+from `tb.json` + `harness/corners.py`; a bench without a `vsup` source has no
+supply axis. `fleet_common.generic_point_results()` maps the returned report
+back to `PointResult`s, so `report.py` is unchanged. A missing, failed or
+runner-incompatible unit is a `failed`/`error` point whose message names the
+corner and the fleet job id; it is never omitted and never re-run locally.
+
+| Bench | Fleet path | Reason |
+|---|---|---|
+| `smoke-bias`, `device-resistor-tc`, `device-mos-vth`, `device-pnp-vbe`, `device-mos-mismatch`, `device-pnp-mismatch` | supported | single `op` card, plain vector expressions. For the `device-*` benches this covers the generic manifest check only, not the `run_*.py` constant-current / sweep extraction |
+| `amp-loop-stability`, `amp-psrr`, `core-psrr-ideal-amp` | refused | `ac` followed by an ngspice `let`/`while` script (loop-gain phase/gain margin, worst-case scan); not `.meas`/expr-expressible |
+| `amp-offset-sensitivity` | refused | the measures read a `let` variable defined in the analysis section |
+| `core-mirror-sensitivity` | refused | five `dc` cards plus `op` in one deck; a klt request is one analysis |
+| `trim-coverage` | refused | `foreach`/`alterparam`/`reset` loop over trim codes |
+| `startup-disabled-control`, `startup-extracted`, `startup-slow-ramp`, `startup-state-search`, `startup-state-search-extracted` | refused | `tran` with waveform-wide post-processing (`let`/scans); PWL supply refuses klt `supply_v`. Only the `startup` bench has a dedicated builder |
+| `bandgap-loop-smoke` | refused | instantiates `bandgap_top` with no manifest `dut`, so what to inline is undefined (and it seeds `.ic`) |
+
+`sim/tests/test_fleet_requests.py` pins this table to `classify_bench()`.
+
 ## sim/output-load-sensitivity/: characterization, not a spec line
 
 `sim/output-load-sensitivity/` (issue #269) sweeps a DC current sink at
