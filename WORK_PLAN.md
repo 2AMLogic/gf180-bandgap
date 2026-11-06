@@ -27,12 +27,14 @@ _None._
 Human-approved issues ready for implementation (`loom:issue`).
 
 - **#308**: ci: fail when committed bandgap_top.gds differs from generate.py output
+- **#424**: sim harness: dispatch additional analyses to the batch fleet (split from #219)
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
 - **#386**: Prepare the revised par_r resistor-mismatch model-risk assessment and validation plan (part of #239)
+- **#425**: layout/README: remove the stale "no version pin" klt claims now that klt is pinned
 
 ## PRs Awaiting Review
 
@@ -52,10 +54,13 @@ Issues carrying `loom:curated`.
 
 - **#87**: Layout's 4x unit-PNP array for core.Q2 gives an effective dVBE ratio of 4.03, not the schematic's 3.63 — floorplan 4.1 asserts the opposite *(curated)*
 - **#203**: DR-0007 phase A: measure array ratio and finalize schematic PVT evidence *(curated)*
+- **#219**: sim harness: share the batch-backend guard and cap default local --jobs *(curated)*
 - **#239**: DR-0007: execute final-DUT fleet suite and mismatch evidence run *(curated)*
 - **#308**: ci: fail when committed bandgap_top.gds differs from generate.py output *(curated)*
 - **#358**: T1 item 11: declare ERC well/substrate ties now that klayout-tools#2169 is fixed, then cite item 11 *(curated)*
 - **#386**: Prepare the revised par_r resistor-mismatch model-risk assessment and validation plan (part of #239) *(curated)*
+- **#424**: sim harness: dispatch additional analyses to the batch fleet (split from #219) *(curated)*
+- **#425**: layout/README: remove the stale "no version pin" klt claims now that klt is pinned *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -74,11 +79,11 @@ Issues carrying `loom:curated`.
 | Operator merge-risk holds | 0 |
 | Very important | 0 |
 | Important | 2 |
-| Ready (`loom:issue`) | 1 |
-| In Progress (`loom:building`) | 1 |
+| Ready (`loom:issue`) | 2 |
+| In Progress (`loom:building`) | 2 |
 | PRs awaiting review | 1 |
 | Approved PRs awaiting merge | 0 |
-| Curated | 6 |
+| Curated | 9 |
 | Architect / Hermit proposals | 1 |
 | Active epics | 3 |
 <!-- guide:plan-body:end -->
