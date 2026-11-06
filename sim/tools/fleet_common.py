@@ -316,6 +316,71 @@ def hash_problems(plan: dict, *, dut_sha: str | None, tb_sha: str, manifest_sha:
 # --------------------------------------------------------------------------
 
 
+def remote_job_id(report: dict) -> str:
+    """The fleet job id of a report (``environment.remote.job_id``), or ``unknown``."""
+    return str(((report.get("environment") or {}).get("remote") or {}).get("job_id") or "unknown")
+
+
+def generic_point_results(tb: dict, plan: dict, report: dict | None, request: str = "run") -> tuple[list, list[str]]:
+    """Map one fleet report of a ``tb.json``-driven bench to harness ``PointResult``s.
+
+    -> (results, problems). One result per expected unit of ``plan['requests']``
+    entry ``request``, in plan order, never omitted: a unit that is absent or
+    whose klt execution cannot be trusted is ``status="error"`` / ``"failed"``,
+    one lacking a finite measurement is ``"failed"`` with ``missing`` set, and
+    every non-ok message names the corner and the fleet job id. Report-level
+    problems (no report, duplicate/unexpected ids, runner incompatibility,
+    version mismatch) are returned too and downgrade every otherwise-ok point to
+    ``"failed"``: evidence ends INCOMPLETE, never PASS. Nothing here runs a
+    simulation, so there is no local fallback.
+    """
+    from harness import corners as hc
+    from harness.runner import PointResult
+
+    entry = next(r for r in plan["requests"] if r["name"] == request)
+    required = list(entry["measurements"])
+    by_name = {c.name: c for c in hc.resolve_corners(tb["corners"])}
+
+    def key(p, s, t):
+        return (p, None if s is None else round(float(s), 3), float(t))
+
+    expected = [key(*u) for u in entry["expected_units"]]
+    if report is None:
+        points, missing, failed, problems = {}, [(k, "absent from report") for k in expected], [], [
+            f"request {request!r}: no report.json (batch submit failed or result not fetched)"]
+        job = "unknown"
+    else:
+        job = remote_job_id(report)
+        points, missing, failed, problems = collect_units(
+            report, expected, required, lambda cid: key(*parse_klt_corner_id(cid)))
+        problems = problems + provenance_problems(report, plan)
+    miss, fail = dict(missing), dict(failed)
+    status_of = {c.get("corner_id"): c.get("status") for c in (report or {}).get("corners", [])}
+    out = []
+    for i, k in enumerate(expected):
+        process, supply, temp = k
+        label = f"{process}/{'novdd' if supply is None else f'{supply:.3f}V'}/{temp:g}C"
+        pt = hc.PvtPoint(by_name[process], temp, tb["nominal_supply_v"] if supply is None else supply, index=i)
+        tag = f"[fleet job {job}] corner {label}"
+        if k in fail:
+            st = "error" if status_of.get(label) == "error" else "failed"
+            out.append(PointResult(pt, st, message=f"{tag}: {fail[k]}", diagnostic=fail[k]))
+        elif k in miss:
+            absent = miss[k] == "absent from report"
+            vals = {}
+            if not absent:
+                c = next((c for c in report["corners"] if c.get("corner_id") == label), {})
+                vals = {m["name"]: m["value"] for m in c.get("measurements", []) if is_finite_number(m.get("value"))}
+            out.append(PointResult(pt, "error" if absent else "failed", measurements=vals,
+                                   missing=[n for n in required if n not in vals], message=f"{tag}: {miss[k]}"))
+        elif problems:
+            out.append(PointResult(pt, "failed", measurements=points[k],
+                                   message=f"{tag}: report not trusted: {'; '.join(problems)}"[:400]))
+        else:
+            out.append(PointResult(pt, "ok", measurements={n: points[k][n] for n in required}))
+    return out, problems
+
+
 def fmt_num(x, n: int = 6) -> str:
     """Record-table number: ``-`` for None, else ``n`` significant digits."""
     return "-" if x is None else f"{x:.{n}g}"
