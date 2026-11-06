@@ -26,13 +26,12 @@ _None._
 
 Human-approved issues ready for implementation (`loom:issue`).
 
-_None._
+- **#308**: ci: fail when committed bandgap_top.gds differs from generate.py output
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
-- **#308**: ci: fail when committed bandgap_top.gds differs from generate.py output
 - **#386**: Prepare the revised par_r resistor-mismatch model-risk assessment and validation plan (part of #239)
 
 ## PRs Awaiting Review
@@ -61,7 +60,6 @@ Issues carrying `loom:curated`.
 ## Proposed (Architect / Hermit)
 
 - **#219**: sim harness: share the batch-backend guard and cap default local --jobs *(architect)*
-- **#418**: Remove orphaned sim/tools/fleet_suite_summary.py (only its own test references it) *(hermit)*
 
 ## Epics
 
@@ -76,11 +74,11 @@ Issues carrying `loom:curated`.
 | Operator merge-risk holds | 0 |
 | Very important | 0 |
 | Important | 2 |
-| Ready (`loom:issue`) | 0 |
-| In Progress (`loom:building`) | 2 |
+| Ready (`loom:issue`) | 1 |
+| In Progress (`loom:building`) | 1 |
 | PRs awaiting review | 1 |
 | Approved PRs awaiting merge | 0 |
 | Curated | 6 |
-| Architect / Hermit proposals | 2 |
+| Architect / Hermit proposals | 1 |
 | Active epics | 3 |
 <!-- guide:plan-body:end -->
