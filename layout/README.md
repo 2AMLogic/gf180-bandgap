@@ -86,15 +86,17 @@ KLayout GUI/application binary or its `.drc`/`.lydrc` script runner**. Every
 command below ran to completion in a shell with no KLayout application
 installed, no `DISPLAY`, and no Qt.
 
-**No version pin — drift is expected, and has happened before ([#159](https://github.com/2AMLogic/gf180-bandgap/issues/159)).**
-`uv tool install`/`pip install` above always resolves to the git repo's
-current `HEAD`, so the exact rule set/extraction behaviour changes out from
-under this repo whenever `klayout-tools` merges upstream. The "Expected
-results" table below records the `klt` revision its DRC-clean/LVS-match
-verdicts were last verified against (`uv tool install`'s own
-`uv-receipt.toml`, or `klt --version` for the package version alone) — check
-that note before trusting the table unchanged, and re-run the reproduction
-commands (below) against your own installed `klt` if it is newer.
+**`klt` is pinned.** The version is set by
+[`signoff/klt-pin.txt`](../signoff/klt-pin.txt), and the install line above
+must match that file. Upstream merges therefore do not change the rule
+set/extraction behaviour under this repo (they did before the pin — see
+[#159](https://github.com/2AMLogic/gf180-bandgap/issues/159)). A bump is a
+deliberate act: re-run `signoff/regenerate.sh` and state in the PR what
+moved, as `klt-pin.txt`'s own comment says. The "Expected results" table
+below records the `klt` revision its DRC-clean/LVS-match verdicts were last
+verified against (`klt --version` for the package version) — check that note
+before trusting the table unchanged, and re-run the reproduction commands
+(below) if your installed `klt` differs.
 
 ## Reproducing the whole flow
 
@@ -190,9 +192,9 @@ python3 layout/lvs/run_lvs.py layout/bandgap_top/bandgap_top.gds --engine both
 
 **RESOLVED — klt-version drift silently invalidated the DRC-clean/LVS-match
 verdicts above, independent of any drawn-geometry change**
-([#159](https://github.com/2AMLogic/gf180-bandgap/issues/159)). `klt` is
-installed unpinned from git head (no version pin — see "Requires `klt` on
-`PATH`" above); #156 found (while regenerating `bandgap_top.gds` for the
+([#159](https://github.com/2AMLogic/gf180-bandgap/issues/159)). `klt` was
+installed unpinned from git head at the time (no version pin then; it is
+pinned now — see "Install `klt`" above); #156 found (while regenerating `bandgap_top.gds` for the
 area row) that a `klt` installed today no longer reproduced either verdict
 against the committed GDS, and #159 root-caused and fixed each finding
 rather than treating it as a `klt` regression to report upstream — none of
@@ -233,8 +235,8 @@ it turned out to be a genuine `klt`/klayout-tools bug:
 `git+https://github.com/2AMLogic/klayout-tools@a482d3934bd644b763cf925f6344ac05f54a1623`
 (the exact `uv tool install` receipt, `uv-receipt.toml`, as of this table's
 capture — re-verify against a fresh `klt --version`/install receipt before
-trusting this table unchanged, since `klt` is installed unpinned from git
-head; see "Install `klt`" above).
+trusting this table unchanged, since `klt` was installed unpinned from git
+head at the time of capture; it is pinned now, see "Install `klt`" above).
 
 `net_count` is 92, not 93, because gf180-bandgap#88 redrew the MiM cap's `fb`
 up-hop contact to land inside the recognised top plate — the top plate no
