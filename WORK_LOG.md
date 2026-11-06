@@ -4,6 +4,12 @@ Chronological record of recently merged pull requests and closed issues, maintai
 
 ### 2026-11-06
 
+- **PR #429**: feat(sim): refuse local multi-point grids on fleet backends; default jobs to 2
+- **PR #428**: feat(sim): build fleet requests from tb.json and ingest reports to PointResult
+- **PR #427**: docs: describe klt as pinned in layout README
+- **Issue #219** (closed): sim harness: share the batch-backend guard and cap default local --jobs
+- **Issue #424** (closed): sim harness: dispatch additional analyses to the batch fleet (split from #219)
+- **Issue #425** (closed): layout/README: remove the stale "no version pin" klt claims now that klt is pinned
 - **PR #421**: docs: point sim/suite README at the fleet evidence roll-up tool
 - **Issue #418** (closed): Remove orphaned sim/tools/fleet_suite_summary.py (only its own test references it)
 
