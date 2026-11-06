@@ -2,6 +2,11 @@
 
 Chronological record of recently merged pull requests and closed issues, maintained by the Loom Guide role. Newest entries appear first.
 
+### 2026-11-06
+
+- **PR #421**: docs: point sim/suite README at the fleet evidence roll-up tool
+- **Issue #418** (closed): Remove orphaned sim/tools/fleet_suite_summary.py (only its own test references it)
+
 ### 2026-11-01
 
 - **PR #417**: Bump Repo Skills 0.24.7 -> 0.25.1
