@@ -2,6 +2,10 @@
 
 Chronological record of recently merged pull requests and closed issues, maintained by the Loom Guide role. Newest entries appear first.
 
+### 2026-11-07
+
+- **PR #432**: Bump Repo Skills 0.25.1 -> 0.25.10
+
 ### 2026-11-06
 
 - **PR #429**: feat(sim): refuse local multi-point grids on fleet backends; default jobs to 2

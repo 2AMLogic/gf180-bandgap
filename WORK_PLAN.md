@@ -39,7 +39,6 @@ Issues currently being built (`loom:building`).
 PRs waiting on Judge (`loom:review-requested`).
 
 - **#387**: docs: propose DR-0008 par_r model-risk successor and validation plan
-- **#432**: Bump Repo Skills 0.25.1 -> 0.25.10
 
 ## Approved (Awaiting Merge)
 
@@ -77,7 +76,7 @@ _None._
 | Important | 2 |
 | Ready (`loom:issue`) | 1 |
 | In Progress (`loom:building`) | 1 |
-| PRs awaiting review | 2 |
+| PRs awaiting review | 1 |
 | Approved PRs awaiting merge | 0 |
 | Curated | 6 |
 | Architect / Hermit proposals | 0 |
