@@ -447,8 +447,6 @@ class RecordPair:
     mc_record: str | None
     corner_provenance: str | None
     mc_provenance: str | None
-    #: The class both legs were matched on, or ``None`` when they were not.
-    matched: str | None = None
     #: Fatal: no same-provenance pair could be formed without an explicit pin.
     problems: list[str] = field(default_factory=list)
 
@@ -526,13 +524,11 @@ def select_records(
             CORNER_SLUG, corner_id, sim_dir
         )
         m_class = mc_class if mc_id is None else record_provenance(MC_SLUG, mc_id, sim_dir)
-        matched = c_class if c_class is not None and c_class == m_class else None
         return RecordPair(
             corner_record=corner_id,
             mc_record=mc_id,
             corner_provenance=c_class,
             mc_provenance=m_class,
-            matched=matched,
             problems=problems or [],
         )
 
