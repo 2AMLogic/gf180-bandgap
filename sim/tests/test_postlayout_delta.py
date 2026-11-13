@@ -29,16 +29,39 @@ sys.path.insert(0, str(SIM_DIR))
 
 import postlayout_delta as pld  # noqa: E402
 from harness import paths as harness_paths  # noqa: E402
+from suite import combined as combined_mod  # noqa: E402
 from suite import spec as spec_mod  # noqa: E402
 
 SLUG = "output-voltage-tc"
 
+#: What follows the class on a *corner* record's provenance line: a space and
+#: an em dash, so the class is already its own whitespace-delimited token.
+CORNER_TAIL = " — DUT `x.spice`"
 
-def record_md(provenance: str | None, rows: list[tuple[str, str, str, str]]) -> str:
-    """A record stub with the per-corner table shape sim/harness/report.py emits."""
+#: What follows the class on a *fleet-ingested* record's provenance line
+#: (``sim/tools/fleet_ingest.py``'s ``build_record()``): a period abutting the
+#: class, then the DUT identity sentence. That period is part of the raw
+#: ``\S+`` token, so a reader that does not normalize it away reads
+#: ``schematic.`` and rejects the record (issue #454).
+FLEET_TAIL = (
+    f". Canonical DUT `sim/dut/bandgap_top.spice` sha256 `{'9e' * 32}`; "
+    f"testbench sha256 `{'ab' * 32}`; tb.json sha256 `{'3b' * 32}`."
+)
+
+
+def record_md(
+    provenance: str | None,
+    rows: list[tuple[str, str, str, str]],
+    tail: str = CORNER_TAIL,
+) -> str:
+    """A record stub with the per-corner table shape sim/harness/report.py emits.
+
+    ``tail`` is what the record states after the provenance class; it defaults
+    to the corner-record shape. Pass :data:`FLEET_TAIL` for the fleet shape.
+    """
     lines = ["# stub", ""]
     if provenance is not None:
-        lines.append(f"- **Netlist provenance**: {provenance} — DUT `x.spice`")
+        lines.append(f"- **Netlist provenance**: {provenance}{tail}")
         lines.append("")
     lines.append("| corner-id | `vref` | `tc_ppm` | pass/fail |")
     lines.append("|---|---|---|---|")
@@ -86,6 +109,39 @@ class LoadRecordTests(unittest.TestCase):
     def test_missing_provenance_is_unknown(self) -> None:
         rec = self.load(record_md(None, [("tt_27", "1.2", "10", "PASS")]))
         self.assertEqual(rec.provenance, "unknown")
+
+    def test_fleet_ingested_class_loads_without_its_trailing_period(self) -> None:
+        """A fleet record states ``schematic.``; it must load as ``schematic``.
+
+        Regression for #454: every October fleet record abuts the class with a
+        period, so a reader that keeps the raw token rejected all of them at
+        ``main()``'s provenance check even though the record states the class.
+        """
+        rec = self.load(
+            record_md("schematic", [("tt_27", "1.2", "10", "PASS")], tail=FLEET_TAIL)
+        )
+        self.assertEqual(rec.provenance, "schematic")
+
+    def test_reports_exactly_what_the_shared_reader_reports(self) -> None:
+        """``load_record`` reads this field through ``provenance_of_path``.
+
+        One function reads the **Netlist provenance** field (#454), so the two
+        callers cannot drift apart in normalization again. Upper-case plus the
+        fleet period exercises both halves of that normalization.
+        """
+        text = record_md(
+            "SCHEMATIC", [("tt_27", "1.2", "10", "PASS")], tail=FLEET_TAIL
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_record(root, "r1", text)
+            with mock.patch.object(pld, "REPO_ROOT", root):
+                rec = pld.load_record(SLUG, "r1")
+            shared = combined_mod.provenance_of_path(
+                root / "sim" / SLUG / "records" / "r1.md"
+            )
+        self.assertEqual(rec.provenance, shared)
+        self.assertEqual(rec.provenance, "schematic")
 
     def test_non_numeric_cell_is_omitted_not_zero(self) -> None:
         rec = self.load(record_md("schematic", [("tt_27", "n/a", "10", "PASS")]))

@@ -181,7 +181,7 @@ class ResItem:
 
 @dataclass
 class TrimLadderItem:
-    """The 63-segment trim ladder, drawn as unit segments in ``rows`` sub-rows.
+    """The 63-segment trim ladder, drawn as unit segments in two sub-rows.
 
     The ladder is one series chain of ``units`` identical segments. Chain
     **node index** *k* is the node between drawn unit *k-1* and unit *k*, so
@@ -195,7 +195,6 @@ class TrimLadderItem:
     unit_width_nm: int
     unit_length_nm: int
     units: int
-    sub_rows: int
     nets: tuple[str, str]  # (bottom = tn0, top = vref)
     #: Node-index pairs the drawn Metal1 trim option shorts, derived from the
     #: schematic's own ideal ``RS*`` strap expressions at
@@ -908,7 +907,6 @@ def build_rows(flat: FlatNetlist) -> list[Row]:
                     # on it, so the drawn unit is 2770 nm (-0.07%, see AREA.md/PR #408).
                     unit_length_nm=snap_grid(nm(unit.params["r_length"])),
                     units=len(trim_units),
-                    sub_rows=2,
                     nets=("core.tn0", "vref"),
                     strap_spans=trim_strap_spans(flat, trim_units, DRAWN_TRIM_CODE),
                     split_after_unit=31,

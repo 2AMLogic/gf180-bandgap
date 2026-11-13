@@ -27,20 +27,23 @@ _None._
 
 Human-approved issues ready for implementation (`loom:issue`).
 
-- **#308**: ci: fail when committed bandgap_top.gds differs from generate.py output
 - **#386**: Prepare the revised par_r resistor-mismatch model-risk assessment and validation plan (part of #239)
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
-_None._
+- **#450**: Remove the never-read is_mos attribute from the five layout plan item classes
+- **#453**: Remove dead fleet_common.corner_key and the duplicate klt_version() in the fleet request builders
+- **#454**: Read Netlist provenance through one function: postlayout_delta's copy rejects fleet-ingested records
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
 - **#387**: docs: propose DR-0008 par_r model-risk successor and validation plan
+- **#455**: refactor(layout): drop the never-read is_mos flag from plan item classes
+- **#456**: refactor(sim/tools): drop dead fleet_common.corner_key, single-source klt_version()
 
 ## Approved (Awaiting Merge)
 
@@ -61,7 +64,7 @@ Issues carrying `loom:curated`.
 
 ## Proposed (Architect / Hermit)
 
-- **#450**: Remove the never-read is_mos attribute from the five layout plan item classes *(hermit)*
+_None._
 
 ## Epics
 
@@ -76,11 +79,11 @@ Issues carrying `loom:curated`.
 | Operator merge-risk holds | 0 |
 | Very important | 0 |
 | Important | 3 |
-| Ready (`loom:issue`) | 2 |
-| In Progress (`loom:building`) | 0 |
-| PRs awaiting review | 1 |
+| Ready (`loom:issue`) | 1 |
+| In Progress (`loom:building`) | 3 |
+| PRs awaiting review | 3 |
 | Approved PRs awaiting merge | 0 |
 | Curated | 6 |
-| Architect / Hermit proposals | 1 |
+| Architect / Hermit proposals | 0 |
 | Active epics | 3 |
 <!-- guide:plan-body:end -->

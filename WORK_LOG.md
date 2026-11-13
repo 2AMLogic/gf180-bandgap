@@ -8,6 +8,8 @@ Chronological record of recently merged pull requests and closed issues, maintai
 
 ### 2026-11-13
 
+- **Issue #445** (closed): docs(signoff): two quoting inaccuracies in signoff/README.md (August body_verification, unmodeled_rules groups)
+- **PR #452**: docs(signoff): requote the August body_verification and the unmodeled_rules groups
 - **Issue #447** (closed): Follow-on: Work identified in PR #442
 - **PR #449**: docs: requote the DRC/LVS results table and the A6/PSRR summary notes from current evidence
 - **Issue #446** (closed): Remove five never-read module constants (SWEEP_POINTS, VREF_NOMINAL_V, NWELL_CLEAR, MC_SUPPLY_SAMPLE, ARTIFACT_URI_PREFIX)
