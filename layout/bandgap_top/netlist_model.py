@@ -337,6 +337,11 @@ def flatten(
     flat = FlatNetlist()
 
     def walk(instances: Iterable[RawInstance], prefix: str, net_map: dict[str, str]) -> None:
+        """Flatten ``instances`` living at ``prefix``.
+
+        ``net_map`` maps this level's pin names to the parent's net names; a
+        node missing from it is internal to this level and gets ``prefix``.
+        """
         for instance in instances:
             family = _family(instance)
             path = f"{prefix}{instance.name}"
@@ -360,12 +365,7 @@ def flatten(
                     pin: net_map.get(node, f"{prefix}{node}")
                     for pin, node in zip(definition.pins, instance.nodes)
                 }
-                # Internal (non-pin) nets get the child's own prefix.
-                walk(
-                    definition.instances,
-                    child_prefix,
-                    _ChildNetMap(child_map, child_prefix),
-                )
+                walk(definition.instances, child_prefix, child_map)
                 continue
 
             terminals = TERMINALS[family]
@@ -382,30 +382,10 @@ def flatten(
                 Device(path, family, instance.model, nets, _numeric_params(instance, family))
             )
 
-    top_map = _ChildNetMap({}, "")
-    walk(top_instances, "", top_map)
+    walk(top_instances, "", {})
     # Every net referenced at the top level of the file is a global net.
     flat.top_pins = ("vdd", "vss", "vref")
     return flat
-
-
-class _ChildNetMap(dict):
-    """Net-name resolver for one hierarchy level.
-
-    Pin nets map to the parent's net name; every other node is local and gets
-    this level's path prefix. Implemented as a ``dict`` subclass so ``.get``
-    keeps the "pin -> parent net" mapping while unknown keys fall through to
-    the prefixed local name.
-    """
-
-    def __init__(self, pin_map: dict[str, str], prefix: str) -> None:
-        super().__init__(pin_map)
-        self.prefix = prefix
-
-    def get(self, key: str, default: str | None = None) -> str:  # type: ignore[override]
-        if key in self:
-            return self[key]
-        return f"{self.prefix}{key}"
 
 
 def load(path: Path | str = DEFAULT_NETLIST) -> FlatNetlist:
