@@ -156,10 +156,6 @@ class MosItem:
     device: str | None = None  # flattened netlist path (None for a dummy)
     dummy: bool = False
 
-    @property
-    def is_mos(self) -> bool:
-        return True
-
 
 @dataclass
 class ResItem:
@@ -181,8 +177,6 @@ class ResItem:
     #: `excludes` layers for its `ppolyf_u` entry -- keeping it a short,
     #: same as an unmarked device, rather than silently wrong (#73).
     high_rho: bool = False
-
-    is_mos = False
 
 
 @dataclass
@@ -217,8 +211,6 @@ class TrimLadderItem:
     split_after_unit: int
     devices: tuple[str, ...] = ()
 
-    is_mos = False
-
 
 @dataclass
 class PnpItem:
@@ -231,8 +223,6 @@ class PnpItem:
     device: str | None = None
     dummy: bool = False
 
-    is_mos = False
-
 
 @dataclass
 class TapItem:
@@ -242,8 +232,6 @@ class TapItem:
     kind: str  # "psub" | "nwell"
     length_nm: int
     net: str
-
-    is_mos = False
 
 
 @dataclass
