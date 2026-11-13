@@ -1,0 +1,190 @@
+{
+  "_comment": [
+    "PINNED-klt TIE PROBE -- not signoff evidence. gf180-bandgap#441.",
+    "",
+    "erc-supply-spec.json verbatim, plus the ties[] declaration that klt",
+    "0.8.0 (signoff/klt-pin.txt) actually computes erc.missing_tie from.",
+    "Its sibling erc-tie-spec.known-gap.json is the SAME declaration as it",
+    "was written against klt 0.5.0, kept unchanged as the #2169 history; this",
+    "file is what that declaration has to become to say anything at the pin.",
+    "",
+    "Why this is NOT the item 11 citation: it reads the PRE-DR-0007 GDS, and",
+    "the citation (plus any manifest change) belongs to gf180-bandgap#358",
+    "after #204 regenerates the layout. This file exists so #358 starts from",
+    "a measured declaration instead of re-deriving one.",
+    "",
+    "THREE BIAS CLASSES, because one ties[] entry claims every shape on its",
+    "well_layer and this block biases Nwell two different ways:",
+    "",
+    "  nwell_tap_pmos  Nwell 21/0 MINUS the DRC_BJT 127/5 marker -> vdd",
+    "      The PMOS band's well. Tapped by ntap.pbias / ntap.top",
+    "      (plan.py TapItem kind='nwell', net='vdd').",
+    "",
+    "  nwell_base_pnp  Nwell 21/0 WHERE the DRC_BJT 127/5 marker is -> vss",
+    "      The eight vertical-PNP base islands (one per PnpItem in plan.py's",
+    "      'PNP' row, each a 10.40um square: generate.draw_pnp draws L_NWELL",
+    "      and a coincident L_DRC_BJT box). Every PnpItem declares",
+    "      base_net='vss' -- the Nwell IS the PNP base terminal, so biasing",
+    "      it to vdd would be the bug. Declared as its own entry per klt's",
+    "      own rule that each bias class gets one (erc.py,",
+    "      _select_well_class: 'each bias class is declared as its own",
+    "      ties[] entry with its own net').",
+    "",
+    "  psub_tap        top-cell extent MINUS Nwell 21/0 -> vss",
+    "      The native p-substrate, via well_complement_of (klayout-tools",
+    "      #3750) because no LVPWELL (204/0) is drawn anywhere in this GDS.",
+    "      Tapped by ptap.nbias / ptap.ampn plus the p+ guard ring",
+    "      (floorplan.md section 9).",
+    "",
+    "tap_layer is Comp 22/0 narrowed by tap_requires (klayout-tools#2169) in",
+    "all three entries -- Comp n Nplus 32/0 for an n-well tap, Comp n Pplus",
+    "31/0 for a substrate tap. gf180mcu has no dedicated tap layer, so",
+    "tap_is_dedicated is deliberately NOT affirmed; the narrowing is what",
+    "makes the tap region distinguishable from ordinary source/drain Comp.",
+    "Declaring the implant alone (tap_layer 32/0, as known-gap.json does)",
+    "removes nothing from the drawn layer and klt 0.8.0 correctly refuses it",
+    "as erc_coverage.skipped reason 'degenerate_tap_declaration'.",
+    "",
+    "Measured on klt 0.8.0 / klayout 0.30.13 against",
+    "layout/bandgap_top/bandgap_top.gds",
+    "sha256:97944732...edf055c -- see this spec's committed report and",
+    "README.md, 'What is NOT verified here':",
+    "",
+    "    gate_count            10   (no #2169 collapse)",
+    "    erc_coverage.skipped  []   (all three ties COMPUTED)",
+    "    erc_finding_count     0",
+    "",
+    "One honest caveat the report states itself: psub_tap is listed under",
+    "erc_coverage.checked_by_well_assertion, because its region is derived",
+    "by complement rather than read off drawn geometry. That is weaker",
+    "evidence than a drawn tub layer would be -- but it is a computed check",
+    "with a falsifiable region, not the absence of evidence that omitting",
+    "ties[] leaves behind."
+  ],
+  "stackup": [
+    {
+      "name": "Poly2",
+      "layer": "30/0",
+      "role": "gate",
+      "active_layer": "22/0"
+    },
+    {
+      "name": "Metal1",
+      "layer": "34/0",
+      "label_layer": "34/10"
+    },
+    {
+      "name": "Metal2",
+      "layer": "36/0"
+    },
+    {
+      "name": "Metal3",
+      "layer": "42/0"
+    },
+    {
+      "name": "Metal4",
+      "layer": "46/0"
+    },
+    {
+      "name": "Metal5",
+      "layer": "81/0"
+    }
+  ],
+  "vias": [
+    {
+      "name": "Contact",
+      "layer": "33/0",
+      "between": [
+        "Poly2",
+        "Metal1"
+      ]
+    },
+    {
+      "name": "Via1",
+      "layer": "35/0",
+      "between": [
+        "Metal1",
+        "Metal2"
+      ]
+    },
+    {
+      "name": "Via2",
+      "layer": "38/0",
+      "between": [
+        "Metal2",
+        "Metal3"
+      ]
+    },
+    {
+      "name": "Via3",
+      "layer": "40/0",
+      "between": [
+        "Metal3",
+        "Metal4"
+      ]
+    },
+    {
+      "name": "Via4",
+      "layer": "41/0",
+      "between": [
+        "Metal4",
+        "Metal5"
+      ]
+    }
+  ],
+  "nets": [
+    {
+      "name": "vdd",
+      "kind": "supply"
+    },
+    {
+      "name": "vss",
+      "kind": "supply"
+    },
+    {
+      "name": "vref",
+      "kind": "signal"
+    }
+  ],
+  "ties": [
+    {
+      "name": "nwell_tap_pmos",
+      "well_layer": "21/0",
+      "well_excludes": [
+        "127/5"
+      ],
+      "tap_layer": "22/0",
+      "tap_requires": [
+        "32/0"
+      ],
+      "connect_to": "Metal1",
+      "net": "vdd"
+    },
+    {
+      "name": "nwell_base_pnp",
+      "well_layer": "21/0",
+      "well_requires": [
+        "127/5"
+      ],
+      "tap_layer": "22/0",
+      "tap_requires": [
+        "32/0"
+      ],
+      "connect_to": "Metal1",
+      "net": "vss"
+    },
+    {
+      "name": "psub_tap",
+      "well_layer": null,
+      "well_complement_of": [
+        "21/0"
+      ],
+      "tap_layer": "22/0",
+      "tap_requires": [
+        "31/0"
+      ],
+      "connect_to": "Metal1",
+      "net": "vss"
+    }
+  ]
+}
