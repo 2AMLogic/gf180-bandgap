@@ -138,11 +138,11 @@ Expected results (as committed):
 | Step | Result |
 |---|---|
 | `matching_report.py` | all tier-1/2/3 checks pass, exit 0 |
-| `run_drc.py` | `status: clean`, `violation_count: 0` (`20260817-125327-972f6d5.drc.json`; see "RESOLVED — klt-version drift..." below) |
-| `run_lvs.py` | `status: match`, 164/164 devices, 92/92 nets (`20260817-125346-972f6d5.lvs.json`; see "RESOLVED — klt-version drift..." below) |
+| `run_drc.py` | `status: clean`, `violation_count: 0`, `metrics.drc__error__count: 0` — quoted from `20261028-065229-f32fe48.drc.json` (klt 0.8.0, klayout 0.30.12), the envelope `signoff/block-manifest.json` item 3 cites. The earlier `20260817-125327-972f6d5.drc.json` run reached the same verdict under klt 0.2.0 / klayout 0.30.10; see "RESOLVED — klt-version drift..." below |
+| `run_lvs.py` | `status: match`, 164/164 devices, 82/82 nets, 3/3 pins, `mismatch_count: 9` (all `warning`), `error_count: 0` — quoted from `20261028-065214-f32fe48.lvs.json` (klt 0.8.0, klayout 0.30.12), the envelope `signoff/block-manifest.json` item 4 cites. The earlier `20260817-125346-972f6d5.lvs.json` run read 164/164 devices but 92/92 nets, 4/4 pins and 14 mismatches under klt 0.2.0 / klayout 0.30.10, against an earlier drawn GDS; see "RESOLVED — klt-version drift..." below and "Of the 9 mismatches..." further down |
 | `routing_budget.py` | decomposition reconstructs the drawn bbox (221.70 × 281.03 µm) with **no corridor and no rail-band term left**, and the drawn `S1` area equals `area_report.py`'s measured 62,505.60 µm² / 2.47× — beating the study's 65,896.39 µm² / 2.60× estimate by 5.1 % (see [`routing/multi-metal-routing-study.md`](routing/multi-metal-routing-study.md) and `bandgap_top/AREA.md` Finding 6) |
 | `run_erc.py` | `gate_count: 10`, `erc_finding_count: 0` — **zero** `erc.unconnected_net` and **zero** `erc.supply_short` naming `vdd`/`vss`, i.e. each supply is exactly one electrical island (`20260920-062158-32dcc18.erc.json`). The report's own `status` is `not_checked`/exit 4 on every gf180mcu run, which T1 item 11 does not grade on — see [`erc/README.md`](erc/README.md), and note that `erc.missing_tie` is **not computed** there |
-| `run_lvs.py --engine both` | klayout `match`, 14 mismatches; netgen `mismatch`, 1 `device.property` error (`20260819-070132-1e66285.lvs-netgen.json`) — **engines DISAGREE by design**: [#168](https://github.com/2AMLogic/gf180-bandgap/issues/168) root-caused this to a netgen-only device-pairing artifact on graph-symmetric dummy devices, not a layout defect (see below); the `klayout` engine's `match` verdict is this repo's acceptance gate (#159/#170) and is unaffected |
+| `run_lvs.py --engine both` | **Dated to 2026-08-19, the last netgen run committed under `layout/lvs/reports/bandgap_top/`** (klt 0.2.0, klayout 0.30.10, netgen 1.5.133) — not a re-quote of the 2026-10-28 envelopes above, which are klayout-only, and no netgen run has been committed since: klayout `match`, 14 mismatches (`20260819-070132-1e66285.lvs.json`); netgen `mismatch`, 3 mismatches of which 1 is an `error`-severity `device.property` (`20260819-070132-1e66285.lvs-netgen.json`) — **engines DISAGREE by design**: [#168](https://github.com/2AMLogic/gf180-bandgap/issues/168) root-caused this to a netgen-only device-pairing artifact on graph-symmetric dummy devices, not a layout defect (see below); the `klayout` engine's `match` verdict is this repo's acceptance gate (#159/#170) and is unaffected |
 | `area_report.py` | 62,505.60 µm² vs. the current interim ceiling of 66,000 µm² (0.066 mm², `spec/decision-records/0006-area-target-narrowed-post-166.md`, proposed via the ratification-via-PR path) — **PASS, 5.3 % headroom**; still **FAIL, 25.0 % over budget** against the originally-ratified 50,000 µm² (DR-0003) (issue #166 recovered 22.7 % of #156's 80,813.72 µm²; the remainder is row-stripe floorplan whitespace, not routing — see `layout/bandgap_top/AREA.md` Findings 5–7) |
 
 **RESOLVED (documented, not a code change) — the `netgen` engine's
@@ -161,6 +161,15 @@ check — a pairing choice `klt`'s own comparer does not have to make the same
 way, and does not: the `klayout` engine's independent (non-configurable-
 tolerance) device-parameter check reports zero `device.property` mismatches
 on the same inputs (`20260819-070132-1e66285.lvs.json`).
+
+**Every figure in this finding is dated to that 2026-08-19 `--engine both`
+run** (`20260819-070132-1e66285.lvs.json` / `.lvs-netgen.json`, klt 0.2.0 /
+klayout 0.30.10 / netgen 1.5.133, layout `sha256:3e1af18e…`). It is the newest
+netgen run committed in this repo, so nothing below is re-quoted from the
+2026-10-28 klayout envelopes `signoff/block-manifest.json` cites — those did
+not run netgen at all (`environment.netgen_binary: null`). The root cause
+itself is unaffected by that: it is a property of netgen's comparator on
+single-net dummy topology, not of one run's numbers.
 
 Confirmed root cause, not merely hypothesised: `klt extract`'s own per-device
 coordinates place the two `L=16 µm` dummy `pfet`s (`pfet$43`/`pfet$48`,
@@ -226,22 +235,33 @@ it turned out to be a genuine `klt`/klayout-tools bug:
   match exactly, and the `vdd`/`VDD` and `FB`/`$12` net-identity "conflicts"
   — collateral fallout from the comparer's structural matching around that
   one broken device pair, not a real `klt` case-sensitivity bug — cleared
-  as a side effect, with no separate net-naming fix needed. The remaining
-  14 mismatches are the same pre-existing warning-severity noise this
-  section already documents below (2 `device.body_unverified`, 12
-  structurally-resolved `topology`).
+  as a side effect, with no separate net-naming fix needed. The 14 mismatches
+  remaining **at that run** (`20260817-125346-972f6d5.lvs.json`, 2026-08-17)
+  are the same pre-existing warning-severity noise this section documents
+  below (2 `device.body_unverified`, 12 structurally-resolved `topology`).
+  The manifest-cited 2026-10-28 envelope reads 9 instead — see "Of the 9
+  mismatches..." below.
 
-**klt revision this table is valid against:** `klt 0.2.0`,
+**klt revision each row is valid against:** the `run_drc.py` and `run_lvs.py`
+rows carry their envelope's own `provenance` — `klt 0.8.0`, klayout 0.30.12
+for the 2026-10-28 envelopes `signoff/block-manifest.json` cites. The
+`--engine both` row, the #159 and #168 findings above and the net-count note
+below are valid against the revision of their own 2026-08 capture: `klt
+0.2.0`,
 `git+https://github.com/2AMLogic/klayout-tools@a482d3934bd644b763cf925f6344ac05f54a1623`
-(the exact `uv tool install` receipt, `uv-receipt.toml`, as of this table's
-capture — re-verify against a fresh `klt --version`/install receipt before
-trusting this table unchanged, since `klt` was installed unpinned from git
-head at the time of capture; it is pinned now, see "Install `klt`" above).
+(the exact `uv tool install` receipt, `uv-receipt.toml`, as of that capture —
+`klt` was installed unpinned from git head at the time; it is pinned now, see
+"Install `klt`" above). Re-verify against a fresh `klt --version`/install
+receipt before trusting any undated figure here.
 
-`net_count` is 92, not 93, because gf180-bandgap#88 redrew the MiM cap's `fb`
-up-hop contact to land inside the recognised top plate — the top plate no
-longer extracts as its own isolated net, so it no longer contributes a
-distinct entry to the net count (see "Findings and escalations" below).
+**At the 2026-08 capture** `net_count` was 92, not 93, because
+gf180-bandgap#88 redrew the MiM cap's `fb` up-hop contact to land inside the
+recognised top plate — the top plate no longer extracts as its own isolated
+net, so it no longer contributes a distinct entry to the net count (see
+"Findings and escalations" below). The manifest-cited 2026-10-28 envelope
+reads 82 nets and 3 pins against a later drawn GDS
+(`sha256:97944732…`, vs. `sha256:3e1af18e…` here); this paragraph explains
+the 2026-08 figure only, and nothing here accounts for that later change.
 
 **RESOLVED — `run_lvs.py`'s `match` result went stale between commits,
 independent of any code change here** ([#89](https://github.com/2AMLogic/gf180-bandgap/issues/89)).
@@ -291,12 +311,24 @@ splitting, not a `klt` recognition change. Confirmed unrelated to klt-version
 drift specifically: the same 164/42 count is what a `klt` install at either
 the pre-#159 or post-#159 revision extracts from this GDS.
 
-Of the current 14 mismatches, all are `warning`-severity and not defects: two
-`device.body_unverified` entries are the deck's standing "no substrate/well
-tap layer" caveat (see below), and 12 `topology` entries are ambiguous net
-pairings the comparer resolved structurally — the six per-unit PNP Nwell
-nets and the symmetric interior nodes of the strapped-out trim loops. There
-are no `error`-severity mismatches. `status` is `NetlistComparer`'s own
+Of the 9 mismatches in the manifest-cited 2026-10-28 envelope
+(`20261028-065214-f32fe48.lvs.json`), all are `warning`-severity and none is
+a defect; `error_count` is 0 and `category_error_counts` is empty. Six are
+`topology` entries — ambiguous net pairings the comparer resolved
+structurally, every one of them an interior node of the strapped-out trim
+loops (`CORE_TRIM_U2_0`, `CORE_TRIM_U2_2`, `CORE_TRIM_U3_0`,
+`CORE_TRIM_U3_6`, `CORE_TRIM_U4_0`, `CORE_TRIM_U4_14`). The other three are
+`device.geometry_not_compared`, one per device class whose geometry
+parameters KLayout declares *secondary* so `kdb.NetlistComparer` never
+compared them: `cap_mim_2f0_m4m5_noshield` (`A`, `P` not compared; `C` was),
+`ppolyf_u` and `ppolyf_u_1k` (`A`, `L`, `P`, `W` not compared; `R` was).
+Those three are a stated gap in what the compare covers, not a difference it
+found — see "What the LVS verdict does and does not cover" below. That
+envelope carries **no** `device.body_unverified` entry: its
+`body_verification.status` is `verified`. The 2026-08-19 run read 14
+mismatches instead (2 `device.body_unverified` — the deck's standing "no
+substrate/well tap layer" caveat discussed below — and 12
+structurally-resolved `topology`). `status` is `NetlistComparer`'s own
 boolean verdict, which `klt lvs` never re-derives from the mismatch list.
 
 The MiM cap's **top** plate now resolves to the real `fb` net directly
