@@ -653,16 +653,6 @@ def build_plan(bench: str, tb: dict, *, design_include: Path, dut: Path, tb_netl
     return plan, files
 
 
-def klt_version() -> str | None:
-    import subprocess
-
-    try:
-        out = subprocess.run(["klt", "--version"], capture_output=True, text=True, timeout=30).stdout.strip()
-    except (OSError, subprocess.SubprocessError):
-        return None
-    return out.split()[-1] if out else None
-
-
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("bench", choices=SUPPORTED)
@@ -682,7 +672,7 @@ def main() -> int:
         a.bench, tb,
         design_include=hc_pdk().design_include, dut=dut,
         tb_netlist=SIM / a.bench / "testbench" / tb["netlist"],
-        dut_rel=str(dut.relative_to(REPO)), submitting_klt_version=a.klt_version or klt_version(),
+        dut_rel=str(dut.relative_to(REPO)), submitting_klt_version=a.klt_version or fc.klt_version(),
     )
     out = Path(a.outdir).resolve()
     for rel, text in files.items():
