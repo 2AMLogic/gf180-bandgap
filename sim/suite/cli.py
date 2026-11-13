@@ -25,7 +25,6 @@ from . import combined as combined_verdict
 from .completeness import (
     EXIT_OK,
     EXIT_RUN_ERROR,
-    EXIT_SPEC_FAIL,
     Completeness,
     assess,
 )
