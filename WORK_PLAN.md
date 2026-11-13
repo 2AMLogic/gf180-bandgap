@@ -27,8 +27,8 @@ _None._
 
 Human-approved issues ready for implementation (`loom:issue`).
 
-- **#386**: Prepare the revised par_r resistor-mismatch model-risk assessment and validation plan (part of #239)
 - **#308**: ci: fail when committed bandgap_top.gds differs from generate.py output
+- **#386**: Prepare the revised par_r resistor-mismatch model-risk assessment and validation plan (part of #239)
 
 ## In Progress
 
@@ -61,7 +61,7 @@ Issues carrying `loom:curated`.
 
 ## Proposed (Architect / Hermit)
 
-_None._
+- **#450**: Remove the never-read is_mos attribute from the five layout plan item classes *(hermit)*
 
 ## Epics
 
@@ -81,6 +81,6 @@ _None._
 | PRs awaiting review | 1 |
 | Approved PRs awaiting merge | 0 |
 | Curated | 6 |
-| Architect / Hermit proposals | 0 |
+| Architect / Hermit proposals | 1 |
 | Active epics | 3 |
 <!-- guide:plan-body:end -->
