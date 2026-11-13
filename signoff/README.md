@@ -181,10 +181,13 @@ reported verbatim in the committed record's `citation.coverage`):
 "Clean" means clean *inside that scope*. Every DRM chapter not listed above
 was not checked by this run. The envelope is explicit about the size of that
 gap in its own terms: `coverage.unmodeled_rules` names **97** DRM rule IDs
-(the `MV` voltage variants, the metal-slotting `MSLOT.*` set, `MT30.*`,
-`ESD.*`, `GR.*` and the via `V[1-4].*` enclosure variants) that this deck
-does not transcribe at all, and so no run against it can ever evaluate.
-`violation_count` is 0 over the 82 rules in `coverage.rules_checked`.
+that this deck does not transcribe at all, and so no run against it can ever
+evaluate. Those 97 are exactly ten groups: the medium-voltage `*_MV`
+variants (35), the via `V[1-4].*` enclosure variants (16), `MT30.*` (9), the
+metal-slotting `MSLOT.*` set (8), `ESD.*` (8), `DV.1/3/6/7/8/9` (6), `GR.*`
+(5), the metal `M[1-5].2b` variants (5), `MT.2b`/`MT.3`/`MT.4` (3) and the
+contact pair `CO.6a`/`CO.6b` (2). `violation_count` is 0 over the 82 rules
+in `coverage.rules_checked`.
 
 ### Item 4 — what the cited LVS run did and did not compare
 
@@ -248,12 +251,15 @@ pinned `content_hash` against and could not prove the citation fresh — even
 though that run *had* been made against the committed layout
 (`environment.layout_sha256` agreed with it). Dropping the pin to force a
 `met` would have asserted a freshness no tool checked, so the pin stayed and
-the row stayed `unmet` until the re-run above (klayout-tools#1969). On that
-August run both engines' `body_verification` read `unchecked` — which is not
-`verified` — and the netgen side reported `status: "mismatch"` (2
-`device.body_unverified` warnings on the deck-synthesized substrate/well nets,
-plus 1 `device.property` entry whose per-parameter detail netgen's output did
-not parse into). [`layout/README.md`](../layout/README.md) and
+the row stayed `unmet` until the re-run above (klayout-tools#1969). Neither
+August envelope carries a `body_verification` field at all — both were
+written by klt 0.2.0, and no envelope from that version or earlier in this
+repo has one — so nothing on that run verified device bodies, which is a
+weaker statement than the `verified` above, not a comparable one. The netgen
+side reported `status: "mismatch"` (2 `device.body_unverified` warnings on
+the deck-synthesized substrate/well nets, plus 1 `device.property` entry
+whose per-parameter detail netgen's output did not parse into).
+[`layout/README.md`](../layout/README.md) and
 [`layout/erc/README.md`](../layout/erc/README.md) still describe that run.
 
 ### Item 5 — full corner verification: what is actually still open
