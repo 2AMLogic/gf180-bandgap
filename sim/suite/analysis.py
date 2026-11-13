@@ -142,7 +142,6 @@ class LineOutcome:
     status: str = "PENDING"
     outcomes: list[LimitOutcome] = field(default_factory=list)
     reference: dict[str, tuple[float, float]] = field(default_factory=dict)
-    detail: str = ""
     n_corners: int = 0
 
     @property

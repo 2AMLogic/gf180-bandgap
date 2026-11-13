@@ -8,6 +8,16 @@ Chronological record of recently merged pull requests and closed issues, maintai
 
 ### 2026-11-13
 
+- **Issue #457** (closed): Remove the never-read sub_rows and top_pins fields from the layout planner
+- **PR #462**: refactor(layout): drop the unread sub_rows and top_pins planner fields
+- **Issue #454** (closed): Read Netlist provenance through one function: postlayout_delta's copy rejects fleet-ingested records
+- **PR #460**: refactor(sim): read Netlist provenance through provenance_of_path only
+- **Issue #453** (closed): Remove dead fleet_common.corner_key and the duplicate klt_version() in the fleet request builders
+- **PR #456**: refactor(sim/tools): drop dead fleet_common.corner_key, single-source klt_version()
+- **Issue #450** (closed): Remove the never-read is_mos attribute from the five layout plan item classes
+- **PR #455**: refactor(layout): drop the never-read is_mos flag from plan item classes
+- **Issue #445** (closed): docs(signoff): two quoting inaccuracies in signoff/README.md (August body_verification, unmodeled_rules groups)
+- **PR #452**: docs(signoff): requote the August body_verification and the unmodeled_rules groups
 - **Issue #447** (closed): Follow-on: Work identified in PR #442
 - **PR #449**: docs: requote the DRC/LVS results table and the A6/PSRR summary notes from current evidence
 - **Issue #446** (closed): Remove five never-read module constants (SWEEP_POINTS, VREF_NOMINAL_V, NWELL_CLEAR, MC_SUPPLY_SAMPLE, ARTIFACT_URI_PREFIX)

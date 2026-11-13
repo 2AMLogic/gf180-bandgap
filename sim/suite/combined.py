@@ -128,10 +128,10 @@ SIM_DIR = REPO_ROOT / "sim"
 REPORT_DIR = SIM_DIR / "suite" / "combined"
 
 # Every known caller of this module (`sim/run_combined_accuracy.py`,
-# `sim/tests/test_combined.py`, `sim/suite/cli.py` via `sim/run_suite.py`)
-# inserts SIM_DIR onto sys.path before importing `suite.combined`, so this
-# module-level import of a sibling `sim/harness/` package is safe here (see
-# issue #154).
+# `sim/tests/test_combined.py`, `sim/suite/cli.py` via `sim/run_suite.py`,
+# `sim/postlayout_delta.py`) inserts SIM_DIR onto sys.path before importing
+# `suite.combined`, so this module-level import of a sibling `sim/harness/`
+# package is safe here (see issue #154).
 sys.path.insert(0, str(SIM_DIR))
 from harness import stats as harness_stats  # noqa: E402  (needs sys.path)
 from harness.paths import _repo_relative  # noqa: E402  (needs sys.path)
@@ -261,9 +261,11 @@ def read_mc_groups(corners_dir: Path) -> dict[tuple[str, float], GroupStats]:
 # --- evidence discovery -----------------------------------------------------
 
 
-#: ``sim/README.md``'s required **Netlist provenance** field, as
-#: ``sim/postlayout_delta.py`` reads it back off a record. Kept identical to
-#: that module's pattern on purpose: one convention, one way of reading it.
+#: ``sim/README.md``'s required **Netlist provenance** field. Read it only
+#: through :func:`provenance_of_path` -- that is the one reader of this field,
+#: for this module and for ``sim/postlayout_delta.py`` alike. A second,
+#: hand-rolled scan is what diverged from this one's normalization and made
+#: ``postlayout_delta`` reject every fleet-ingested record (#454).
 PROVENANCE_FIELD = re.compile(r"^-\s+\*\*Netlist provenance\*\*:\s*(\S+)")
 
 #: What a record that does not state the field (or cannot be read) reports as.
@@ -445,8 +447,6 @@ class RecordPair:
     mc_record: str | None
     corner_provenance: str | None
     mc_provenance: str | None
-    #: The class both legs were matched on, or ``None`` when they were not.
-    matched: str | None = None
     #: Fatal: no same-provenance pair could be formed without an explicit pin.
     problems: list[str] = field(default_factory=list)
 
@@ -524,13 +524,11 @@ def select_records(
             CORNER_SLUG, corner_id, sim_dir
         )
         m_class = mc_class if mc_id is None else record_provenance(MC_SLUG, mc_id, sim_dir)
-        matched = c_class if c_class is not None and c_class == m_class else None
         return RecordPair(
             corner_record=corner_id,
             mc_record=mc_id,
             corner_provenance=c_class,
             mc_provenance=m_class,
-            matched=matched,
             problems=problems or [],
         )
 
