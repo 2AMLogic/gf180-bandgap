@@ -34,9 +34,9 @@ sys.path.insert(0, str(REPO_ROOT / "sim"))
 
 from harness import report as harness_report  # noqa: E402
 from suite import spec as spec_mod  # noqa: E402
+from suite.combined import provenance_of_path  # noqa: E402
 
 RECORD_ROW = re.compile(r"^\s*\|\s*`([^`]+)`\s*\|(.+)\|\s*$")
-PROVENANCE = re.compile(r"^-\s+\*\*Netlist provenance\*\*:\s*(\S+)")
 
 
 @dataclass
@@ -73,12 +73,12 @@ def load_record(slug: str, record_id: str) -> Record:
     path = REPO_ROOT / "sim" / slug / "records" / f"{record_id}.md"
     text = path.read_text()
 
-    provenance = "unknown"
-    for line in text.splitlines():
-        hit = PROVENANCE.match(line)
-        if hit:
-            provenance = hit.group(1)
-            break
+    # Read this field only through the shared reader -- a second, hand-rolled
+    # scan here kept the class's trailing period and rejected every
+    # fleet-ingested record (#454). The ``read_text()`` above already failed
+    # loudly for an unreadable record, so the ``unknown`` fallback inside
+    # ``provenance_of_path`` cannot mask a missing one.
+    provenance = provenance_of_path(path)
 
     header: list[str] | None = None
     corners: dict[str, dict[str, float]] = {}
