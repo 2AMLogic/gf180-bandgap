@@ -164,7 +164,7 @@ def sweep_consistency(vals: dict) -> list[str]:
     return errs
 
 
-def assess(points, missing, failed, problems, tb: dict | None = None, expected=None):
+def assess(points, missing, failed, problems, tb: dict | None = None):
     """Per-corner derived values + verdicts + one overall verdict.
 
     Overall: INCOMPLETE if anything expected is missing/failed (never PASS),
