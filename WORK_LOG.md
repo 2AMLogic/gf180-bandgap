@@ -8,6 +8,12 @@ Chronological record of recently merged pull requests and closed issues, maintai
 
 ### 2026-11-13
 
+- **Issue #461** (closed): Remove _ChildNetMap: dict subclass whose .get override duplicates the default both callers already pass
+- **PR #465**: refactor(layout): resolve child nets with a plain dict, drop _ChildNetMap
+- **Issue #459** (closed): bug: postlayout_delta exits 1 after a successful write when -o is outside the repo
+- **PR #464**: fix(sim): keep postlayout_delta's exit status off its confirmation print
+- **Issue #463** (closed): Remove the never-read LineOutcome.detail and RecordPair.matched fields from the spec-line suite
+- **PR #467**: refactor(suite): drop the unread LineOutcome.detail and RecordPair.matched fields
 - **Issue #457** (closed): Remove the never-read sub_rows and top_pins fields from the layout planner
 - **PR #462**: refactor(layout): drop the unread sub_rows and top_pins planner fields
 - **Issue #454** (closed): Read Netlist provenance through one function: postlayout_delta's copy rejects fleet-ingested records
