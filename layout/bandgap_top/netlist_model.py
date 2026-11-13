@@ -166,7 +166,6 @@ class Device:
 @dataclass
 class FlatNetlist:
     devices: list[Device] = field(default_factory=list)
-    top_pins: tuple[str, ...] = ()
 
     def by_family(self, family: str) -> list[Device]:
         return [d for d in self.devices if d.family == family]
@@ -384,8 +383,6 @@ def flatten(
 
     top_map = _ChildNetMap({}, "")
     walk(top_instances, "", top_map)
-    # Every net referenced at the top level of the file is a global net.
-    flat.top_pins = ("vdd", "vss", "vref")
     return flat
 
 
