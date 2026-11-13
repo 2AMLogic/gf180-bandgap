@@ -89,10 +89,16 @@ brief's structure allows.
 `bandgap_top` regulates `vref` to a PTAT+CTAT-summed bandgap voltage
 (nominal 1.20 V) referenced to `vss`, independent of `vdd` (within the
 supply range) and, to first order, of temperature. The Brokaw core forces
-equal collector currents into a PNP pair of unequal emitter area (nominal
-drawn ratio: see §5's dVBE caveat) through a resistor ladder, producing a
-PTAT voltage across a sense resistor; that PTAT term is summed with the
-PNP's own CTAT base-emitter voltage at the output node. The telescopic-
+equal emitter currents through a PNP pair of unequal emitter area — since
+[DR-0007](../../spec/decision-records/0007-q2-array-dvbe-ratio.md) (ratified
+by the operator 2026-10-02) `core.Q2` is **four parallel `pnp_05p00x05p00`
+units** against `core.Q1`'s one, an effective ΔVBE ratio measured at
+**4.0209** at the 5.07 µA design current (`bjt_typical`, 27 °C; 4.0185–4.0281
+across three BJT corners × −40/27/125 °C, record
+[`20261008-120404-44d1a83`](../../sim/device-pnp-array/records/20261008-120404-44d1a83.md))
+— producing a PTAT voltage across the sense resistor `core.R2`; that PTAT
+term is summed with the PNP's own CTAT base-emitter voltage at the output
+node. The telescopic-
 cascode error amplifier closes the loop around the core's two sense nodes.
 On power-up, the core's fully-off state is a stable (degenerate) equilibrium
 of the loop; `bandgap_startup` senses the absence of bias current and
@@ -113,95 +119,189 @@ full 81-point PVT grid (process × −40/27/125 °C × 2.97/3.30/3.63 V), per
 `sim/startup/`, `sim/trim-coverage/`, `design/bandgap_error_budget.md` §5,
 and `sim/postlayout-delta.md`.
 
+**Which evidence each column rests on.** The schematic columns are the
+**final-DUT** fleet records indexed in
+[`sim/suite/fleet-evidence-239.md`](../../sim/suite/fleet-evidence-239.md),
+taken against the canonical DUT `sim/dut/bandgap_top.spice`
+(sha256 `9ef5f8c5…`) **after** DR-0007's `core.Q2` array amendment and the
+`R2` re-derivation / `R1` re-null it required
+(`design/bandgap_error_budget.md` §5e/§5f) — rolled up over exactly those
+pinned records in
+[`sim/suite/summaries/20261016-015258-1c4f2a2.md`](../../sim/suite/summaries/20261016-015258-1c4f2a2.md),
+which reports all six indexed spec lines passing. Three qualifications the
+rows below carry individually:
+
+- **Startup** simulates its own embedded, synchronized core, which lumps
+  `R1` + 32 trim units into one resistor (exact at `tt`/27 °C only;
+  −0.18 % / +0.27 % at −40 / 125 °C; `res_ff`/`res_ss` not exercised), so it
+  is not a simulation of the canonical netlist itself
+  (`sim/startup-embedded-core-sync.md`).
+- **Trim** and **Output noise** have no final-DUT record: their newest
+  records (2026-08-02 and 2026-09-10) are on **superseded DUTs** and predate
+  DR-0007's retuning. Those rows are labelled accordingly and no verdict is
+  carried forward from them to the amended design.
+- The **post-layout** column is `sim/postlayout-delta.md` and
+  `sim/startup-extracted/`, whose newest records are all dated 2026-08-03
+  and therefore **also predate DR-0007** — see the subsection after the
+  table.
+
 **No 5.0 V characterization exists or is claimed** — see the "Supply / 5.0V
 rail" row below; this is the one row this document scopes as *not
 evaluated* rather than met/unmet, per
 [DR-0002](../../spec/decision-records/0002-supply-voltage-scope.md).
 
-| Row | Typ (schematic, tt/27°C/3.3V) | Min/Max (schematic, 81-corner) | Post-layout extracted | Schematic verdict | **Extracted (post-layout) verdict** |
+| Row | Typ (schematic, tt/27°C/3.3V) | Min/Max (schematic, 81-corner) | Post-layout extracted (pre-DR-0007) | Schematic verdict | **Extracted (post-layout) verdict** |
 |---|---|---|---|---|---|
-| Output reference (1.20 V ±2% untrimmed, 1.176–1.224 V) | 1.19249 V | 1.18142 V – 1.20185 V | 1.23361 V (typ), up to 1.25187 V worst-case | **MET** (81/81) | **UNMET** — fails both the low bound (`res_ss_-40c_3.63v`, 1.2219 V vs. floor irrelevant here; the failure is high-side) and the high bound (`bjt_ss_125c_2.97v`, 1.25187 V vs. 1.224 V max) |
-| Output reference, combined basis (mismatch MC N≥300 + process corners, 3σ) | — | 81/81 corners, worst margin **+2.194 mV** (`design/bandgap_error_budget.md` §5c/§5d, post-#147/#151) | not re-run post-layout | **MET** | **not evaluated** — the mismatch-MC leg (`sim/mc-untrimmed/`) has no post-layout-extracted counterpart; only the deterministic-corner leg has been re-run extracted, and that leg alone already fails (row above) |
-| Temp coefficient (−40…125 °C, <50 ppm/°C box) | 13.6851 ppm/°C | 13.56 – 29.84 ppm/°C | 62.59 ppm/°C (typ), up to 90.22 ppm/°C worst-case | **MET** (81/81) | **UNMET** — worst extracted corner (`bjt_ss_-40c_3.30v`, 90.22 ppm/°C) is 1.8× the 50 ppm/°C limit |
-| PSRR (>60 dB DC–1 kHz) | 111.755 dB (1 Hz) / 96.8106 dB (1 kHz) | worst 74.2966 dB (1 Hz) / 74.215 dB (1 kHz), both `res_ss_125c_3.63v` | worst 74.7351 dB (1 Hz) / 72.896 dB (1 kHz) | **MET** (81/81) | **MET** (81/81) |
-| Line regulation (<1 mV/V, DC, 2.97–3.63 V) | — | worst 0.0399 mV/V (`res_ss_125c_3.30v`) | worst 0.0373 mV/V | **MET** (27/27) | **MET** (27/27) |
-| Supply / output reference over supply (3.3 V ±10%: Vref stays 1.176–1.224 V across 2.97–3.63 V) | — | same as Output reference row | same as Output reference row | **MET** | **UNMET** (same cause as Output reference) |
+| Output reference (1.20 V ±2% untrimmed, 1.176–1.224 V) | 1.20198 V | 1.18859 V – 1.21120 V ([`20261016-010723-ee8a503`](../../sim/output-voltage-tc/records/20261016-010723-ee8a503.md)) | 1.23361 V (typ), up to 1.25187 V worst-case | **MET** (27/27 fleet units, each internally swept −40…125 °C = the full 81-point grid) | **UNMET** — the failure is entirely high-side: worst extracted 1.25187 V at `bjt_ss_125c_2.97v` against the 1.224 V ceiling; the 1.176 V floor is not violated (extracted minimum 1.2219 V). `sim/postlayout-delta.md` marks the row FAIL on the two limits taken together |
+| Output reference, combined basis (mismatch MC N≥300 + process corners, 3σ) | — | **0 of 81 corners fail**, tightest margin **+1.356 mV** (`bjt_ff_125c_3.63v`), from [`sim/suite/combined/20261016-013300-999e5cf.md`](../../sim/suite/combined/20261016-013300-999e5cf.md) over the final-DUT corner leg and the N=300 mismatch leg ([`20261016-013258-999e5cf`](../../sim/mc-untrimmed/records/20261016-013258-999e5cf.md)) | not re-run post-layout | **MET** — with the report's own caveat that the verdict is **sensitive to `par_r`**: scaling that assumed mismatch coefficient ×2 flips 3 of 27 corners at 125 °C to FAIL, so the coefficient must be validated before the verdict is treated as final ([DR-0004](../../spec/decision-records/0004-par-r-mismatch-coefficient-risk.md)) | **not evaluated** — the mismatch-MC leg (`sim/mc-untrimmed/`) has no post-layout-extracted counterpart; only the deterministic-corner leg has been re-run extracted, and that leg alone already fails (row above) |
+| Temp coefficient (−40…125 °C, <50 ppm/°C box) | 25.917 ppm/°C | 11.224 – 44.6557 ppm/°C (worst at `bjt_ff` / 3.63 V) | 62.5948 ppm/°C (typ), up to 90.2239 ppm/°C worst-case | **MET** (27/27 units = 81-point grid), 10.7 % under the limit | **UNMET** — worst extracted corner (`bjt_ss_-40c_3.30v`, 90.2239 ppm/°C) is 1.8× the 50 ppm/°C limit |
+| PSRR (>60 dB DC–1 kHz) | 110.82 dB (1 Hz) / 96.1977 dB (1 kHz) | worst 77.524 dB (1 Hz) / 77.3002 dB (1 kHz), both `res_ss_125c_3.63v` ([`20261016-013458-999e5cf`](../../sim/psrr-dc/records/20261016-013458-999e5cf.md)) | worst 74.7351 dB (1 Hz) / 72.896 dB (1 kHz) | **MET** (81/81) | **MET** (81/81) |
+| Line regulation (<1 mV/V, DC, 2.97–3.63 V) | — | worst 0.027133 mV/V (`res_ss_125c_3.30v`, [`20261016-013457-999e5cf`](../../sim/line-regulation/records/20261016-013457-999e5cf.md)) | worst 0.0372934 mV/V | **MET** (27/27) | **MET** (27/27) |
+| Supply / output reference over supply (3.3 V ±10%: Vref stays 1.176–1.224 V across 2.97–3.63 V) | — | same as Output reference row (continuous 133-point supply sweep per corner: 1.18859 – 1.21109 V) | same as Output reference row | **MET** | **UNMET** (same cause as Output reference) |
 | Supply / 5.0V rail (stretch: "also 5V flavor"; Challenge #5 brief expects 3.3–5.0V analog-rail operation) | — | — | — | **not evaluated** | **not evaluated** — no 5.0V device flavor, testbench, or layout exists per DR-0002 (3.3V-only, wave 1); Challenge #5's brief text expects analog blocks to operate 3.3–5.0V, and this design has not been shown to |
-| Quiescent current (<50 µA) | 20.7144 µA | worst 34.0054 µA (`ff_125c_3.63v`) | worst 36.2719 µA | **MET** (81/81) | **MET** (81/81) |
-| Trim (1-point, ≥±5% range, ≤0.25%/step at 27°C) | span 178.2 mV, LSB 2.83 mV | span 135.4–240.7 mV over 81 corners | not re-run post-layout | **MET** (81/81) | **not evaluated** — no post-layout-extracted trim-coverage bench exists yet |
-| Startup (self-starting all corners, <1 ms to 1%) | — | worst 43.97 µs (`fs_-40c_2.97v`) | worst ~15.6 µs (well under 1 ms) | **MET** (81/81) | **MET** (81/81) |
-| Area (<0.05 mm²) | — | drawn 0.06251 mm² (62,505.60 µm²) | same (physical layout) | n/a (not a sim claim) | **UNMET** — 25.0% over the ratified target; [DR-0005](../../spec/decision-records/0005-area-target-overrun.md) proposes an interim 0.085 mm² ceiling but is `Status: proposed`, not ratified, so the ratified 0.05 mm² row still reads FAIL |
-| PSRR @ 1 MHz (stretch, >30 dB) | — | not separately gated | not separately gated | reference only | reference only |
-| Output noise, Load (open items, no numeric target ratified) | — | — | — | **not claimed** | **not claimed** — `sim/suite/spec.py`'s `NOT_CLAIMED_HERE` list; open per README.md amendments A6/A7 |
+| Quiescent current (<50 µA) | 20.7644 µA | worst 33.8425 µA (`ff_125c_3.63v`, gated record [`20261016-015234-71a0fef`](../../sim/iq/records/20261016-015234-71a0fef.md), ingested by #344) | worst 36.2719 µA | **MET** (81/81) | **MET** (81/81) |
+| Trim (1-point, ≥±5% range, ≤0.25%/step at 27°C) | span 178.2 mV, LSB 2.83 mV | span 135.389–240.737 mV, LSB 2.14904–3.82124 mV over 81 corners | not re-run post-layout | **MET** (81/81) **on the pre-DR-0007 netlist only** — the newest record ([`20260802-035959-5066d85`](../../sim/trim-coverage/records/20260802-035959-5066d85.md)) is on a superseded DUT (sha256 `9d38148b…`), so this row is **not re-verified** against the amended `R1`/`R2` sizing | **not evaluated** — no post-layout-extracted trim-coverage bench exists yet |
+| Startup (self-starting all corners, <1 ms to 1%) | 14.57 µs | worst 36.6392 µs (`ss_125c_3.30v`, [`20261016-013501-999e5cf`](../../sim/startup/records/20261016-013501-999e5cf.md)) | worst 29.131 µs (`ss_125c_2.97v`, well under 1 ms) | **MET** (81/81) — on this bench's embedded lumped-`R1` core, not the canonical netlist (see the preamble) | **MET** (81/81) |
+| Area (ratified `< 0.05 mm²`, DR-0003; interim ceiling `< 0.066 mm²`, DR-0006) | — | drawn 0.06492 mm² (64,924.27 µm², bbox 222.10 × 292.32 µm) | same (physical layout) | n/a (not a sim claim) | **PASS against DR-0006's interim `< 0.066 mm²` ceiling** — 1,075.73 µm² (1.6 %) of headroom — and **FAIL against the originally ratified `< 0.05 mm²`** (DR-0003) — 14,924.27 µm² (29.8 %) over ([`layout/bandgap_top/AREA.md`](../../layout/bandgap_top/AREA.md), re-measured 2026-10-30 against the regenerated GDS). [DR-0006](../../spec/decision-records/0006-area-target-narrowed-post-166.md)'s own header still reads `Status: proposed`, although its diff landed: `README.md`'s Area row and `area_report.py`'s `RATIFIED_TARGET_UM2` both carry 0.066 mm²/66,000 µm² |
+| PSRR @ 1 MHz (stretch, >30 dB) | 31.6977 dB | worst 28.706 dB (`ss_125c_2.97v`) over all 81 corners | not separately gated | reference only — recorded, not gated; the stretch goal is **not** met at every corner | reference only |
+| Output noise, Load (open items, no numeric target ratified) | — | 0.1–10 Hz integrated noise is measured (`sim/output-noise/records/`, 2026-09-10, schematic and extracted) but on a superseded DUT and against **no ratified threshold** | — | **not claimed** | **not claimed** — `sim/suite/spec.py`'s `NOT_CLAIMED_HERE` list; the band is defined but the threshold (A6) and the load row (A7) are open items per `README.md` |
 | Long-term drift | — | — | — | **not specified** (canary block) | **not specified** |
 
 ### The output-reference and temperature-coefficient rows are UNMET at the post-layout level
 
 This is the single most important caveat in this document, per the epic's
 own instruction, and it is restated here rather than left to the table
-alone: **`bandgap_top` is DRC-clean (0 violations) and LVS-matching, but its
-parasitic-extracted netlist currently fails the ratified output-reference
-and temperature-coefficient spec rows.** DRC/LVS-clean GDS and post-layout
-spec conformance are two different claims, and only the first is currently
-true for this row pair.
+alone: **the committed `bandgap_top` GDS is DRC-clean (0 violations) and
+LVS-matching, but the parasitic-extracted netlist drawn from it fails the
+ratified output-reference and temperature-coefficient spec rows.**
+DRC/LVS-clean GDS and post-layout spec conformance are two different
+claims, and only the first is currently true for this row pair.
+
+**Every post-layout number in this document predates DR-0007.** The records
+`sim/postlayout-delta.md` pairs are dated 2026-08-03, and that is also the
+date of the newest extracted record in the repo for any gated bench.
+`README.md`'s Status paragraph states the position directly: the committed
+GDS and the LVS reference netlist still carry the **prior `R2` sizing**, so
+their clean DRC/LVS reports do not certify the amended schematic. The
+extracted FAILs below are evidence about the pre-amendment circuit; they are
+not a post-DR-0007 result, and no row is moved to met on the strength of
+them.
 
 - Full per-corner data: [`sim/postlayout-delta.md`](../../sim/postlayout-delta.md)
   (records paired: `sim/output-voltage-tc/records/20260803-100317-ba091ea.md`
   schematic vs. `sim/output-voltage-tc/records/20260803-055357-31e5efc.md`
-  extracted, 81/81 corners aligned).
+  extracted, 81/81 corners aligned) — both pre-DR-0007.
 - Root cause: [issue #87](https://github.com/2AMLogic/gf180-bandgap/issues/87)
   — the drawn PNP array realizes Q2 as four parallel `pnp_05p00x05p00` unit
   devices (for common-centroid matching, per `layout/floorplan.md` §4.1),
   which measures an effective dVBE ratio of **4.03**, against the
-  schematic's single `pnp_10p00x10p00` device at **3.63**. That +8% dVBE
-  gain is a first-order error on `Vref = VBE3 + (R1+trim)/R2 · dVBE`. This
-  is characterized as a device-physics/schematic-vs-layout-intent
+  then-schematic's single `pnp_10p00x10p00` device at **3.63**. That +8%
+  dVBE gain is a first-order error on `Vref = VBE3 + (R1+trim)/R2 · dVBE`.
+  This is characterized as a device-physics/schematic-vs-layout-intent
   divergence, not a DRC or extraction defect — LVS cannot catch it because
   the LVS reference is itself derived from the drawn layout
   (`layout/lvs/make_reference.py`), so it structurally matches four drawn
   units against four reference units regardless of which side's intent is
   "correct."
-- Resolution is blocked on a spec/design decision (issue #87: resize the
-  schematic's PNP to a 4.00 ratio, or redraw the layout to a single 10×10
-  device) and a subsequent passing extracted-netlist re-run
-  ([issue #94](https://github.com/2AMLogic/gf180-bandgap/issues/94)).
-  **Tapeout is not scheduled** pending that decision and re-verification.
+- **That divergence has since been decided, and the schematic side of it is
+  closed.**
+  [DR-0007](../../spec/decision-records/0007-q2-array-dvbe-ratio.md) was
+  **ratified by the operator on 2026-10-02** (Option A: the schematic adopts
+  the drawn 4× unit array; no ratified spec limit moved).
+  `design/netlist/bandgap_top.spice` now carries
+  `XQ2 vss vss e2 pnp_05p00x05p00 m=4`; the array's effective ratio was
+  re-measured over the corner axis as DR-0007's Decision item 1 required
+  ([`20261008-120404-44d1a83`](../../sim/device-pnp-array/records/20261008-120404-44d1a83.md)),
+  `R2` was re-derived from that measurement and `R1` re-nulled / `Vref`
+  re-centred against the full-PVT bench rather than inferred from the `λ`
+  algebra (`design/bandgap_error_budget.md` §5e/§5f — the pre-retune DUT did
+  **not** keep its TC null through the `R2` change: 54.39 ppm/°C, over the
+  ratified 50, before `R1` moved to 446.0 µm). §5's schematic columns are
+  that amended design.
+- **What remains open is the physical and extracted side.** The GDS has not
+  been regenerated against the amended netlist and no extracted re-run
+  exists on it, so the extracted column cannot yet say how much of the gap
+  DR-0007 closes. That is
+  [#204](https://github.com/2AMLogic/gf180-bandgap/issues/204) (regenerate
+  the layout and record pinned extracted verification), with
+  [#87](https://github.com/2AMLogic/gf180-bandgap/issues/87) still open for
+  the extracted re-run its operator ruling asks for and
+  [#94](https://github.com/2AMLogic/gf180-bandgap/issues/94) tracking the
+  gap to the T1 sim-validated tier. **Tapeout is not scheduled** pending
+  that re-verification.
 
 No other row in this table is relaxed, omitted, or presented more favorably
 than its cited evidence supports.
 
 ## 6. Verification status summary
 
-- **DRC**: clean, 0 violations
-  (`layout/drc/reports/bandgap_top/20260817-125327-972f6d5.drc.txt`).
-- **LVS**: `status: match` on both independent comparators —
-  `klt lvs` (klayout engine): 164/164 devices, 92/92 nets, 4/4 pins matched
-  (`layout/lvs/reports/bandgap_top/20260817-125346-972f6d5.lvs.json`, per
-  `layout/README.md`'s "Expected results" table); the cross-check run
-  (`layout/lvs/reports/bandgap_top/20260819-070132-1e66285.lvs.txt`) reports
-  the same klayout `match` verdict with 14 recorded warnings (12
-  `topology`, 2 `device.body_unverified` — both documented as benign
-  connectivity/deck-coverage notes, not netlist errors, in that report and
-  in `layout/README.md`'s "What the LVS verdict does and does not cover"),
-  plus an independent `netgen` comparator that also reads `match` once a
-  netgen-only dummy-device pairing artifact is accounted for (issue #168).
-  See `layout/README.md` for the full detail on what this LVS verdict does
-  and does not cover (e.g., substrate/well-tap body-terminal coverage is a
-  named, standing caveat of the gf180mcu extraction deck, not specific to
-  this layout).
-- **Area**: FAIL against the ratified `<0.05 mm²` target — drawn
-  62,505.60 µm² (0.06251 mm²), 25.0% over budget
-  (`layout/bandgap_top/AREA.md`); an interim `<0.085 mm²` revision is
-  proposed but not ratified
-  ([DR-0005](../../spec/decision-records/0005-area-target-overrun.md)).
-- **Schematic-level spec suite**: every sim-verifiable ratified row passes
-  (`python3 sim/run_suite.py`; `design/bandgap_error_budget.md` §5's
-  running tally through issues #96/#147/#151).
+All of the physical-verification reports below are the newest committed runs
+against the current GDS (sha256 `97944732…`, regenerated 2026-10-28 for
+DRC-cleanliness under `klt` 0.8.0), and they are the two reports
+[`signoff/block-manifest.json`](../../signoff/block-manifest.json) cites for
+T1 items 3 and 4. They certify the **drawn layout**, which still carries the
+pre-DR-0007 `R2` sizing — see §5's post-layout subsection.
+
+- **DRC**: `status: clean`, `violation_count: 0`, 82 rules checked
+  (`layout/drc/reports/bandgap_top/20261028-065229-f32fe48.drc.json`;
+  `klt` 0.8.0 / KLayout 0.30.12, `gf180mcu` deck).
+- **LVS**: `status: match` from `klt lvs` (klayout engine) — **164/164
+  devices, 82/82 nets, 3/3 pins** matched, `error_count: 0`
+  (`layout/lvs/reports/bandgap_top/20261028-065214-f32fe48.lvs.json`). That
+  run records 9 warnings and no errors: 6 `topology` and 3
+  `device.geometry_not_compared` (KLayout compares only *primary* device
+  parameters, so the MIM cap's `A`/`P` and the `ppolyf_u` resistors'
+  `A`/`L`/`P`/`W` did **not** take part in the compare — a named limit of
+  the verdict, not a defect). Body-terminal verification reads
+  `verified` on this run.
+  - The independent **`netgen` cross-check has not been re-run against this
+    GDS**: its newest report
+    (`layout/lvs/reports/bandgap_top/20260819-070132-1e66285.lvs-netgen.json`,
+    2026-08-19) is against the *previous* GDS and is cited here as
+    historical. On that older layout the two engines disagreed by design —
+    `netgen` reported one `device.property` mismatch, root-caused in
+    [issue #168](https://github.com/2AMLogic/gf180-bandgap/issues/168) to a
+    netgen-only pairing artifact on graph-symmetric dummy devices rather
+    than a layout defect; the `klayout` engine's `match` is this repo's
+    acceptance gate.
+  - See `layout/README.md` for what an LVS verdict here does and does not
+    cover (e.g. substrate/well-tap body-terminal coverage is a named,
+    standing caveat of the gf180mcu extraction deck, not specific to this
+    layout). Note that file's own "Expected results" table still quotes the
+    2026-08-17 report IDs and net/pin counts; the figures above are read
+    directly from the committed 2026-10-28 JSON.
+- **Area**: drawn **64,924.27 µm² (0.06492 mm²)**
+  (`layout/bandgap_top/AREA.md`, re-measured 2026-10-30) — **PASS** against
+  DR-0006's interim `< 0.066 mm²` ceiling with 1.6 % of headroom, and
+  **FAIL** against the originally ratified `< 0.05 mm²`
+  ([DR-0003](../../spec/decision-records/0003-target-spec-ratification.md)) by
+  29.8 %. [DR-0005](../../spec/decision-records/0005-area-target-overrun.md)'s
+  `< 0.085 mm²` proposal is **superseded by**
+  [DR-0006](../../spec/decision-records/0006-area-target-narrowed-post-166.md),
+  whose own header still reads `Status: proposed` even though its diff
+  landed in `README.md` and in `area_report.py`'s `RATIFIED_TARGET_UM2`.
+- **Schematic-level spec suite**: all six indexed spec lines pass against the
+  amended (post-DR-0007) DUT —
+  [`sim/suite/summaries/20261016-015258-1c4f2a2.md`](../../sim/suite/summaries/20261016-015258-1c4f2a2.md),
+  rolled up over the pinned final-DUT records indexed in
+  [`sim/suite/fleet-evidence-239.md`](../../sim/suite/fleet-evidence-239.md)
+  (`design/bandgap_error_budget.md` §5's running tally through issues
+  #96/#147/#151 and #209/DR-0007, §5a–§5f). Two qualifications travel with
+  it: the Startup bench runs an embedded lumped-`R1` core rather than the
+  canonical netlist, and the combined untrimmed-accuracy verdict is
+  sensitive to the assumed `par_r` mismatch coefficient (§5). The Trim and
+  Output-noise benches have **not** been re-run on the amended DUT.
 - **Post-layout extracted**: output-reference and temperature-coefficient
   rows FAIL (§5 above); PSRR, line regulation, quiescent current, and
   startup rows PASS extracted; the mismatch-MC leg of the combined accuracy
   verdict and the trim-coverage bench have not been re-run against the
-  extracted netlist at all (open work, not a claimed pass or fail).
+  extracted netlist at all (open work, not a claimed pass or fail). All of
+  it predates DR-0007.
+- **Graded signoff verdict**: the machine-graded record of record is
+  [`signoff/README.md`](../../signoff/README.md) and the committed
+  `signoff/reports/` verdict it produces; T1 item 7 (post-layout) is
+  `unmet` there, and no `klt pex` report exists, so nothing in this document
+  claims a body-biased extracted measurement.
 
 ## 7. Bench test plan
 
@@ -253,11 +353,32 @@ in simulation.
 ## References
 
 - `README.md` — "Target specification (RATIFIED 2026-07-31)" table.
-- `spec/decision-records/0002-supply-voltage-scope.md`,
-  `spec/decision-records/0003-target-spec-ratification.md`,
-  `spec/decision-records/0005-area-target-overrun.md`.
-- `sim/postlayout-delta.md`, `design/bandgap_error_budget.md`.
-- `layout/README.md`, `layout/bandgap_top/AREA.md`.
+- Decision records: `spec/decision-records/0002-supply-voltage-scope.md`
+  (3.3 V-only scope), `0003-target-spec-ratification.md` (the ratified
+  table, including the `< 0.05 mm²` Area row),
+  `0004-par-r-mismatch-coefficient-risk.md` (the mismatch-coefficient
+  assumption the combined accuracy verdict is sensitive to),
+  `0005-area-target-overrun.md` (**superseded by 0006**),
+  `0006-area-target-narrowed-post-166.md` (interim `< 0.066 mm²` Area
+  ceiling) and `0007-q2-array-dvbe-ratio.md` (**ratified 2026-10-02** —
+  `core.Q2` as a 4× unit-PNP array, ΔVBE ratio input amended).
+- Schematic evidence (final DUT, post-DR-0007):
+  `sim/suite/fleet-evidence-239.md` (index and caveats),
+  `sim/suite/summaries/20261016-015258-1c4f2a2.md` (roll-up),
+  `sim/suite/combined/20261016-013300-999e5cf.md` (combined untrimmed
+  accuracy), `sim/device-pnp-array/records/20261008-120404-44d1a83.md`
+  (measured array ratio), `design/bandgap_error_budget.md` §5e/§5f.
+- Pre-DR-0007 evidence, cited as such: `sim/postlayout-delta.md`,
+  `sim/startup-extracted/`, `sim/trim-coverage/`, `sim/output-noise/`.
+- Physical verification: `layout/README.md`,
+  `layout/bandgap_top/AREA.md`,
+  `layout/drc/reports/bandgap_top/20261028-065229-f32fe48.drc.json`,
+  `layout/lvs/reports/bandgap_top/20261028-065214-f32fe48.lvs.json`,
+  `signoff/block-manifest.json`, `signoff/README.md`.
 - [issue #87](https://github.com/2AMLogic/gf180-bandgap/issues/87) (dVBE
-  ratio divergence), [issue #94](https://github.com/2AMLogic/gf180-bandgap/issues/94)
-  (T1 sim-validated tracking issue, gates tapeout on #87's resolution).
+  ratio divergence; decided by DR-0007, extracted re-run outstanding),
+  [issue #94](https://github.com/2AMLogic/gf180-bandgap/issues/94)
+  (T1 sim-validated tracking issue, gates tapeout on #87's resolution),
+  [issue #204](https://github.com/2AMLogic/gf180-bandgap/issues/204)
+  (DR-0007 phase B: regenerate the layout and record pinned extracted
+  verification).
