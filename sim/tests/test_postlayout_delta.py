@@ -15,6 +15,9 @@ read.
 
 from __future__ import annotations
 
+import contextlib
+import io
+import os
 import sys
 import tempfile
 import unittest
@@ -25,6 +28,7 @@ SIM_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SIM_DIR))
 
 import postlayout_delta as pld  # noqa: E402
+from harness import paths as harness_paths  # noqa: E402
 from suite import combined as combined_mod  # noqa: E402
 from suite import spec as spec_mod  # noqa: E402
 
@@ -248,6 +252,79 @@ class RenderTests(unittest.TestCase):
             frag.write_text("## Narrative\n\nhello\n\n")
             text = self.render(str(frag))
         self.assertTrue(text.endswith("## Narrative\n\nhello\n\n"))
+
+
+class MainTests(unittest.TestCase):
+    """``main()``'s final confirmation line must never decide the exit status.
+
+    Writing the document is the work; ``wrote <path>`` is cosmetic. An ``-o``
+    outside the repo used to raise ``ValueError`` from ``relative_to`` *after*
+    the write, so a good run exited 1 and any caller checking the exit status
+    read a successful write as a failure (#459).
+
+    Records are synthetic and ``load_record`` is patched out, so these cover
+    the output path alone and never read ``sim/*/records/``.
+    """
+
+    PAIR = f"{SLUG}=s1:e1"
+
+    def run_main(self, output_arg: str, repo_root: Path, cwd: Path | None = None) -> str:
+        """Run ``main()`` against a temporary repo root; return what it printed."""
+        records = {
+            "s1": make_record({"tt_27": {"vref": 1.200, "tc_ppm": 10.0}}, "schematic"),
+            "e1": make_record({"tt_27": {"vref": 1.176, "tc_ppm": 12.0}}, "extracted"),
+        }
+        argv = ["postlayout_delta.py", "--pair", self.PAIR, "-o", output_arg]
+        buf = io.StringIO()
+        with contextlib.ExitStack() as stack:
+            patch = stack.enter_context
+            patch(mock.patch.object(sys, "argv", argv))
+            patch(mock.patch.object(pld, "load_record", lambda slug, rid: records[rid]))
+            # The two REPO_ROOTs name the same directory in production
+            # (``sim/postlayout_delta.py``'s parent.parent and
+            # ``sim/harness/paths.py``'s parents[2]); keep them in step so the
+            # print's notion of "in-repo" matches the script's.
+            patch(mock.patch.object(pld, "REPO_ROOT", repo_root))
+            patch(mock.patch.object(harness_paths, "REPO_ROOT", repo_root))
+            patch(
+                mock.patch.object(
+                    pld.harness_report, "_git", side_effect=lambda *a, **k: "fixed-" + a[-1]
+                )
+            )
+            if cwd is not None:
+                # Not contextlib.chdir: that is Python >= 3.11 and the harness
+                # floor is 3.9 (sim/harness/README.md, CI's matrix).
+                prev_cwd = os.getcwd()
+                os.chdir(cwd)
+                stack.callback(os.chdir, prev_cwd)
+            patch(contextlib.redirect_stdout(buf))
+            self.assertEqual(pld.main(), 0)
+        return buf.getvalue().strip()
+
+    def test_out_of_repo_output_exits_zero_and_prints_absolute_path(self) -> None:
+        with tempfile.TemporaryDirectory() as repo, tempfile.TemporaryDirectory() as away:
+            out = Path(away).resolve() / "pld-probe.md"
+            printed = self.run_main(str(out), Path(repo).resolve())
+            self.assertEqual(printed, f"wrote {out}")
+            self.assertTrue(out.read_text().startswith("# Schematic-vs-extracted delta"))
+
+    def test_in_repo_output_prints_repo_relative_path(self) -> None:
+        with tempfile.TemporaryDirectory() as repo:
+            root = Path(repo).resolve()
+            (root / "sim").mkdir()
+            out = root / "sim" / "postlayout-delta.md"
+            printed = self.run_main(str(out), root)
+            self.assertEqual(printed, "wrote sim/postlayout-delta.md")
+            self.assertTrue(out.is_file())
+
+    def test_relative_in_repo_output_prints_repo_relative_path(self) -> None:
+        """The production invocation shape: run from the repo root, ``-o sim/...``."""
+        with tempfile.TemporaryDirectory() as repo:
+            root = Path(repo).resolve()
+            (root / "sim").mkdir()
+            printed = self.run_main("sim/postlayout-delta.md", root, cwd=root)
+            self.assertEqual(printed, "wrote sim/postlayout-delta.md")
+            self.assertTrue((root / "sim" / "postlayout-delta.md").is_file())
 
 
 if __name__ == "__main__":

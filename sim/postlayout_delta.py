@@ -33,6 +33,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "sim"))
 
 from harness import report as harness_report  # noqa: E402
+from harness.paths import _repo_relative  # noqa: E402
 from suite import spec as spec_mod  # noqa: E402
 from suite.combined import provenance_of_path  # noqa: E402
 
@@ -278,7 +279,7 @@ def main() -> int:
 
     output = args.output.resolve()
     output.write_text(render(pairs, args.append))
-    print(f"wrote {output.relative_to(REPO_ROOT)}")
+    print(f"wrote {_repo_relative(output)}")
     return 0
 
 
