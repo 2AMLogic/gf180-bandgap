@@ -2,6 +2,24 @@
 
 Chronological record of recently merged pull requests and closed issues, maintained by the Loom Guide role. Newest entries appear first.
 
+## Archives
+
+- [2026-09](work_log/WORK_LOG_2026-09.md)
+
+### 2026-11-13
+
+- **Issue #447** (closed): Follow-on: Work identified in PR #442
+- **PR #449**: docs: requote the DRC/LVS results table and the A6/PSRR summary notes from current evidence
+- **Issue #446** (closed): Remove five never-read module constants (SWEEP_POINTS, VREF_NOMINAL_V, NWELL_CLEAR, MC_SUPPLY_SAMPLE, ARTIFACT_URI_PREFIX)
+- **PR #448**: refactor: drop five never-read module constants
+- **Issue #440** (closed): docs/chipalooza: refresh the Challenge #5 proposal against current decision records and evidence
+- **PR #444**: docs: re-cite the Challenge #5 proposal against DR-0006/DR-0007 and current evidence
+- **Issue #441** (closed): ERC: record whether pinned klt computes erc.missing_tie with ties[] declared (part of #358)
+- **PR #443**: evidence: record that pinned klt 0.8.0 computes erc.missing_tie
+- **Issue #439** (closed): signoff/README.md: item 3, 4 and 5 disclosures describe superseded evidence
+- **PR #442**: docs(signoff): requote item 3/4/5 disclosures from the currently cited evidence
+- **PR #438**: docs: roadmap as of 2026-11-13
+
 ### 2026-11-12
 
 - **PR #436**: Bump Repo Skills 0.25.10 -> 0.26.1
@@ -241,7 +259,3 @@ Chronological record of recently merged pull requests and closed issues, maintai
 
 - **PR #190**: spec: DR-0007 proposes the 4x unit-PNP array for core.Q2 (Option A)
 
-### 2026-09-10
-
-- **Issue #188** (closed): Output-noise characterization bench `sim/output-noise/`: 0.1–10 Hz integrated + spot noise, full PVT, schematic and extracted provenance (evidence for open item A6)
-- **PR #189**: feat: add output-noise characterization bench
