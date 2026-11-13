@@ -16,7 +16,6 @@ from __future__ import annotations
 import contextlib
 import copy
 import io
-import re
 import sys
 import tempfile
 import unittest
