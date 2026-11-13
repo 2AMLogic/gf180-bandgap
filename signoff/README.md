@@ -158,69 +158,155 @@ below).
 `klt signoff` grades item 3 on `status: "clean"` alone. A `met` verdict is
 **not** evidence that the deck's gaps were disclosed, so they are disclosed
 here, quoted from the cited envelope's own `coverage` block
-(`layout/drc/reports/bandgap_top/20260817-125327-972f6d5.drc.json`, and
+(`layout/drc/reports/bandgap_top/20261028-065229-f32fe48.drc.json`, and
 reported verbatim in the committed record's `citation.coverage`):
 
-- `layers_in_stream_without_rules` (8) — layers drawn in this stream the deck
-  has no rule for: `31/0`, `32/0`, `34/10`, `49/0`, `62/0`, `110/5`, `117/5`,
-  `117/10`.
-- `rules_skipped` (3) — rules the deck carries that this run did not evaluate:
-  `metaltop.space.1`, `metaltop.width.1`, `pad.enclosing.metal5.1`.
-- `deck_scope` (10) — the DRM chapters this deck transcribes at all: 7.4
-  Nwell, 7.5 Comp, 7.7 Poly2, 7.12 Contact, 7.13 Metaln, 7.14 Vian, 7.15
-  MetalTop, 9.1 Bond Pad, 10.4.2 MIM Option B, 10.7 DRC_BJT Mark Layer.
+- `layers_in_stream_without_rules` (1) — layers drawn in this stream the deck
+  has no rule for: `34/10`.
+- `rules_skipped` (32) — rules the deck carries that this run did not
+  evaluate. The same envelope's `coverage.inapplicable` gives a reason for
+  every one of the 32: 30 `no_applicable_geometry` and 2
+  `inapplicable_empty_checked_region` (`comp.tap_distance.nwell.mv.1`,
+  `comp.tap_distance.psub.mv.1`). They are the medium-voltage, ESD,
+  guard-ring, dual-gate, fuse, deep-nwell, pad and MetalTop rules — this
+  block draws none of that geometry. `coverage.skipped` is empty and
+  `coverage.unknown` is empty, so no rule was skipped for an unexplained
+  reason. The three rules this file used to list (`metaltop.space.1`,
+  `metaltop.width.1`, `pad.enclosing.metal5.1`) are still among the 32.
+- `deck_scope` (16) — the DRM chapters this deck transcribes at all: 7.4
+  Nwell, 7.5 Comp, 7.7 Poly2, 7.8 Nplus, 7.9 Pplus, 7.12 Contact, 7.13
+  Metaln, 7.14 Vian, 7.15 MetalTop, 9.1 Bond Pad, 10.4.2 MIM Option B, 10.7
+  DRC_BJT Mark Layer, ESD, GR, OFFGRID, SB.
 
 "Clean" means clean *inside that scope*. Every DRM chapter not listed above
-was not checked by this run.
+was not checked by this run. The envelope is explicit about the size of that
+gap in its own terms: `coverage.unmodeled_rules` names **97** DRM rule IDs
+(the `MV` voltage variants, the metal-slotting `MSLOT.*` set, `MT30.*`,
+`ESD.*`, `GR.*` and the via `V[1-4].*` enclosure variants) that this deck
+does not transcribe at all, and so no run against it can ever evaluate.
+`violation_count` is 0 over the 82 rules in `coverage.rules_checked`.
 
-### Item 4 — why a `match` renders `unmet`
+### Item 4 — what the cited LVS run did and did not compare
 
 The cited envelope
-(`layout/lvs/reports/bandgap_top/20260819-070132-1e66285.lvs.json`) reports
-`status: "match"`, engine `klayout`, 92/92 nets and 164/164 devices — and the
-manifest still renders item 4 `unmet` with `reason: "stale_evidence"`. That is
-correct, and it is the reason this manifest exists:
+(`layout/lvs/reports/bandgap_top/20261028-065214-f32fe48.lvs.json`) reports
+`status: "match"`, engine `klayout` (klt 0.8.0, KLayout 0.30.12), with
+`counts` of 82/82 nets, 164/164 devices and 3/3 pins. Its
+`provenance.input.content_hash` is populated and equals the manifest's pin for
+this item, so the grader can prove the citation fresh — the freshness gate
+that the August run failed (history below). The newest record,
+`signoff/reports/20261028-065240-f32fe48.signoff.json`, carries
+`input_verified: true` and `check_status: "match"` for this citation. Per the
+rule at the top of this file, that record, not this paragraph, is the verdict.
 
-- The envelope was produced by `klt` 0.2.0, which left `provenance.input`
-  `null`. `klt signoff`'s staleness gate reads exactly that field, so a pinned
-  `content_hash` cannot be matched against anything and the citation cannot be
-  proven fresh **by the grader**.
-- The run *was* in fact made against the current committed layout — the same
-  envelope's `environment.layout_sha256` is
-  `3e1af18ef32dd461172a9d9d00a62ade323725de9a0f90ded08161237dcc1ae0`, which is
-  today's `layout/bandgap_top/bandgap_top.gds`. But a field the grader does not
-  read is not evidence the grader can use, and dropping the pin to force a
-  `met` would assert freshness no tool checked. The pin stays; the row stays
-  `unmet` until the LVS is re-run with a `klt` new enough to record
-  `provenance.input` (klayout-tools#1969).
-- Independent of freshness: the second engine on that same run
-  (`…-1e66285.lvs-netgen.json`) reports `status: "mismatch"` — 2
-  `device.body_unverified` warnings (the deck-synthesized substrate/well nets,
-  a standing deck-coverage caveat klayout carries too) plus 1
-  `device.property` entry whose per-parameter detail netgen's output did not
-  parse into. So item 4's "a second, independent engine's concurring verdict"
-  strengthening does **not** hold today.
-- Both engines' `body_verification` is `unchecked`, which is not `verified`.
+What the `match` does and does not assert, read off the same envelope:
+
+- **No second engine ran.** `environment.netgen_binary` is `null`, and no
+  `*.lvs-netgen.json` exists for this record id — `layout/lvs/reports/bandgap_top/`
+  carries netgen reports only for the `20260804-*` runs and for
+  `20260819-070132-1e66285`. So item 4's "a second, independent engine's
+  concurring verdict" strengthening is **not** part of this citation. The
+  `match` is klayout's alone.
+- **`body_verification` reads `verified`.** The block in full:
+  `{"status": "verified", "reason": null, "device_classes": [],
+  "device_count": 0, "findings": [], "finding_count": 0}`. Read it against the
+  grader contract rather than at face value: in `klt lvs`'s response schema
+  (klayout-tools `docs/cli/lvs.md` at the pinned 0.8.0, "The same condition,
+  machine-checkable"), `device_classes` and `device_count` count the devices
+  whose bodies came out **unverified**, and are specified to be empty and `0`
+  for a `verified` verdict. So `device_count: 0` is not "no devices were
+  looked at" — `"verified"` is defined there as *a deck was given and every
+  MOS body terminal in the layout's top circuit resolved to a real
+  drawn/derived net*. There are 89 MOS bodies for that to be a statement
+  about: `20261028-065214-f32fe48.extract.json`'s `device_counts` reads 42
+  `nfet` and 47 `pfet` (plus 8 `bjt`, 66 poly resistors and 1 MIM cap, which
+  this field does not cover — it is a MOS-body check). The committed request
+  (`20261028-065214-f32fe48.lvs-request.json`) is the one-request
+  `layout.file` + `layout.deck` form, not the two-step `layout.netlist` form
+  whose `body_verification` verdict that same document tells callers not to
+  rely on (klayout-tools#3177).
+- **A `match` still leaves device sizing uncompared.** `mismatch_count` is
+  **9** against `error_count: 0`: all nine are `severity: "warning"`, which by
+  contract never moves `status`. Three are `device.geometry_not_compared` —
+  KLayout declares a resistor class's `L`/`W`/`A`/`P` and a capacitor class's
+  `A`/`P` *secondary*, so `NetlistComparer` compared only `R` (for the 65
+  `ppolyf_u` and 1 `ppolyf_u_1k`) and `C` (for the 1
+  `cap_mim_2f0_m4m5_noshield`). **The drawn geometry of those 67 devices could
+  differ from the reference netlist by any amount and this run would still
+  report `match`.** The remaining six are `topology`: net pairs the comparer
+  resolved structurally because the pairing was ambiguous by name (layout
+  `$27`, `$29`, `$30`, `$36`, `$37`, `$51` against `CORE_TRIM_U2_0`,
+  `CORE_TRIM_U2_2`, `CORE_TRIM_U3_0`, `CORE_TRIM_U3_6`, `CORE_TRIM_U4_0`,
+  `CORE_TRIM_U4_14`); a `hints.same_nets` entry would pin them down instead.
+
+**History — why the manifest pins inputs at all (August 2026).** The manifest
+previously cited `20260819-070132-1e66285.lvs.json`, which also reported
+`status: "match"` (92/92 nets, 164/164 devices) and was nonetheless rendered
+`unmet` with `reason: "stale_evidence"`: it was produced by `klt` 0.2.0, which
+left `provenance.input` `null`, so the staleness gate had nothing to match the
+pinned `content_hash` against and could not prove the citation fresh — even
+though that run *had* been made against the committed layout
+(`environment.layout_sha256` agreed with it). Dropping the pin to force a
+`met` would have asserted a freshness no tool checked, so the pin stayed and
+the row stayed `unmet` until the re-run above (klayout-tools#1969). On that
+August run both engines' `body_verification` read `unchecked` — which is not
+`verified` — and the netgen side reported `status: "mismatch"` (2
+`device.body_unverified` warnings on the deck-synthesized substrate/well nets,
+plus 1 `device.property` entry whose per-parameter detail netgen's output did
+not parse into). [`layout/README.md`](../layout/README.md) and
+[`layout/erc/README.md`](../layout/erc/README.md) still describe that run.
 
 ### Item 5 — full corner verification: what is actually still open
 
 `no_evidence` here is uncited-for-shape (above), not "nothing has been run".
 Against the spec ratified 2026-07-31
 (`spec/decision-records/0003-target-spec-ratification.md`, the table in
-`README.md`): the latest suite summary,
-`sim/suite/summaries/20260816-142719-1ca1c95.md`, reads **6/6 claimed spec
-lines PASS** across 81/81/27/81 PVT corners plus startup. What is left open,
-disclosed here because no envelope carries it: three spec rows are still
-`TBD` by ratification itself (PSRR load condition, output-noise threshold,
-the load row — amendments A4/A6/A7 from #35, carried through verbatim rather
-than invented), and the summary's own text says one line is still pending a
-bench. An output-noise bench has since landed
-(`sim/output-noise/records/`, #189) but no re-run suite summary carries it
-yet — so "6/6 claimed lines pass" is accurate as written and is not the same
-statement as "the ratified table's full row set passes".
+`README.md`): the newest suite summary,
+[`sim/suite/summaries/20261016-015258-1c4f2a2.md`](../sim/suite/summaries/20261016-015258-1c4f2a2.md)
+(2026-10-16, final DUT; dispatched to the batch fleet and indexed with its
+caveats in
+[`sim/suite/fleet-evidence-239.md`](../sim/suite/fleet-evidence-239.md)),
+calls itself **simulation-complete**: all **6** spec lines in its index PASS
+against the ratified table at every corner, and the two-legged
+untrimmed-accuracy row passes at every corner. Its per-row table also carries
+Startup as PASS on that bench's own verdict — the suite wires that bench in by
+slug and deliberately does not re-evaluate it. Corners behind those rows, from
+the summary's own bench table: 81 (`output-voltage-tc`), 81 (`psrr-dc`), 27
+(`line-regulation`), 81 (`iq`), 81 (`startup`), plus the `mc-untrimmed`
+mismatch leg (N=300 x 4 groups x 3 temperatures) that the two-legged
+output-reference row is ratified on.
 
-The existing evidence for those three rows, their provenance and coverage
-gaps, and one ranked operator question per row are collected in
+What is left open, disclosed here because no envelope carries it:
+
+- **Rows the ratified table carries that this suite does not claim**, from the
+  summary's own "Ratified rows this suite does not claim" table: Trim (no trim
+  segments in the schematic yet, #14); **Output noise** — a bench now exists
+  (`sim/output-noise/`, #189: 0.1–10 Hz integrated plus 1/10/100 kHz spot
+  density over full PVT) and the summary names it, but the *numeric limit* is
+  still open item A6; **Load** — still **no bench yet**, condition open item
+  A7; Area (a layout claim, #15/#16); and long-term drift (not specified for a
+  canary block). PSRR is measured unloaded because its load condition is open
+  item A4. A4/A6/A7 are amendments from #35, TBD by ratification itself and
+  carried through verbatim rather than invented. So "6/6 indexed lines pass"
+  is accurate as written and is not the same statement as "the ratified
+  table's full row set passes".
+- **Startup is not a simulation of the canonical netlist.**
+  `sim/suite/fleet-evidence-239.md` records that the startup bench keeps its
+  embedded, lumped-R1 core (`sim/startup-embedded-core-sync.md`): lumped R1 is
+  exact at tt/27 °C only (−0.18 % / +0.27 % at −40 / 125 °C), and res_ff /
+  res_ss are not exercised by it.
+- **The combined accuracy coefficient is not yet validated.** The same index
+  records that the combined two-legged accuracy report
+  (`sim/suite/combined/20261016-013300-999e5cf.md`, PASS with a tightest
+  margin of 1.356 mV at bjt_ff / 125 °C / 3.63 V) flags that the `par_r` ×2
+  sensitivity case **flips 3 corners at 125 °C**, so that coefficient needs
+  validating before the combined verdict is final.
+
+Both of those caveats predate and are unchanged by #344's Iq roll-up, which
+produced the summary cited above without running any new simulation.
+
+The existing evidence for the TBD rows, their provenance and coverage gaps,
+and one ranked operator question per row are collected in
 [`spec/tbd-row-evidence.md`](../spec/tbd-row-evidence.md). That packet only
 prepares decisions: it changes no verdict here, ratifies no row, and reserves
 no decision-record number.
