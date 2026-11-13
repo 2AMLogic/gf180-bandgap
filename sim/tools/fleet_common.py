@@ -11,7 +11,9 @@ apply one completeness rule instead of three copies:
 * provenance (DUT hash, bench hash, submitting vs worker klt version) that is
   absent or inconsistent is a problem, not a footnote.
 
-Pure functions, stdlib only: no PDK, ngspice, fleet or network.
+Stdlib only: no PDK, ngspice, fleet or network. The functions are pure apart
+from the artifact copiers and :func:`klt_version`, the one local `klt
+--version` probe that fills a plan's ``submitting_klt_version``.
 """
 
 from __future__ import annotations
@@ -21,6 +23,7 @@ import json
 import math
 import re
 import shutil
+import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -42,13 +45,6 @@ def is_finite_number(x) -> bool:
     evidence (a ``nan`` that slipped through `isinstance(x, float)` would
     compare False against every limit and could read as PASS downstream)."""
     return isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x)
-
-
-def corner_key(corner_id: str) -> tuple[str, float]:
-    """'tt/2.970V/27C' -> ('tt', 2.97). Raises on any other shape
-    (including the supply-less ``tt/novdd/27C``)."""
-    process, supply, _temp = corner_id.split("/")
-    return process, float(supply.rstrip("Vv"))
 
 
 def parse_klt_corner_id(corner_id: str) -> tuple[str, float | None, float]:
@@ -242,6 +238,21 @@ def report_identity_problems(report: dict, expected_sha256: str) -> list[str]:
         return [f"report was produced from a different deck: root-input sha256 {got[:12]} "
                 f"differs from the frozen deck's {want[:12]}"]
     return []
+
+
+def klt_version() -> str | None:
+    """The local `klt --version`, or None if klt is absent/unreadable/slow.
+
+    The single probe that fills a plan's ``submitting_klt_version`` -- the
+    field :func:`provenance_problems` below compares against what actually
+    ran. One copy so the request builders cannot disagree about what that
+    field means.
+    """
+    try:
+        out = subprocess.run(["klt", "--version"], capture_output=True, text=True, timeout=30).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return out.split()[-1] if out else None
 
 
 def provenance_problems(report: dict, plan: dict | None, *, require_remote: bool = True) -> list[str]:

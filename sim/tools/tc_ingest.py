@@ -66,10 +66,10 @@ OUTER_TEMP_C = 27.0  # mk_klt_request.py fixes corners.temperature_c = [27]; the
 def corner_key(corner_id) -> tuple[str, float]:
     """'tt/2.970V/27C' -> ('tt', 2.97), validating the FULL returned identity.
 
-    Unlike the process/supply-only `fleet_common.corner_key`, the outer
-    temperature axis must be present, finite and equal the requested 27 C, and
-    the supply must be finite. Raises ValueError (naming the offending id and
-    the expected axis) otherwise."""
+    The key is process/supply only, but the FULL identity is checked: the
+    outer temperature axis must be present, finite and equal the requested
+    27 C, and the supply must be finite and positive. Raises ValueError
+    (naming the offending id and the expected axis) otherwise."""
     expect = "expected '<process>/<supply>V/27C'"
     if not isinstance(corner_id, str):
         raise ValueError(f"corner id {corner_id!r} is not a string; {expect}")

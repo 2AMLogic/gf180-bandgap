@@ -244,16 +244,6 @@ def build_plan(*, dut: Path, dut_rel: str, design_text: str, tb_text: str | None
     return plan, files
 
 
-def klt_version() -> str | None:
-    import subprocess
-
-    try:
-        out = subprocess.run(["klt", "--version"], capture_output=True, text=True, timeout=30).stdout.strip()
-    except (OSError, subprocess.SubprocessError):
-        return None
-    return out.split()[-1] if out else None
-
-
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("outdir")
@@ -266,7 +256,7 @@ def main() -> int:
     dut = (REPO / a.dut).resolve()
     plan, files = build_plan(
         dut=dut, dut_rel=str(dut.relative_to(REPO)), design_text=hp.find_pdk().design_include.read_text(),
-        submitting_klt_version=klt_version(),
+        submitting_klt_version=fc.klt_version(),
     )
     out = Path(a.outdir).resolve()
     for rel, text in files.items():
