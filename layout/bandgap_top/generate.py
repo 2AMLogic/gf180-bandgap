@@ -228,7 +228,6 @@ ROW_GAP = 1100
 # nplus/pplus.space.1 (0.4) and sab.space.1 (0.42) apart.
 RES_ISLAND_GAP = 2 * IMPLANT_ENC + 420
 NWELL_ENC = 600  # Nwell overlap of PMOS COMP, nwell.enclosing.comp.1 min 120
-NWELL_CLEAR = 2000  # Nwell edge -> unrelated COMP
 GUARD_W = 1600  # guard-ring COMP width
 GUARD_CLEAR = 1600  # block content -> guard ring inner edge
 

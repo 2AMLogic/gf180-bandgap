@@ -31,7 +31,6 @@ BROKER_ENV = "KLT_ARTIFACT_BROKER"
 MANIFEST_DIR = Path("manifests") / "artifacts"
 #: Git-ignored (``sim/.work/``) scratch the raw outputs are staged in.
 STAGE_ROOT = Path("sim") / ".work" / ".stage"
-ARTIFACT_URI_PREFIX = "artifact:"
 PREFLIGHT_TIMEOUT_S = 10
 PUT_TIMEOUT_S = 600
 

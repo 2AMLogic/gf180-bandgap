@@ -155,7 +155,6 @@ MC_RESISTOR_GROUP = "mm_res"     # resistor mismatch only -- the par_r share
 #: The measurement each leg contributes.
 CORNER_MEASUREMENT = "vref"
 MC_SAMPLE = "vref_val"
-MC_SUPPLY_SAMPLE = "isup_val"
 
 #: How closely the MC control group and the corner leg's tt/3.30 V point must
 #: agree for the graft to be legitimate. Both are an operating point of the

@@ -47,7 +47,6 @@ from harness import corners as hc  # noqa: E402
 EXPERIMENT = "output-voltage-tc"
 TB_JSON = SIM / EXPERIMENT / "testbench" / "tb.json"
 TC_SPAN_C = 165.0  # -40..125 C
-SWEEP_POINTS = 166
 ENDPOINT_NAMES = ("vref_m40", "vref_27", "vref_125")
 BOX_NAMES = ("vref_box_max", "vref_box_min")
 REQUIRED = ENDPOINT_NAMES + BOX_NAMES

@@ -23,9 +23,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-#: Ratified nominal output, for reference in the summary header.
-VREF_NOMINAL_V = 1.20
-
 
 @dataclass(frozen=True)
 class Limit:
