@@ -22,10 +22,13 @@ layout/erc/
   erc-supply-spec.json                 the supply read           <- SIGNOFF
   erc-supply-spec.negative-control.json  proves the rules fire   <- control
   erc-tie-spec.known-gap.json          reproduces klayout-tools#2169 <- control
+  erc-tie-spec.pinned.json             the ties[] the PIN computes   <- probe
   reports/bandgap_top/
     <record-id>.erc.{json,txt}                    the signoff report
     <record-id>.erc-negative-control.{json,txt}   the control's report
     <record-id>.erc-tie-known-gap.{json,txt}      the #2169 reproduction
+    <record-id>.erc-tie-pinned.{json,txt}         known-gap.json re-run on the pin
+    <record-id>.erc-tie-classed.{json,txt}        pinned.json on the pin
 ```
 
 Each spec's own `_comment` block justifies every `stackup` entry, every
@@ -48,9 +51,30 @@ python3 layout/erc/run_erc.py \
     --spec layout/erc/erc-tie-spec.known-gap.json \
     --suffix erc-tie-known-gap --expect findings
 
-# 4. run_erc.py's own unit tests
+# 4. the pinned-klt tie probe -- records what the PIN computes (#441).
+#    Not signoff evidence: it reads the pre-DR-0007 GDS. See "What is NOT
+#    verified here" below.
+python3 layout/erc/run_erc.py \
+    --spec layout/erc/erc-tie-spec.pinned.json \
+    --suffix erc-tie-classed --expect any
+
+# 5. run_erc.py's own unit tests
 python3 -m unittest discover -s layout/erc -t layout/erc -v
 ```
+
+Steps 1-4 call whatever `klt` is first on `PATH`, and the version matters:
+every report above was made at the pin in `signoff/klt-pin.txt`. If the host
+`klt` is not that version, put the pin first on `PATH` from a throwaway
+environment rather than changing the host tool:
+
+```bash
+uv venv /tmp/klt-pin && VIRTUAL_ENV=/tmp/klt-pin uv pip install \
+    "klayout-tools==$(grep -v '^#' signoff/klt-pin.txt | tr -d '[:space:]')"
+export PATH=/tmp/klt-pin/bin:$PATH
+```
+
+Confirm it took: every report's own `provenance.klt_version` records the
+version that actually ran.
 
 Reports are **append-only** (`CLAUDE.md`; `layout/README.md`, "Reports are
 append-only evidence"): every run mints a new `<YYYYMMDD>-<HHMMSS>-<sha>`
@@ -137,23 +161,96 @@ column asks for `power_connectivity` instead.
 `docs/cli/erc.md` is explicit that omitting the section means the rule is
 never computed. Its zero count in that report is an **absence of evidence,
 not evidence of absence**, and must not be cited as a well-tie verdict.
+That is still true of the signoff report, and is what this section is about.
 
-Two independent reasons it is omitted, both measured:
+**Both historical reasons for omitting `ties[]` are now gone at the pin,
+measured** (gf180-bandgap#441, 2026-11-13, `klt 0.8.0` / `klayout 0.30.13`).
+They are recorded here because the *next* question — whether this block
+actually passes a tie check — is gf180-bandgap#358's, after #204.
 
-1. **klayout-tools#2169** (closed 2026-09-20; declaring `ties[]` is now tracked in
-   gf180-bandgap#358) — declaring any `ties[]` entry collapses the
-   whole design into one electrical island and reports **false** shorts.
-   `erc-tie-spec.known-gap.json` + its committed report are the
-   reproduction on this block: `gate_count` 10 → 1, and all three declared
-   nets (`vdd`, `vss`, `vref`) report as shorted to each other. The gap was
-   first isolated in `gf180-drone-fc`'s FRICTION F-034 on a routed
-   *standard-cell* design; this block is hand-drawn analog with no standard
-   cells and no PDN, and collapses the same way — so the gap is not
-   specific to a P&R'd cell array.
-2. **A p-substrate tie cannot be expressed at all**, separately from
-   #2169: `ties[].well_layer` needs a *drawn* well/tub layer, and this
-   block sits in the native p-substrate with no `LVPWELL` (204/0) anywhere
-   in the GDS. Even a fixed #2169 would only ever grade the n-well half.
+1. **klayout-tools#2169 is fixed.** It used to collapse the whole design
+   into one electrical island on any `ties[]` entry and report **false**
+   shorts (`gate_count` 10 → 1; `vdd`, `vss` and `vref` all mutually
+   shorted). `erc-tie-spec.known-gap.json` is that reproduction, kept
+   byte-for-byte as history. Re-running **that same file unchanged** on the
+   pin — report `*.erc-tie-pinned.*` — gives `gate_count` **10**, each
+   declared net on **exactly one** island, and **zero** `erc.supply_short`.
+   The collapse does not recur. (First isolated in `gf180-drone-fc`'s
+   FRICTION F-034 on a routed *standard-cell* design; this block is
+   hand-drawn analog with no standard cells and no PDN, and used to
+   collapse the same way.)
+2. **A p-substrate tie can now be expressed.** It previously could not at
+   all: `ties[].well_layer` needs a *drawn* well/tub layer, and this block
+   sits in the native p-substrate with no `LVPWELL` (204/0) anywhere in the
+   GDS. `klt 0.8.0`'s `ties[].well_complement_of` (klayout-tools#3750)
+   names the substrate as *the top-cell extent minus* `Nwell`, which
+   follows the layout instead of going stale — so the substrate half is
+   expressible without a drawn tub layer.
+
+### What the pin computes, and what it says
+
+`erc-tie-spec.known-gap.json` re-run unchanged still does **not** yield a
+tie check — but no longer because of the collapse. `klt 0.8.0` reports it as
+`erc_coverage.skipped` with reason **`degenerate_tap_declaration`**: that
+file declares `tap_layer: "32/0"` (`Nplus` alone), which narrows nothing out
+of the drawn layer, so the check would be satisfied by any contact anywhere
+and klt refuses to answer rather than returning an unfalsifiable pass. The 8
+`erc.missing_tie` findings it emits alongside are part of that refusal and
+are **not** a verdict.
+
+`erc-tie-spec.pinned.json` is the declaration that does compute. Two things
+it has to get right, both discovered by measurement:
+
+- **The tap must be narrowed.** `tap_layer: "22/0"` (`Comp`) plus
+  `tap_requires` (klayout-tools#2169's own fix) — `Comp ∩ Nplus` for an
+  n-well tap, `Comp ∩ Pplus` for a substrate tap. gf180mcu has no dedicated
+  tap layer, so `tap_is_dedicated` is deliberately not affirmed.
+- **`Nwell` carries two bias classes here, and one `ties[]` entry claims
+  every shape on its well layer.** Declaring a single n-well tie to `vdd`
+  reports **8** `erc.missing_tie` findings, and all 8 are the
+  vertical-PNP base islands — one per `PnpItem` in `plan.py`'s `PNP` row,
+  each the 10.40 µm square `generate.draw_pnp` draws, every one declaring
+  `base_net: "vss"`. The `Nwell` *is* the PNP base terminal, so tying it to
+  `vdd` would be the defect; the findings are correct about the geometry and
+  wrong only about which net was claimed. Splitting the classes on the
+  `DRC_BJT` (127/5) marker `draw_pnp` already draws — `well_excludes` for
+  the PMOS band, `well_requires` for the PNP bases — is what klt's own rule
+  asks for ("each bias class is declared as its own `ties[]` entry with its
+  own `net`").
+
+With those two corrections, report `*.erc-tie-classed.*`:
+
+| | |
+| --- | --- |
+| `gate_count` | 10 (no collapse) |
+| `erc_coverage.skipped` | **empty** — all three ties **computed** |
+| `erc.missing_tie:["nwell_tap_pmos"]` | checked |
+| `erc.missing_tie:["nwell_base_pnp"]` | checked |
+| `erc.missing_tie:["psub_tap"]` | checked |
+| `erc_finding_count` | **0** |
+| `erc.supply_short` / `erc.unconnected_net` | 0 / 0 |
+| declared-net islands | `vdd` 1, `vss` 1, `vref` 1 |
+
+`status: "not_checked"` / exit 4 on that report is the gf180mcu
+antenna-coverage artefact described above, not a tie result.
+
+**Three things that report is NOT:**
+
+1. **Not the item 11 citation.** Citing item 11 and touching
+   `signoff/block-manifest.json` is gf180-bandgap#358's scope, after #204.
+   This directory's signoff spec is unchanged and still declares no
+   `ties[]`; replacing it was explicitly out of scope for #441.
+2. **Made on the pre-DR-0007 GDS.** It reads the currently committed
+   `layout/bandgap_top/bandgap_top.gds`,
+   `sha256:97944732…edf055c` — *not* the layout #204 will regenerate. Every
+   number above has to be re-measured on the regenerated GDS before it can
+   be cited.
+3. **`psub_tap` is weaker evidence than the other two.** The report itself
+   says so, listing it under `erc_coverage.checked_by_well_assertion`:
+   its region is *derived* by complement rather than read off drawn
+   geometry. That is still a computed check with a falsifiable region — but
+   it is not the same as a drawn tub layer, and should be stated that way
+   rather than flattened into "the substrate is verified".
 
 ### What stands in for it, and how far that reaches
 
@@ -196,19 +293,37 @@ saying so in its own words —
 `vsubs`↔`VSUBS` pin correspondence in the table above is a pin-list match,
 not a tie verdict.
 
-So: **no tool in this flow currently returns a well/substrate-tie verdict
-for this block.** Items (1)–(3) say the taps exist, are legal, and are
-strapped onto the right rails; none of them says every well and every
-substrate region *reaches* one. That gap closes when `ties[]` is declared now that klayout-tools#2169 is
-fixed (gf180-bandgap#358) — and, for the substrate half, only if
-`ties[]` grows a way to name an undrawn native substrate.
+So: **the signoff report in this directory still returns no
+well/substrate-tie verdict for this block.** Items (1)–(3) say the taps
+exist, are legal, and are strapped onto the right rails; none of them says
+every well and every substrate region *reaches* one.
+
+What has changed is that the *tool* no longer blocks that verdict. At the
+pin, `erc-tie-spec.pinned.json` computes all three tie checks and comes back
+with zero findings (table above) — including the substrate half, via
+`well_complement_of`, which is the capability this section previously said
+`ties[]` would have to grow. Converting that into item 11 evidence means
+re-measuring it on the regenerated GDS and citing it in the manifest, which
+is **gf180-bandgap#358**, after **#204**.
 
 ## Friction filed
 
 | Upstream | Status | What |
 | --- | --- | --- |
-| [klayout-tools#2169](https://github.com/2AMLogic/klayout-tools/issues/2169) | closed 2026-09-20 | `ties[]` collapses a design to one island (false `erc.supply_short`). Reproduced here on a hand-drawn analog layout — see `erc-tie-spec.known-gap.json`. |
+| [klayout-tools#2169](https://github.com/2AMLogic/klayout-tools/issues/2169) | closed 2026-09-20; **fix confirmed here 2026-11-13** | `ties[]` collapses a design to one island (false `erc.supply_short`). Reproduced here on a hand-drawn analog layout — see `erc-tie-spec.known-gap.json`. Re-running that spec unchanged on `klt 0.8.0` no longer collapses (`*.erc-tie-pinned.*`, gf180-bandgap#441). |
 | [klayout-tools#2179](https://github.com/2AMLogic/klayout-tools/issues/2179) | closed 2026-09-20 | `klt erc --pdk` has no antenna-ratio table outside sky130, so every non-sky130 run is `status: "not_checked"` / exit 4 even when its connectivity rules ran clean. |
 
 Per `CLAUDE.md`'s friction protocol, both were filed against the tool as
 generic tool gaps, with no design-specific detail from this repo.
+
+**No new upstream issue was filed for #441**, because neither trigger
+survived measurement: the `ties[]` collapse does not recur at the pin, and a
+native p-substrate tie *is* expressible there
+(`well_complement_of`). The two corrections
+`erc-tie-spec.pinned.json` needed — narrowing the tap with `tap_requires`,
+and splitting `Nwell`'s two bias classes into separate entries — are the
+tool's documented schema working as designed, each with its own named
+`erc_coverage` skip reason pointing at the fix, not tool gaps. `klt 0.8.0`
+refusing an unfalsifiable declaration (`degenerate_tap_declaration`) instead
+of returning a clean pass is the behaviour this repo's friction reports
+asked for.
