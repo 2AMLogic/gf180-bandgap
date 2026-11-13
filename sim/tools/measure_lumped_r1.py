@@ -50,7 +50,7 @@ BIASES = (("lowbias", 0.0, 0.05), ("opbias", 0.7, 0.5))
 W = "2u"
 
 
-def pdk_paths(corner: str) -> tuple[str, str]:
+def pdk_paths() -> tuple[str, str]:
     from harness import pdk as pdk_mod  # type: ignore
 
     p = pdk_mod.find_pdk()
@@ -148,7 +148,7 @@ def main() -> int:
     ap.add_argument("--check-length", type=float, help="verify this lumped length (um) only")
     args = ap.parse_args()
 
-    design, models = pdk_paths(args.corner)
+    design, models = pdk_paths()
     base = base_r1_length()
     base_u = float(base.rstrip("u"))
     print(f"base R1 length in {TOP.relative_to(SIM.parent)}: {base}; corner {args.corner}")

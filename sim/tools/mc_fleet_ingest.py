@@ -123,7 +123,7 @@ def plan_problems(run, plan: dict, *, dut_sha: str | None, tb_sha: str, decks: d
     return probs
 
 
-def sample_problems(entry: dict, report: dict, units: dict) -> list[str]:
+def sample_problems(entry: dict, report: dict) -> list[str]:
     """Seed / index consistency of the returned samples (see `klt sim`'s seed contract)."""
     probs: list[str] = []
     mc = (report.get("environment") or {}).get("monte_carlo")
@@ -195,7 +195,7 @@ def assess(run, plan: dict, reports: dict[str, dict], *, dut_sha: str | None, tb
         missing += [((name,) + k, why) for k, why in miss]
         failed += [((name,) + k, why) for k, why in fail]
         problems += [f"{name}: {p}" for p in probs]
-        problems += sample_problems(entry, rep, pts)
+        problems += sample_problems(entry, rep)
         rows = []
         for key in exp:
             v = pts.get(key)
@@ -307,7 +307,7 @@ FLEET_MISS_NOTE = (
 )
 
 
-def build_evidence_record(run, plan, result, reports, record, stamp, dut_label, dut_path, issue, supersedes, git=None) -> str:
+def build_evidence_record(run, plan, result, reports, record, stamp, dut_label, dut_path, issue, supersedes) -> str:
     saved = dict(run.RUN_CONTEXT)
     run.RUN_CONTEXT.update({
         "issue": str(issue), "supersedes": supersedes or "(none)",
@@ -391,7 +391,7 @@ def write_evidence(run, exp_dir: Path, work: Path, plan: dict, result: dict, rep
         fh.write(
             f"* mismatch-injected DUT variant, as simulated by the fleet (frozen deck of request {mm_deck}).\n"
             + decks[mm_deck])
-    text = build_evidence_record(run, plan, result, reports, record, st, dut_label, dut_path, issue, supersedes, git)
+    text = build_evidence_record(run, plan, result, reports, record, st, dut_label, dut_path, issue, supersedes)
     return hreport.device_write_record(exp_dir / "records", record, text)
 
 
