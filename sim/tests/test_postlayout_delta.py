@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import contextlib
 import io
+import os
 import sys
 import tempfile
 import unittest
@@ -235,7 +236,11 @@ class MainTests(unittest.TestCase):
                 )
             )
             if cwd is not None:
-                patch(contextlib.chdir(cwd))
+                # Not contextlib.chdir: that is Python >= 3.11 and the harness
+                # floor is 3.9 (sim/harness/README.md, CI's matrix).
+                prev_cwd = os.getcwd()
+                os.chdir(cwd)
+                stack.callback(os.chdir, prev_cwd)
             patch(contextlib.redirect_stdout(buf))
             self.assertEqual(pld.main(), 0)
         return buf.getvalue().strip()
