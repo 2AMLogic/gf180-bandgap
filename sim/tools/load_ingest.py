@@ -54,7 +54,6 @@ from __future__ import annotations
 import argparse
 import gzip
 import json
-import shutil
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -476,12 +475,7 @@ def write_evidence(exp_dir: Path, work: Path, tb: dict, plan: dict, result: dict
         with gzip.open(cdir / f"{fi.corner_id(key)}.series.json.gz", "wt") as fh:
             json.dump(cols, fh)
     fc.copy_request_artifacts(work, cdir, [REQUEST], reports)
-    snap = exp_dir / "netlist-snapshots"
-    snap.mkdir(parents=True, exist_ok=True)
-    target = snap / f"{record}.spice"
-    if target.exists():
-        raise RuntimeError(f"{target} exists (append-only)")
-    shutil.copyfile(work / REQUEST / "body.spice", target)
+    hreport.write_device_netlist_snapshot(exp_dir / "netlist-snapshots", record, work / REQUEST / "body.spice")
     text = build_record(record, st, tb, plan, result, reports, issue, supersedes, note, git)
     return hreport.device_write_record(exp_dir / "records", record, text)
 

@@ -460,9 +460,7 @@ def main() -> int:
     write_corner_logs(cdir, work, report, points, record)
     for n in ("request.json", "report.json"):
         shutil.copyfile(work / n, cdir / n)
-    snap = exp_dir / "netlist-snapshots"
-    snap.mkdir(exist_ok=True)
-    shutil.copyfile(work / "body.spice", snap / f"{record}.spice")
+    hreport.write_device_netlist_snapshot(exp_dir / "netlist-snapshots", record, work / "body.spice")
 
     if a.dut_rev:
         import subprocess

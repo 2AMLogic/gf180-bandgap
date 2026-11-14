@@ -985,12 +985,7 @@ def main() -> int:
                 flush=True,
             )
 
-    snap_dir = HERE / "netlist-snapshots"
-    snap_dir.mkdir(parents=True, exist_ok=True)
-    snap_path = snap_dir / f"{record}.spice"
-    if snap_path.exists():
-        raise RuntimeError(f"refusing to overwrite existing snapshot {snap_path}")
-    snap_path.write_text(dut_mm, encoding="utf-8")
+    harness_report.write_snapshot_text(HERE / "netlist-snapshots", record, dut_mm)
 
     path = harness_report.device_write_stored_record(
         HERE / "records",

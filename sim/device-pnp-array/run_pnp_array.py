@@ -276,13 +276,11 @@ def main() -> int:
     for name in ("request.json", "report.json"):
         shutil.copyfile(work / name, cdir / name)
 
-    snap = HERE / "netlist-snapshots"
-    snap.mkdir(exist_ok=True)
     body = (work / "body.spice").read_text().replace(
         f'.include "{req.BENCH_DIR / req.BENCH}"',
         (req.BENCH_DIR / req.BENCH).read_text(),
     )
-    (snap / f"{record}.spice").write_text(body)
+    hreport.write_snapshot_text(HERE / "netlist-snapshots", record, body)
 
     path = hreport.device_write_record(
         HERE / "records", record, build_record(record, stamp, report, points, missing, failed, cids)
