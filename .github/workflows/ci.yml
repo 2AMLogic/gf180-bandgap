@@ -122,6 +122,17 @@ jobs:
         # test fails or a directory collects zero tests.
         run: bash .github/scripts/test_layout.sh
 
+      - name: Own-directory sys.path.insert guard (python3 -m form)
+        # The step above runs `unittest discover -s <dir>`, which supplies the
+        # directory itself, so it cannot notice if a module loses its
+        # own-directory sys.path.insert -- the line that is load-bearing only
+        # under `python3 -m <dotted.module>`. #478 spent a Builder cycle on
+        # that false premise. This runs the documented `-m` form directly and
+        # checks every site still carries its explanatory comment. The four
+        # klayout-tier targets are deferred to the `signoff` job below, which
+        # runs the same script with --with-klayout.
+        run: bash .github/scripts/test_dotted_invocation.sh
+
   signoff:
     name: T1 signoff re-grade (klt)
     runs-on: ubuntu-latest
@@ -163,6 +174,16 @@ jobs:
         # Here klt and its klayout dependency are installed, so those tests
         # must actually run: --require-no-skips fails on any skipped test.
         run: bash .github/scripts/test_layout.sh --require-no-skips
+
+      - name: Own-directory sys.path.insert guard (klayout tier, no skips)
+        # The `test` job runs this script's base tier. Here klayout is present
+        # (it ships as a klt dependency), so --with-klayout adds the four
+        # layout/bandgap_top/ targets that reach a module-level
+        # `import klayout.db`, and fails on any skipped test. That second half
+        # is what catches layout/common/test_klayout_builder.py losing its
+        # insert: HAVE_KLAYOUT goes False and all 7 tests skip while the
+        # process still exits 0, so only a no-skip assertion sees it.
+        run: bash .github/scripts/test_dotted_invocation.sh --with-klayout
 
       - name: Re-grade the block manifest
         # `klt signoff --manifest` exits 3 when the block is not yet T1, which
