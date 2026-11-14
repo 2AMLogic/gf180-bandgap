@@ -8,6 +8,12 @@ Chronological record of recently merged pull requests and closed issues, maintai
 
 ### 2026-11-13
 
+- **Issue #468** (closed): Remove six never-read function parameters from the sim ingest and spec-check tools
+- **PR #473**: refactor: drop six never-read parameters from sim ingest/spec-check signatures
+- **Issue #470** (closed): Remove the dangling worktree:return npm script: its target script no longer exists
+- **PR #472**: chore: drop the dangling worktree:return npm script entry
+- **Issue #469** (closed): Remove three unused imports and two never-read routing_budget constants
+- **PR #474**: chore: drop three unused imports and two never-read PRE_REWRITE constants
 - **Issue #461** (closed): Remove _ChildNetMap: dict subclass whose .get override duplicates the default both callers already pass
 - **PR #465**: refactor(layout): resolve child nets with a plain dict, drop _ChildNetMap
 - **Issue #459** (closed): bug: postlayout_delta exits 1 after a successful write when -o is outside the repo
