@@ -17,6 +17,8 @@ from unittest import mock
 
 SIM = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SIM))
+# Load-bearing: sys.path[0] is this file's dir only under `python3 file.py`.
+# Under the documented `python3 -m <dotted.module>` form it is the CWD. #479
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from fake_store import FakeStore  # noqa: E402
