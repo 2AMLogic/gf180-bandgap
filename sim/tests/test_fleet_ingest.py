@@ -1321,6 +1321,34 @@ class SuiteIntegration(TmpCase):
         with self.assertRaises(RuntimeError):
             hreport.device_write_record(exp / "records", r1.stem, "overwrite")
 
+    def test_occupied_snapshot_refuses_with_record_exists(self):
+        """An occupied ``netlist-snapshots/<record>.spice`` aborts the ingest.
+
+        ``allocate_record_id`` normally skips an occupied id (it checks the
+        snapshot path via ``_record_id_occupied``), so reaching this path takes
+        a stubbed allocator -- it is the shared writer's last-line refusal, not
+        a state a healthy run produces. It must still raise rather than
+        overwrite: ``sim/`` is append-only.
+        """
+        from unittest import mock
+
+        from harness import report as hreport
+
+        fx = self.fx("line-regulation")
+        res = fx.assess()
+        exp = self.tmp / "exp" / "line-regulation"
+        rec_id = "20260801-120000-abc1234"
+        snap = exp / "netlist-snapshots" / f"{rec_id}.spice"
+        snap.parent.mkdir(parents=True)
+        snap.write_bytes(b"* earlier evidence -- must survive\n")
+        with mock.patch.object(hreport, "allocate_record_id", return_value=rec_id):
+            with self.assertRaises(hreport.RecordExists) as cm:
+                fi.write_evidence(exp, self.tmp, "line-regulation", fx.tb, fx.plan, res, fx.reports,
+                                  dut_label="x", issue=237, git=GIT)
+        self.assertIn("sim/ is append-only", str(cm.exception))
+        self.assertEqual(snap.read_bytes(), b"* earlier evidence -- must survive\n")
+        self.assertFalse((exp / "records" / f"{rec_id}.md").exists())
+
     # ---- run-level rejection must not become suite-valid evidence (#284)
 
     def _tree(self, root: Path) -> list:

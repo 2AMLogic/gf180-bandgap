@@ -868,16 +868,30 @@ def write_device_corner_log(
     return path
 
 
+def write_snapshot_text(snapshot_dir: Path, record: str, text: str | bytes) -> Path:
+    """Freeze already-composed deck ``text`` as ``netlist-snapshots/<record-id>.spice``.
+
+    The single writer of a flat netlist snapshot, for every caller that holds
+    the deck in memory rather than on disk -- the fleet ingestors concatenate
+    or head their frozen decks, and the Monte-Carlo / pnp-array runs rewrite
+    theirs (mismatch injection, inlined ``.include``) before freezing it.
+    :func:`write_device_netlist_snapshot` delegates here, so the append-only
+    refusal (``RecordExists``) is expressed once for all of them.
+    """
+    snapshot_dir.mkdir(parents=True, exist_ok=True)
+    path = snapshot_dir / f"{record}.spice"
+    _write_exclusive(path, text, "netlist snapshot")
+    return path
+
+
 def write_device_netlist_snapshot(snapshot_dir: Path, record: str, deck: Path) -> Path:
     """Freeze ``deck`` as ``netlist-snapshots/<record-id>.spice``.
 
     A device testbench is a single self-contained file with no separate DUT to
-    fold in, so unlike :func:`write_netlist_snapshot` this is a verbatim copy.
+    fold in, so unlike :func:`write_netlist_snapshot` this is a verbatim copy:
+    ``deck``'s bytes reach :func:`write_snapshot_text` untouched.
     """
-    snapshot_dir.mkdir(parents=True, exist_ok=True)
-    path = snapshot_dir / f"{record}.spice"
-    _write_exclusive(path, deck.read_bytes(), "netlist snapshot")
-    return path
+    return write_snapshot_text(snapshot_dir, record, deck.read_bytes())
 
 
 def device_write_record(records_dir: Path, record: str, body: str) -> Path:
