@@ -1049,8 +1049,6 @@ def write_evidence(exp_dir: Path, work: Path, bench: str, tb: dict, plan: dict, 
     record, st, cdir, git = fc.begin_evidence(exp_dir, repo=repo, git=git, stamp=stamp)
     write_corner_logs(cdir, work, plan, result, record)
     fc.copy_request_artifacts(work, cdir, [r["name"] for r in plan["requests"]], reports)
-    snap = exp_dir / "netlist-snapshots"
-    snap.mkdir(parents=True, exist_ok=True)
     # evidence_lint wants exactly one flat netlist-snapshots/<record>.spice: it holds every
     # request's frozen deck (headed by name + sha256); each exact deck is also kept
     # byte-for-byte in corners/<record>/deck-<request>.spice.
@@ -1059,7 +1057,7 @@ def write_evidence(exp_dir: Path, work: Path, bench: str, tb: dict, plan: dict, 
         body = work / r["name"] / "body.spice"
         shutil.copyfile(body, cdir / f"deck-{r['name']}.spice")
         parts.append(f"* ==== frozen fleet deck: {r['name']} sha256 {r['deck_sha256']} ====\n" + body.read_text())
-    (snap / f"{record}.spice").write_text("\n".join(parts))
+    hreport.write_snapshot_text(exp_dir / "netlist-snapshots", record, "\n".join(parts))
     text = build_record(record, st, bench, tb, plan, result, reports, dut_label, issue, supersedes, note, git)
     return hreport.device_write_record(exp_dir / "records", record, text)
 

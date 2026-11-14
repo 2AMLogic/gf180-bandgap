@@ -580,6 +580,41 @@ class Evidence(unittest.TestCase):
                                   dut_path=DUT, issue=238, git=GIT)
             self.assertFalse(exp.exists())
 
+    def test_occupied_snapshot_refuses_with_record_exists(self):
+        """An occupied ``netlist-snapshots/<record>.spice`` aborts the ingest.
+
+        ``allocate_record_id`` normally skips an occupied id (it checks the
+        snapshot path via ``_record_id_occupied``), so reaching this path takes
+        a stubbed allocator -- it is the shared writer's last-line refusal, not
+        a state a healthy run produces. It must still raise rather than
+        overwrite: ``sim/`` is append-only.
+        """
+        from unittest import mock
+
+        from harness import report as hreport
+
+        fx = self.fx
+        res = fx.assess()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            work = root / "work"
+            for rel, text in fx.files.items():
+                p = work / rel
+                p.parent.mkdir(parents=True, exist_ok=True)
+                p.write_text(text)
+            exp = root / "sim" / "mc-untrimmed"
+            rec_id = "20260801-120000-abc1234"
+            snap = exp / "netlist-snapshots" / f"{rec_id}.spice"
+            snap.parent.mkdir(parents=True)
+            snap.write_bytes(b"* earlier evidence -- must survive\n")
+            with mock.patch.object(hreport, "allocate_record_id", return_value=rec_id):
+                with self.assertRaises(hreport.RecordExists) as cm:
+                    mi.write_evidence(RUN, exp, work, fx.plan, res, fx.reports, fx.decks,
+                                      dut_label="x", dut_path=DUT, issue=238, git=GIT)
+            self.assertIn("sim/ is append-only", str(cm.exception))
+            self.assertEqual(snap.read_bytes(), b"* earlier evidence -- must survive\n")
+            self.assertFalse((exp / "records" / f"{rec_id}.md").exists())
+
     def test_fleet_mc_leg_pairs_with_a_matching_corner_record_and_anchors_on_the_control(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

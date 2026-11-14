@@ -384,13 +384,11 @@ def write_evidence(run, exp_dir: Path, work: Path, plan: dict, result: dict, rep
                               compact_reports=True, require_reports=True)
     for r in plan["requests"]:
         (cdir / f"deck-{r['name']}.spice").write_text(decks[r["name"]])
-    snap = exp_dir / "netlist-snapshots"
-    snap.mkdir(parents=True, exist_ok=True)
     mm_deck = next(r["name"] for r in plan["requests"] if r["dut_variant"] == "mm")
-    with open(snap / f"{record}.spice", "x", encoding="utf-8") as fh:  # exclusive: never overwrite
-        fh.write(
-            f"* mismatch-injected DUT variant, as simulated by the fleet (frozen deck of request {mm_deck}).\n"
-            + decks[mm_deck])
+    hreport.write_snapshot_text(
+        exp_dir / "netlist-snapshots", record,
+        f"* mismatch-injected DUT variant, as simulated by the fleet (frozen deck of request {mm_deck}).\n"
+        + decks[mm_deck])
     text = build_evidence_record(run, plan, result, reports, record, st, dut_label, dut_path, issue, supersedes)
     return hreport.device_write_record(exp_dir / "records", record, text)
 
