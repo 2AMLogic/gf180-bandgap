@@ -54,6 +54,8 @@ import os
 import sys
 from dataclasses import dataclass
 
+# Load-bearing: sys.path[0] is this file's dir only under `python3 file.py`.
+# Under the documented `python3 -m <dotted.module>` form it is the CWD. #479
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import area_report  # noqa: E402
