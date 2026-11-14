@@ -60,9 +60,7 @@ Issues carrying `loom:curated`.
 
 ## Proposed (Architect / Hermit)
 
-- **#468**: Remove six never-read function parameters from the sim ingest and spec-check tools *(hermit)*
-- **#469**: Remove three unused imports and two never-read routing_budget constants *(hermit)*
-- **#470**: Remove the dangling worktree:return npm script: its target script no longer exists *(hermit)*
+- **#475**: Remove three unconsumed block netlists from design/netlist: bandgap_core.spice is stale against the schematic *(hermit)*
 
 ## Epics
 
@@ -82,6 +80,6 @@ Issues carrying `loom:curated`.
 | PRs awaiting review | 1 |
 | Approved PRs awaiting merge | 0 |
 | Curated | 6 |
-| Architect / Hermit proposals | 3 |
+| Architect / Hermit proposals | 1 |
 | Active epics | 3 |
 <!-- guide:plan-body:end -->
