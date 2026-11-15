@@ -15,6 +15,7 @@ import math
 import sys
 import tempfile
 import unittest
+from datetime import datetime
 from pathlib import Path
 
 SIM = Path(__file__).resolve().parents[1]
@@ -27,6 +28,7 @@ import fleet_ingest as fi  # noqa: E402
 import mk_klt_fleet_request as mk  # noqa: E402
 import tc_ingest as ti  # noqa: E402
 from harness import evidence_lint  # noqa: E402
+from harness import report as hreport  # noqa: E402
 from suite import analysis, completeness, spec  # noqa: E402
 from suite.cli import BenchRun, expected_corner_ids  # noqa: E402
 
@@ -293,6 +295,13 @@ class NoiseFixture(Fixture):
         kw.setdefault("decks", self.decks())
         kw.setdefault("requests", self.requests())
         return fi.assess_bench(self.bench, self.tb, self.plan, self.reports, self.tmp, **kw)
+
+    def record(self, res):
+        """build_record() in memory (#492): the bench render is part of the
+        reporting contract, so tests assert on it without writing evidence."""
+        return fi.build_record("20261115-120000-gtest", datetime(2026, 11, 15, 12, 0, 0), self.bench,
+                               self.tb, self.plan, res, self.reports,
+                               dut_label="sim/dut/bandgap_top.spice", issue=492, supersedes=None, note=None)
 
 
 class TmpCase(unittest.TestCase):
@@ -1190,6 +1199,101 @@ class NoiseIngest(TmpCase):
         self.assertEqual(len(res["invalid"]), 80)
         self.assertEqual(res["spreads"]["onoise_int_0p1_10hz_uvrms"][0], 0.0)
         self.assertFalse(any("spread" in p for p in res["problems"]))
+
+    # ---- #492: the fleet render reports the spread-floor waiver, not silently
+
+    def single_corner_fixture(self):
+        """The #491 shape: 80 invalid op corners, exactly 1 valid (n == 1)."""
+        def raw(r, i, out):
+            if "raw_vref_op" in out and i != 40:
+                out["raw_vref_op"] = 0.2
+            return out
+
+        def docs(r, i, doc):
+            if r["name"] == "op" and i != 40:
+                doc["points"] = [[3.3, 0.2]]
+            return doc
+        return self.fx("output-noise", raw=raw, docs=docs)
+
+    def spread_lines(self, text):
+        return [l for l in text.splitlines() if "Grid spread of" in l]
+
+    def test_single_corner_render_states_the_floor_waiver(self):
+        f = self.single_corner_fixture()
+        res = f.assess()
+        self.assertEqual(len(res["invalid"]), 80)
+        got, lim, skipped = res["spreads"]["onoise_int_0p1_10hz_uvrms"]
+        self.assertEqual((got, lim), (0.0, 5.0))  # spreads[..] keeps (spread, floor) up front
+        self.assertEqual(skipped, fi.SPREAD_FLOOR_SKIP_REASON)
+        (line,) = self.spread_lines(f.record(res))
+        self.assertIn("**Floor not evaluated** (floor 5 %)", line)
+        self.assertIn(fi.SPREAD_FLOOR_SKIP_REASON, line)
+        self.assertNotIn("% (floor", line)  # no figure presented as if the floor had been evaluated
+
+    def test_multi_corner_render_is_unchanged(self):
+        # >= 2 valid corners: the rendered line and the below-floor problem keep
+        # #491's exact wording; no waiver annotation anywhere in the record.
+        def flat(r, i, d):
+            return {**d, "points": [[PROBE_TOTAL_V * 600, 0.0]]} if r["name"] == "noise_1" else d
+        f = self.fx("output-noise", docs=flat,
+                    raw=lambda r, i, out: ({**out, "raw_onoise_int_0p1_10hz_uvrms": printed(PROBE_TOTAL_V * 600)}
+                                           if "raw_onoise_int_0p1_10hz_uvrms" in out else out))
+        res = f.assess()
+        self.assertEqual(res["spreads"]["onoise_int_0p1_10hz_uvrms"], (0.0, 5.0, None))
+        text = f.record(res)
+        (line,) = self.spread_lines(text)
+        self.assertEqual(line, "  - Grid spread of `onoise_int_0p1_10hz_uvrms` over valid corners: 0 % (floor 5 %).")
+        self.assertNotIn("Floor not evaluated", text)
+        self.assertTrue(any(p.startswith("onoise_int_0p1_10hz_uvrms: spread over the valid corners is 0 %, "
+                                         "below the 5 % floor") for p in res["problems"]))
+
+    def test_single_zero_sample_waives_without_a_figure(self):
+        # spread_pct([0.0]) is None (zero mean): the waived line must not show a
+        # "-" figure next to the waiver claim.
+        def raw(r, i, out):
+            if "raw_vref_op" in out and i != 40:
+                out["raw_vref_op"] = 0.2
+            elif i == 40 and "raw_onoise_int_0p1_10hz_uvrms" in out:
+                out["raw_onoise_int_0p1_10hz_uvrms"] = 0.0
+            return out
+
+        def docs(r, i, doc):
+            if r["name"] == "op" and i != 40:
+                doc["points"] = [[3.3, 0.2]]
+            elif r["name"] == "noise_1" and i == 40:
+                doc["points"] = [[0.0, 0.0]]
+            return doc
+        f = self.fx("output-noise", raw=raw, docs=docs)
+        res = f.assess()
+        self.assertEqual(len(res["invalid"]), 80)
+        self.assertEqual(res["spreads"]["onoise_int_0p1_10hz_uvrms"],
+                         (None, 5.0, fi.SPREAD_FLOOR_SKIP_REASON))
+        (line,) = self.spread_lines(f.record(res))
+        self.assertIn(fi.SPREAD_FLOOR_SKIP_REASON, line)
+        self.assertNotIn("- %", line)
+
+    def test_waiver_is_per_measurement_not_per_bench(self):
+        # A second min_spread_pct floor on the same bench: each spreads entry
+        # carries its own skip reason and its own floor in the render. (Valid
+        # sets coincide across checks by construction -- a corner missing a
+        # check measurement is invalid -- so both are n == 1 here; what is
+        # asserted is that the annotation lives per entry, never bench-wide.)
+        f = self.single_corner_fixture()
+        f.tb["checks"]["onoise_1khz_nv_rthz"] = {"min_spread_pct": 20.0}  # a second floor, same n == 1 grid
+        res = f.assess()
+        self.assertEqual(set(res["spreads"]), {"onoise_int_0p1_10hz_uvrms", "onoise_1khz_nv_rthz"})
+        self.assertEqual([e[2] for e in res["spreads"].values()], [fi.SPREAD_FLOOR_SKIP_REASON] * 2)
+        lines = self.spread_lines(f.record(res))
+        self.assertEqual(len(lines), 2)
+        self.assertTrue(all("Floor not evaluated" in l and fi.SPREAD_FLOOR_SKIP_REASON in l for l in lines))
+        self.assertIn("(floor 5 %)", lines[0])
+        self.assertIn("(floor 20 %)", lines[1])
+
+    def test_waiver_wording_is_pinned_to_the_harness_skip(self):
+        # One wording for both paths (#492): report.inapplicable_checks is the
+        # harness source of the reason string; if either site drifts, this fails.
+        skipped = hreport.inapplicable_checks({"m": {"min_spread_pct": 5.0}}, {"m": {"n": 1}})
+        self.assertEqual([s["reason"] for s in skipped], [fi.SPREAD_FLOOR_SKIP_REASON])
 
     def test_worker_identity_mismatch(self):
         f = self.fx("output-noise")
