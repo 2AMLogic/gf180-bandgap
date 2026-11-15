@@ -8,6 +8,8 @@ Chronological record of recently merged pull requests and closed issues, maintai
 
 ### 2026-11-15
 
+- **PR #491**: fix: skip min_spread_pct floors on single-sample grids, reported not silent
+- **Issue #486** (closed): sim/selftest.sh --quick can never pass: single-point grid cannot satisfy min_spread_pct checks
 - **PR #489**: test: catch the SNAPSHOT_DIR constant form in the snapshot-path guard
 - **PR #487**: build: wire dotted-invocation guard into check:ci, add test:dotted alias
 - **Issue #484** (closed): Snapshot drift guard misses a hand-rolled copy written with the SNAPSHOT_DIR constant
