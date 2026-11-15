@@ -8,6 +8,8 @@ Chronological record of recently merged pull requests and closed issues, maintai
 
 ### 2026-11-15
 
+- **PR #494**: fix: fleet render states the spread-floor waiver instead of a silent below-floor figure
+- **Issue #492** (closed): fleet_ingest waives the min_spread floor at one valid corner without reporting the skip
 - **PR #491**: fix: skip min_spread_pct floors on single-sample grids, reported not silent
 - **Issue #486** (closed): sim/selftest.sh --quick can never pass: single-point grid cannot satisfy min_spread_pct checks
 - **PR #489**: test: catch the SNAPSHOT_DIR constant form in the snapshot-path guard
