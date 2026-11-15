@@ -34,6 +34,7 @@ import ast
 import shutil
 import sys
 import tempfile
+import textwrap
 import unittest
 from pathlib import Path
 
@@ -46,38 +47,77 @@ SNAPSHOT_DIR = "netlist-snapshots"
 WRITERS = frozenset({"write_snapshot_text", "write_device_netlist_snapshot"})
 RECORD = "20260801-120000-abc1234"
 
+# Snapshot-path sites in the module-constant form that are *not* hand-rolled
+# writers, exempt from the offender assertion (but still counted in the
+# inventory). Keyed on (file, enclosing function), never a line number, so a
+# rebase cannot silently void the exemption:
+ALLOWED_SNAPSHOT_PATH_SITES = frozenset({
+    # write_netlist_snapshot IS a trusted writer -- it routes through
+    # _write_exclusive -- but it sits outside WRITERS by design (#480/#481
+    # deliberately leave the DUT-folding variant alone), so its own
+    # ``experiment_dir / SNAPSHOT_DIR`` path construction reads as an
+    # offender to the statement-level scan. It is the writer, not a copy.
+    ("sim/harness/report.py", "write_netlist_snapshot"),
+    # _record_id_occupied only probes whether the record already exists
+    # (``p.exists() or p.is_symlink()``); it builds a snapshot path and
+    # never writes one.
+    ("sim/harness/report.py", "_record_id_occupied"),
+})
+
 
 def production_sources() -> list[Path]:
     """Every ``sim/`` module that ships, i.e. everything but this test suite."""
     return sorted(p for p in SIM.rglob("*.py") if p.parent != Path(__file__).parent)
 
 
-def snapshot_path_sites(tree: ast.AST) -> list[tuple[ast.stmt, int]]:
+def snapshot_path_sites(tree: ast.AST) -> list[tuple[ast.stmt, int, str | None]]:
     """Statements that build a ``<something> / "netlist-snapshots"`` path.
 
-    Returns ``(enclosing statement, line)`` pairs. Keyed on the division
-    operator so a mention of the directory in prose -- a record's markdown
-    body, a docstring -- is not mistaken for a path construction.
+    The right operand may name the directory as a string literal, as the
+    module constant ``SNAPSHOT_DIR`` -- the idiom ``harness/report.py``
+    itself uses -- or as an attribute (``hreport.SNAPSHOT_DIR``). Resolving
+    arbitrary constants is out of scope; matching the one name the repo
+    actually uses closes the realistic path.
+
+    Returns ``(enclosing statement, line, enclosing function or None)``
+    triples. Keyed on the division operator so a mention of the directory
+    in prose -- a record's markdown body, a docstring -- is not mistaken for
+    a path construction.
     """
     parents = {}
     for node in ast.walk(tree):
         for child in ast.iter_child_nodes(node):
             parents[child] = node
 
+    def names_snapshot_dir(right: ast.expr) -> bool:
+        # The Constant form matches the directory's *value*; the Name and
+        # Attribute forms match the *identifier* the repo gives that value.
+        return (
+            (isinstance(right, ast.Constant) and right.value == SNAPSHOT_DIR)
+            or (isinstance(right, ast.Name) and right.id == "SNAPSHOT_DIR")
+            or (isinstance(right, ast.Attribute) and right.attr == "SNAPSHOT_DIR")
+        )
+
     sites = []
     for node in ast.walk(tree):
         if not (
             isinstance(node, ast.BinOp)
             and isinstance(node.op, ast.Div)
-            and isinstance(node.right, ast.Constant)
-            and node.right.value == SNAPSHOT_DIR
+            and names_snapshot_dir(node.right)
         ):
             continue
+        func = None
+        ancestor = parents.get(node)
+        while ancestor is not None:
+            if isinstance(ancestor, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                func = ancestor.name
+                break
+            ancestor = parents.get(ancestor)
         stmt = node
         while stmt is not None and not isinstance(stmt, ast.stmt):
             stmt = parents.get(stmt)
         if stmt is not None:
-            sites.append((stmt, node.lineno))
+            sites.append((stmt, node.lineno, func))
     return sites
 
 
@@ -96,10 +136,13 @@ class OneWriter(unittest.TestCase):
     def test_every_snapshot_path_is_an_argument_to_the_shared_writer(self):
         offenders = []
         for src in production_sources():
+            rel = str(src.relative_to(SIM.parent))
             tree = ast.parse(src.read_text(), filename=str(src))
-            for stmt, line in snapshot_path_sites(tree):
+            for stmt, line, func in snapshot_path_sites(tree):
+                if (rel, func) in ALLOWED_SNAPSHOT_PATH_SITES:
+                    continue
                 if not calls_a_writer(stmt):
-                    offenders.append(f"{src.relative_to(SIM.parent)}:{line}")
+                    offenders.append(f"{rel}:{line}")
         self.assertEqual(
             offenders, [],
             "these build a netlist-snapshots path without going through "
@@ -123,7 +166,86 @@ class OneWriter(unittest.TestCase):
             "sim/tools/mc_fleet_ingest.py",
             "sim/tools/tc_ingest.py",
         ])
-        self.assertEqual(sum(found.values()), 8)
+        # 8 literal-form sites + report.py's two constant-form sites
+        # (write_netlist_snapshot's own path construction and
+        # _record_id_occupied's read-only probe), which the widened scan now
+        # sees and the allowance above declares.
+        self.assertEqual(sum(found.values()), 10)
+        self.assertEqual(found["sim/harness/report.py"], 3)
+
+
+class ScanShapes(unittest.TestCase):
+    """Which AST shapes the structural scan reports -- and which it must not.
+
+    The retired writers all built the path as ``x / "netlist-snapshots"``,
+    so the scan keys on the division operator. But the module-constant form
+    -- ``x / SNAPSHOT_DIR``, the idiom ``harness/report.py`` itself uses --
+    must be just as visible, or a seventh hand-rolled copy written that way
+    passes the suite (issue #484).
+    """
+
+    PLANTED = textwrap.dedent("""\
+        SNAPSHOT_DIR = "netlist-snapshots"
+
+        def write_snapshot(exp_dir, record, text):
+            snap = exp_dir / SNAPSHOT_DIR
+            snap.mkdir(parents=True, exist_ok=True)
+            (snap / f"{record}.spice").write_text(text)
+        """)
+
+    def _planted_module(self) -> ast.Module:
+        """The unguarded offender, parsed from a disposable tree."""
+        with tempfile.TemporaryDirectory() as td:
+            planted = Path(td) / "sim" / "tools" / "_planted_writer.py"
+            planted.parent.mkdir(parents=True)
+            planted.write_text(self.PLANTED)
+            return ast.parse(planted.read_text(), filename=str(planted))
+
+    def test_constant_form_offender_is_reported(self):
+        """``exp_dir / SNAPSHOT_DIR`` -- the form report.py itself uses -- is seen."""
+        sites = snapshot_path_sites(self._planted_module())
+        self.assertEqual(
+            len(sites), 1,
+            "a hand-rolled writer in the module-constant form evades the "
+            "scan; the guard only sees string literals on the right of the "
+            "division")
+        stmt, line, func = sites[0]
+        self.assertEqual(line, 4)
+        self.assertEqual(func, "write_snapshot")
+        self.assertFalse(
+            calls_a_writer(stmt),
+            "the planted statement never calls the shared writer, so the "
+            "offender assertion must name it")
+
+    def test_attribute_form_offender_is_reported(self):
+        """``exp_dir / hreport.SNAPSHOT_DIR`` is seen too."""
+        source = "import hreport\n\nexp_dir / hreport.SNAPSHOT_DIR\n"
+        sites = snapshot_path_sites(ast.parse(source))
+        self.assertEqual(
+            len(sites), 1,
+            "the attribute form of the module constant evades the scan")
+        stmt, line, func = sites[0]
+        self.assertEqual(line, 3)
+        self.assertIsNone(func)
+
+    def test_literal_form_is_still_reported(self):
+        """The shape all six retired copies used stays covered."""
+        source = 'exp_dir / "netlist-snapshots"\n'
+        sites = snapshot_path_sites(ast.parse(source))
+        self.assertEqual(len(sites), 1)
+        stmt, line, func = sites[0]
+        self.assertEqual(line, 1)
+        self.assertFalse(calls_a_writer(stmt))
+
+    def test_prose_mention_is_not_reported(self):
+        """A mention of the directory in prose is not a path construction."""
+        source = textwrap.dedent("""\
+            def note(record):
+                # see sim/netlist-snapshots/ for the frozen evidence
+                '''records live under netlist-snapshots/'''
+                return f"snapshot: netlist-snapshots/{record}.spice"
+        """)
+        self.assertEqual(snapshot_path_sites(ast.parse(source)), [])
 
 
 class ByteCompatibility(unittest.TestCase):
