@@ -285,7 +285,14 @@ def evaluate_checks(
         ):
             if limit is None:
                 continue
-            observed = (summary.get(name) or {}).get("spread_pct")
+            stats = summary.get(name) or {}
+            # A one-sample grid has zero spread by construction, so a
+            # min_spread_pct floor is vacuous there, not violated -- it is
+            # reported as skipped (inapplicable_checks), never a silent pass.
+            # n == 1 exactly: a missing or zero n still fails below.
+            if kind == "min_spread_pct" and stats.get("n") == 1:
+                continue
+            observed = stats.get("spread_pct")
             violated = (
                 observed is None
                 or not math.isfinite(observed)
@@ -303,6 +310,29 @@ def evaluate_checks(
                     }
                 )
     return failures
+
+
+def inapplicable_checks(checks: dict[str, dict], summary: dict) -> list[dict]:
+    """Grid floors a one-sample grid cannot evaluate (see evaluate_checks).
+
+    Mirrors the skip decision in evaluate_checks so the record can say on its
+    face that a subset run did not prove the PVT plumbing."""
+    skipped: list[dict] = []
+    for name, spec in checks.items():
+        limit = spec.get("min_spread_pct")
+        if limit is None:
+            continue
+        if (summary.get(name) or {}).get("n") == 1:
+            skipped.append(
+                {
+                    "measurement": name,
+                    "kind": "min_spread_pct",
+                    "limit": limit,
+                    "reason": "single-sample grid: spread floor not applicable (n=1)",
+                    "at": "grid",
+                }
+            )
+    return skipped
 
 
 def environment(pdk: Pdk, ngspice: str, repo_root: Path, git: dict | None = None) -> dict:
@@ -391,6 +421,7 @@ def build_record(
     measure_names = list(tb.measure)
     summary = summarize(results, measure_names)
     failures = evaluate_checks(tb.checks, results, summary)
+    skipped = inapplicable_checks(tb.checks, summary)
     n_ok = sum(1 for r in results if r.status == "ok")
 
     if n_ok != len(results):
@@ -441,6 +472,7 @@ def build_record(
             "spec": tb.checks,
             "passed": not failures,
             "failures": failures,
+            "skipped": skipped,
         },
         "summary": summary,
         "points": [r.as_dict() for r in results],
@@ -562,6 +594,18 @@ def _result_lines(record: dict) -> list[str]:
     if grid_failures:
         lines.append("")
         lines.append("  Grid-level check failures: " + "; ".join(grid_failures) + ".")
+
+    skipped = record["checks"].get("skipped") or []
+    if skipped:
+        lines.append("")
+        lines.append(
+            "  Grid-level checks skipped (not evaluated): "
+            + "; ".join(
+                f"{s['measurement']} {s['kind']}={_fmt(s['limit'])} — {s['reason']}"
+                for s in skipped
+            )
+            + "."
+        )
 
     lines.append("")
     lines.append("  Spread across the grid:")

@@ -789,11 +789,16 @@ def assess_bench(bench: str, tb: dict, plan: dict, reports: dict, work: Path, *,
     if bench in MEASUREMENT_BENCHES:
         # grid-level spread floor (harness.report semantics): a figure that should
         # move with PVT but comes back flat means .temp / .lib never took effect.
+        # harness.report skips the floor at exactly one valid sample (a one-point
+        # grid has zero spread by construction); keep the two in lockstep.
         for name, chk in tb["checks"].items():
             if "min_spread_pct" not in chk:
                 continue
-            got = spread_pct([r["measures"][name] for k, r in rows.items() if k not in invalid and name in r["measures"]])
+            valid = [r["measures"][name] for k, r in rows.items() if k not in invalid and name in r["measures"]]
+            got = spread_pct(valid)
             spreads[name] = (got, chk["min_spread_pct"])
+            if len(valid) == 1:
+                continue
             if got is None or got < chk["min_spread_pct"]:
                 problems.append(f"{name}: spread over the valid corners is {fc.fmt_num(got, 4)} %, below the "
                                 f"{chk['min_spread_pct']:g} % floor (the PVT sweep may not have taken effect)")
