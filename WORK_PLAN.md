@@ -29,13 +29,14 @@ _None._
 Human-approved issues ready for implementation (`loom:issue`).
 
 - **#386**: Prepare the revised par_r resistor-mismatch model-risk assessment and validation plan (part of #239)
-- **#484**: Snapshot drift guard misses a hand-rolled copy written with the SNAPSHOT_DIR constant
+
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
-- **#483**: Wire test_dotted_invocation.sh into package.json check:ci for local reachability
+_None._
+
 
 ## PRs Awaiting Review
 
@@ -47,7 +48,8 @@ PRs waiting on Judge (`loom:review-requested`).
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
-- **#487**: build: wire dotted-invocation guard into check:ci, add test:dotted alias
+_None._
+
 
 ## Proposed
 
@@ -59,8 +61,7 @@ Issues carrying `loom:curated`.
 - **#308**: ci: fail when committed bandgap_top.gds differs from generate.py output *(curated)*
 - **#358**: T1 item 11: declare ERC well/substrate ties now that klayout-tools#2169 is fixed, then cite item 11 *(curated)*
 - **#386**: Prepare the revised par_r resistor-mismatch model-risk assessment and validation plan (part of #239) *(curated)*
-- **#483**: Wire test_dotted_invocation.sh into package.json check:ci for local reachability *(curated)*
-- **#484**: Snapshot drift guard misses a hand-rolled copy written with the SNAPSHOT_DIR constant *(curated)*
+
 
 ## Proposed (Architect / Hermit)
 
@@ -80,11 +81,11 @@ Issues carrying `loom:curated`.
 | Operator merge-risk holds | 0 |
 | Very important | 0 |
 | Important | 4 |
-| Ready (`loom:issue`) | 2 |
-| In Progress (`loom:building`) | 1 |
+| Ready (`loom:issue`) | 1 |
+| In Progress (`loom:building`) | 0 |
 | PRs awaiting review | 1 |
-| Approved PRs awaiting merge | 1 |
-| Curated | 8 |
+| Approved PRs awaiting merge | 0 |
+| Curated | 6 |
 | Architect / Hermit proposals | 2 |
 | Active epics | 3 |
 <!-- guide:plan-body:end -->
