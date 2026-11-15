@@ -381,6 +381,11 @@ def run(args: argparse.Namespace) -> int:
             f"  CHECK FAIL {failure['measurement']} {failure['kind']}={_fmt(failure['limit'])} "
             f"got {_fmt(failure['value'])} at {failure['at']}"
         )
+    for skip in record["checks"].get("skipped") or []:
+        print(
+            f"  CHECK SKIP {skip['measurement']} {skip['kind']}={_fmt(skip['limit'])} "
+            f"— {skip['reason']}"
+        )
 
     if not args.no_write:
         snapshot = report.write_netlist_snapshot(tb, experiment_dir, record_id)

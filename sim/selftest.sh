@@ -5,6 +5,8 @@
 #   sim/selftest.sh              unit tests + smoke PVT run (no evidence written)
 #   sim/selftest.sh --record     also mint an evidence record under sim/smoke-bias/
 #   sim/selftest.sh --quick      unit tests + a single tt/27C/nominal point
+#                                (skips the grid-spread floors: it does NOT
+#                                prove the PVT plumbing moves the corner)
 #   sim/selftest.sh --require-pdk  fail (instead of skipping) if the PDK is absent
 #
 # Exit codes: 0 pass (or skipped sim stage), 1 something failed.
@@ -21,7 +23,7 @@ for arg in "$@"; do
     --record) RECORD=1 ;;
     --quick) QUICK=1 ;;
     --require-pdk) REQUIRE_PDK=1 ;;
-    -h|--help) sed -n '2,12p' "${BASH_SOURCE[0]}"; exit 0 ;;
+    -h|--help) sed -n '2,14p' "${BASH_SOURCE[0]}"; exit 0 ;;
     *) echo "unknown option: ${arg}" >&2; exit 1 ;;
   esac
 done

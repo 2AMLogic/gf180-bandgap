@@ -435,6 +435,52 @@ class ChecksTests(unittest.TestCase):
         failures = report.evaluate_checks({"v": {"min_spread_pct": 5.0}}, flat, summary)
         self.assertEqual(failures[0]["kind"], "min_spread_pct")
 
+    def test_a_single_sample_grid_skips_the_min_spread_floor(self):
+        """A one-point grid has zero spread by construction, so the floor's
+        purpose (proving the PVT plumbing moves the corner) is vacuous there:
+        `sim/selftest.sh --quick` must be able to pass. The skip is reported
+        via `inapplicable_checks`, never passed silently."""
+        one = [_StubResult("a", {"v": 1.0})]
+        summary = report.summarize(one, ["v"])
+        self.assertEqual(summary["v"]["n"], 1)
+        self.assertEqual(
+            report.evaluate_checks({"v": {"min_spread_pct": 5.0}}, one, summary), []
+        )
+        skipped = report.inapplicable_checks({"v": {"min_spread_pct": 5.0}}, summary)
+        self.assertEqual(len(skipped), 1)
+        entry = skipped[0]
+        self.assertEqual(entry["measurement"], "v")
+        self.assertEqual(entry["kind"], "min_spread_pct")
+        self.assertEqual(entry["limit"], 5.0)
+        self.assertEqual(entry["at"], "grid")
+        self.assertTrue(entry["reason"])
+
+    def test_a_no_sample_summary_still_fails_the_min_spread_floor(self):
+        summary = report.summarize([], ["v"])
+        self.assertEqual(summary["v"], {"n": 0})
+        self.assertEqual(
+            [
+                f["kind"]
+                for f in report.evaluate_checks({"v": {"min_spread_pct": 5.0}}, [], summary)
+            ],
+            ["min_spread_pct"],
+        )
+        self.assertEqual(
+            report.inapplicable_checks({"v": {"min_spread_pct": 5.0}}, summary), []
+        )
+
+    def test_max_spread_floor_is_never_skipped(self):
+        """max_spread_pct is vacuously satisfied at one sample: no failure, and
+        no skip entry either."""
+        one = [_StubResult("a", {"v": 1.0})]
+        summary = report.summarize(one, ["v"])
+        self.assertEqual(
+            report.evaluate_checks({"v": {"max_spread_pct": 10.0}}, one, summary), []
+        )
+        self.assertEqual(
+            report.inapplicable_checks({"v": {"max_spread_pct": 10.0}}, summary), []
+        )
+
     def test_passing_checks_produce_no_failures(self):
         self.assertEqual(
             report.evaluate_checks(
@@ -444,6 +490,62 @@ class ChecksTests(unittest.TestCase):
             ),
             [],
         )
+
+
+class SingleSampleRecordTests(unittest.TestCase):
+    """A one-point grid (`--quick` shape): min_spread floors are skipped and
+    the skip is carried on the record, visibly."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.dir = Path(self.tmp.name)
+        self.addCleanup(self.tmp.cleanup)
+        tb_dir = self.dir / "an-experiment" / "testbench"
+        tb_dir.mkdir(parents=True)
+        (tb_dir / "x.spice").write_text("v1 vdd 0 dc {vdd_val}\nXd vdd 0 out dut\n")
+        (tb_dir / "tb.json").write_text(
+            json.dumps(
+                {
+                    "name": "x",
+                    "netlist": "x.spice",
+                    "measure": {"vout": "v(out)"},
+                    "checks": {"vout": {"min": 0.5, "max": 1.5, "min_spread_pct": 5.0}},
+                }
+            )
+        )
+        self.pdk = fake_pdk(self.dir / "gf180mcuD")
+        self.points = corners.build_grid(corners.resolve_corners(["tt"]), (27,), [3.3])
+        self.record = report.build_record(
+            tb=testbench.load(tb_dir),
+            pdk=self.pdk,
+            points=self.points,
+            results=[
+                runner.PointResult(point=self.points[0], status="ok", measurements={"vout": 1.2})
+            ],
+            ngspice="ngspice-46",
+            repo_root=SIM_DIR,
+            record_id="20260729-153000-1a7ef75",
+            started_utc="2026-07-29T15:30:00+00:00",
+            wall_seconds=1.0,
+        )
+
+    def test_the_skip_is_recorded_and_the_run_passes(self):
+        checks = self.record["checks"]
+        self.assertTrue(checks["passed"])
+        self.assertEqual(checks["failures"], [])
+        self.assertEqual(len(checks["skipped"]), 1)
+        skip = checks["skipped"][0]
+        self.assertEqual(
+            (skip["measurement"], skip["kind"], skip["limit"], skip["at"]),
+            ("vout", "min_spread_pct", 5.0, "grid"),
+        )
+        self.assertTrue(skip["reason"])
+        self.assertEqual(self.record["status"], "pass")
+
+    def test_the_markdown_record_names_the_skipped_floor(self):
+        text = report.render_record(self.record, "an-experiment")
+        self.assertIn("vout min_spread_pct=5", text)
+        self.assertIn("skipped", text.lower())
 
 
 class RecordIdTests(unittest.TestCase):

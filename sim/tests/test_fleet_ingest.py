@@ -1173,6 +1173,24 @@ class NoiseIngest(TmpCase):
         self.assertEqual(res["invalid"], {})
         self.assertTrue(any("spread" in p for p in res["problems"]))
 
+    def test_single_valid_corner_skips_the_spread_floor(self):
+        """harness.report skips a min_spread_pct floor at n == 1; the ingest
+        floor carries the same guard so the two cannot drift. The spread stays
+        on `spreads` (informational); only the below-floor problem is waived."""
+        def raw(r, i, out):
+            if "raw_vref_op" in out and i != 40:
+                out["raw_vref_op"] = 0.2
+            return out
+
+        def docs(r, i, doc):
+            if r["name"] == "op" and i != 40:
+                doc["points"] = [[3.3, 0.2]]
+            return doc
+        res = self.fx("output-noise", raw=raw, docs=docs).assess()
+        self.assertEqual(len(res["invalid"]), 80)
+        self.assertEqual(res["spreads"]["onoise_int_0p1_10hz_uvrms"][0], 0.0)
+        self.assertFalse(any("spread" in p for p in res["problems"]))
+
     def test_worker_identity_mismatch(self):
         f = self.fx("output-noise")
         f.reports["noise_2"]["environment"]["remote"]["runner_compatibility"] = "mismatch"
