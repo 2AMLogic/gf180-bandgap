@@ -6,6 +6,14 @@ Chronological record of recently merged pull requests and closed issues, maintai
 
 - [2026-09](work_log/WORK_LOG_2026-09.md)
 
+### 2026-11-14
+
+- **PR #482**: ci: guard the own-directory sys.path.insert idiom under python3 -m
+- **PR #481**: refactor: route all six netlist-snapshot writes through one append-only writer
+- **Issue #480** (closed): Deduplicate the netlist-snapshot write: six hand-rolled copies, four different append-only behaviours, beside an existing shared helper
+- **Issue #479** (closed): Comment the sys.path.insert(0, <own dir>) idiom: it is load-bearing for the documented 'python3 -m <dotted>' invocation
+- **Issue #478** (closed): Remove 19 redundant sys.path.insert lines: each inserts a directory Python already supplies
+
 ### 2026-11-13
 
 - **Issue #468** (closed): Remove six never-read function parameters from the sim ingest and spec-check tools
