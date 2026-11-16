@@ -43,6 +43,7 @@ _None._
 PRs waiting on Judge (`loom:review-requested`).
 
 - **#387**: docs: propose DR-0008 par_r model-risk successor and validation plan
+- **#496**: chore(loom): resync installed Loom to v0.19.1302
 
 ## Approved (Awaiting Merge)
 
@@ -65,7 +66,7 @@ Issues carrying `loom:curated`.
 
 ## Proposed (Architect / Hermit)
 
-- **#477**: Deduplicate the startup ramp deck: 183 lines declared byte-identical across sim/startup and sim/startup-slow-ramp, with nothing enforcing it *(hermit)*
+- **#477**: Deduplicate the startup ramp deck: 183 lines declared byte-identical across sim/startup and sim/startup-slow-ramp, with nothing enforcing it *(hermit)* *(hermit)*
 - **#475**: Remove three unconsumed block netlists from design/netlist: bandgap_core.spice is stale against the schematic *(hermit)*
 
 ## Epics
@@ -83,7 +84,7 @@ Issues carrying `loom:curated`.
 | Important | 4 |
 | Ready (`loom:issue`) | 1 |
 | In Progress (`loom:building`) | 0 |
-| PRs awaiting review | 1 |
+| PRs awaiting review | 2 |
 | Approved PRs awaiting merge | 0 |
 | Curated | 6 |
 | Architect / Hermit proposals | 2 |
