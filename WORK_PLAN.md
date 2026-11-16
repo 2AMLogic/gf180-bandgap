@@ -43,13 +43,12 @@ _None._
 PRs waiting on Judge (`loom:review-requested`).
 
 - **#387**: docs: propose DR-0008 par_r model-risk successor and validation plan
-- **#496**: chore(loom): resync installed Loom to v0.19.1302
 
 ## Approved (Awaiting Merge)
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
-_None._
+- **#496**: chore(loom): resync installed Loom to v0.19.1302
 
 
 ## Proposed
@@ -84,8 +83,8 @@ Issues carrying `loom:curated`.
 | Important | 4 |
 | Ready (`loom:issue`) | 1 |
 | In Progress (`loom:building`) | 0 |
-| PRs awaiting review | 2 |
-| Approved PRs awaiting merge | 0 |
+| PRs awaiting review | 1 |
+| Approved PRs awaiting merge | 1 |
 | Curated | 6 |
 | Architect / Hermit proposals | 2 |
 | Active epics | 3 |
