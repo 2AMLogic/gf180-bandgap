@@ -35,7 +35,7 @@ Human-approved issues ready for implementation (`loom:issue`).
 
 Issues currently being built (`loom:building`).
 
-_None._
+- **#504**: bandgap_top has a dangling Via1 at (62870,134020): Metal2 above, no Metal1 below (metal1.enclosing.via1.1)
 
 
 ## PRs Awaiting Review
@@ -61,6 +61,7 @@ Issues carrying `loom:curated`.
 - **#308**: ci: fail when committed bandgap_top.gds differs from generate.py output *(curated)*
 - **#358**: T1 item 11: declare ERC well/substrate ties now that klayout-tools#2169 is fixed, then cite item 11 *(curated)*
 - **#386**: Prepare the revised par_r resistor-mismatch model-risk assessment and validation plan (part of #239) *(curated)*
+- **#504**: bandgap_top has a dangling Via1 at (62870,134020): Metal2 above, no Metal1 below (metal1.enclosing.via1.1) *(curated)*
 
 
 ## Proposed (Architect / Hermit)
@@ -82,10 +83,10 @@ Issues carrying `loom:curated`.
 | Very important | 0 |
 | Important | 4 |
 | Ready (`loom:issue`) | 1 |
-| In Progress (`loom:building`) | 0 |
+| In Progress (`loom:building`) | 1 |
 | PRs awaiting review | 1 |
 | Approved PRs awaiting merge | 0 |
-| Curated | 6 |
+| Curated | 7 |
 | Architect / Hermit proposals | 2 |
 | Active epics | 3 |
 <!-- guide:plan-body:end -->
