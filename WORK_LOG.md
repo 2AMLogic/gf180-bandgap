@@ -8,6 +8,8 @@ Chronological record of recently merged pull requests and closed issues, maintai
 
 ### 2026-11-17
 
+- **PR #506**: fix: drop vestigial Via2/Metal2/Via1 hop from the MiM cap fb down-hop
+- **Issue #504** (closed): bandgap_top has a dangling Via1 at (62870,134020): Metal2 above, no Metal1 below (metal1.enclosing.via1.1)
 - **PR #501**: chore(loom): resync installed Loom to v0.19.1306
 
 ### 2026-11-16
