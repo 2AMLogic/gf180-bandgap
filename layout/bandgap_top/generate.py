@@ -1186,9 +1186,10 @@ def _mim_cap(
       the same margin the old down-hop kept, now measured from the bottom
       plate rather than from the tab that no longer exists), where an
       ordinary Via4 -> Metal4 (a small disjoint pad, spaced by
-      ``mim.space.1``'s 1.2um Metal4-Metal4 minimum) -> Via3 -> Metal3 ->
-      Via2 -> Metal2 -> Via1 chain reaches down into the already-drawn ``fb``
-      rail, same as before.
+      ``mim.space.1``'s 1.2um Metal4-Metal4 minimum) -> Via3 chain lands
+      directly on the already-drawn Metal3 ``fb`` rail (before the
+      row-routing rewrite the rail was Metal1, and the chain continued
+      Via2 -> Metal2 -> Via1 down to it).
 
       ``CAP_MK``/``MIM_L_MK`` no longer need the tab-shaped right-edge
       exception either: with no tab to exclude, both markers are drawn with
@@ -1289,11 +1290,11 @@ def _mim_cap(
     # fb down-hop: Metal5 -> Via4 -> Metal4 (a standalone pad, spaced clear
     # of the bottom plate) -> Via3 -> Metal3 (the existing AMPPCASC fb rail,
     # gf180-bandgap#166). Shorter than before the row-routing rewrite: the
-    # rail used to be Metal1, needing an extra Via2 -> Metal2 -> Via1 hop.
+    # rail used to be Metal1, needing an extra Via2 -> Metal2 -> Via1 hop --
+    # whose leftovers (a Via2 onto a floating Metal2 pad, and a Via1 with no
+    # Metal1 beneath it) are gone since #504.
     b.box(L_VIA4, fb_down_x - VIA_W // 2, fb_ty - VIA_W // 2, fb_down_x + VIA_W // 2, fb_ty + VIA_W // 2)
     _via_pad(b, L_METAL4, L_VIA3, fb_down_x, fb_ty)
-    _via_pad(b, L_METAL3, L_VIA2, fb_down_x, fb_ty)
-    _via_pad(b, L_METAL2, L_VIA1, fb_down_x, fb_ty)
 
 
 def save_options() -> kdb.SaveLayoutOptions:
