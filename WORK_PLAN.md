@@ -20,8 +20,8 @@ _None._
 `loom:important`; taken before unlabelled work.
 
 - **#203**: DR-0007 phase A: measure array ratio and finalize schematic PVT evidence
-- **#204**: DR-0007 phase B: regenerate layout and record pinned extracted verification
-- **#239**: DR-0007: execute final-DUT fleet suite and mismatch evidence run
+- **#204**: DR-0007 phase B: regenerate layout and record pinned extracted verification *(held)*
+- **#239**: DR-0007: execute final-DUT fleet suite and mismatch evidence run *(held)*
 - **#386**: Prepare the revised par_r resistor-mismatch model-risk assessment and validation plan (part of #239)
 
 ## Ready
@@ -35,7 +35,7 @@ Human-approved issues ready for implementation (`loom:issue`).
 
 Issues currently being built (`loom:building`).
 
-- **#504**: bandgap_top has a dangling Via1 at (62870,134020): Metal2 above, no Metal1 below (metal1.enclosing.via1.1)
+_None._
 
 
 ## PRs Awaiting Review
@@ -55,24 +55,24 @@ _None._
 
 Issues carrying `loom:curated`.
 
-- **#87**: Layout's 4x unit-PNP array for core.Q2 gives an effective dVBE ratio of 4.03, not the schematic's 3.63 — floorplan 4.1 asserts the opposite *(curated)*
+- **#87**: Layout's 4x unit-PNP array for core.Q2 gives an effective dVBE ratio of 4.03, not the schematic's 3.63 — floorplan 4.1 asserts the opposite *(curated)* *(held)*
 - **#203**: DR-0007 phase A: measure array ratio and finalize schematic PVT evidence *(curated)*
-- **#239**: DR-0007: execute final-DUT fleet suite and mismatch evidence run *(curated)*
-- **#308**: ci: fail when committed bandgap_top.gds differs from generate.py output *(curated)*
-- **#358**: T1 item 11: declare ERC well/substrate ties now that klayout-tools#2169 is fixed, then cite item 11 *(curated)*
+- **#239**: DR-0007: execute final-DUT fleet suite and mismatch evidence run *(curated)* *(held)*
+- **#308**: ci: fail when committed bandgap_top.gds differs from generate.py output *(curated)* *(held)*
+- **#358**: T1 item 11: declare ERC well/substrate ties now that klayout-tools#2169 is fixed, then cite item 11 *(curated)* *(held)*
 - **#386**: Prepare the revised par_r resistor-mismatch model-risk assessment and validation plan (part of #239) *(curated)*
-- **#504**: bandgap_top has a dangling Via1 at (62870,134020): Metal2 above, no Metal1 below (metal1.enclosing.via1.1) *(curated)*
 
 
 ## Proposed (Architect / Hermit)
 
-- **#477**: Deduplicate the startup ramp deck: 183 lines declared byte-identical across sim/startup and sim/startup-slow-ramp, with nothing enforcing it *(hermit)*
-- **#475**: Remove three unconsumed block netlists from design/netlist: bandgap_core.spice is stale against the schematic *(hermit)*
+- **#477**: Deduplicate the startup ramp deck: 183 lines declared byte-identical across sim/startup and sim/startup-slow-ramp, with nothing enforcing it *(hermit)* *(held)*
+- **#475**: Remove three unconsumed block netlists from design/netlist: bandgap_core.spice is stale against the schematic *(hermit)* *(held)*
+- **#508**: Remove generated flat extracted netlist duplicate (and mk_extracted_dut --flat) *(hermit)* *(held)*
 
 ## Epics
 
-- **#94**: Track the gap to T1 sim-validated (klayout-tools design-evidence tiers)
-- **#202**: Q2 array (DR-0007): corner-covered PVT re-run, R1 re-null, extracted re-run on pinned klt
+- **#94**: Track the gap to T1 sim-validated (klayout-tools design-evidence tiers) *(held)*
+- **#202**: Q2 array (DR-0007): corner-covered PVT re-run, R1 re-null, extracted re-run on pinned klt *(held)*
 - **#203**: DR-0007 phase A: measure array ratio and finalize schematic PVT evidence
 
 ## Backlog Balance
@@ -83,10 +83,10 @@ Issues carrying `loom:curated`.
 | Very important | 0 |
 | Important | 4 |
 | Ready (`loom:issue`) | 1 |
-| In Progress (`loom:building`) | 1 |
+| In Progress (`loom:building`) | 0 |
 | PRs awaiting review | 1 |
 | Approved PRs awaiting merge | 0 |
-| Curated | 7 |
-| Architect / Hermit proposals | 2 |
+| Curated | 6 |
+| Architect / Hermit proposals | 3 |
 | Active epics | 3 |
 <!-- guide:plan-body:end -->
