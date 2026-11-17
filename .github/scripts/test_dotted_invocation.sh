@@ -25,7 +25,7 @@
 #   Phase 1 (comments)   Every own-directory insert in the tree is declared in
 #                        the table below and carries the shared explanatory
 #                        comment, whose last line names the `-m` form. Static,
-#                        so it covers all 23 sites on every runner: delete one
+#                        so it covers all 24 sites on every runner: delete one
 #                        insert and the site count stops matching the table.
 #   Phase 2 (behaviour)  Every declared target of the selected tier is actually
 #                        run via `python3 -m` and must exit 0. Delete an insert
@@ -80,17 +80,20 @@ layout/common/klayout_builder.py
 #   kind  unittest run as `python3 -m unittest <dotted.test_module>`
 #         help     run as `python3 -m <dotted.module> --help`
 #
-# 23 sites as measured on 2026-11-14 (#479): the 19 in #478's
+# 24 sites: the 23 measured on 2026-11-14 (#479) -- the 19 in #478's
 # baseline-vs-removed matrix (all `base`) plus the four layout/bandgap_top/
 # production modules its enumeration missed, each separately confirmed to stop
-# importing under `-m` when its insert is deleted. Those four are `klayout`
+# importing under `-m` when its insert is deleted; those four are `klayout`
 # tier because they reach a module-level `import klayout.db` -- directly in
 # generate.py, transitively in the other three -- so a bare runner cannot
-# distinguish a missing insert from a missing klayout.
-EXPECTED_SITES=23
+# distinguish a missing insert from a missing klayout -- plus the #507
+# via-landing guard, `base unittest` like test_klayout_builder: it also
+# imports klayout.db inside try/except and skips cleanly on a bare runner.
+EXPECTED_SITES=24
 SITES='
 base    unittest layout.bandgap_top.test_plan            layout/bandgap_top/test_plan.py
 base    unittest layout.bandgap_top.test_routing_budget  layout/bandgap_top/test_routing_budget.py
+base    unittest layout.bandgap_top.test_via_landing     layout/bandgap_top/test_via_landing.py
 base    unittest layout.common.test_klayout_builder      layout/common/test_klayout_builder.py
 base    unittest layout.common.test_report_id            layout/common/test_report_id.py
 base    unittest layout.erc.test_run_erc                 layout/erc/test_run_erc.py
