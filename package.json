@@ -3,11 +3,12 @@
   "description": "Loom-managed workspace with AI development orchestration",
   "private": true,
   "scripts": {
-    "check:ci": "bash .github/scripts/lint.sh && bash sim/selftest.sh && python3 -m unittest discover -s signoff/tests && python3 -m unittest discover -s spec/tests && bash .github/scripts/test_layout.sh && bash .github/scripts/test_dotted_invocation.sh",
+    "check:ci": "bash .github/scripts/lint.sh && bash sim/selftest.sh && python3 -m unittest discover -s signoff/tests && python3 -m unittest discover -s spec/tests && bash .github/scripts/test_layout.sh && bash .github/scripts/test_dotted_invocation.sh && bash .github/scripts/test_lint_args.sh",
     "check:all": "npm run check:ci",
     "test": "bash sim/selftest.sh",
     "test:layout": "bash .github/scripts/test_layout.sh",
     "test:dotted": "bash .github/scripts/test_dotted_invocation.sh",
+    "test:lint-args": "bash .github/scripts/test_lint_args.sh",
     "test:unit": "python3 -m unittest discover -s sim/tests -t sim/tests -v && python3 -m unittest discover -s signoff/tests -v && python3 -m unittest discover -s spec/tests -v && bash .github/scripts/test_layout.sh",
     "sim:env": "python3 sim/run_corners.py --check-env",
     "sim:list": "python3 sim/run_corners.py --list",
