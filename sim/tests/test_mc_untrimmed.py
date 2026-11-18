@@ -85,6 +85,70 @@ class StripTrailingEnd(unittest.TestCase):
         )
 
 
+class UnwrapTopSubckt(unittest.TestCase):
+    """#508: a wrapped DUT (the extracted netlist) must include at deck
+    level exactly like the flat file it replaces; a DUT with no
+    `bandgap_top` wrapper (the default schematic) must pass through
+    unchanged."""
+
+    def test_strips_bandgap_top_wrapper_keeps_inner_subckts(self):
+        text = (
+            "* header\n"
+            ".subckt bandgap_top vdd vss vref\n"
+            "\n"
+            "XR1 a b vss ppolyf_u r_width=2u r_length=10u m=1\n"
+            ".subckt bandgap_core vdd sns1 sns2 vss fb vref ibias casc\n"
+            "XM1 d g vss vss nfet_03v3 L=0.5u W=2u nf=1 m=1\n"
+            ".ends\n"
+            "\n"
+            ".ends bandgap_top\n"
+        )
+        out = run.unwrap_top_subckt(text)
+        self.assertEqual(
+            out,
+            "* header\n"
+            "\n"
+            "XR1 a b vss ppolyf_u r_width=2u r_length=10u m=1\n"
+            ".subckt bandgap_core vdd sns1 sns2 vss fb vref ibias casc\n"
+            "XM1 d g vss vss nfet_03v3 L=0.5u W=2u nf=1 m=1\n"
+            ".ends\n",
+        )
+
+    def test_noop_on_default_netlist_and_inner_subckts(self):
+        self.assertEqual(run.unwrap_top_subckt(NETLIST), NETLIST)
+        # The default DUT's only `bandgap_top` subckt text is xschem's
+        # `**`-comment line; a comment must never count as a wrapper.
+        self.assertIn("**.subckt bandgap_top vdd vss vref", NETLIST)
+
+    def test_variants_of_wrapped_match_variants_of_flat(self):
+        # The same-deck property #508 rests on: unwrapping the subckt form
+        # and feeding it through the variant construction yields what the
+        # deleted flat file yielded, minus its own header comment lines.
+        subckt = (
+            "* subckt-form header\n"
+            ".subckt bandgap_top vdd vss vref\n"
+            "\n"
+            "XR1 a b vss ppolyf_u r_width=2u r_length=10u m=1\n"
+            "\n"
+            ".ends bandgap_top\n"
+        )
+        flat = (
+            "* flat-form header\n"
+            "\n"
+            "XR1 a b vss ppolyf_u r_width=2u r_length=10u m=1\n"
+        )
+        new_variants, new_injected = run.prepare_dut_variants(
+            run.unwrap_top_subckt(subckt)
+        )
+        old_variants, old_injected = run.prepare_dut_variants(flat)
+        self.assertEqual(new_injected, old_injected)
+        for key in ("baseline", "mm"):
+            new = new_variants[key].splitlines()
+            old = old_variants[key].splitlines()
+            self.assertEqual(new[1:], old[1:])  # cards identical
+            self.assertTrue(new[0].startswith("*"))
+
+
 class InjectResistorMismatch(unittest.TestCase):
     def test_real_netlist(self):
         expected = len(PPOLYF_LINE.findall(NETLIST))
