@@ -1,6 +1,8 @@
 name: CI
 
-# Green/red gate for every PR and every push to main. Everything in this file
+# Green/red gate for every PR, every push to main, and every merge-queue
+# trial merge (`merge_group`, issue #516 -- the trigger the fleet's queue
+# ruleset requires before it will accept this repo). Everything in this file
 # is headless and PDK-free: it runs on a bare ubuntu runner with nothing but
 # python3 (stdlib) and shellcheck, so a PR is never blocked on downloading a
 # ~1 GB PDK or on building xschem.
@@ -45,6 +47,7 @@ on:
   pull_request:
   push:
     branches: [main]
+  merge_group:
 
 permissions:
   contents: read
@@ -64,6 +67,8 @@ jobs:
           # `git merge-base origin/main HEAD`. The default depth-1 checkout has
           # neither origin/main nor enough history for a merge base, which would
           # silently downgrade that check to a SKIP -- hence full history.
+          # Full history is also what lets the merge_group run rev-parse the
+          # queue's base_sha (an ancestor commit on main) below.
           fetch-depth: 0
 
       - name: Lint
@@ -73,7 +78,29 @@ jobs:
         # --require-append-only: same argument for the merge base -- if it stops
         # resolving, fail loudly instead of passing on a skipped check.
         # Same script `npm run lint` runs locally.
-        run: .github/scripts/lint.sh --require-shellcheck --require-append-only
+        #
+        # merge_group (the queue's trial merge, issue #516, ported from
+        # sky130-comparator#332): $GITHUB_BASE_REF is empty on that event, so
+        # the append-only halves (lint steps 4 and 7) get their base from the
+        # event payload instead -- merge_group.base_sha, a raw SHA -- via
+        # lint.sh's --base-ref. PR and push runs are byte-identical to before:
+        # the flag is added only when the event is merge_group, and an empty
+        # MG_BASE fails the step outright rather than let the gates silently
+        # fall back to whatever origin/main the checkout happens to hold.
+        env:
+          MG_BASE: ${{ github.event.merge_group.base_sha }}
+        run: |
+          set -euo pipefail
+          args=(--require-shellcheck --require-append-only)
+          if [ "$GITHUB_EVENT_NAME" = "merge_group" ]; then
+            if [ -z "$MG_BASE" ]; then
+              echo "merge_group event without merge_group.base_sha: refusing to" >&2
+              echo "verify append-only against an unknown base" >&2
+              exit 1
+            fi
+            args+=(--base-ref "$MG_BASE")
+          fi
+          .github/scripts/lint.sh "${args[@]}"
 
   test:
     name: Harness self-test (no PDK, py${{ matrix.python-version }})

@@ -8,6 +8,10 @@
 #   .github/scripts/lint.sh --require-append-only fail (instead of skipping) if
 #                                                the append-only evidence check
 #                                                cannot resolve its base ref
+#   .github/scripts/lint.sh --base-ref <ref>     diff the append-only halves
+#                                                against <ref> (branch or raw
+#                                                SHA) instead of
+#                                                $GITHUB_BASE_REF/origin/main
 #
 # Zero dependencies beyond python3 and (optionally) shellcheck, matching the
 # harness's stdlib-only rule -- there is no venv and no package manifest to
@@ -30,14 +34,31 @@ cd "${REPO_ROOT}" || exit 1
 
 REQUIRE_SHELLCHECK=0
 EVIDENCE_ARGS=()
-for arg in "$@"; do
-  case "${arg}" in
+BASE_REF=""
+while [ "$#" -gt 0 ]; do
+  case "$1" in
     --require-shellcheck) REQUIRE_SHELLCHECK=1 ;;
     --require-append-only) EVIDENCE_ARGS+=(--require-append-only) ;;
-    -h|--help) sed -n '2,24p' "${BASH_SOURCE[0]}"; exit 0 ;;
-    *) echo "unknown option: ${arg}" >&2; exit 1 ;;
+    --base-ref)
+      if [ "$#" -lt 2 ]; then
+        echo "option --base-ref needs a value" >&2
+        exit 1
+      fi
+      BASE_REF="$2"
+      shift
+      ;;
+    --base-ref=*) BASE_REF="${1#--base-ref=}" ;;
+    -h|--help) sed -n '2,28p' "${BASH_SOURCE[0]}"; exit 0 ;;
+    *) echo "unknown option: ${1}" >&2; exit 1 ;;
   esac
+  shift
 done
+# The merge-queue base (github.event.merge_group.base_sha) arrives from ci.yml
+# as a raw SHA; both gates rev-parse whatever they are given, so it needs no
+# origin/ prefixing here (issue #516).
+if [ -n "${BASE_REF}" ]; then
+  EVIDENCE_ARGS+=(--base-ref "${BASE_REF}")
+fi
 
 status=0
 
