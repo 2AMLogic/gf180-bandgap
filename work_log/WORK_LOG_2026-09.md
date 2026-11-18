@@ -2,6 +2,10 @@
 
 Sections moved byte-for-byte from [WORK_LOG.md](../WORK_LOG.md) by `loom-daemon work-docs archive`.
 
+### 2026-09-15
+
+- **PR #190**: spec: DR-0007 proposes the 4x unit-PNP array for core.Q2 (Option A)
+
 ### 2026-09-10
 
 - **Issue #188** (closed): Output-noise characterization bench `sim/output-noise/`: 0.1–10 Hz integrated + spot noise, full PVT, schematic and extracted provenance (evidence for open item A6)
