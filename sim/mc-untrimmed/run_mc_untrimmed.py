@@ -66,10 +66,13 @@ run's ngspice working directory as `dut.spice` (mismatch-injected or
 verbatim, depending on the group), the same "corner shim" pattern
 `sim/harness` (`sim/device-resistor-tc/run_resistor_tc.py`, the reference
 harness-as-library consumer) already uses for `corner.spice`. Pointing
-`--dut` at #17's future extracted netlist re-runs `testbench/tb_mc_untrimmed.spice`
+`--dut` at the extracted netlist re-runs `testbench/tb_mc_untrimmed.spice`
 unmodified, provided the extracted netlist still calls `ppolyf_u` primitives
 by name for the matched resistors (true of a schematic-preserving PEX flow;
-flagged here rather than assumed).
+flagged here rather than assumed). The bench includes its DUT at top level,
+so a wrapped DUT (the extracted netlist's `.subckt bandgap_top` form) has
+that wrapper stripped at copy time by `unwrap_top_subckt()`; the default
+schematic DUT has no top wrapper and passes through unchanged.
 
 ## Fleet path (shared dispatch workers)
 
@@ -235,6 +238,38 @@ def strip_trailing_end(text: str) -> str:
     """
     lines = [line for line in text.splitlines() if line.strip().lower() != ".end"]
     return "\n".join(lines) + "\n"
+
+
+_TOP_SUBCKT_RE = re.compile(r"^\.subckt\s+bandgap_top(?:\s|$)", re.IGNORECASE)
+_TOP_ENDS_RE = re.compile(r"^\.ends\s+bandgap_top\s*$", re.IGNORECASE)
+
+
+def unwrap_top_subckt(text: str) -> str:
+    """Strip a top-level `.subckt bandgap_top ...` / `.ends bandgap_top`
+    wrapper, so a wrapped DUT netlist includes at deck level like the
+    default (unwrapped) one.
+
+    This bench `.include`s `dut.spice` at top level and its `.ic` seeds
+    name top-level nodes, so a wrapped extracted netlist
+    (`layout/netlist/bandgap_top_extracted.spice`) must have its wrapper
+    removed at copy time. A no-op on a DUT with no `bandgap_top` wrapper:
+    the default `design/netlist/bandgap_top.spice` defines only inner
+    subckts (`bandgap_core` etc.), which -- like every other line -- are
+    left alone. Only this module's local path unwraps: the fleet request
+    builder (`sim/tools/mk_klt_mc_request.py`) instantiates the subckt and
+    its `top_ports()` requires the wrapper.
+    """
+    lines = text.splitlines()
+    if not any(_TOP_SUBCKT_RE.match(line) for line in lines):
+        return text
+    kept = [
+        line
+        for line in lines
+        if not (_TOP_SUBCKT_RE.match(line) or _TOP_ENDS_RE.match(line))
+    ]
+    while kept and not kept[-1].strip():
+        kept.pop()
+    return "\n".join(kept) + "\n"
 
 
 def inject_resistor_mismatch(text: str) -> tuple[str, list[dict]]:
@@ -930,7 +965,9 @@ def main() -> int:
     if not dut_path.is_file():
         sys.exit(f"ERROR: DUT netlist not found: {dut_path}")
 
-    dut_by_variant, injected = prepare_dut_variants(dut_path.read_text(encoding="utf-8"))
+    dut_by_variant, injected = prepare_dut_variants(
+        unwrap_top_subckt(dut_path.read_text(encoding="utf-8"))
+    )
     dut_mm = dut_by_variant["mm"]
 
     git = harness_report.git_provenance(root)

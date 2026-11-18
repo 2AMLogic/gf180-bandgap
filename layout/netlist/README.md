@@ -13,10 +13,18 @@ layout/netlist/
   mk_extracted_dut.py             extraction report -> simulatable .subckt bandgap_top (see below)
   verify_mim_routing.py           proves both MiM plates are physically wired to vdd/fb
   bandgap_top_extracted.spice     GENERATED sim/dut-ready DUT (subckt form)
-  bandgap_top_extracted_flat.spice  GENERATED, same cards with no subckt wrapper (sim/mc-untrimmed)
   reports/
     bandgap_top/                  <record-id>.{extract.json,extracted.spice}
 ```
+
+> **Removed flat duplicate.** `bandgap_top_extracted_flat.spice` (same cards,
+> no `.subckt bandgap_top` wrapper) existed until `615706d6` (2026-11-18, the
+> parent of the commit that removed it, per #508). The three append-only
+> `sim/mc-untrimmed/records/*.md` that cite that path resolve at the commit
+> each record names, and the netlist content they ran survives verbatim in
+> `sim/mc-untrimmed/netlist-snapshots/`. `run_mc_untrimmed.py --dut
+> layout/netlist/bandgap_top_extracted.spice` now strips the wrapper at copy
+> time, producing the same deck the flat file held.
 
 Current state, against `main`'s `bandgap_top.gds` (post-#88) and the current
 klayout-tools deck:
@@ -112,10 +120,6 @@ hard error, not a silent BA4 re-add.
 Everything else — device existence, class, connectivity, drawn resistor
 `L`/`W`, drawn plate area, drawn finger and PNP-unit counts, and the per-net
 RC parasitics — is measured, not asserted.
-
-`--flat` emits the same cards with no `.subckt bandgap_top` wrapper, for
-`sim/mc-untrimmed`, whose deck includes its DUT at top level and whose `.ic`
-seeds name top-level nodes.
 
 ## `verify_mim_routing.py` — the one connection no tool can check
 
@@ -239,11 +243,11 @@ simulatable model name on its own.
 
 Per #17's own Test Plan (re-run the full post-layout suite whenever the
 extracted netlist changes) and #88's acceptance criteria, the full suite ran
-against the redrawn `bandgap_top_extracted.spice`/`bandgap_top_extracted_flat.spice`:
+against the redrawn `bandgap_top_extracted.spice`:
 
 ```bash
 python3 sim/run_suite.py --dut layout/netlist/bandgap_top_extracted.spice --only output-voltage-tc psrr-dc line-regulation iq
-PDK_ROOT=~/.volare PDK=gf180mcuD python3 sim/mc-untrimmed/run_mc_untrimmed.py --dut layout/netlist/bandgap_top_extracted_flat.spice
+PDK_ROOT=~/.volare PDK=gf180mcuD python3 sim/mc-untrimmed/run_mc_untrimmed.py --dut layout/netlist/bandgap_top_extracted.spice
 python3 sim/run_corners.py startup-extracted
 python3 sim/run_corners.py startup-state-search-extracted
 python3 sim/run_combined_accuracy.py
