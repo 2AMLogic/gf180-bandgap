@@ -6,6 +6,11 @@ Chronological record of recently merged pull requests and closed issues, maintai
 
 - [2026-09](work_log/WORK_LOG_2026-09.md)
 
+### 2026-11-18
+
+- **PR #513**: chore: remove generated flat extracted netlist, unwrap DUT at copy time
+- **Issue #508** (closed): Remove generated flat extracted netlist duplicate (and mk_extracted_dut --flat)
+
 ### 2026-11-17
 
 - **PR #510**: test: guard via landing in bandgap_top.gds (every cut covered by metal above and below)
