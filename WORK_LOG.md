@@ -8,6 +8,8 @@ Chronological record of recently merged pull requests and closed issues, maintai
 
 ### 2026-11-18
 
+- **PR #517**: ci: report on merge-queue trial merges via merge_group and an explicit base
+- **Issue #516** (closed): Merge queue: add the merge_group trigger to the required-check workflow(s)
 - **PR #513**: chore: remove generated flat extracted netlist, unwrap DUT at copy time
 - **Issue #508** (closed): Remove generated flat extracted netlist duplicate (and mk_extracted_dut --flat)
 
@@ -312,8 +314,4 @@ Chronological record of recently merged pull requests and closed issues, maintai
 
 - **Issue #192** (closed): T1 item 11 (power delivery, structural): no klt erc supply spec or report in this repo
 - **PR #195**: feat(erc): add the klt erc supply read for structural power delivery
-
-### 2026-09-15
-
-- **PR #190**: spec: DR-0007 proposes the 4x unit-PNP array for core.Q2 (Option A)
 
