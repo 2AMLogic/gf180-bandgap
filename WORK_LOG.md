@@ -8,6 +8,8 @@ Chronological record of recently merged pull requests and closed issues, maintai
 
 ### 2026-11-18
 
+- **PR #521**: fix: fail closed on an empty --base-ref value in lint.sh
+- **Issue #518** (closed): lint.sh: an empty --base-ref value is silently dropped instead of failing closed
 - **PR #517**: ci: report on merge-queue trial merges via merge_group and an explicit base
 - **Issue #516** (closed): Merge queue: add the merge_group trigger to the required-check workflow(s)
 - **PR #513**: chore: remove generated flat extracted netlist, unwrap DUT at copy time
