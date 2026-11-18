@@ -22,6 +22,7 @@ name: CI
 # | layout unit tests, klayout/klt-gated, no skips| klt+network  | `signoff` (here)   |
 # | `sim/run_corners.py --list` manifest load     | python3      | `lint` (here)      |
 # | `sim/selftest.sh` stages 1-2                  | python3      | `test` (here)      |
+# | lint.sh `--base-ref` fail-closed contract     | python3      | `test` (here)      |
 # | `sim/selftest.sh` stage 3 (81-point PVT run)  | ngspice+PDK  | `sim-pdk.yml`      |
 # | `sim/smoke_test/run_smoke_test.sh`            | xschem+PDK   | EXCLUDED (below)   |
 # | `sim/device-*/run_*.py`                       | ngspice+PDK  | EXCLUDED (below)   |
@@ -159,6 +160,16 @@ jobs:
         # klayout-tier targets are deferred to the `signoff` job below, which
         # runs the same script with --with-klayout.
         run: bash .github/scripts/test_dotted_invocation.sh
+
+      - name: lint.sh --base-ref fail-closed guard
+        # The merge_group step above guards its own MG_BASE, but that check
+        # lives in one caller. This pins the option itself (#518): an
+        # explicitly given but empty --base-ref value must fail before any
+        # check runs, instead of being silently dropped and falling the
+        # append-only gates back to $GITHUB_BASE_REF/origin/main with a green
+        # gate. A future caller that builds `--base-ref "$VAR"` from an unset
+        # variable then inherits the invariant for free.
+        run: bash .github/scripts/test_lint_args.sh
 
   signoff:
     name: T1 signoff re-grade (klt)
