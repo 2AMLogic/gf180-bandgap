@@ -19,9 +19,9 @@
 #     any check runs (stdout carries no `== N/10` banner);
 #   - the pre-existing missing-value error (`--base-ref` as the last
 #     argument) still fires;
-#   - a non-empty value is forwarded to both gates, pinned by the
-#     `clean against the merge base with <ref>` signature the gates print
-#     when they diffed against that ref -- HEAD resolves at any checkout
+#   - a non-empty value is forwarded to the evidence gate, pinned by the
+#     `clean against the merge base with <ref>` signature that gate prints
+#     when it diffed against that ref -- HEAD resolves at any checkout
 #     depth, so the signature is deterministic on every runner;
 #   - a whitespace-only value is non-empty, so the parser accepts it and the
 #     gate it reaches decides (never a silent fall-back to the default base).
@@ -29,6 +29,20 @@
 # Assertions match signature lines rather than lint.sh's overall exit code
 # where possible: this test is about the option, not repo lint health, which
 # the `lint` CI job gates separately.
+#
+# Case 3 observes one gate, not both. lint.sh appends BASE_REF once to a
+# single EVIDENCE_ARGS array that both append-only consumers receive, but
+# only the evidence gate (sim/check_records.py, via
+# sim/harness/evidence_lint.py) prints the `clean against the merge base
+# with <ref>` signature -- the decision-records gate
+# (spec/check_decision_records.py) runs clean silently -- so the grep pins
+# the evidence gate alone; the decision-records gate gets the same
+# EVIDENCE_ARGS array by construction and is not observed by case 3.
+# Widening the assertion to lint.sh's overall exit code (0 for the
+# --base-ref cases) would cover the second consumer, but it would also
+# couple this argument test to repo lint health -- an unrelated failing
+# check would fail it -- the coupling the signature-line approach above
+# deliberately avoids; considered and rejected (#522).
 #
 # Zero dependencies beyond python3, matching the repo's stdlib-only rule.
 # Exit codes: 0 pass, 1 a check failed.
@@ -88,9 +102,9 @@ check_forwarded() {
   run_lint "$@"
   if grep -q 'clean against the merge base with HEAD' "${out}" && \
      ! grep -q 'needs a non-empty value' "${err}"; then
-    echo "   ok ${spelling}: both gates diffed against HEAD"
+    echo "   ok ${spelling}: the evidence gate diffed against HEAD"
   else
-    fail "${spelling}: gates did not report diffing against HEAD"
+    fail "${spelling}: the evidence gate did not report diffing against HEAD"
   fi
 }
 check_forwarded '--base-ref HEAD' --base-ref HEAD
