@@ -67,7 +67,6 @@ Issues carrying `loom:curated`.
 
 - **#477**: Deduplicate the startup ramp deck: 183 lines declared byte-identical across sim/startup and sim/startup-slow-ramp, with nothing enforcing it *(hermit)* *(held)*
 - **#475**: Remove three unconsumed block netlists from design/netlist: bandgap_core.spice is stale against the schematic *(hermit)* *(held)*
-- **#508**: Remove generated flat extracted netlist duplicate (and mk_extracted_dut --flat) *(hermit)* *(held)*
 
 ## Epics
 
@@ -87,6 +86,6 @@ Issues carrying `loom:curated`.
 | PRs awaiting review | 1 |
 | Approved PRs awaiting merge | 0 |
 | Curated | 6 |
-| Architect / Hermit proposals | 3 |
+| Architect / Hermit proposals | 2 |
 | Active epics | 3 |
 <!-- guide:plan-body:end -->
