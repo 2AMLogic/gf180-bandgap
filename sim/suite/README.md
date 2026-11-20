@@ -142,6 +142,15 @@ does not invent limits for it. Until #11 lands, `sim/startup/` is absent and
 the row reports **PENDING — bench not in the tree yet**: a missing bench is
 never a silent pass, and never a hard error either.
 
+### Rolling up already-minted (fleet) evidence
+
+`python3 sim/tools/fleet_suite_summary.py --record SLUG=ID ... --corner-record ID --mc-record ID`
+judges records that were minted elsewhere (batch fleet, ingested by
+`tc_ingest.py` / `fleet_ingest.py` / `mc_fleet_ingest.py`) with this suite's
+own parsers and completeness rules, and starts no simulation. A bench with no
+`--record` is reported as missing evidence, never substituted. See the
+script's docstring (#239).
+
 ## Measurement conventions (the parts that are easy to get wrong)
 
 - **TC is box, not endpoints.** `output-voltage-tc` sweeps temperature

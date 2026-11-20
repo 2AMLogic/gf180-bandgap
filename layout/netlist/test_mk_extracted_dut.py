@@ -16,13 +16,14 @@ from __future__ import annotations
 import contextlib
 import copy
 import io
-import re
 import sys
 import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
 
+# Load-bearing: sys.path[0] is this file's dir only under `python3 file.py`.
+# Under the documented `python3 -m <dotted.module>` form it is the CWD. #479
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import mk_extracted_dut as mk  # noqa: E402
@@ -210,23 +211,16 @@ class BackAnnotationTests(unittest.TestCase):
 
 
 class EmitTests(unittest.TestCase):
-    def emit(self, flat=False, extract=None):
+    def emit(self, extract=None):
         ex = extract or make_extract()
         ex["_ae_cache"] = {"$4": 25.0, "$5": 25.0}
-        return mk.emit(ex, make_lvs(), flat=flat)
+        return mk.emit(ex, make_lvs())
 
     def test_wrapped_has_subckt_and_ends(self):
         lines, _, counts = self.emit()
         self.assertEqual(lines[0], ".subckt bandgap_top vdd vss vref")
         self.assertIn(".ends bandgap_top", lines)
         self.assertEqual(counts["bjt"], 2)
-
-    def test_flat_omits_subckt_wrapper(self):
-        lines, _, _ = self.emit(flat=True)
-        text = "\n".join(lines)
-        self.assertNotRegex(text, r"(?m)^\.subckt")
-        self.assertNotRegex(text, r"(?m)^\.ends")
-        self.assertIn("FLAT form", text)
 
     def test_no_dollar_or_backslash_in_cards(self):
         lines, _, _ = self.emit()
@@ -379,15 +373,6 @@ class MainTests(unittest.TestCase):
         self.assertIn("*   BA2: $W -> vdd", text)
         self.assertIn("*   BA3: $B1 -> vss", text)
         self.assertRegex(text, r"(?m)^\* sha256 \(this file, sans this line\): [0-9a-f]{32}$")
-
-    def test_flat_flag_omits_wrapper(self):
-        self.run_main("--flat")
-        text = self.out.read_text()
-        self.assertNotRegex(text, r"(?m)^\.subckt bandgap_top")
-        self.assertNotRegex(text, r"(?m)^\.ends")
-        self.assertIn(" --flat ", text)
-        self.run_main()  # unflattened run restores the wrapper
-        self.assertRegex(self.out.read_text(), r"(?m)^\.subckt bandgap_top vdd vss vref$")
 
     def test_check_passes_on_identical_output(self):
         self.run_main()

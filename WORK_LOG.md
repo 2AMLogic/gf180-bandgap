@@ -2,6 +2,135 @@
 
 Chronological record of recently merged pull requests and closed issues, maintained by the Loom Guide role. Newest entries appear first.
 
+## Archives
+
+- [2026-09](work_log/WORK_LOG_2026-09.md)
+
+### 2026-11-18
+
+- **PR #517**: ci: report on merge-queue trial merges via merge_group and an explicit base
+- **Issue #516** (closed): Merge queue: add the merge_group trigger to the required-check workflow(s)
+- **PR #513**: chore: remove generated flat extracted netlist, unwrap DUT at copy time
+- **Issue #508** (closed): Remove generated flat extracted netlist duplicate (and mk_extracted_dut --flat)
+
+### 2026-11-17
+
+- **PR #510**: test: guard via landing in bandgap_top.gds (every cut covered by metal above and below)
+- **Issue #507** (closed): Add an automated via-landing regression guard (every cut covered by the metal above and below)
+- **PR #506**: fix: drop vestigial Via2/Metal2/Via1 hop from the MiM cap fb down-hop
+- **Issue #504** (closed): bandgap_top has a dangling Via1 at (62870,134020): Metal2 above, no Metal1 below (metal1.enclosing.via1.1)
+- **PR #501**: chore(loom): resync installed Loom to v0.19.1306
+
+### 2026-11-16
+
+- **PR #496**: chore(loom): resync installed Loom to v0.19.1302
+
+### 2026-11-15
+
+- **PR #494**: fix: fleet render states the spread-floor waiver instead of a silent below-floor figure
+- **Issue #492** (closed): fleet_ingest waives the min_spread floor at one valid corner without reporting the skip
+- **PR #491**: fix: skip min_spread_pct floors on single-sample grids, reported not silent
+- **Issue #486** (closed): sim/selftest.sh --quick can never pass: single-point grid cannot satisfy min_spread_pct checks
+- **PR #489**: test: catch the SNAPSHOT_DIR constant form in the snapshot-path guard
+- **PR #487**: build: wire dotted-invocation guard into check:ci, add test:dotted alias
+- **Issue #484** (closed): Snapshot drift guard misses a hand-rolled copy written with the SNAPSHOT_DIR constant
+- **Issue #483** (closed): Wire test_dotted_invocation.sh into package.json check:ci for local reachability
+
+### 2026-11-14
+
+- **PR #482**: ci: guard the own-directory sys.path.insert idiom under python3 -m
+- **PR #481**: refactor: route all six netlist-snapshot writes through one append-only writer
+- **Issue #480** (closed): Deduplicate the netlist-snapshot write: six hand-rolled copies, four different append-only behaviours, beside an existing shared helper
+- **Issue #479** (closed): Comment the sys.path.insert(0, <own dir>) idiom: it is load-bearing for the documented 'python3 -m <dotted>' invocation
+- **Issue #478** (closed): Remove 19 redundant sys.path.insert lines: each inserts a directory Python already supplies
+
+### 2026-11-13
+
+- **Issue #468** (closed): Remove six never-read function parameters from the sim ingest and spec-check tools
+- **PR #473**: refactor: drop six never-read parameters from sim ingest/spec-check signatures
+- **Issue #470** (closed): Remove the dangling worktree:return npm script: its target script no longer exists
+- **PR #472**: chore: drop the dangling worktree:return npm script entry
+- **Issue #469** (closed): Remove three unused imports and two never-read routing_budget constants
+- **PR #474**: chore: drop three unused imports and two never-read PRE_REWRITE constants
+- **Issue #461** (closed): Remove _ChildNetMap: dict subclass whose .get override duplicates the default both callers already pass
+- **PR #465**: refactor(layout): resolve child nets with a plain dict, drop _ChildNetMap
+- **Issue #459** (closed): bug: postlayout_delta exits 1 after a successful write when -o is outside the repo
+- **PR #464**: fix(sim): keep postlayout_delta's exit status off its confirmation print
+- **Issue #463** (closed): Remove the never-read LineOutcome.detail and RecordPair.matched fields from the spec-line suite
+- **PR #467**: refactor(suite): drop the unread LineOutcome.detail and RecordPair.matched fields
+- **Issue #457** (closed): Remove the never-read sub_rows and top_pins fields from the layout planner
+- **PR #462**: refactor(layout): drop the unread sub_rows and top_pins planner fields
+- **Issue #454** (closed): Read Netlist provenance through one function: postlayout_delta's copy rejects fleet-ingested records
+- **PR #460**: refactor(sim): read Netlist provenance through provenance_of_path only
+- **Issue #453** (closed): Remove dead fleet_common.corner_key and the duplicate klt_version() in the fleet request builders
+- **PR #456**: refactor(sim/tools): drop dead fleet_common.corner_key, single-source klt_version()
+- **Issue #450** (closed): Remove the never-read is_mos attribute from the five layout plan item classes
+- **PR #455**: refactor(layout): drop the never-read is_mos flag from plan item classes
+- **Issue #445** (closed): docs(signoff): two quoting inaccuracies in signoff/README.md (August body_verification, unmodeled_rules groups)
+- **PR #452**: docs(signoff): requote the August body_verification and the unmodeled_rules groups
+- **Issue #447** (closed): Follow-on: Work identified in PR #442
+- **PR #449**: docs: requote the DRC/LVS results table and the A6/PSRR summary notes from current evidence
+- **Issue #446** (closed): Remove five never-read module constants (SWEEP_POINTS, VREF_NOMINAL_V, NWELL_CLEAR, MC_SUPPLY_SAMPLE, ARTIFACT_URI_PREFIX)
+- **PR #448**: refactor: drop five never-read module constants
+- **Issue #440** (closed): docs/chipalooza: refresh the Challenge #5 proposal against current decision records and evidence
+- **PR #444**: docs: re-cite the Challenge #5 proposal against DR-0006/DR-0007 and current evidence
+- **Issue #441** (closed): ERC: record whether pinned klt computes erc.missing_tie with ties[] declared (part of #358)
+- **PR #443**: evidence: record that pinned klt 0.8.0 computes erc.missing_tie
+- **Issue #439** (closed): signoff/README.md: item 3, 4 and 5 disclosures describe superseded evidence
+- **PR #442**: docs(signoff): requote item 3/4/5 disclosures from the currently cited evidence
+- **PR #438**: docs: roadmap as of 2026-11-13
+
+### 2026-11-12
+
+- **PR #436**: Bump Repo Skills 0.25.10 -> 0.26.1
+
+### 2026-11-07
+
+- **PR #432**: Bump Repo Skills 0.25.1 -> 0.25.10
+
+### 2026-11-06
+
+- **PR #429**: feat(sim): refuse local multi-point grids on fleet backends; default jobs to 2
+- **PR #428**: feat(sim): build fleet requests from tb.json and ingest reports to PointResult
+- **PR #427**: docs: describe klt as pinned in layout README
+- **Issue #219** (closed): sim harness: share the batch-backend guard and cap default local --jobs
+- **Issue #424** (closed): sim harness: dispatch additional analyses to the batch fleet (split from #219)
+- **Issue #425** (closed): layout/README: remove the stale "no version pin" klt claims now that klt is pinned
+- **PR #421**: docs: point sim/suite README at the fleet evidence roll-up tool
+- **Issue #418** (closed): Remove orphaned sim/tools/fleet_suite_summary.py (only its own test references it)
+
+### 2026-11-01
+
+- **PR #417**: Bump Repo Skills 0.24.7 -> 0.25.1
+
+### 2026-10-30
+
+- **PR #415**: ci: run layout tests with klayout/klt in signoff job and fail on skips
+- **Issue #306** (closed): ci: run klayout/klt-gated layout tests in the signoff job and fail on skips
+- **PR #413**: fix: re-measure AREA.md headline vs regenerated GDS; test_layout.sh continues past failures
+- **Issue #326** (closed): layout/bandgap_top: routing-budget S1 area disagrees with committed GDS bbox (klayout-gated test fails on main)
+
+### 2026-10-28
+
+- **PR #410**: fix: make bandgap_top DRC-clean under klt 0.8.0
+- **Issue #408** (closed): bandgap_top.gds fails pinned klt 0.8.0 DRC (grid/contact width); T1 item 3 cannot be re-pinned
+
+### 2026-10-27
+
+- **PR #407**: refactor: emit tie-aware LVS reference from make_reference.py, drop tie_reference.py
+- **Issue #403** (closed): Collapse the two LVS reference netlists: fold tie_reference.py into make_reference.py
+- **PR #405**: docs: point klt install hints at the PyPI pin instead of the git URL
+- **Issue #400** (closed): Doctor: update before push
+- **PR #399**: chore(signoff): pin klayout-tools to PyPI 0.8.0 and regenerate record
+- **Issue #398** (closed): Bump klayout-tools pin 67e684ed9b2b → 0.8.0
+
+### 2026-10-25
+
+- **PR #390**: docs(layout): condense resolved friction list, mark klayout-tools#2169/#2179 closed
+- **PR #340**: fix(signoff): default re-grade uses the repo klt pin via uvx
+- **Issue #389** (closed): Condense resolved entries in layout/README.md 'Friction filed' and fix stale 'Still open' claims
+- **Issue #328** (closed): signoff: use the repository klt pin for default local re-grading
+
 ### 2026-10-24
 
 - **PR #383**: chore: remove stale tracked .loom/manifest.json.tmp install leftover
@@ -186,11 +315,3 @@ Chronological record of recently merged pull requests and closed issues, maintai
 - **Issue #192** (closed): T1 item 11 (power delivery, structural): no klt erc supply spec or report in this repo
 - **PR #195**: feat(erc): add the klt erc supply read for structural power delivery
 
-### 2026-09-15
-
-- **PR #190**: spec: DR-0007 proposes the 4x unit-PNP array for core.Q2 (Option A)
-
-### 2026-09-10
-
-- **Issue #188** (closed): Output-noise characterization bench `sim/output-noise/`: 0.1–10 Hz integrated + spot noise, full PVT, schematic and extracted provenance (evidence for open item A6)
-- **PR #189**: feat: add output-noise characterization bench

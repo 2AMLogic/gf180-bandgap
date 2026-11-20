@@ -592,6 +592,36 @@ class Evidence(TmpCase):
             _, _, r2 = self.mint(Path(td), fx)
             self.assertNotEqual(r1, r2)
 
+    def test_occupied_snapshot_refuses_with_record_exists(self):
+        """An occupied ``netlist-snapshots/<record>.spice`` aborts the ingest.
+
+        ``allocate_record_id`` normally skips an occupied id (it checks the
+        snapshot path via ``_record_id_occupied``), so reaching this path takes
+        a stubbed allocator -- it is the shared writer's last-line refusal, not
+        a state a healthy run produces. It must still raise rather than
+        overwrite: ``sim/`` is append-only.
+        """
+        from unittest import mock
+
+        from harness import report as hreport
+
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            fx = self.fx()
+            res = fx.assess()
+            exp = root / "sim" / BENCH
+            rec_id = "20260801-120000-abc1234"
+            snap = exp / "netlist-snapshots" / f"{rec_id}.spice"
+            snap.parent.mkdir(parents=True)
+            snap.write_bytes(b"* earlier evidence -- must survive\n")
+            with mock.patch.object(hreport, "allocate_record_id", return_value=rec_id):
+                with self.assertRaises(hreport.RecordExists) as cm:
+                    li.write_evidence(exp, self.tmp, fx.tb, fx.plan, res, fx.reports,
+                                      issue=269, git=GIT, repo=root)
+            self.assertIn("sim/ is append-only", str(cm.exception))
+            self.assertEqual(snap.read_bytes(), b"* earlier evidence -- must survive\n")
+            self.assertFalse((exp / "records" / f"{rec_id}.md").exists())
+
 
 if __name__ == "__main__":
     unittest.main()

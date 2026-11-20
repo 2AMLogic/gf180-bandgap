@@ -40,6 +40,8 @@ HERE = Path(__file__).resolve().parent
 SIM = HERE.parent
 REPO = SIM.parent
 sys.path.insert(0, str(SIM))
+# Load-bearing: sys.path[0] is this file's dir only under `python3 file.py`.
+# Under the documented `python3 -m <dotted.module>` form it is the CWD. #479
 sys.path.insert(0, str(HERE))
 
 import fleet_common as fc  # noqa: E402
@@ -123,7 +125,7 @@ def plan_problems(run, plan: dict, *, dut_sha: str | None, tb_sha: str, decks: d
     return probs
 
 
-def sample_problems(entry: dict, report: dict, units: dict) -> list[str]:
+def sample_problems(entry: dict, report: dict) -> list[str]:
     """Seed / index consistency of the returned samples (see `klt sim`'s seed contract)."""
     probs: list[str] = []
     mc = (report.get("environment") or {}).get("monte_carlo")
@@ -195,7 +197,7 @@ def assess(run, plan: dict, reports: dict[str, dict], *, dut_sha: str | None, tb
         missing += [((name,) + k, why) for k, why in miss]
         failed += [((name,) + k, why) for k, why in fail]
         problems += [f"{name}: {p}" for p in probs]
-        problems += sample_problems(entry, rep, pts)
+        problems += sample_problems(entry, rep)
         rows = []
         for key in exp:
             v = pts.get(key)
@@ -307,7 +309,7 @@ FLEET_MISS_NOTE = (
 )
 
 
-def build_evidence_record(run, plan, result, reports, record, stamp, dut_label, dut_path, issue, supersedes, git=None) -> str:
+def build_evidence_record(run, plan, result, reports, record, stamp, dut_label, dut_path, issue, supersedes) -> str:
     saved = dict(run.RUN_CONTEXT)
     run.RUN_CONTEXT.update({
         "issue": str(issue), "supersedes": supersedes or "(none)",
@@ -384,14 +386,12 @@ def write_evidence(run, exp_dir: Path, work: Path, plan: dict, result: dict, rep
                               compact_reports=True, require_reports=True)
     for r in plan["requests"]:
         (cdir / f"deck-{r['name']}.spice").write_text(decks[r["name"]])
-    snap = exp_dir / "netlist-snapshots"
-    snap.mkdir(parents=True, exist_ok=True)
     mm_deck = next(r["name"] for r in plan["requests"] if r["dut_variant"] == "mm")
-    with open(snap / f"{record}.spice", "x", encoding="utf-8") as fh:  # exclusive: never overwrite
-        fh.write(
-            f"* mismatch-injected DUT variant, as simulated by the fleet (frozen deck of request {mm_deck}).\n"
-            + decks[mm_deck])
-    text = build_evidence_record(run, plan, result, reports, record, st, dut_label, dut_path, issue, supersedes, git)
+    hreport.write_snapshot_text(
+        exp_dir / "netlist-snapshots", record,
+        f"* mismatch-injected DUT variant, as simulated by the fleet (frozen deck of request {mm_deck}).\n"
+        + decks[mm_deck])
+    text = build_evidence_record(run, plan, result, reports, record, st, dut_label, dut_path, issue, supersedes)
     return hreport.device_write_record(exp_dir / "records", record, text)
 
 

@@ -1,6 +1,8 @@
 name: CI
 
-# Green/red gate for every PR and every push to main. Everything in this file
+# Green/red gate for every PR, every push to main, and every merge-queue
+# trial merge (`merge_group`, issue #516 -- the trigger the fleet's queue
+# ruleset requires before it will accept this repo). Everything in this file
 # is headless and PDK-free: it runs on a bare ubuntu runner with nothing but
 # python3 (stdlib) and shellcheck, so a PR is never blocked on downloading a
 # ~1 GB PDK or on building xschem.
@@ -17,8 +19,10 @@ name: CI
 # | harness unit tests (`sim/tests/`)             | python3      | `test` (here)      |
 # | layout unit tests (`layout/**/test_*.py`)     | python3      | `test` (here)      |
 # | signoff validator unit tests (`signoff/tests/`)| python3     | `test` (here)      |
+# | layout unit tests, klayout/klt-gated, no skips| klt+network  | `signoff` (here)   |
 # | `sim/run_corners.py --list` manifest load     | python3      | `lint` (here)      |
 # | `sim/selftest.sh` stages 1-2                  | python3      | `test` (here)      |
+# | lint.sh `--base-ref` fail-closed contract     | python3      | `test` (here)      |
 # | `sim/selftest.sh` stage 3 (81-point PVT run)  | ngspice+PDK  | `sim-pdk.yml`      |
 # | `sim/smoke_test/run_smoke_test.sh`            | xschem+PDK   | EXCLUDED (below)   |
 # | `sim/device-*/run_*.py`                       | ngspice+PDK  | EXCLUDED (below)   |
@@ -44,6 +48,7 @@ on:
   pull_request:
   push:
     branches: [main]
+  merge_group:
 
 permissions:
   contents: read
@@ -63,6 +68,8 @@ jobs:
           # `git merge-base origin/main HEAD`. The default depth-1 checkout has
           # neither origin/main nor enough history for a merge base, which would
           # silently downgrade that check to a SKIP -- hence full history.
+          # Full history is also what lets the merge_group run rev-parse the
+          # queue's base_sha (an ancestor commit on main) below.
           fetch-depth: 0
 
       - name: Lint
@@ -72,7 +79,29 @@ jobs:
         # --require-append-only: same argument for the merge base -- if it stops
         # resolving, fail loudly instead of passing on a skipped check.
         # Same script `npm run lint` runs locally.
-        run: .github/scripts/lint.sh --require-shellcheck --require-append-only
+        #
+        # merge_group (the queue's trial merge, issue #516, ported from
+        # sky130-comparator#332): $GITHUB_BASE_REF is empty on that event, so
+        # the append-only halves (lint steps 4 and 7) get their base from the
+        # event payload instead -- merge_group.base_sha, a raw SHA -- via
+        # lint.sh's --base-ref. PR and push runs are byte-identical to before:
+        # the flag is added only when the event is merge_group, and an empty
+        # MG_BASE fails the step outright rather than let the gates silently
+        # fall back to whatever origin/main the checkout happens to hold.
+        env:
+          MG_BASE: ${{ github.event.merge_group.base_sha }}
+        run: |
+          set -euo pipefail
+          args=(--require-shellcheck --require-append-only)
+          if [ "$GITHUB_EVENT_NAME" = "merge_group" ]; then
+            if [ -z "$MG_BASE" ]; then
+              echo "merge_group event without merge_group.base_sha: refusing to" >&2
+              echo "verify append-only against an unknown base" >&2
+              exit 1
+            fi
+            args+=(--base-ref "$MG_BASE")
+          fi
+          .github/scripts/lint.sh "${args[@]}"
 
   test:
     name: Harness self-test (no PDK, py${{ matrix.python-version }})
@@ -121,6 +150,27 @@ jobs:
         # test fails or a directory collects zero tests.
         run: bash .github/scripts/test_layout.sh
 
+      - name: Own-directory sys.path.insert guard (python3 -m form)
+        # The step above runs `unittest discover -s <dir>`, which supplies the
+        # directory itself, so it cannot notice if a module loses its
+        # own-directory sys.path.insert -- the line that is load-bearing only
+        # under `python3 -m <dotted.module>`. #478 spent a Builder cycle on
+        # that false premise. This runs the documented `-m` form directly and
+        # checks every site still carries its explanatory comment. The four
+        # klayout-tier targets are deferred to the `signoff` job below, which
+        # runs the same script with --with-klayout.
+        run: bash .github/scripts/test_dotted_invocation.sh
+
+      - name: lint.sh --base-ref fail-closed guard
+        # The merge_group step above guards its own MG_BASE, but that check
+        # lives in one caller. This pins the option itself (#518): an
+        # explicitly given but empty --base-ref value must fail before any
+        # check runs, instead of being silently dropped and falling the
+        # append-only gates back to $GITHUB_BASE_REF/origin/main with a green
+        # gate. A future caller that builds `--base-ref "$VAR"` from an unset
+        # variable then inherits the invariant for free.
+        run: bash .github/scripts/test_lint_args.sh
+
   signoff:
     name: T1 signoff re-grade (klt)
     runs-on: ubuntu-latest
@@ -152,14 +202,34 @@ jobs:
         run: |
           set -euo pipefail
           pin="$(grep -v '^[[:space:]]*#' signoff/klt-pin.txt | grep -v '^[[:space:]]*$' | head -1)"
-          echo "klayout-tools @ ${pin}"
+          echo "klayout-tools==${pin}"
           python3 -m pip install --upgrade pip
-          python3 -m pip install "klayout-tools @ git+https://github.com/2AMLogic/klayout-tools@${pin}"
-          klt version || true
+          python3 -m pip install "klayout-tools==${pin}"
+          klt --version
+
+      - name: Layout unit tests (klayout/klt present, no skips)
+        # The `test` job lets klayout/klt-gated tests skip on its bare runner.
+        # Here klt and its klayout dependency are installed, so those tests
+        # must actually run: --require-no-skips fails on any skipped test.
+        run: bash .github/scripts/test_layout.sh --require-no-skips
+
+      - name: Own-directory sys.path.insert guard (klayout tier, no skips)
+        # The `test` job runs this script's base tier. Here klayout is present
+        # (it ships as a klt dependency), so --with-klayout adds the four
+        # layout/bandgap_top/ targets that reach a module-level
+        # `import klayout.db`, and fails on any skipped test. That second half
+        # is what catches layout/common/test_klayout_builder.py losing its
+        # insert: HAVE_KLAYOUT goes False and all 7 tests skip while the
+        # process still exits 0, so only a no-skip assertion sees it.
+        run: bash .github/scripts/test_dotted_invocation.sh --with-klayout
 
       - name: Re-grade the block manifest
         # `klt signoff --manifest` exits 3 when the block is not yet T1, which
         # is this block's current state and not an error -- check_signoff.py
         # knows that, and fails only on a real error or on any drift between
         # the fresh grade and the committed record.
+        # The step above pip-installed klt at klt-pin.txt's revision, so the
+        # explicit override selects that same revision (no uvx on the runner).
+        env:
+          KLT_SIGNOFF_CMD: klt
         run: python3 signoff/check_signoff.py --run-klt

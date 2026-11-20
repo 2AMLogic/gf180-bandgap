@@ -70,11 +70,11 @@ layout/
 
 ## Install `klt`
 
-No PyPI release yet — install from the klayout-tools git repo:
+Install the pinned klayout-tools release from PyPI:
 
 ```bash
-uv tool install git+https://github.com/2AMLogic/klayout-tools
-# or: pip install git+https://github.com/2AMLogic/klayout-tools
+uv tool install klayout-tools==0.8.0
+# or: pip install klayout-tools==0.8.0
 
 klt --version
 klt drc --help
@@ -86,15 +86,17 @@ KLayout GUI/application binary or its `.drc`/`.lydrc` script runner**. Every
 command below ran to completion in a shell with no KLayout application
 installed, no `DISPLAY`, and no Qt.
 
-**No version pin — drift is expected, and has happened before ([#159](https://github.com/2AMLogic/gf180-bandgap/issues/159)).**
-`uv tool install`/`pip install` above always resolves to the git repo's
-current `HEAD`, so the exact rule set/extraction behaviour changes out from
-under this repo whenever `klayout-tools` merges upstream. The "Expected
-results" table below records the `klt` revision its DRC-clean/LVS-match
-verdicts were last verified against (`uv tool install`'s own
-`uv-receipt.toml`, or `klt --version` for the package version alone) — check
-that note before trusting the table unchanged, and re-run the reproduction
-commands (below) against your own installed `klt` if it is newer.
+**`klt` is pinned.** The version is set by
+[`signoff/klt-pin.txt`](../signoff/klt-pin.txt), and the install line above
+must match that file. Upstream merges therefore do not change the rule
+set/extraction behaviour under this repo (they did before the pin — see
+[#159](https://github.com/2AMLogic/gf180-bandgap/issues/159)). A bump is a
+deliberate act: re-run `signoff/regenerate.sh` and state in the PR what
+moved, as `klt-pin.txt`'s own comment says. The "Expected results" table
+below records the `klt` revision its DRC-clean/LVS-match verdicts were last
+verified against (`klt --version` for the package version) — check that note
+before trusting the table unchanged, and re-run the reproduction commands
+(below) if your installed `klt` differs.
 
 ## Reproducing the whole flow
 
@@ -136,11 +138,11 @@ Expected results (as committed):
 | Step | Result |
 |---|---|
 | `matching_report.py` | all tier-1/2/3 checks pass, exit 0 |
-| `run_drc.py` | `status: clean`, `violation_count: 0` (`20260817-125327-972f6d5.drc.json`; see "RESOLVED — klt-version drift..." below) |
-| `run_lvs.py` | `status: match`, 164/164 devices, 92/92 nets (`20260817-125346-972f6d5.lvs.json`; see "RESOLVED — klt-version drift..." below) |
+| `run_drc.py` | `status: clean`, `violation_count: 0`, `metrics.drc__error__count: 0` — quoted from `20261028-065229-f32fe48.drc.json` (klt 0.8.0, klayout 0.30.12), the envelope `signoff/block-manifest.json` item 3 cites. The earlier `20260817-125327-972f6d5.drc.json` run reached the same verdict under klt 0.2.0 / klayout 0.30.10; see "RESOLVED — klt-version drift..." below |
+| `run_lvs.py` | `status: match`, 164/164 devices, 82/82 nets, 3/3 pins, `mismatch_count: 9` (all `warning`), `error_count: 0` — quoted from `20261028-065214-f32fe48.lvs.json` (klt 0.8.0, klayout 0.30.12), the envelope `signoff/block-manifest.json` item 4 cites. The earlier `20260817-125346-972f6d5.lvs.json` run read 164/164 devices but 92/92 nets, 4/4 pins and 14 mismatches under klt 0.2.0 / klayout 0.30.10, against an earlier drawn GDS; see "RESOLVED — klt-version drift..." below and "Of the 9 mismatches..." further down |
 | `routing_budget.py` | decomposition reconstructs the drawn bbox (221.70 × 281.03 µm) with **no corridor and no rail-band term left**, and the drawn `S1` area equals `area_report.py`'s measured 62,505.60 µm² / 2.47× — beating the study's 65,896.39 µm² / 2.60× estimate by 5.1 % (see [`routing/multi-metal-routing-study.md`](routing/multi-metal-routing-study.md) and `bandgap_top/AREA.md` Finding 6) |
 | `run_erc.py` | `gate_count: 10`, `erc_finding_count: 0` — **zero** `erc.unconnected_net` and **zero** `erc.supply_short` naming `vdd`/`vss`, i.e. each supply is exactly one electrical island (`20260920-062158-32dcc18.erc.json`). The report's own `status` is `not_checked`/exit 4 on every gf180mcu run, which T1 item 11 does not grade on — see [`erc/README.md`](erc/README.md), and note that `erc.missing_tie` is **not computed** there |
-| `run_lvs.py --engine both` | klayout `match`, 14 mismatches; netgen `mismatch`, 1 `device.property` error (`20260819-070132-1e66285.lvs-netgen.json`) — **engines DISAGREE by design**: [#168](https://github.com/2AMLogic/gf180-bandgap/issues/168) root-caused this to a netgen-only device-pairing artifact on graph-symmetric dummy devices, not a layout defect (see below); the `klayout` engine's `match` verdict is this repo's acceptance gate (#159/#170) and is unaffected |
+| `run_lvs.py --engine both` | **Dated to 2026-08-19, the last netgen run committed under `layout/lvs/reports/bandgap_top/`** (klt 0.2.0, klayout 0.30.10, netgen 1.5.133) — not a re-quote of the 2026-10-28 envelopes above, which are klayout-only, and no netgen run has been committed since: klayout `match`, 14 mismatches (`20260819-070132-1e66285.lvs.json`); netgen `mismatch`, 3 mismatches of which 1 is an `error`-severity `device.property` (`20260819-070132-1e66285.lvs-netgen.json`) — **engines DISAGREE by design**: [#168](https://github.com/2AMLogic/gf180-bandgap/issues/168) root-caused this to a netgen-only device-pairing artifact on graph-symmetric dummy devices, not a layout defect (see below); the `klayout` engine's `match` verdict is this repo's acceptance gate (#159/#170) and is unaffected |
 | `area_report.py` | 62,505.60 µm² vs. the current interim ceiling of 66,000 µm² (0.066 mm², `spec/decision-records/0006-area-target-narrowed-post-166.md`, proposed via the ratification-via-PR path) — **PASS, 5.3 % headroom**; still **FAIL, 25.0 % over budget** against the originally-ratified 50,000 µm² (DR-0003) (issue #166 recovered 22.7 % of #156's 80,813.72 µm²; the remainder is row-stripe floorplan whitespace, not routing — see `layout/bandgap_top/AREA.md` Findings 5–7) |
 
 **RESOLVED (documented, not a code change) — the `netgen` engine's
@@ -159,6 +161,15 @@ check — a pairing choice `klt`'s own comparer does not have to make the same
 way, and does not: the `klayout` engine's independent (non-configurable-
 tolerance) device-parameter check reports zero `device.property` mismatches
 on the same inputs (`20260819-070132-1e66285.lvs.json`).
+
+**Every figure in this finding is dated to that 2026-08-19 `--engine both`
+run** (`20260819-070132-1e66285.lvs.json` / `.lvs-netgen.json`, klt 0.2.0 /
+klayout 0.30.10 / netgen 1.5.133, layout `sha256:3e1af18e…`). It is the newest
+netgen run committed in this repo, so nothing below is re-quoted from the
+2026-10-28 klayout envelopes `signoff/block-manifest.json` cites — those did
+not run netgen at all (`environment.netgen_binary: null`). The root cause
+itself is unaffected by that: it is a property of netgen's comparator on
+single-net dummy topology, not of one run's numbers.
 
 Confirmed root cause, not merely hypothesised: `klt extract`'s own per-device
 coordinates place the two `L=16 µm` dummy `pfet`s (`pfet$43`/`pfet$48`,
@@ -190,9 +201,9 @@ python3 layout/lvs/run_lvs.py layout/bandgap_top/bandgap_top.gds --engine both
 
 **RESOLVED — klt-version drift silently invalidated the DRC-clean/LVS-match
 verdicts above, independent of any drawn-geometry change**
-([#159](https://github.com/2AMLogic/gf180-bandgap/issues/159)). `klt` is
-installed unpinned from git head (no version pin — see "Requires `klt` on
-`PATH`" above); #156 found (while regenerating `bandgap_top.gds` for the
+([#159](https://github.com/2AMLogic/gf180-bandgap/issues/159)). `klt` was
+installed unpinned from git head at the time (no version pin then; it is
+pinned now — see "Install `klt`" above); #156 found (while regenerating `bandgap_top.gds` for the
 area row) that a `klt` installed today no longer reproduced either verdict
 against the committed GDS, and #159 root-caused and fixed each finding
 rather than treating it as a `klt` regression to report upstream — none of
@@ -224,22 +235,33 @@ it turned out to be a genuine `klt`/klayout-tools bug:
   match exactly, and the `vdd`/`VDD` and `FB`/`$12` net-identity "conflicts"
   — collateral fallout from the comparer's structural matching around that
   one broken device pair, not a real `klt` case-sensitivity bug — cleared
-  as a side effect, with no separate net-naming fix needed. The remaining
-  14 mismatches are the same pre-existing warning-severity noise this
-  section already documents below (2 `device.body_unverified`, 12
-  structurally-resolved `topology`).
+  as a side effect, with no separate net-naming fix needed. The 14 mismatches
+  remaining **at that run** (`20260817-125346-972f6d5.lvs.json`, 2026-08-17)
+  are the same pre-existing warning-severity noise this section documents
+  below (2 `device.body_unverified`, 12 structurally-resolved `topology`).
+  The manifest-cited 2026-10-28 envelope reads 9 instead — see "Of the 9
+  mismatches..." below.
 
-**klt revision this table is valid against:** `klt 0.2.0`,
+**klt revision each row is valid against:** the `run_drc.py` and `run_lvs.py`
+rows carry their envelope's own `provenance` — `klt 0.8.0`, klayout 0.30.12
+for the 2026-10-28 envelopes `signoff/block-manifest.json` cites. The
+`--engine both` row, the #159 and #168 findings above and the net-count note
+below are valid against the revision of their own 2026-08 capture: `klt
+0.2.0`,
 `git+https://github.com/2AMLogic/klayout-tools@a482d3934bd644b763cf925f6344ac05f54a1623`
-(the exact `uv tool install` receipt, `uv-receipt.toml`, as of this table's
-capture — re-verify against a fresh `klt --version`/install receipt before
-trusting this table unchanged, since `klt` is installed unpinned from git
-head; see "Install `klt`" above).
+(the exact `uv tool install` receipt, `uv-receipt.toml`, as of that capture —
+`klt` was installed unpinned from git head at the time; it is pinned now, see
+"Install `klt`" above). Re-verify against a fresh `klt --version`/install
+receipt before trusting any undated figure here.
 
-`net_count` is 92, not 93, because gf180-bandgap#88 redrew the MiM cap's `fb`
-up-hop contact to land inside the recognised top plate — the top plate no
-longer extracts as its own isolated net, so it no longer contributes a
-distinct entry to the net count (see "Findings and escalations" below).
+**At the 2026-08 capture** `net_count` was 92, not 93, because
+gf180-bandgap#88 redrew the MiM cap's `fb` up-hop contact to land inside the
+recognised top plate — the top plate no longer extracts as its own isolated
+net, so it no longer contributes a distinct entry to the net count (see
+"Findings and escalations" below). The manifest-cited 2026-10-28 envelope
+reads 82 nets and 3 pins against a later drawn GDS
+(`sha256:97944732…`, vs. `sha256:3e1af18e…` here); this paragraph explains
+the 2026-08 figure only, and nothing here accounts for that later change.
 
 **RESOLVED — `run_lvs.py`'s `match` result went stale between commits,
 independent of any code change here** ([#89](https://github.com/2AMLogic/gf180-bandgap/issues/89)).
@@ -289,12 +311,24 @@ splitting, not a `klt` recognition change. Confirmed unrelated to klt-version
 drift specifically: the same 164/42 count is what a `klt` install at either
 the pre-#159 or post-#159 revision extracts from this GDS.
 
-Of the current 14 mismatches, all are `warning`-severity and not defects: two
-`device.body_unverified` entries are the deck's standing "no substrate/well
-tap layer" caveat (see below), and 12 `topology` entries are ambiguous net
-pairings the comparer resolved structurally — the six per-unit PNP Nwell
-nets and the symmetric interior nodes of the strapped-out trim loops. There
-are no `error`-severity mismatches. `status` is `NetlistComparer`'s own
+Of the 9 mismatches in the manifest-cited 2026-10-28 envelope
+(`20261028-065214-f32fe48.lvs.json`), all are `warning`-severity and none is
+a defect; `error_count` is 0 and `category_error_counts` is empty. Six are
+`topology` entries — ambiguous net pairings the comparer resolved
+structurally, every one of them an interior node of the strapped-out trim
+loops (`CORE_TRIM_U2_0`, `CORE_TRIM_U2_2`, `CORE_TRIM_U3_0`,
+`CORE_TRIM_U3_6`, `CORE_TRIM_U4_0`, `CORE_TRIM_U4_14`). The other three are
+`device.geometry_not_compared`, one per device class whose geometry
+parameters KLayout declares *secondary* so `kdb.NetlistComparer` never
+compared them: `cap_mim_2f0_m4m5_noshield` (`A`, `P` not compared; `C` was),
+`ppolyf_u` and `ppolyf_u_1k` (`A`, `L`, `P`, `W` not compared; `R` was).
+Those three are a stated gap in what the compare covers, not a difference it
+found — see "What the LVS verdict does and does not cover" below. That
+envelope carries **no** `device.body_unverified` entry: its
+`body_verification.status` is `verified`. The 2026-08-19 run read 14
+mismatches instead (2 `device.body_unverified` — the deck's standing "no
+substrate/well tap layer" caveat discussed below — and 12
+structurally-resolved `topology`). `status` is `NetlistComparer`'s own
 boolean verdict, which `klt lvs` never re-derives from the mismatch list.
 
 The MiM cap's **top** plate now resolves to the real `fb` net directly
@@ -472,10 +506,12 @@ none is a design simplification, and nothing in the reference is hand-written.
   ladder node, or the MIM cap's either plate wired to the wrong rail all now
   fail this check.
 - **Not covered** (each a tool-capability limit, each stated at its source):
-  - **Device body/well terminals.** The deck draws no substrate- or
-    well-tap layer, so every NMOS body compares against the synthesised
-    `vsubs` global and every PMOS body against one anonymous well net —
-    `klt lvs`'s own two `device.body_unverified` warnings.
+  - **Device body/well terminals.** Since klt 0.3.0 the deck derives taps
+    from the implants, so NMOS bodies / PNP bases compare against `vss` and
+    PMOS bodies against `vdd`; the reference is the single tie-aware form
+    ([#378](https://github.com/2AMLogic/gf180-bandgap/issues/378),
+    `layout/lvs/ROOT-CAUSE-378.md`). Whether a tie is physically adequate
+    (latch-up, tap spacing) is a DRC/ERC question LVS does not answer.
   - **RESOLVED — the MIM capacitor's top-plate net**
     ([#88](https://github.com/2AMLogic/gf180-bandgap/issues/88)). Until #88,
     klayout-tools#329's plate-to-`metals[]` join (see "Covered" above,
@@ -932,100 +968,22 @@ are reported, not patched around:
 Per CLAUDE.md's friction protocol, every klayout-tools gap this work
 surfaced is tracked generically (tool capability, never this design's
 specifics) on the public
-[klayout-tools issue tracker](https://github.com/2AMLogic/klayout-tools/issues):
+[klayout-tools issue tracker](https://github.com/2AMLogic/klayout-tools/issues),
+which is the system of record for their status. The history of how this repo
+adopted each fix lives in `git log` and the gf180-bandgap issues cited in the
+sections above.
 
-- **Extraction decks recognise MOS only** — no resistor/bipolar/capacitor
-  device classes, so an analog block's LVS cannot be a full-device LVS:
-  [`#219`](https://github.com/2AMLogic/klayout-tools/issues/219) —
-  **resolved upstream** (#222/#223/#225); this block's reference netlist now
-  models all four classes.
-- **A curated deck's poly-resistor list covers one sheet-rho flavour of the
-  PDK's poly-resistor family** — any drawn instance of another flavour
-  collapses to a short:
-  [`#299`](https://github.com/2AMLogic/klayout-tools/issues/299) — **resolved
-  upstream** on 2026-08-02. The deck now carries a `ppolyf_u_1k` entry
-  (`SAB` + `Resistor` + `RES_MK`), and
-  [#78](https://github.com/2AMLogic/gf180-bandgap/issues/78) took it up:
-  `generate.py` now draws `RES_MK` on `startup.RPU`'s `high_rho` body too, so
-  it extracts as a real `ppolyf_u_1k` device at 1000 Ω/□ instead of a short
-  on either side of the comparison. The last remaining marker difference
-  between the two flavours' bodies is the base flavour's `Pplus`, which the
-  high-rho recogniser deliberately omits.
-- **A bipolar recogniser that keys off a bare diffusion layer cannot tell a
-  base-contact ring from the emitter it surrounds** — a curated deck that
-  models no implant layers recognised *two* bipolars per drawn vertical-PNP
-  unit cell (the real one, plus one whose "emitter" is the base ring):
-  [`#302`](https://github.com/2AMLogic/klayout-tools/issues/302) — **resolved
-  upstream** on 2026-08-02 by
-  [`#304`](https://github.com/2AMLogic/klayout-tools/issues/304) (deck commit
-  `be4b4f82`), which excludes `Nplus` from the emitter region so the n+ tie
-  ring is dropped. **This repo has taken it up** ([#84](https://github.com/2AMLogic/gf180-bandgap/issues/84)):
-  `make_reference.py` now emits one `bjt` card per drawn PNP unit, and the
-  committed LVS evidence was regenerated against the current (post-#304)
-  deck — see the resolved deck-pin finding above.
-- **gf180mcu extraction deck declares one metal level and no vias** — forced
-  single-metal routing on any block that wanted to LVS, at a real area cost:
-  [`#220`](https://github.com/2AMLogic/klayout-tools/issues/220) —
-  **resolved upstream** (the deck now carries the full Metal1–Metal5 stack
-  with vias). **This repo has taken it up**
-  ([#166](https://github.com/2AMLogic/gf180-bandgap/issues/166)): the block
-  is routed on Metal2/Metal3 today and the area cost that gap imposed is
-  measured and recovered — see "Routing style" above and
-  [`bandgap_top/AREA.md`](bandgap_top/AREA.md) Finding 6.
-- **`gf180mcu` deck coverage gap (well/tap, BJT-specific rules)** —
-  [`#157`](https://github.com/2AMLogic/klayout-tools/issues/157), filed from
-  the #15 DRC bring-up.
-- **Missing `klt lvs` / extraction capability** — the original gap
-  ([`#54`](https://github.com/2AMLogic/klayout-tools/issues/54), superseded
-  by epic [`#153`](https://github.com/2AMLogic/klayout-tools/issues/153)) —
-  **resolved upstream**, and this block's layout is the consumer that closed
-  the loop on it.
-- **`enclosing` check false-negatives on a shape drawn entirely outside the
-  enclosing layer, instead of flagging the under-enclosure** — found via the
-  `fb` top-plate tab above (#82):
-  [`#318`](https://github.com/2AMLogic/klayout-tools/issues/318) —
-  **resolved upstream** on 2026-08-02 by
-  [`#327`](https://github.com/2AMLogic/klayout-tools/issues/327); the current
-  deck now genuinely flags this layout's `fb` tab instead of false-negativing
-  it (see the #82 update above and gf180-bandgap#84).
-- **A recognised MiM cap's plate nets are isolated from the connectivity
-  stack**, so no via stack to either plate can ever be confirmed by `klt
-  extract`/`klt lvs` — the same limitation that made the `fb` tab's
-  workaround necessary in the first place:
-  [`#314`](https://github.com/2AMLogic/klayout-tools/issues/314) —
-  **resolved upstream** (joins a recognised plate to the ordinary metal
-  stack when its via lands on that plate). Its own follow-on gap — a
-  DRM-legal top-plate via still misread as a `vdd`/`fb` short — was filed as
-  [`#364`](https://github.com/2AMLogic/klayout-tools/issues/364) and fixed
-  by [`PR #368`](https://github.com/2AMLogic/klayout-tools/pull/368);
-  gf180-bandgap#88 redrew this layout's contact against it (see "Findings
-  and escalations" above) and is the consumer that closed the loop on both.
-- **klt-version DRC/LVS drift investigated, no new tool defect found**
-  ([#159](https://github.com/2AMLogic/gf180-bandgap/issues/159)): all four
-  findings (two new-but-intentional DRM rules this repo needed to adapt to,
-  one real pre-existing layout enclosure gap, one stale reference-side
-  capacitance model) root-caused to this repo's own `generate.py`/
-  `make_reference.py`, not to `klt`/klayout-tools — a measured refutation
-  of the "genuine klt bug" hypothesis rather than a filing. See the
-  "Expected results" table's "RESOLVED — klt-version drift..." note above
-  for the full root-cause breakdown.
-- **`klt erc`'s `ties[]` collapses a design into one electrical island**,
-  reporting false `erc.supply_short`/`erc.multiply_driven_net` findings and
-  making T1 item 11's `erc.missing_tie` half unsatisfiable:
-  [`#2169`](https://github.com/2AMLogic/klayout-tools/issues/2169) — filed
-  upstream from a routed standard-cell design, and **independently
-  reproduced here** on a hand-drawn analog layout with no standard cells and
-  no PDN (`gate_count` 10 → 1, three false shorts). The reproduction is
-  committed as [`erc/erc-tie-spec.known-gap.json`](erc/erc-tie-spec.known-gap.json)
-  plus its report, so this repo's decision to omit `ties[]` is a measured
-  one. Still open.
-- **`klt erc --pdk` has an antenna-ratio limit table for sky130 only**, so
-  every gf180mcu run reports `status: "not_checked"` / exit 4 no matter how
-  clean its connectivity rules came back — a passing structural supply read
-  is indistinguishable, by status and exit code, from a run that checked
-  nothing: [`#2179`](https://github.com/2AMLogic/klayout-tools/issues/2179).
-  Filed 2026-09-20. It does not block T1 item 11 (which grades the finding
-  rules, not the status), but it does block machine-grading one. Still open.
+- [`#219`](https://github.com/2AMLogic/klayout-tools/issues/219) — extraction decks recognised MOS only: resolved.
+- [`#299`](https://github.com/2AMLogic/klayout-tools/issues/299) — deck poly-resistor list covered one sheet-rho flavour: resolved (taken up in [#78](https://github.com/2AMLogic/gf180-bandgap/issues/78)).
+- [`#302`](https://github.com/2AMLogic/klayout-tools/issues/302) — bipolar recogniser could not tell a base-contact ring from the emitter: resolved by [`#304`](https://github.com/2AMLogic/klayout-tools/issues/304) (taken up in [#84](https://github.com/2AMLogic/gf180-bandgap/issues/84)).
+- [`#220`](https://github.com/2AMLogic/klayout-tools/issues/220) — deck declared one metal level and no vias: resolved (taken up in [#166](https://github.com/2AMLogic/gf180-bandgap/issues/166); see "Routing style" above and [`bandgap_top/AREA.md`](bandgap_top/AREA.md) Finding 6).
+- [`#157`](https://github.com/2AMLogic/klayout-tools/issues/157) — `gf180mcu` deck coverage gap (well/tap, BJT-specific rules), filed from the #15 DRC bring-up.
+- [`#54`](https://github.com/2AMLogic/klayout-tools/issues/54) / [`#153`](https://github.com/2AMLogic/klayout-tools/issues/153) — missing `klt lvs` / extraction capability: resolved.
+- [`#318`](https://github.com/2AMLogic/klayout-tools/issues/318) — `enclosing` check false-negative on a shape drawn entirely outside the enclosing layer: resolved by [`#327`](https://github.com/2AMLogic/klayout-tools/issues/327) (see the #82 update above and gf180-bandgap#84).
+- [`#314`](https://github.com/2AMLogic/klayout-tools/issues/314) — recognised MiM cap plate nets isolated from the connectivity stack: resolved; follow-on [`#364`](https://github.com/2AMLogic/klayout-tools/issues/364) fixed by [`PR #368`](https://github.com/2AMLogic/klayout-tools/pull/368) (gf180-bandgap#88; see "Findings and escalations" above).
+- [`#2169`](https://github.com/2AMLogic/klayout-tools/issues/2169) — `klt erc`'s `ties[]` collapses a design into one electrical island: **closed 2026-09-20**. Independently reproduced here; the reproduction is committed as [`erc/erc-tie-spec.known-gap.json`](erc/erc-tie-spec.known-gap.json) plus its report (append-only evidence, left untouched). Whether `ties[]` should now be declared is tracked in [#358](https://github.com/2AMLogic/gf180-bandgap/issues/358).
+- [`#2179`](https://github.com/2AMLogic/klayout-tools/issues/2179) — `klt erc --pdk` had an antenna-ratio limit table for sky130 only, so every gf180mcu run reported `not_checked` / exit 4: **closed 2026-09-20**.
+- klt-version DRC/LVS drift ([#159](https://github.com/2AMLogic/gf180-bandgap/issues/159)) was investigated and root-caused to this repo, not to the tool; no filing. See the "Expected results" table's "RESOLVED — klt-version drift..." note above.
 
 ## The `trivial_poly_res` DRC fixture (#15)
 

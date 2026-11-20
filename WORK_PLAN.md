@@ -3,6 +3,7 @@
 This roadmap is generated from the current GitHub label state by the Loom Guide role.
 
 <!-- guide:plan-body:start -->
+_Generated: 2026-11-18T13:22:51Z (snapshot; compare against live labels)_
 ## Operator Attention: Merge-Risk-Hold Pileup
 
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
@@ -19,53 +20,59 @@ _None._
 
 `loom:important`; taken before unlabelled work.
 
-- **#239**: DR-0007: execute final-DUT fleet suite and mismatch evidence run
+- **#203**: DR-0007 phase A: measure array ratio and finalize schematic PVT evidence
+- **#204**: DR-0007 phase B: regenerate layout and record pinned extracted verification *(held)*
+- **#239**: DR-0007: execute final-DUT fleet suite and mismatch evidence run *(held)*
+- **#386**: Prepare the revised par_r resistor-mismatch model-risk assessment and validation plan (part of #239)
 
 ## Ready
 
 Human-approved issues ready for implementation (`loom:issue`).
 
-_None._
+- **#386**: Prepare the revised par_r resistor-mismatch model-risk assessment and validation plan (part of #239)
+
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
-- **#308**: ci: fail when committed bandgap_top.gds differs from generate.py output
-- **#328**: signoff: use the repository klt pin for default local re-grading
+- **#518**: lint.sh: an empty --base-ref value is silently dropped instead of failing closed
+
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
-_None._
+- **#387**: docs: propose DR-0008 par_r model-risk successor and validation plan
 
 ## Approved (Awaiting Merge)
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
-- **#340**: fix(signoff): default re-grade uses the repo klt pin via uvx
+_None._
+
 
 ## Proposed
 
 Issues carrying `loom:curated`.
 
-- **#87**: Layout's 4x unit-PNP array for core.Q2 gives an effective dVBE ratio of 4.03, not the schematic's 3.63 — floorplan 4.1 asserts the opposite *(curated)*
+- **#87**: Layout's 4x unit-PNP array for core.Q2 gives an effective dVBE ratio of 4.03, not the schematic's 3.63 — floorplan 4.1 asserts the opposite *(curated)* *(held)*
 - **#203**: DR-0007 phase A: measure array ratio and finalize schematic PVT evidence *(curated)*
-- **#239**: DR-0007: execute final-DUT fleet suite and mismatch evidence run *(curated)*
-- **#308**: ci: fail when committed bandgap_top.gds differs from generate.py output *(curated)*
-- **#326**: layout/bandgap_top: routing-budget S1 area disagrees with committed GDS bbox (klayout-gated test fails on main) *(curated)*
-- **#358**: T1 item 11: declare ERC well/substrate ties now that klayout-tools#2169 is fixed, then cite item 11 *(curated)*
+- **#239**: DR-0007: execute final-DUT fleet suite and mismatch evidence run *(curated)* *(held)*
+- **#308**: ci: fail when committed bandgap_top.gds differs from generate.py output *(curated)* *(held)*
+- **#358**: T1 item 11: declare ERC well/substrate ties now that klayout-tools#2169 is fixed, then cite item 11 *(curated)* *(held)*
+- **#386**: Prepare the revised par_r resistor-mismatch model-risk assessment and validation plan (part of #239) *(curated)*
+
 
 ## Proposed (Architect / Hermit)
 
-- **#219**: sim harness: share the batch-backend guard and cap default local --jobs *(architect)*
-- **#306**: ci: run klayout/klt-gated layout tests in the signoff job and fail on skips *(architect)*
+- **#477**: Deduplicate the startup ramp deck: 183 lines declared byte-identical across sim/startup and sim/startup-slow-ramp, with nothing enforcing it *(hermit)* *(held)*
+- **#475**: Remove three unconsumed block netlists from design/netlist: bandgap_core.spice is stale against the schematic *(hermit)* *(held)*
 
 ## Epics
 
-- **#94**: Track the gap to T1 sim-validated (klayout-tools design-evidence tiers)
-- **#202**: Q2 array (DR-0007): corner-covered PVT re-run, R1 re-null, extracted re-run on pinned klt
+- **#94**: Track the gap to T1 sim-validated (klayout-tools design-evidence tiers) *(held)*
+- **#202**: Q2 array (DR-0007): corner-covered PVT re-run, R1 re-null, extracted re-run on pinned klt *(held)*
 - **#203**: DR-0007 phase A: measure array ratio and finalize schematic PVT evidence
 
 ## Backlog Balance
@@ -74,11 +81,11 @@ Issues carrying `loom:curated`.
 |------|-------|
 | Operator merge-risk holds | 0 |
 | Very important | 0 |
-| Important | 1 |
-| Ready (`loom:issue`) | 0 |
-| In Progress (`loom:building`) | 2 |
-| PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 1 |
+| Important | 4 |
+| Ready (`loom:issue`) | 1 |
+| In Progress (`loom:building`) | 1 |
+| PRs awaiting review | 1 |
+| Approved PRs awaiting merge | 0 |
 | Curated | 6 |
 | Architect / Hermit proposals | 2 |
 | Active epics | 3 |

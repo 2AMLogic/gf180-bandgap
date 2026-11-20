@@ -24,8 +24,12 @@ editing, no per-device fudging:
 3. **Add the layout's edge dummy devices** (``plan.build_rows``), which are
    real transistors in the layout and so must be real transistors here.
 4. **Re-target the MOS body terminals** to the nets the deck actually
-   produces: NMOS bodies to the deck's ``vsubs`` global, PMOS bodies to the
-   single Nwell net of the contiguous PMOS band.
+   produces: NMOS bodies to the substrate tie (``vss``), PMOS bodies to the
+   Nwell tie of the contiguous PMOS band (``vdd``). Since klayout-tools#1084
+   (klt >= 0.3.0) the deck derives a tap region from the Nplus/Pplus implants
+   (n+ Comp inside Nwell = well tie, p+ Comp outside Nwell = substrate tie),
+   so these ties extract onto the real rails rather than onto a separate
+   ``vsubs`` global and a floating Nwell net (gf180-bandgap#378, #403).
 5. **Emit one ``ppolyf_u`` card per drawn resistor body** — ``core.R1`` and
    ``core.R2`` (each one folded serpentine = one recognised device) and each
    of the 63 trim-ladder unit segments — with ``R`` predicted from the
@@ -49,9 +53,9 @@ editing, no per-device fudging:
    and (duplicated) ``AC``/``PC`` from the enclosing Nwell island
    (``plan.pnp_base_area_nm2``/``pnp_base_perimeter_nm`` — see that
    function's docstring for why the deck reports the same value for both
-   the base and collector parameters). Each unit's Nwell is its own island,
-   so each unit's base is its own (unnamed) net — the deck never connects
-   Nwell to Contact.
+   the base and collector parameters). Each unit's base (its Nwell island) is
+   tied to ``vss`` and the collector is the substrate, i.e. ``vss`` too —
+   ``design/netlist`` draws every PNP as ``XQn vss vss <emitter>``.
 
    **Historical note.** Before klayout-tools#304, the deck recognised a
    bipolar emitter as ``Comp & Nwell & DRC_BJT`` and modelled no implant
@@ -93,6 +97,10 @@ and does not prove is stated in ``layout/README.md``.
 Usage::
 
     python3 layout/lvs/make_reference.py -o layout/lvs/bandgap_top.ref.spice
+
+This is the tie-aware form that matches the pinned klt; the older pre-#1084
+form (separate ``vsubs`` pin, floating ``nwl``/``nw_<unit>`` nets) is gone —
+see ``layout/lvs/ROOT-CAUSE-378.md``.
 """
 
 from __future__ import annotations
@@ -108,19 +116,16 @@ sys.path.insert(0, str(REPO_ROOT / "layout" / "bandgap_top"))
 import netlist_model  # noqa: E402
 import plan as plan_mod  # noqa: E402
 
-#: Net the ``klt`` gf180mcu extraction deck ties every NMOS body to
-#: (``decks.ExtractionDeck.substrate_net``); the deck draws no substrate-tap
-#: layer, so it cannot derive a real body net. It is also the bulk terminal
-#: of every extracted ``ppolyf_u`` (``ResistorDevice.bulk_to_substrate``) and
-#: the collector of every extracted ``bjt`` (the deck models no drawn
-#: collector layer -- a vertical bipolar's collector *is* the substrate).
-SUBSTRATE_NET = "vsubs"
+#: Net every NMOS body ties to. The deck derives substrate taps from the
+#: Nplus/Pplus implants (klayout-tools#1084), so the substrate is the real
+#: ``vss`` rail. It is also the bulk terminal of every extracted ``ppolyf_u``
+#: (``ResistorDevice.bulk_to_substrate``), the collector of every extracted
+#: ``bjt`` (a vertical bipolar's collector *is* the substrate) and each PNP
+#: unit's base (its Nwell island is tied to ``vss``).
+SUBSTRATE_NET = "vss"
 
-#: Name used for the PMOS band's single Nwell net. The extraction deck never
-#: connects Nwell to Contact (doing so would short every device in the well
-#: together), so the extracted PMOS body is an unnamed net; the comparer
-#: matches it structurally.
-NWELL_NET = "nwl"
+#: Net the PMOS band's single Nwell ties to (the well tie lands on ``vdd``).
+NWELL_NET = "vdd"
 
 TOP = "bandgap_top"
 
@@ -235,15 +240,15 @@ def build_reference(trim_code: int) -> tuple[str, dict]:
                     counts[RES_CLASS] += 1
 
             elif isinstance(item, plan_mod.PnpItem):
-                # Step 8: each unit's own Nwell island is its own (unnamed)
-                # extracted net -- the deck connects Nwell to nothing. One
+                # Step 8: each unit's base (Nwell island) is tied to vss, as
+                # is its collector (the substrate). One
                 # real p+ emitter extracts per unit (klayout-tools#304). All
                 # six junction parameters the deck reports are modelled from
                 # drawn geometry (gf180-bandgap#111): AE/PE from the emitter
                 # square, AB/PB/AC/PC from the enclosing Nwell island --
                 # plan.pnp_base_nwell_side_nm's docstring explains why AC/PC
                 # duplicate AB/PB.
-                base = f"nw_{name}"
+                base = SUBSTRATE_NET
                 emitter = net_of(item.emitter_net)
                 use(base, emitter, SUBSTRATE_NET)
                 ae_nm2 = plan_mod.pnp_emitter_area_nm2(item)
@@ -293,16 +298,11 @@ def build_reference(trim_code: int) -> tuple[str, dict]:
     )
     counts[CAP_CLASS] += 1
 
-    # Pins: the block's three real ports plus the one body net the deck
-    # synthesises. `Netlist.make_top_level_pins()` promotes every *named*
-    # extracted net to a pin, and only vdd/vss/vref carry a Metal1 label in
-    # the layout, so those three plus `vsubs` are the extracted pin set.
-    # `nwl` (the PMOS band's Nwell) is never promoted -- the deck never
-    # connects Nwell to Contact, so it has no Metal1 label to promote on --
-    # so it stays an internal (unnamed-equivalent) net here too, not a
-    # declared top-level pin (gf180-bandgap#111).
+    # Pins: the block's three real ports. `Netlist.make_top_level_pins()`
+    # promotes every *named* extracted net to a pin, and only vdd/vss/vref
+    # carry a Metal1 label in the layout; with the substrate and Nwell ties
+    # on vss/vdd there is no separate body pin (gf180-bandgap#111, #378).
     pins = [p for p in ("vdd", "vss", "vref") if p in used_nets]
-    pins.append(SUBSTRATE_NET)
 
     header = [
         "* LVS reference netlist for bandgap_top -- GENERATED, do not edit.",

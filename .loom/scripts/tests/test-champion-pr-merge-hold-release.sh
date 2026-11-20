@@ -39,15 +39,14 @@ CHAMPION_MD="$PROMPT_DIR/champion-pr-merge.md"
 
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/assert.sh"
 
-assert_eq() {
-    if [[ "$1" == "$2" ]]; then pass "$3"; else fail "$3 (expected '$1', got '$2')"; fi
-}
+# Local assert_contains kept: uses grep -qF matching; shared helper uses a bash substring match.
 assert_contains() {
     if grep -qF -- "$2" <<<"$1"; then pass "$3"; else fail "$3 (missing '$2' in: $1)"; fi
 }
 assert_lacks() {
     if grep -qF -- "$2" <<<"$1"; then fail "$3 (unexpected '$2' in: $1)"; else pass "$3"; fi
 }
+# Local assert_doc_contains kept: fixed $DOC/$CHAMPION_MD target, so (needle, msg) not (file, needle, msg).
 assert_doc_contains() {
     if grep -qF -- "$1" "$CHAMPION_MD"; then pass "$2"; else fail "$2 (missing literal: $1)"; fi
 }
@@ -76,13 +75,17 @@ chmod +x "$WORK/.loom/scripts/post-comment.sh"
 # FIX_COMMENTS its trusted comments (loom-daemon forge trusted-comments --gh-shape)
 # FIX_EVENTS   issues/N/events payload; FIX_EVENTS_FAIL=1 makes the read fail
 # FIX_LIST     gh pr list payload for the census
-git() { [[ "$*" == "rev-parse --git-common-dir" ]] && echo "$WORK"; }
+# #13200: the facts file lives under /tmp/loom-champion/<sha256 of the git common dir, first 12 hex>, not in .git.
+FACTS_DIR="/tmp/loom-champion/$(printf '%s\n' "$WORK" | sha256sum | cut -c1-12)"
+mkdir -p "$FACTS_DIR"; trap 'rm -rf "$WORK" "$FACTS_DIR"' EXIT
+git() { [[ "$*" == "rev-parse --path-format=absolute --git-common-dir" ]] && echo "$WORK"; }
 # Write the "0. PR facts" file the precheck reads, from FIX_PR + FIX_COMMENTS.
-write_facts() { jq --argjson c "$FIX_COMMENTS" '.comments = $c' <<<"$FIX_PR" >"$WORK/loom-champion-facts-pr-$1.json"; }
+write_facts() { jq --argjson c "$FIX_COMMENTS" '.comments = $c' <<<"$FIX_PR" >"$FACTS_DIR/facts-pr-$1.json"; }
 gh() {
     case "$1 $2" in
         "pr view") printf '%s\n' "$FIX_PR" ;;
         "pr edit") echo "EDIT $*" >>"$STUB_LOG" ;;
+        "api repos/{owner}/{repo}/pulls/"*) echo "false false" ;;   # #13534: live state re-read: open
         "api repos/{owner}/{repo}/issues/"*)
             [[ "${FIX_EVENTS_FAIL:-0}" == 1 ]] && return 1
             local filter="" a

@@ -7,6 +7,15 @@
 - **Snapshot**: `origin/main` @ `3524ca42` (2026-10-09). Every path, record ID,
   hash and commit below was checked against that tree; see
   [Provenance verification](#provenance-verification).
+- **Refreshed 2026-11-13** against `origin/main` @ `3e52d4d3` (#447), in two
+  sentences only: the PSRR table's applicability note on
+  `20260816-145206-1ca1c95` and the A6 "Original decision context" bullet both
+  called `sim/suite/summaries/20260816-142719-1ca1c95.md` "the latest suite
+  summary", which was true at the `3524ca42` snapshot and is no longer — the
+  newest summary is now `sim/suite/summaries/20261016-015258-1c4f2a2.md`
+  (2026-10-16). Each of those two sentences now also states what that newest
+  summary says. Nothing else was re-checked against `3e52d4d3`, and no row,
+  verdict, threshold, count or applicability label changed.
 - **Scope**: existing committed evidence only. No simulation was run to
   prepare this packet. `sim/` records are cited, never edited.
 
@@ -112,7 +121,7 @@ ngspice and no fleet job id.
 | `20260803-063546-31e5efc` | extracted | `eea17aad` (= current extracted file) | 74.74 / 72.90 / 18.55 | PASS | HISTORICAL: the extracted netlist predates #151 and DR-0007 |
 | `20260803-094523-ba091ea` | schematic | `f5975273` | 74.30 / 74.22 / 30.98 | PASS | HISTORICAL |
 | `20260815-022028-40321ca` | schematic | `f5975273` | 74.30 / 74.21 / 30.98 | PASS | HISTORICAL |
-| `20260816-145206-1ca1c95` | schematic, **dirty tree** | `f408e30d` | 77.61 / 77.40 / 28.96 | PASS | HISTORICAL. This is the record the latest suite summary cites (`sim/suite/summaries/20260816-142719-1ca1c95.md`) |
+| `20260816-145206-1ca1c95` | schematic, **dirty tree** | `f408e30d` | 77.61 / 77.40 / 28.96 | PASS | HISTORICAL. This is the record cited by the suite summary that was the latest one at this packet's snapshot (`sim/suite/summaries/20260816-142719-1ca1c95.md`). The newest summary on `main`, `sim/suite/summaries/20261016-015258-1c4f2a2.md`, cites a later `psrr-dc` record instead (`sim/psrr-dc/records/20261016-013458-999e5cf.md`, line 27 of that summary); that record is outside this packet's snapshot and is not assessed here (refresh note, 2026-11-13) |
 
 **`sim/amp-psrr/records/` (7 records):** `20260801-034242-c26da47` (dirty,
 FAIL, 31.87 dB worst), `20260801-073426-a7fd16a` (frozen amp, FAIL, 31.87),
@@ -220,8 +229,16 @@ explicitly makes it a target in that DR.
   not X. A spot-noise point is a *potential* separate requirement that only
   applies if a later wave feeds an ADC.
 - `sim/suite/spec.py` `NOT_CLAIMED_HERE` keeps "Output noise" unclaimed. The
-  latest suite summary (`sim/suite/summaries/20260816-142719-1ca1c95.md`,
-  line 117) predates the bench and still says "no bench yet".
+  suite summary that was the latest one at this packet's snapshot
+  (`sim/suite/summaries/20260816-142719-1ca1c95.md`, line 117) predates the
+  bench and still says "no bench yet". The newest summary on `main`,
+  `sim/suite/summaries/20261016-015258-1c4f2a2.md`, line 117, instead reads
+  "threshold is open item A6 (README.md) -- sim/output-noise/ measures it
+  (0.1-10 Hz integrated + 1/10/100 kHz spot density, full PVT), but the
+  numeric limit remains open pending a narrowly-scoped decision record" — the
+  bench is no longer missing from the summary's own account, and what remains
+  open is A6's numeric limit, which is exactly the question this section puts
+  to the operator (refresh note, 2026-11-13).
 
 ### Measurement definition
 

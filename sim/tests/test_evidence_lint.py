@@ -385,6 +385,38 @@ class AppendOnlyTests(unittest.TestCase):
     def test_an_unchanged_tree_passes(self):
         self.assertEqual(self.check(), [])
 
+    def _main(self, *args: str):
+        """Run the CLI (main) against this fixture; (exit code, stdout)."""
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            rc = evidence_lint.main(["--root", str(self.root), "--quiet", *args])
+        return rc, out.getvalue()
+
+    # --base-ref with a raw SHA is the merge-queue shape (issue #516): the
+    # queue's trial merge carries its base as github.event.merge_group.base_sha,
+    # forwarded by ci.yml via lint.sh --base-ref. These pin the CLI path: an
+    # explicit SHA resolves and diffs against that commit, and a SHA that does
+    # not resolve FAILS under --require-append-only instead of SKIPping.
+
+    def test_a_clean_tree_passes_with_an_explicit_sha_base_ref(self):
+        rc, out = self._main("--base-ref", self.base, "--require-append-only")
+        self.assertEqual(rc, 0)
+        self.assertIn(f"clean against the merge base with {self.base}", out)
+
+    def test_an_explicit_sha_base_ref_diffs_against_that_commit(self):
+        record = self.root / "sim/output-voltage-tc/records" / f"{RECORD_ID}.md"
+        record.write_text(record.read_text() + "\n- **Note**: typo fix\n")
+        rc, out = self._main("--base-ref", self.base, "--require-append-only")
+        self.assertEqual(rc, 1)
+        self.assertIn("modified since", out)
+
+    def test_a_non_resolving_sha_fails_under_require_append_only(self):
+        dead = "deadbeef" * 5
+        rc, out = self._main("--base-ref", dead, "--require-append-only")
+        self.assertEqual(rc, 1)
+        self.assertIn("could not run", out)
+        self.assertNotIn("SKIP", out)
+
     def test_adding_a_new_record_is_allowed(self):
         write_experiment(self.root, record_id=OLDER_ID)
         self.git("add", "-A")

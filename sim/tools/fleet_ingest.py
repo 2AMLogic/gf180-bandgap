@@ -58,6 +58,8 @@ HERE = Path(__file__).resolve().parent
 SIM = HERE.parent
 REPO = SIM.parent
 sys.path.insert(0, str(SIM))
+# Load-bearing: sys.path[0] is this file's dir only under `python3 file.py`.
+# Under the documented `python3 -m <dotted.module>` form it is the CWD. #479
 sys.path.insert(0, str(HERE))
 
 import fleet_common as fc  # noqa: E402
@@ -68,6 +70,12 @@ NOISE_BENCH = "output-noise"
 #: No ratified threshold: verdict is MEASURED / INCOMPLETE, never PASS / FAIL.
 MEASUREMENT_BENCHES = (NOISE_BENCH,)
 MEASURED = "MEASURED"
+#: Why the grid spread floor is waived at exactly one valid sample. Worded
+#: identically to the harness path's skip reason (sim/harness/report.py
+#: `inapplicable_checks`, the record's CHECK SKIP line) so a local record and
+#: a fleet bench read the same; report.py is not touched by the fleet path, so
+#: the equality is pinned by NoiseIngest.test_waiver_wording_is_pinned_to_the_harness_skip.
+SPREAD_FLOOR_SKIP_REASON = "single-sample grid: spread floor not applicable (n=1)"
 INVALID_POINT_MARKER = "*** sim/harness: INVALID POINT"  # mirrors harness.runner / suite.analysis
 
 #: tb.json checks that are ratified-spec limits. Every other tb.json check is
@@ -787,11 +795,20 @@ def assess_bench(bench: str, tb: dict, plan: dict, reports: dict, work: Path, *,
     if bench in MEASUREMENT_BENCHES:
         # grid-level spread floor (harness.report semantics): a figure that should
         # move with PVT but comes back flat means .temp / .lib never took effect.
+        # harness.report skips the floor at exactly one valid sample (a one-point
+        # grid has zero spread by construction); keep the two in lockstep. The
+        # skip is recorded on the tuple here -- the single decision point -- and
+        # the bench render reports it with the harness wording, never re-deriving
+        # the n == 1 condition (#492).
         for name, chk in tb["checks"].items():
             if "min_spread_pct" not in chk:
                 continue
-            got = spread_pct([r["measures"][name] for k, r in rows.items() if k not in invalid and name in r["measures"]])
-            spreads[name] = (got, chk["min_spread_pct"])
+            valid = [r["measures"][name] for k, r in rows.items() if k not in invalid and name in r["measures"]]
+            got = spread_pct(valid)
+            skipped = SPREAD_FLOOR_SKIP_REASON if len(valid) == 1 else None
+            spreads[name] = (got, chk["min_spread_pct"], skipped)
+            if skipped:
+                continue
             if got is None or got < chk["min_spread_pct"]:
                 problems.append(f"{name}: spread over the valid corners is {fc.fmt_num(got, 4)} %, below the "
                                 f"{chk['min_spread_pct']:g} % floor (the PVT sweep may not have taken effect)")
@@ -951,8 +968,15 @@ def build_record(record: str, stamp: datetime, bench: str, tb: dict, plan: dict,
             "`noise` linearizes around), not read from inside the noise request.")
         add("  - Integrated total and `vref_op` come from the full-precision waveform artifact (the printed expr is a "
             "cross-check); spot densities and frequency indices are printed expr values (7 significant digits).")
-        for name, (got, lim) in result.get("spreads", {}).items():
-            add(f"  - Grid spread of `{name}` over valid corners: {fc.fmt_num(got, 4)} % (floor {lim:g} %).")
+        for name, (got, lim, skipped) in result.get("spreads", {}).items():
+            if skipped:
+                # n == 1: the spread figure is 0 by construction (or "-" when the single
+                # sample is 0) -- report the waiver, not a figure that would read as a
+                # below-floor spread (#492).
+                add(f"  - Grid spread of `{name}` over valid corners: **Floor not evaluated** (floor {lim:g} %) "
+                    f"-- {skipped}.")
+            else:
+                add(f"  - Grid spread of `{name}` over valid corners: {fc.fmt_num(got, 4)} % (floor {lim:g} %).")
     if overall == "INCOMPLETE":
         add("  - **INCOMPLETE.**")
         for k, why in result["missing"]:
@@ -1049,8 +1073,6 @@ def write_evidence(exp_dir: Path, work: Path, bench: str, tb: dict, plan: dict, 
     record, st, cdir, git = fc.begin_evidence(exp_dir, repo=repo, git=git, stamp=stamp)
     write_corner_logs(cdir, work, plan, result, record)
     fc.copy_request_artifacts(work, cdir, [r["name"] for r in plan["requests"]], reports)
-    snap = exp_dir / "netlist-snapshots"
-    snap.mkdir(parents=True, exist_ok=True)
     # evidence_lint wants exactly one flat netlist-snapshots/<record>.spice: it holds every
     # request's frozen deck (headed by name + sha256); each exact deck is also kept
     # byte-for-byte in corners/<record>/deck-<request>.spice.
@@ -1059,7 +1081,7 @@ def write_evidence(exp_dir: Path, work: Path, bench: str, tb: dict, plan: dict, 
         body = work / r["name"] / "body.spice"
         shutil.copyfile(body, cdir / f"deck-{r['name']}.spice")
         parts.append(f"* ==== frozen fleet deck: {r['name']} sha256 {r['deck_sha256']} ====\n" + body.read_text())
-    (snap / f"{record}.spice").write_text("\n".join(parts))
+    hreport.write_snapshot_text(exp_dir / "netlist-snapshots", record, "\n".join(parts))
     text = build_record(record, st, bench, tb, plan, result, reports, dut_label, issue, supersedes, note, git)
     return hreport.device_write_record(exp_dir / "records", record, text)
 

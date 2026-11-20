@@ -67,7 +67,7 @@ def parse_readme(text: str) -> dict[str, str]:
     return out
 
 
-def readme_bounds(name: str, mode: str, target: str) -> dict[str, float]:
+def readme_bounds(mode: str, target: str) -> dict[str, float]:
     """Numeric bounds a Target cell states, as {'min'|'max': value}."""
     if mode == "window":
         m = _WINDOW.search(target)
@@ -95,7 +95,7 @@ def check(readme_text: str, suite) -> list[str]:
             problems.append(f"{prefix}: row not found in README table")
             continue
         try:
-            want = readme_bounds(name, mode, table[name])
+            want = readme_bounds(mode, table[name])
         except ValueError as exc:
             problems.append(f"{name}: {exc}")
             continue
@@ -129,7 +129,7 @@ def check(readme_text: str, suite) -> list[str]:
     return problems
 
 
-def main(argv: list[str] | None = None) -> int:
+def main() -> int:
     sys.path.insert(0, str(REPO_ROOT))
     from sim.suite import spec  # noqa: E402  (stdlib-only module)
 

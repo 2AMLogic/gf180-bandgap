@@ -156,10 +156,6 @@ class MosItem:
     device: str | None = None  # flattened netlist path (None for a dummy)
     dummy: bool = False
 
-    @property
-    def is_mos(self) -> bool:
-        return True
-
 
 @dataclass
 class ResItem:
@@ -182,12 +178,10 @@ class ResItem:
     #: same as an unmarked device, rather than silently wrong (#73).
     high_rho: bool = False
 
-    is_mos = False
-
 
 @dataclass
 class TrimLadderItem:
-    """The 63-segment trim ladder, drawn as unit segments in ``rows`` sub-rows.
+    """The 63-segment trim ladder, drawn as unit segments in two sub-rows.
 
     The ladder is one series chain of ``units`` identical segments. Chain
     **node index** *k* is the node between drawn unit *k-1* and unit *k*, so
@@ -201,7 +195,6 @@ class TrimLadderItem:
     unit_width_nm: int
     unit_length_nm: int
     units: int
-    sub_rows: int
     nets: tuple[str, str]  # (bottom = tn0, top = vref)
     #: Node-index pairs the drawn Metal1 trim option shorts, derived from the
     #: schematic's own ideal ``RS*`` strap expressions at
@@ -217,8 +210,6 @@ class TrimLadderItem:
     split_after_unit: int
     devices: tuple[str, ...] = ()
 
-    is_mos = False
-
 
 @dataclass
 class PnpItem:
@@ -231,8 +222,6 @@ class PnpItem:
     device: str | None = None
     dummy: bool = False
 
-    is_mos = False
-
 
 @dataclass
 class TapItem:
@@ -242,8 +231,6 @@ class TapItem:
     kind: str  # "psub" | "nwell"
     length_nm: int
     net: str
-
-    is_mos = False
 
 
 @dataclass
@@ -319,10 +306,22 @@ class Row:
 # justification) is unchanged.
 # --------------------------------------------------------------------------- #
 
-CT = 240  # contact.width.1 min 220
+#: Manufacturing grid in nm (deck ``*.ongrid.1``: 0.005 um); every drawn vertex
+#: must be a multiple of this.
+GRID_NM = 5
+
+
+def snap_grid(value_nm: int) -> int:
+    """Round ``value_nm`` to the nearest multiple of :data:`GRID_NM`."""
+    return GRID_NM * round(value_nm / GRID_NM)
+
+
+CT = 220  # contact.width.1: exactly 220 (klt 0.8.0 deck: fixed 0.22 x 0.22 um square)
 ENC_CT = 100  # comp/poly2 enclosing contact, min 70
 POLY_SP = 300  # poly2.space.1 min 240
 IMPLANT_ENC = 200  # Pplus/Nplus overlap of COMP
+SD_COL = 900  # MOS source/drain column width (generate.draw_mos; tap spacing below needs it)
+GATE_IMPLANT_ENC = 230  # Pplus/Nplus overlap of a MOS gate region (pplus/nplus.enclosing.poly2.1, 0.23)
 RES_PAD = 440  # ppolyf_u free-end contact pad height, > IMPLANT_ENC so the
 # pad stays outside the RES_MK/Pplus/SAB marker box (CT + 2*ENC_CT room for
 # the pad's own contact enclosure; see generate.draw_res, #73)
@@ -387,6 +386,7 @@ def res_geometry(item: ResItem) -> tuple[int, int, int]:
     pitch = item.width_nm + POLY_SP
     n = item.segments
     leg = (item.length_nm - (n - 1) * POLY_SP - 2 * IMPLANT_ENC) // n
+    leg -= leg % GRID_NM  # keep every derived vertex on the manufacturing grid
     if leg <= item.width_nm + 2 * (ENC_CT + CT):
         raise ValueError(f"{item.key}: {n} segments is too many for L={item.length_nm}")
     return (n - 1) * pitch + item.width_nm, leg, leg
@@ -649,6 +649,36 @@ def trim_strap_spans(
     return tuple(sorted(spans))
 
 
+#: Island pitch the generator places items at (``generate.ISLAND_GAP``); only
+#: used to size the body-tap strips below to the row they serve.
+_STRIP_ISLAND_GAP = 500
+
+
+def mos_row_width_nm(items: list) -> int:
+    """Drawn width of a row of MOS islands and taps (``generate.place_rows``)."""
+    widths = [i.length_nm if isinstance(i, TapItem) else 2 * SD_COL + i.l_nm for i in items]
+    return sum(widths) + _STRIP_ISLAND_GAP * (len(widths) - 1)
+
+
+def tap_strip(name: str, kind: str, net: str, *rows_items: list, nwell: bool) -> Row:
+    """A full-width body-tap strip serving the MOS rows next to it.
+
+    ``comp.tap_distance.{nwell,psub}.lv.1`` (DRM DF.13, 20 um at 3.3 V) want
+    every PCOMP/NCOMP inside 20 um of a tap. A tap *inside* a matched
+    interdigitated array would break its symmetry, so the tap is a bar *between*
+    rows, as wide as the widest row it serves (every device spans its row's
+    height, so the strip is within one row-gap of each neighbour). A tap draws
+    no device: the LVS reference is unchanged.
+    """
+    length = max(mos_row_width_nm(items) for items in rows_items)
+    return Row(
+        name,
+        [TapItem(f"{kind[0]}tap.{name.lower()}", kind, length, net)],
+        nwell=nwell,
+        note=f"{kind} body-tap strip (comp.tap_distance.*.lv.1, 20 um)",
+    )
+
+
 def build_rows(flat: FlatNetlist) -> list[Row]:
     """Build the ordered (bottom-to-top) row plan."""
     rows: list[Row] = []
@@ -873,9 +903,10 @@ def build_rows(flat: FlatNetlist) -> list[Row]:
                 TrimLadderItem(
                     key="core.trim",
                     unit_width_nm=nm(unit.params["r_width"]),
-                    unit_length_nm=nm(unit.params["r_length"]),
+                    # 2772 nm is off the 5 nm grid; the drawn marker box must be
+                    # on it, so the drawn unit is 2770 nm (-0.07%, see AREA.md/PR #408).
+                    unit_length_nm=snap_grid(nm(unit.params["r_length"])),
                     units=len(trim_units),
-                    sub_rows=2,
                     nets=("core.tn0", "vref"),
                     strap_spans=trim_strap_spans(flat, trim_units, DRAWN_TRIM_CODE),
                     split_after_unit=31,
@@ -886,7 +917,29 @@ def build_rows(flat: FlatNetlist) -> list[Row]:
         )
     )
 
-    return rows
+    return _insert_tap_strips(rows)
+
+
+#: (strip name, kind, net, row it goes *after*, rows it serves, in-Nwell)
+_TAP_STRIPS = (
+    ("PTAPAMP", "psub", "vss", "AMPNCASC", ("AMPNCASC", "AMPPAIR"), False),
+    ("NTAPAMP", "nwell", "vdd", "AMPPCASC", ("AMPPCASC", "AMPLOAD"), True),
+    ("NTAPCORE", "nwell", "vdd", "PBIAS", ("PBIAS", "COREIBIAS", "CORECASC"), True),
+    ("NTAPMIR", "nwell", "vdd", "CORECASC", ("CORECASC", "COREMIRROR"), True),
+)
+
+
+def _insert_tap_strips(rows: list[Row]) -> list[Row]:
+    by_name = {r.name: r for r in rows}
+    out: list[Row] = []
+    for r in rows:
+        out.append(r)
+        for name, kind, net, after, serves, nwell in _TAP_STRIPS:
+            if r.name == after:
+                out.append(
+                    tap_strip(name, kind, net, *(by_name[n].items for n in serves), nwell=nwell)
+                )
+    return out
 
 
 def mim_cap(flat: FlatNetlist) -> MimCapItem:

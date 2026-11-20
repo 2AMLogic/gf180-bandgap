@@ -6,5 +6,25 @@
       "sibling": "2AMLogic/gf180-opamp",
       "status": "evaluate"
     }
+  ],
+  "imports": [
+    {
+      "from": "2AMLogic/sky130-comparator",
+      "commit": "8e33733d3c4d1e5ffd193663abda2d710c831593",
+      "mode": "fetched",
+      "note": "merge_group base plumbing ported (issue #516, from sky130-comparator#332): event-payload base -> env -> --base-ref, fail-closed on an absent base. Adapted, not vendored: the upstream gate is check-sim-append-only.py, ours are lint.sh + the two python gates that already took --base-ref.",
+      "files": [
+        {
+          "upstream": "scripts/check-sim-append-only.py",
+          "local": ".github/scripts/lint.sh",
+          "sha256": "e84edf17ac59ac63b0b1e2e8215826f31f3dda7f620758df925e249886679e51"
+        },
+        {
+          "upstream": ".github/workflows/t1-signoff.yml",
+          "local": ".github/workflows/ci.yml",
+          "sha256": "56d2a5b8f42e782cd7f9081b31eb23d36e955ef8b551b2bac7ed1407a50df6fa"
+        }
+      ]
+    }
   ]
 }

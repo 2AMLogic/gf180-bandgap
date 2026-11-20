@@ -54,6 +54,8 @@ import os
 import sys
 from dataclasses import dataclass
 
+# Load-bearing: sys.path[0] is this file's dir only under `python3 file.py`.
+# Under the documented `python3 -m <dotted.module>` form it is the CWD. #479
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import area_report  # noqa: E402
@@ -96,10 +98,12 @@ GDS_MARKER_MARGIN = 2 * plan_mod.IMPLANT_ENC  # 400 nm per axis
 #: The single-metal block as measured immediately before gf180-bandgap#166
 #: replaced it: 239.20 x 337.85 um of Poly2 corridor + stacked Metal1 rails
 #: (``AREA.md`` "Headline" as of #156; the study's S0 row). Kept so the
-#: recovery this rewrite achieved stays quotable from a tool run.
+#: recovery this rewrite achieved stays quotable from a tool run. Inside that
+#: block the Poly2 corridor was 16900 nm wide (25 spines x SPINE_PITCH +
+#: FIELD_GAP) and the 15 stacked Metal1 rail bands 56420 nm tall; those two
+#: figures are recorded here as prose rather than as constants, because no
+#: code path prints, checks or tests them.
 PRE_REWRITE_AREA_UM2 = 80813.72
-PRE_REWRITE_CORRIDOR_NM = 16900  # 25 spines x SPINE_PITCH + FIELD_GAP (width)
-PRE_REWRITE_RAIL_BAND_NM = 56420  # the 15 stacked Metal1 rail bands (height)
 
 #: ``layout/routing/multi-metal-routing-study.md`` §1/§5, scenario S1 — the
 #: estimate this implementation was costed against, before it was drawn. Its

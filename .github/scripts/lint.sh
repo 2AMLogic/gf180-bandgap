@@ -8,6 +8,12 @@
 #   .github/scripts/lint.sh --require-append-only fail (instead of skipping) if
 #                                                the append-only evidence check
 #                                                cannot resolve its base ref
+#   .github/scripts/lint.sh --base-ref <ref>     diff the append-only halves
+#                                                against <ref> (branch or raw
+#                                                SHA) instead of
+#                                                $GITHUB_BASE_REF/origin/main;
+#                                                an explicitly given but empty
+#                                                value fails (#518)
 #
 # Zero dependencies beyond python3 and (optionally) shellcheck, matching the
 # harness's stdlib-only rule -- there is no venv and no package manifest to
@@ -30,14 +36,45 @@ cd "${REPO_ROOT}" || exit 1
 
 REQUIRE_SHELLCHECK=0
 EVIDENCE_ARGS=()
-for arg in "$@"; do
-  case "${arg}" in
+BASE_REF=""
+BASE_REF_GIVEN=0
+while [ "$#" -gt 0 ]; do
+  case "$1" in
     --require-shellcheck) REQUIRE_SHELLCHECK=1 ;;
     --require-append-only) EVIDENCE_ARGS+=(--require-append-only) ;;
-    -h|--help) sed -n '2,24p' "${BASH_SOURCE[0]}"; exit 0 ;;
-    *) echo "unknown option: ${arg}" >&2; exit 1 ;;
+    --base-ref)
+      if [ "$#" -lt 2 ]; then
+        echo "option --base-ref needs a value" >&2
+        exit 1
+      fi
+      BASE_REF="$2"
+      BASE_REF_GIVEN=1
+      shift
+      ;;
+    --base-ref=*)
+      BASE_REF="${1#--base-ref=}"
+      BASE_REF_GIVEN=1
+      ;;
+    -h|--help) sed -n '2,30p' "${BASH_SOURCE[0]}"; exit 0 ;;
+    *) echo "unknown option: ${1}" >&2; exit 1 ;;
   esac
+  shift
 done
+# The merge-queue base (github.event.merge_group.base_sha) arrives from ci.yml
+# as a raw SHA; both gates rev-parse whatever they are given, so it needs no
+# origin/ prefixing here (issue #516). The option itself fails closed on a
+# value that was explicitly given but empty (#518): silently dropping it would
+# fall the gates back to $GITHUB_BASE_REF/origin/main -- verifying append-only
+# evidence against an unknown base with a green gate. Tracking "was given"
+# separately from the value keeps that invariant in the option, so a caller
+# that builds `--base-ref "$VAR"` from an unset variable cannot re-open it.
+if [ "${BASE_REF_GIVEN}" -eq 1 ]; then
+  if [ -z "${BASE_REF}" ]; then
+    echo "option --base-ref needs a non-empty value" >&2
+    exit 1
+  fi
+  EVIDENCE_ARGS+=(--base-ref "${BASE_REF}")
+fi
 
 status=0
 

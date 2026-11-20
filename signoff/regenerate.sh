@@ -44,7 +44,7 @@ if ! command -v uvx >/dev/null 2>&1; then
   exit 1
 fi
 
-KLT=(uvx --from "git+https://github.com/2AMLogic/klayout-tools@${PIN}" klt)
+KLT=(uvx --from "klayout-tools==${PIN}" klt)
 
 # `klt signoff --manifest` exits 3 when the block is not yet T1 (at least one
 # item `unmet`) and 0 only at full T1 -- both mean "the report rendered".

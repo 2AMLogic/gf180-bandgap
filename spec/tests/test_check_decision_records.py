@@ -1,12 +1,20 @@
 #!/usr/bin/env python3
-"""Unit tests for spec/check_decision_records.py. No git, no network.
+"""Unit tests for spec/check_decision_records.py. No network.
 
     python3 -m unittest discover -s spec/tests -v
+
+The Record/Index/Immutability classes are pure-python (no git). The
+MergeBaseRef class shells out to git in a throwaway repo: it pins the
+--base-ref CLI path the merge queue uses (issue #516).
 """
 
 from __future__ import annotations
 
+import contextlib
+import io
+import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -175,6 +183,68 @@ class Immutability(unittest.TestCase):
         cur = good()
         cur[C] = rec("ratified", body="Changed.")
         self.assertEqual(cd.check_immutable(cur, good()), [])
+
+
+class MergeBaseRef(unittest.TestCase):
+    """--base-ref with a raw SHA: the merge-queue shape (issue #516).
+
+    The queue's trial merge carries its base as
+    github.event.merge_group.base_sha, forwarded by ci.yml via
+    lint.sh --base-ref. These pin the git-backed half: an explicit SHA
+    resolves and the immutability check diffs against that commit, and a
+    SHA that does not resolve FAILS under --require-append-only instead of
+    SKIPping.
+    """
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        self.git("init", "--quiet")
+        self.git("config", "user.email", "test@example.invalid")
+        self.git("config", "user.name", "test")
+        records = self.root / cd.RECORDS_REL
+        records.mkdir(parents=True)
+        (records / A).write_text(rec())
+        (self.root / cd.README_REL).parent.mkdir(parents=True, exist_ok=True)
+        (self.root / cd.README_REL).write_text(index(("0001", "ratified")))
+        self.git("add", "-A")
+        self.git("commit", "--quiet", "-m", "seed record")
+        self.base = self.git("rev-parse", "HEAD").stdout.strip()
+
+    def git(self, *args):
+        return subprocess.run(
+            ("git", *args),
+            cwd=str(self.root),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=True,
+        )
+
+    def _main(self, *args):
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            rc = cd.main(["--root", str(self.root), *args])
+        return rc, out.getvalue()
+
+    def test_a_clean_tree_passes_with_an_explicit_sha_base_ref(self):
+        rc, out = self._main("--base-ref", self.base)
+        self.assertEqual(rc, 0, out)
+        self.assertIn("0 problem(s)", out)
+
+    def test_an_explicit_sha_base_ref_diffs_against_that_commit(self):
+        (self.root / cd.RECORDS_REL / A).write_text(rec(body="Relaxed."))
+        rc, out = self._main("--base-ref", self.base)
+        self.assertEqual(rc, 1)
+        self.assertIn("ratified record modified", out)
+
+    def test_a_non_resolving_sha_fails_under_require_append_only(self):
+        dead = "deadbeef" * 5
+        rc, out = self._main("--base-ref", dead, "--require-append-only")
+        self.assertEqual(rc, 1)
+        self.assertIn("could not run", out)
+        self.assertNotIn("SKIP", out)
 
 
 class RealTree(unittest.TestCase):

@@ -39,6 +39,8 @@ HERE = Path(__file__).resolve().parent
 SIM = HERE.parent
 REPO = SIM.parent
 sys.path.insert(0, str(SIM))
+# Load-bearing: sys.path[0] is this file's dir only under `python3 file.py`.
+# Under the documented `python3 -m <dotted.module>` form it is the CWD. #479
 sys.path.insert(0, str(HERE))
 
 import fleet_common as fc  # noqa: E402
@@ -47,7 +49,6 @@ from harness import corners as hc  # noqa: E402
 EXPERIMENT = "output-voltage-tc"
 TB_JSON = SIM / EXPERIMENT / "testbench" / "tb.json"
 TC_SPAN_C = 165.0  # -40..125 C
-SWEEP_POINTS = 166
 ENDPOINT_NAMES = ("vref_m40", "vref_27", "vref_125")
 BOX_NAMES = ("vref_box_max", "vref_box_min")
 REQUIRED = ENDPOINT_NAMES + BOX_NAMES
@@ -67,10 +68,10 @@ OUTER_TEMP_C = 27.0  # mk_klt_request.py fixes corners.temperature_c = [27]; the
 def corner_key(corner_id) -> tuple[str, float]:
     """'tt/2.970V/27C' -> ('tt', 2.97), validating the FULL returned identity.
 
-    Unlike the process/supply-only `fleet_common.corner_key`, the outer
-    temperature axis must be present, finite and equal the requested 27 C, and
-    the supply must be finite. Raises ValueError (naming the offending id and
-    the expected axis) otherwise."""
+    The key is process/supply only, but the FULL identity is checked: the
+    outer temperature axis must be present, finite and equal the requested
+    27 C, and the supply must be finite and positive. Raises ValueError
+    (naming the offending id and the expected axis) otherwise."""
     expect = "expected '<process>/<supply>V/27C'"
     if not isinstance(corner_id, str):
         raise ValueError(f"corner id {corner_id!r} is not a string; {expect}")
@@ -165,7 +166,7 @@ def sweep_consistency(vals: dict) -> list[str]:
     return errs
 
 
-def assess(points, missing, failed, problems, tb: dict | None = None, expected=None):
+def assess(points, missing, failed, problems, tb: dict | None = None):
     """Per-corner derived values + verdicts + one overall verdict.
 
     Overall: INCOMPLETE if anything expected is missing/failed (never PASS),
@@ -461,9 +462,7 @@ def main() -> int:
     write_corner_logs(cdir, work, report, points, record)
     for n in ("request.json", "report.json"):
         shutil.copyfile(work / n, cdir / n)
-    snap = exp_dir / "netlist-snapshots"
-    snap.mkdir(exist_ok=True)
-    shutil.copyfile(work / "body.spice", snap / f"{record}.spice")
+    hreport.write_device_netlist_snapshot(exp_dir / "netlist-snapshots", record, work / "body.spice")
 
     if a.dut_rev:
         import subprocess

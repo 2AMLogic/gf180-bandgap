@@ -47,8 +47,12 @@ Why each gate sits where it does:
   the session, and says so through `LOOM_SWEEP_CLAIM_OWNED=<N>`. An in-session
   `/loom:sweep` publishes the lease at pre-flight. A Builder launched by either
   sees its invoker's claim as `BUILDING` / `LEASE_ALREADY_HELD` /
-  `BRANCH_EXISTS` and must continue, not refuse. The signal is mechanical on
-  every launch path:
+  `BRANCH_EXISTS` and must continue, not refuse. `forge check-claim` applies
+  that itself where the marker is set: with `LOOM_SWEEP_CLAIM_OWNED=<N>` it
+  exits `1` past `BUILDING`, `BRANCH_EXISTS` and a `LEASE_ALREADY_HELD` whose
+  lease is this host's (another host's lease still blocks), naming on stderr
+  what it passed, so the session need not reason about it. The signal is
+  mechanical on every launch path:
   - daemon sweep (Task subagent or `worker run`): the daemon exports
     `LOOM_SWEEP_CLAIM_OWNED=<N>` and every child inherits it;
   - attended sweep, `worker run --role builder --issue <N>`: the worker is
@@ -130,6 +134,8 @@ LOOM_STEP_OUTCOME role=<judge|curator|builder> target=<N> class=<verdict|noop|re
 It is advisory: a classifier uses it only to choose between classes the
 post-state already allows, never to claim a `verdict` the forge does not show.
 A missing line on an unchanged item is `failed` with reason `unclassified`.
+The reason is read with `-` folded to `_` (#13500): `reason=ci-pending`, the
+spelling of the Judge's `--skip-reason`, is the `ci_pending` token below.
 
 ### Reason tokens
 
