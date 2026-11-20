@@ -89,23 +89,62 @@
     "  warnings) -- no text on 34/10 names it. Declaring it would produce a",
     "  guaranteed erc.unconnected_net about a missing LABEL, which says",
     "  nothing about whether the substrate is tied. See README.md, 'What is",
-    "  NOT verified here'.",
+    "  and is NOT verified here'.",
     "",
-    "== no ties[] ==",
+    "== ties ==",
     "",
-    "There is deliberately NO ties[] section, and that is a recorded tool gap",
-    "rather than an oversight. Declaring one collapses this layout into a",
-    "single electrical island and reports a FALSE erc.supply_short --",
-    "klayout-tools#2169, first isolated in gf180-drone-fc's FRICTION F-034 on",
-    "a routed standard-cell design, and reproduced here on a hand-drawn",
-    "analog one by erc-tie-spec.known-gap.json + its committed report.",
+    "The well/substrate tie declaration T1 item 11 grades erc.missing_tie",
+    "from -- the piece this spec used to omit while klayout-tools#2169 made",
+    "any ties[] declaration collapse the design (that history is kept in",
+    "erc-tie-spec.known-gap.json and its committed report). The declaration",
+    "below was derived and measured as erc-tie-spec.pinned.json",
+    "(gf180-bandgap#441), then merged into this signoff spec verbatim by",
+    "gf180-bandgap#526: merging was the smaller diff against making the",
+    "probe file the signoff spec, which is the choice README.md's 'The tie",
+    "negative control' section records.",
     "",
-    "Because ties[] is omitted, erc.missing_tie is NOT COMPUTED by this run",
-    "(klayout-tools docs/cli/erc.md: 'Omitted entirely -> erc.missing_tie is",
-    "never computed'). Its zero count in the committed report is an ABSENCE",
-    "OF EVIDENCE, not evidence of absence, and must never be cited as a",
-    "well-tie verdict. README.md's 'What is NOT verified here' names what does",
-    "stand in for it, and how far that substitute actually reaches."
+    "THREE entries, because one ties[] entry claims every shape on its",
+    "well_layer and this block biases Nwell two different ways:",
+    "",
+    "  nwell_tap_pmos  Nwell 21/0 MINUS the DRC_BJT 127/5 marker -> vdd",
+    "      The PMOS band's well. Tapped by ntap.pbias / ntap.top",
+    "      (plan.py TapItem kind='nwell', net='vdd').",
+    "",
+    "  nwell_base_pnp  Nwell 21/0 WHERE the DRC_BJT 127/5 marker is -> vss",
+    "      The eight vertical-PNP base islands (one per PnpItem in plan.py's",
+    "      'PNP' row, each a 10.40um square: generate.draw_pnp draws L_NWELL",
+    "      and a coincident L_DRC_BJT box). Every PnpItem declares",
+    "      base_net='vss' -- the Nwell IS the PNP base terminal, so biasing",
+    "      it to vdd would be the bug. Declared as its own entry per klt's",
+    "      own rule that each bias class gets one (erc.py,",
+    "      _select_well_class: 'each bias class is declared as its own",
+    "      ties[] entry with its own net').",
+    "",
+    "  psub_tap        top-cell extent MINUS Nwell 21/0 -> vss",
+    "      The native p-substrate, via well_complement_of (klayout-tools",
+    "      #3750) because no LVPWELL (204/0) is drawn anywhere in this GDS.",
+    "      Tapped by ptap.nbias / ptap.ampn plus the p+ guard ring",
+    "      (floorplan.md section 9).",
+    "",
+    "tap_layer is Comp 22/0 narrowed by tap_requires (klayout-tools#2169) in",
+    "all three entries -- Comp n Nplus 32/0 for an n-well tap, Comp n Pplus",
+    "31/0 for a substrate tap. gf180mcu has no dedicated tap layer, so",
+    "tap_is_dedicated is deliberately NOT affirmed; the narrowing is what",
+    "makes the tap region distinguishable from ordinary source/drain Comp.",
+    "",
+    "Measured with ties[] in place (klt 0.8.0, on the committed GDS this",
+    "report's provenance pins): erc_coverage.skipped is empty -- all three",
+    "tie checks COMPUTED -- and erc_finding_count is 0. psub_tap is listed",
+    "under erc_coverage.checked_by_well_assertion, because its region is",
+    "derived by complement rather than read off drawn geometry: weaker",
+    "evidence than a drawn tub layer, but a computed check with a",
+    "falsifiable region. erc-tie-spec.negative-control.json is the control",
+    "that proves the missing-tie rule fires: this spec with each ties[].net",
+    "flipped, reporting erc.missing_tie for every tap class.",
+    "",
+    "This run is cited against the pre-DR-0007 layout: #204 regenerates the",
+    "GDS, and the manifest's content_hash pin forces a re-mint then (the",
+    "re-run stays tracked by #358)."
   ],
   "stackup": [
     { "name": "Poly2", "layer": "30/0", "role": "gate", "active_layer": "22/0" },
@@ -126,5 +165,46 @@
     { "name": "vdd", "kind": "supply" },
     { "name": "vss", "kind": "supply" },
     { "name": "vref", "kind": "signal" }
+  ],
+  "ties": [
+    {
+      "name": "nwell_tap_pmos",
+      "well_layer": "21/0",
+      "well_excludes": [
+        "127/5"
+      ],
+      "tap_layer": "22/0",
+      "tap_requires": [
+        "32/0"
+      ],
+      "connect_to": "Metal1",
+      "net": "vdd"
+    },
+    {
+      "name": "nwell_base_pnp",
+      "well_layer": "21/0",
+      "well_requires": [
+        "127/5"
+      ],
+      "tap_layer": "22/0",
+      "tap_requires": [
+        "32/0"
+      ],
+      "connect_to": "Metal1",
+      "net": "vss"
+    },
+    {
+      "name": "psub_tap",
+      "well_layer": null,
+      "well_complement_of": [
+        "21/0"
+      ],
+      "tap_layer": "22/0",
+      "tap_requires": [
+        "31/0"
+      ],
+      "connect_to": "Metal1",
+      "net": "vss"
+    }
   ]
 }

@@ -28,7 +28,7 @@ under the pinned klt 0.8.0 (PR #410, reports `20261028-*`), but those reports do
 schematic. The last extracted-netlist comparison, [`sim/postlayout-delta.md`](../sim/postlayout-delta.md), shows
 the output-reference and TC rows failing post-layout; it also predates DR-0007.
 
-**T1 sim-validated, graded.** `signoff/reports/20261028-065240-f32fe48.signoff.json` (klt 0.8.0): **4 of 11
+**T1 sim-validated, graded.** `signoff/reports/20261120-210546-e0893ec.signoff.json` (klt 0.8.0): **5 of 11
 items met**.
 
 | Item | State | What moves it |
@@ -43,7 +43,7 @@ items met**.
 | 8 Characterization report | unmet, no evidence | #397, after #395 |
 | 9 Testbenches shipped | met | |
 | 10 Repo hygiene | met | |
-| 11 Power delivery | unmet, no evidence | #358, after #204 |
+| 11 Power delivery | met (#526, against the pre-DR-0007 layout) | re-cut by #204 (#358) |
 
 The tracking epic is #94; the DR-0007 chain is #202 (phase A #203, phase B #204).
 

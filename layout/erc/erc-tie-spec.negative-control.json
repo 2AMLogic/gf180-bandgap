@@ -1,0 +1,101 @@
+{
+  "_comment": [
+    "TIE NEGATIVE CONTROL -- not signoff evidence. gf180-bandgap#526.",
+    "",
+    "erc-supply-spec.json's item-11 tie verdict is 'zero erc.missing_tie,",
+    "from ties the run actually checked' (no degenerate_tap_declaration /",
+    "degenerate_well_assertion in erc_coverage.skipped[]). Like the supply",
+    "zero, that zero is only meaningful if the rule that produces it can",
+    "fire: a ties[] entry whose tap narrowing silently matched nothing would",
+    "report exactly the same clean result. This spec is the control that",
+    "tells those two cases apart, for every tap class.",
+    "",
+    "It is erc-supply-spec.json verbatim -- same stackup, same vias, same",
+    "nets[], same ties[] geometry declarations -- with ONE edit: each of the",
+    "three ties[].net values is flipped (vdd <-> vss). The taps drawn in",
+    "this layout strap each well class to its REAL rail, so asking for the",
+    "other rail must report every class untied:",
+    "",
+    "    erc.missing_tie  layer='nwell_tap_pmos'  net='vss'   (1 finding:",
+    "                       the one PMOS-band well region)",
+    "    erc.missing_tie  layer='nwell_base_pnp'  net='vdd'   (8 findings:",
+    "                       one per vertical-PNP base island)",
+    "    erc.missing_tie  layer='psub_tap'        net='vdd'   (1 finding:",
+    "                       the one substrate region)",
+    "    erc_finding_count: 10, all erc.missing_tie, nothing else",
+    "    status: violations, exit 3",
+    "",
+    "and run_erc.py --expect findings asserts at least one finding. The",
+    "per-class identities above are what the committed report actually",
+    "carries (its findings name the ties[] entry in `layer`); a class that",
+    "stopped firing would mean the rule no longer reaches that class, and",
+    "the signoff report's zero for it would have stopped meaning anything --",
+    "the item-11 claim must be withdrawn until that is explained.",
+    "",
+    "vdd/vss/vref nets[] entries are carried unchanged, so the control also",
+    "demonstrates the supply-island verdicts still hold while the tie",
+    "question fails: findings name only the flipped tie nets, and zero",
+    "erc.supply_short / erc.unconnected_net are reported alongside."
+  ],
+  "stackup": [
+    { "name": "Poly2", "layer": "30/0", "role": "gate", "active_layer": "22/0" },
+    { "name": "Metal1", "layer": "34/0", "label_layer": "34/10" },
+    { "name": "Metal2", "layer": "36/0" },
+    { "name": "Metal3", "layer": "42/0" },
+    { "name": "Metal4", "layer": "46/0" },
+    { "name": "Metal5", "layer": "81/0" }
+  ],
+  "vias": [
+    { "name": "Contact", "layer": "33/0", "between": ["Poly2", "Metal1"] },
+    { "name": "Via1", "layer": "35/0", "between": ["Metal1", "Metal2"] },
+    { "name": "Via2", "layer": "38/0", "between": ["Metal2", "Metal3"] },
+    { "name": "Via3", "layer": "40/0", "between": ["Metal3", "Metal4"] },
+    { "name": "Via4", "layer": "41/0", "between": ["Metal4", "Metal5"] }
+  ],
+  "nets": [
+    { "name": "vdd", "kind": "supply" },
+    { "name": "vss", "kind": "supply" },
+    { "name": "vref", "kind": "signal" }
+  ],
+  "ties": [
+    {
+      "name": "nwell_tap_pmos",
+      "well_layer": "21/0",
+      "well_excludes": [
+        "127/5"
+      ],
+      "tap_layer": "22/0",
+      "tap_requires": [
+        "32/0"
+      ],
+      "connect_to": "Metal1",
+      "net": "vss"
+    },
+    {
+      "name": "nwell_base_pnp",
+      "well_layer": "21/0",
+      "well_requires": [
+        "127/5"
+      ],
+      "tap_layer": "22/0",
+      "tap_requires": [
+        "32/0"
+      ],
+      "connect_to": "Metal1",
+      "net": "vdd"
+    },
+    {
+      "name": "psub_tap",
+      "well_layer": null,
+      "well_complement_of": [
+        "21/0"
+      ],
+      "tap_layer": "22/0",
+      "tap_requires": [
+        "31/0"
+      ],
+      "connect_to": "Metal1",
+      "net": "vdd"
+    }
+  ]
+}

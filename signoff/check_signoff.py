@@ -46,6 +46,12 @@ BLOCK_KINDS = ("analog", "digital", "mixed-signal")
 # klayout-tools#2025 (2026-09-17); a klt pin bump that changes the count
 # changes `t1_item_count` in the report, which is checked below.
 MAX_ITEM_ID = 11
+# T1 items whose manifest entry is klt's **compound citation** shape: a JSON
+# list of ordinary file/command entries, all of which the grader resolves
+# (`klt signoff`'s item 11, klayout-tools#2025 -- the `erc` supply run plus
+# the `lvs` report item 4 grades). An entry of this shape for any other item
+# is a manifest-authoring mistake klt would not read, so it fails below.
+COMPOUND_ITEM_IDS = frozenset({11})
 RECORD_ID_RE = re.compile(r"^\d{8}-\d{6}-[0-9a-f]{7,40}\.signoff\.json$")
 EVIDENCE_KEY_RE = re.compile(r"^(\d+)(?:\.(analog|digital))?$")
 
@@ -53,6 +59,21 @@ EVIDENCE_KEY_RE = re.compile(r"^(\d+)(?:\.(analog|digital))?$")
 # free-form/large fields (`coverage`, `body_bias`) which are reported verbatim
 # from the cited envelope and compared separately, as whole blocks.
 CITATION_FIELDS = ("file", "command", "kind", "check_status", "content_hash")
+
+
+def evidence_parts(entry) -> list | None:
+    """An evidence entry as the list of part dicts it normalizes to.
+
+    A compound item (COMPOUND_ITEM_IDS) cites a JSON list of ordinary
+    entries; every other item cites one object. Both come back as a list of
+    part dicts here, so per-part checks never fork. ``None`` when the entry
+    is neither shape (reported by the caller).
+    """
+    if isinstance(entry, list):
+        return entry
+    if isinstance(entry, dict):
+        return [entry]
+    return None
 
 
 class Failures:
@@ -135,28 +156,52 @@ def check_manifest(manifest, failures: Failures) -> dict:
             )
             continue
 
-        if not isinstance(entry, dict):
+        if isinstance(entry, list):
+            if int(match.group(1)) not in COMPOUND_ITEM_IDS:
+                failures.add(
+                    f"manifest: evidence[{key!r}] is a list, but only item(s) "
+                    f"{sorted(COMPOUND_ITEM_IDS)} take klt's compound citation "
+                    "shape -- klt would not resolve the parts"
+                )
+                continue
+            if not entry:
+                failures.add(
+                    f"manifest: evidence[{key!r}] is an empty list -- it cites "
+                    "nothing while claiming to cite something"
+                )
+                continue
+
+        parts = evidence_parts(entry)
+        if parts is None:
             failures.add(
                 f"manifest: evidence[{key!r}] must be an object pinning a "
                 "`content_hash` (a bare path cannot have its freshness verified)"
             )
             continue
-        if not isinstance(entry.get("content_hash"), str):
-            failures.add(
-                f"manifest: evidence[{key!r}] pins no `content_hash` -- an "
-                "unpinned citation's freshness cannot be verified at all"
-            )
-        cited = entry.get("file")
-        if isinstance(cited, str):
-            cited_path = REPO_ROOT / cited
-            if not cited_path.is_file():
-                failures.add(f"manifest: evidence[{key!r}] cites missing file {cited}")
-            else:
-                load_json(cited_path, failures, f"manifest evidence[{key!r}]")
-        elif "command" not in entry:
-            failures.add(
-                f"manifest: evidence[{key!r}] has neither a `file` nor a `command`"
-            )
+        for index, part in enumerate(parts):
+            label = key if len(parts) == 1 else f"{key} part {index}"
+            if not isinstance(part, dict):
+                failures.add(
+                    f"manifest: evidence[{label!r}] must be an object pinning a "
+                    "`content_hash` (a bare path cannot have its freshness verified)"
+                )
+                continue
+            if not isinstance(part.get("content_hash"), str):
+                failures.add(
+                    f"manifest: evidence[{label!r}] pins no `content_hash` -- an "
+                    "unpinned citation's freshness cannot be verified at all"
+                )
+            cited = part.get("file")
+            if isinstance(cited, str):
+                cited_path = REPO_ROOT / cited
+                if not cited_path.is_file():
+                    failures.add(f"manifest: evidence[{label!r}] cites missing file {cited}")
+                else:
+                    load_json(cited_path, failures, f"manifest evidence[{label!r}]")
+            elif "command" not in part:
+                failures.add(
+                    f"manifest: evidence[{label!r}] has neither a `file` nor a `command`"
+                )
 
     return evidence
 
@@ -181,30 +226,54 @@ def check_pins(manifest_evidence: dict, failures: Failures) -> None:
         return
 
     for key, entry in manifest_evidence.items():
-        pinned = entry.get("content_hash") if isinstance(entry, dict) else None
-        if not isinstance(pinned, str):
+        parts = evidence_parts(entry) if isinstance(entry, (dict, list)) else None
+        if not parts:
             continue  # already reported by check_manifest
         artifact = inputs.get(key)
-        if not isinstance(artifact, str):
+        # A single string names the one artifact every part of this item pins
+        # (item 11's two parts both read the GDS); a list names one artifact
+        # per part, positionally, for a compound item whose parts pin
+        # different inputs.
+        artifacts = [artifact] if isinstance(artifact, str) else artifact
+        if not isinstance(artifacts, list) or len(artifacts) not in (1, len(parts)):
             failures.add(
-                f"pinned-inputs: no artifact recorded for evidence[{key!r}] -- "
-                "every pin must name the repo file it is the hash of"
+                f"pinned-inputs: no artifact recorded for evidence[{key!r}] "
+                "-- every pin must name the repo file it is the hash of (one "
+                "string, or one string per compound part)"
             )
             continue
-        artifact_path = REPO_ROOT / artifact
-        if not artifact_path.is_file():
-            failures.add(f"pinned-inputs: {artifact} (evidence[{key!r}]) does not exist")
-            continue
-        actual = sha256_file(artifact_path)
-        if actual != pinned:
-            failures.add(
-                f"pinned-inputs: {artifact} has changed since evidence[{key!r}] "
-                f"was pinned\n  pinned: {pinned}\n  actual: {actual}\n"
-                "  -> re-run the cited check against current sources, then "
-                "re-run signoff/regenerate.sh"
-            )
-        else:
-            print(f"  ok  evidence[{key}] pin matches {artifact}")
+        if len(artifacts) == 1:
+            artifacts = artifacts * len(parts)
+
+        for index, (part, artifact_name) in enumerate(zip(parts, artifacts)):
+            label = key if len(parts) == 1 else f"{key} part {index}"
+            pinned = part.get("content_hash") if isinstance(part, dict) else None
+            if not isinstance(pinned, str):
+                continue  # already reported by check_manifest
+            if not isinstance(artifact_name, str):
+                failures.add(
+                    f"pinned-inputs: no artifact recorded for evidence[{label!r}] "
+                    "-- every pin must name the repo file it is the hash of"
+                )
+                continue
+            artifact_path = REPO_ROOT / artifact_name
+            if not artifact_path.is_file():
+                failures.add(
+                    f"pinned-inputs: {artifact_name} (evidence[{label!r}]) does not exist"
+                )
+                continue
+            actual = sha256_file(artifact_path)
+            if actual != pinned:
+                cited = part.get("file")
+                failures.add(
+                    f"pinned-inputs: {artifact_name} has changed since "
+                    f"evidence[{label!r}] ({cited}) was pinned\n"
+                    f"  pinned: {pinned}\n  actual: {actual}\n"
+                    "  -> re-run the cited check against current sources, then "
+                    "re-run signoff/regenerate.sh"
+                )
+            else:
+                print(f"  ok  evidence[{label}] pin matches {artifact_name}")
 
     for key in inputs:
         if key not in manifest_evidence:
@@ -287,22 +356,48 @@ def check_report(report_doc, manifest, manifest_evidence: dict, failures: Failur
         citation = item.get("citation") or {}
         key = str(item.get("id"))
         entry = manifest_evidence.get(key)
-        if not isinstance(entry, dict):
+        parts = evidence_parts(entry) if entry is not None else None
+        if not parts:
             failures.add(
                 f"report: item {item.get('id')} is `met` but the manifest cites "
                 "nothing for it"
             )
             continue
-        if citation.get("file") != entry.get("file"):
+        if isinstance(entry, list):
+            # klt's compound citation: the top-level fields mirror the first
+            # part, and `parts[]` carries every cited envelope in order.
+            cite_parts = citation.get("parts")
+            if not isinstance(cite_parts, list) or len(cite_parts) != len(parts):
+                failures.add(
+                    f"report: item {item.get('id')} citation carries "
+                    f"{len(cite_parts) if isinstance(cite_parts, list) else 0} "
+                    f"parts, the manifest cites {len(parts)}"
+                )
+            else:
+                for index, (cited_part, entry_part) in enumerate(zip(cite_parts, parts)):
+                    if cited_part.get("file") != entry_part.get("file"):
+                        failures.add(
+                            f"report: item {item.get('id')} citation part {index} "
+                            f"cites {cited_part.get('file')!r}, manifest cites "
+                            f"{entry_part.get('file')!r}"
+                        )
+                    if cited_part.get("content_hash") != entry_part.get("content_hash"):
+                        failures.add(
+                            f"report: item {item.get('id')} citation part {index} "
+                            f"hash {cited_part.get('content_hash')!r} != manifest "
+                            f"pin {entry_part.get('content_hash')!r}"
+                        )
+        first = parts[0]
+        if citation.get("file") != first.get("file"):
             failures.add(
                 f"report: item {item.get('id')} cites {citation.get('file')!r}, "
-                f"manifest cites {entry.get('file')!r}"
+                f"manifest cites {first.get('file')!r}"
             )
-        if citation.get("content_hash") != entry.get("content_hash"):
+        if citation.get("content_hash") != first.get("content_hash"):
             failures.add(
                 f"report: item {item.get('id')} citation hash "
                 f"{citation.get('content_hash')!r} != manifest pin "
-                f"{entry.get('content_hash')!r}"
+                f"{first.get('content_hash')!r}"
             )
 
     met = sum(1 for item in items if item.get("tier") == "T1" and item.get("status") == "met")
