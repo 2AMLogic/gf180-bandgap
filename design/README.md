@@ -43,3 +43,10 @@ per PVT point). Netlist the schematic from xschem, strip any simulator
 directives, and point a `sim/<experiment-slug>/testbench/tb.json` at the
 result. The runner does not care whether a fragment was generated or typed by
 hand.
+
+## Design notes
+
+- [`amplifier-allocation-answers.md`](amplifier-allocation-answers.md) — the
+  Q4–Q6 offset, noise and common-mode allocations this block answers to the
+  `gf180-opamp` consumer request ([2AMLogic/gf180-opamp#62](https://github.com/2AMLogic/gf180-opamp/issues/62));
+  compilation of committed records, no spec change.
