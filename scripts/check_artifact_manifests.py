@@ -11,7 +11,9 @@ the manifest (``sim/harness/evidence_store.py``). This check fails on:
 * an entry whose bytes are *also* tracked in git (matched by sha256 against
   tracked files of the same size), which would defeat the point of storing
   them;
-* a URL, ``s3://`` or ``arn:aws:`` string anywhere in a manifest.
+* a URL, ``s3://`` or ``arn:aws:`` string anywhere in a manifest;
+* a failing ``git ls-files`` inventory -- the tracked-file gate cannot run,
+  so an unreadable index is an error, not "nothing is tracked".
 
 Stdlib + git only. Usage: ``scripts/check_artifact_manifests.py [REPO_ROOT]``.
 Exit 0 clean, 1 problems.
@@ -34,12 +36,22 @@ FORBIDDEN_RE = re.compile(r"s3://|arn:aws:|https?://", re.IGNORECASE)
 MAX_HASHED_BYTES = 256 * 1024 * 1024
 
 
+class GitInventoryError(RuntimeError):
+    """``git ls-files`` failed, so the tracked-file set is unknowable."""
+
+
 def _tracked_files(root: Path) -> list[str]:
     done = subprocess.run(
         ["git", "ls-files", "-z"], cwd=root, capture_output=True, check=False
     )
     if done.returncode != 0:
-        return []
+        raise GitInventoryError(
+            "git ls-files failed (exit {}): {}".format(
+                done.returncode,
+                done.stderr.decode("utf-8", "replace").strip()
+                or "no diagnostic output",
+            )
+        )
     return [p for p in done.stdout.decode("utf-8", "replace").split("\0") if p]
 
 
@@ -106,13 +118,16 @@ def check(root: Path) -> list[str]:
     manifest_dir = root / MANIFEST_DIR
     if not manifest_dir.is_dir():
         return []
-    tracked = _tracked_files(root)
+    try:
+        tracked = _tracked_files(root)
+    except GitInventoryError as exc:
+        return [f"{MANIFEST_DIR.as_posix()}: cannot gate tracked files ({exc})"]
     tracked_set = set(tracked)
     problems: list[str] = []
     entries: list[tuple[str, dict]] = []
     for path in sorted(manifest_dir.glob("*.manifest.json")):
         rel = path.relative_to(root).as_posix()
-        if tracked_set and rel not in tracked_set:
+        if rel not in tracked_set:
             continue  # untracked scratch; only committed manifests are gated
         found, good = check_manifest(path, rel)
         problems += found

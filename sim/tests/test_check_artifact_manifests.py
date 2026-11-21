@@ -75,6 +75,9 @@ class Checker(unittest.TestCase):
             tracked={"sim/b/corners/r/c.log": b"dup"},
         )
         self.assertTrue(any("also tracked" in p for p in problems))
+        self.assertTrue(
+            any("sim/b/corners/r/c.log" in p for p in problems), problems
+        )
 
     def test_same_size_different_bytes_ok(self):
         self.assertEqual(
@@ -84,6 +87,30 @@ class Checker(unittest.TestCase):
             ),
             [],
         )
+
+    def test_git_inventory_failure_is_reported(self):
+        # A corrupt index must surface as a problem, not silently look like
+        # "nothing is tracked" (which skips the duplicate-byte gate).
+        with tempfile.TemporaryDirectory() as tmp:
+            root = self._repo(
+                tmp,
+                {"schema_version": 1, "entries": [entry(b"dup")]},
+                tracked={"sim/b/corners/r/c.log": b"dup"},
+            )
+            (root / ".git" / "index").write_bytes(b"\x00\x01not an index")
+            problems = cam.check(root)
+            self.assertTrue(any("git ls-files" in p for p in problems), problems)
+
+    def test_empty_index_skips_untracked_scratch(self):
+        # Valid but empty index: untracked scratch manifests stay outside the
+        # check, exactly as when some (non-empty) set of files is tracked.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+            mdir = root / "manifests" / "artifacts"
+            mdir.mkdir(parents=True)
+            (mdir / "scratch.manifest.json").write_text("{nope")
+            self.assertEqual(cam.check(root), [])
 
 
 if __name__ == "__main__":
