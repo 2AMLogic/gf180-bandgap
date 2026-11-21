@@ -57,15 +57,19 @@ layout/
                          recognition resolved by #73, LVS reference staleness tracked as #75
     reports/bandgap_top/   <record-id>.{extract.json,extracted.spice}
   erc/
-    README.md          T1 item 11 (structural power delivery) -- the verdict, and
-                         what erc.missing_tie does NOT cover (#192)
+    README.md          T1 item 11 (structural power delivery) -- the verdict,
+                         the ties[] derivation and the negative controls (#192, #526)
     run_erc.py         reproducible klt erc invocation -> committed report; asserts
                          the item-11 verdict rather than leaving it to a reader
     test_run_erc.py    unit tests for run_erc.py's verdict helpers (no klt needed)
-    erc-supply-spec.json                    the supply read           <- SIGNOFF
-    erc-supply-spec.negative-control.json   proves the rules fire     <- control
+    erc-supply-spec.json                    the supply + ties read  <- SIGNOFF
+    erc-supply-spec.negative-control.json   proves the net rules fire <- control
     erc-tie-spec.known-gap.json             reproduces klayout-tools#2169 <- control
-    reports/bandgap_top/   <record-id>.{erc,erc-negative-control,erc-tie-known-gap}.{json,txt}
+    erc-tie-spec.pinned.json                the #441 ties[] derivation probe
+    erc-tie-spec.negative-control.json      proves the tie rule fires <- control
+    reports/bandgap_top/   <record-id>.{erc,erc-negative-control,erc-tie-known-gap,
+                                       erc-tie-classed,erc-tie-pinned,
+                                       erc-tie-negative-control}.{json,txt}
 ```
 
 ## Install `klt`
@@ -141,7 +145,7 @@ Expected results (as committed):
 | `run_drc.py` | `status: clean`, `violation_count: 0`, `metrics.drc__error__count: 0` — quoted from `20261028-065229-f32fe48.drc.json` (klt 0.8.0, klayout 0.30.12), the envelope `signoff/block-manifest.json` item 3 cites. The earlier `20260817-125327-972f6d5.drc.json` run reached the same verdict under klt 0.2.0 / klayout 0.30.10; see "RESOLVED — klt-version drift..." below |
 | `run_lvs.py` | `status: match`, 164/164 devices, 82/82 nets, 3/3 pins, `mismatch_count: 9` (all `warning`), `error_count: 0` — quoted from `20261028-065214-f32fe48.lvs.json` (klt 0.8.0, klayout 0.30.12), the envelope `signoff/block-manifest.json` item 4 cites. The earlier `20260817-125346-972f6d5.lvs.json` run read 164/164 devices but 92/92 nets, 4/4 pins and 14 mismatches under klt 0.2.0 / klayout 0.30.10, against an earlier drawn GDS; see "RESOLVED — klt-version drift..." below and "Of the 9 mismatches..." further down |
 | `routing_budget.py` | decomposition reconstructs the drawn bbox (221.70 × 281.03 µm) with **no corridor and no rail-band term left**, and the drawn `S1` area equals `area_report.py`'s measured 62,505.60 µm² / 2.47× — beating the study's 65,896.39 µm² / 2.60× estimate by 5.1 % (see [`routing/multi-metal-routing-study.md`](routing/multi-metal-routing-study.md) and `bandgap_top/AREA.md` Finding 6) |
-| `run_erc.py` | `gate_count: 10`, `erc_finding_count: 0` — **zero** `erc.unconnected_net` and **zero** `erc.supply_short` naming `vdd`/`vss`, i.e. each supply is exactly one electrical island (`20260920-062158-32dcc18.erc.json`). The report's own `status` is `not_checked`/exit 4 on every gf180mcu run, which T1 item 11 does not grade on — see [`erc/README.md`](erc/README.md), and note that `erc.missing_tie` is **not computed** there |
+| `run_erc.py` | `gate_count: 10`, `erc_finding_count: 0` — **zero** `erc.unconnected_net` and **zero** `erc.supply_short` naming `vdd`/`vss`, i.e. each supply is exactly one electrical island, and **zero** `erc.missing_tie` with all three tie checks **computed** (`erc_coverage.skipped` empty) (`20261120-210525-e0893ec.erc.json`, klt 0.8.0), the envelope `signoff/block-manifest.json` item 11 cites. The report's own `status` is `not_checked`/exit 4 on every gf180mcu run, which T1 item 11 does not grade on — see [`erc/README.md`](erc/README.md) and its tie negative control |
 | `run_lvs.py --engine both` | **Dated to 2026-08-19, the last netgen run committed under `layout/lvs/reports/bandgap_top/`** (klt 0.2.0, klayout 0.30.10, netgen 1.5.133) — not a re-quote of the 2026-10-28 envelopes above, which are klayout-only, and no netgen run has been committed since: klayout `match`, 14 mismatches (`20260819-070132-1e66285.lvs.json`); netgen `mismatch`, 3 mismatches of which 1 is an `error`-severity `device.property` (`20260819-070132-1e66285.lvs-netgen.json`) — **engines DISAGREE by design**: [#168](https://github.com/2AMLogic/gf180-bandgap/issues/168) root-caused this to a netgen-only device-pairing artifact on graph-symmetric dummy devices, not a layout defect (see below); the `klayout` engine's `match` verdict is this repo's acceptance gate (#159/#170) and is unaffected |
 | `area_report.py` | 62,505.60 µm² vs. the current interim ceiling of 66,000 µm² (0.066 mm², `spec/decision-records/0006-area-target-narrowed-post-166.md`, proposed via the ratification-via-PR path) — **PASS, 5.3 % headroom**; still **FAIL, 25.0 % over budget** against the originally-ratified 50,000 µm² (DR-0003) (issue #166 recovered 22.7 % of #156's 80,813.72 µm²; the remainder is row-stripe floorplan whitespace, not routing — see `layout/bandgap_top/AREA.md` Findings 5–7) |
 
@@ -981,7 +985,7 @@ sections above.
 - [`#54`](https://github.com/2AMLogic/klayout-tools/issues/54) / [`#153`](https://github.com/2AMLogic/klayout-tools/issues/153) — missing `klt lvs` / extraction capability: resolved.
 - [`#318`](https://github.com/2AMLogic/klayout-tools/issues/318) — `enclosing` check false-negative on a shape drawn entirely outside the enclosing layer: resolved by [`#327`](https://github.com/2AMLogic/klayout-tools/issues/327) (see the #82 update above and gf180-bandgap#84).
 - [`#314`](https://github.com/2AMLogic/klayout-tools/issues/314) — recognised MiM cap plate nets isolated from the connectivity stack: resolved; follow-on [`#364`](https://github.com/2AMLogic/klayout-tools/issues/364) fixed by [`PR #368`](https://github.com/2AMLogic/klayout-tools/pull/368) (gf180-bandgap#88; see "Findings and escalations" above).
-- [`#2169`](https://github.com/2AMLogic/klayout-tools/issues/2169) — `klt erc`'s `ties[]` collapses a design into one electrical island: **closed 2026-09-20**. Independently reproduced here; the reproduction is committed as [`erc/erc-tie-spec.known-gap.json`](erc/erc-tie-spec.known-gap.json) plus its report (append-only evidence, left untouched). Whether `ties[]` should now be declared is tracked in [#358](https://github.com/2AMLogic/gf180-bandgap/issues/358).
+- [`#2169`](https://github.com/2AMLogic/klayout-tools/issues/2169) — `klt erc`'s `ties[]` collapses a design into one electrical island: **closed 2026-09-20**. Independently reproduced here; the reproduction is committed as [`erc/erc-tie-spec.known-gap.json`](erc/erc-tie-spec.known-gap.json) plus its report (append-only evidence, left untouched). `ties[]` is now declared in the signoff spec (#526, derived in #441); the post-#204 re-run on the regenerated GDS stays tracked in [#358](https://github.com/2AMLogic/gf180-bandgap/issues/358).
 - [`#2179`](https://github.com/2AMLogic/klayout-tools/issues/2179) — `klt erc --pdk` had an antenna-ratio limit table for sky130 only, so every gf180mcu run reported `not_checked` / exit 4: **closed 2026-09-20**.
 - klt-version DRC/LVS drift ([#159](https://github.com/2AMLogic/gf180-bandgap/issues/159)) was investigated and root-caused to this repo, not to the tool; no filing. See the "Expected results" table's "RESOLVED — klt-version drift..." note above.
 

@@ -59,11 +59,11 @@ renders `wrong_kind`, not `met`.
 
 ## What the manifest cites, and what it deliberately does not
 
-Four items are cited today (3, 4, 9 and 10). Everything else is uncited and
-renders `no_evidence` — an accurate machine-readable statement that no
-`klt`-gradable check backs that claim in this repo yet. That is the honest
-result, not a placeholder: citing a passing envelope that does not actually
-support an item would turn a row green while proving nothing.
+Five items are cited today (3, 4, 9, 10 and 11). Everything else is
+uncited and renders `no_evidence` — an accurate machine-readable statement
+that no `klt`-gradable check backs that claim in this repo yet. That is the
+honest result, not a placeholder: citing a passing envelope that does not
+actually support an item would turn a row green while proving nothing.
 
 **Items 9 and 10 are cited through `klt signoff --attest`.** They have no
 dedicated `klt` verb, so the grader's artifact-anchored generic envelope
@@ -130,26 +130,32 @@ post-layout numbers were measured on a properly body-biased extracted netlist.
 Absence of that field never means "every device body was biased"; here it
 means the question has not been asked with the tool that answers it.
 
-**Item 11 (power delivery, structural) has no citation**, though — unlike
-items 5/6/7/8 above — this repo *does* have a `klt erc` supply spec and a
-`klt erc` report (`layout/erc/erc-supply-spec.json`,
-`layout/erc/reports/bandgap_top/`, established by
-[#192](https://github.com/2AMLogic/gf180-bandgap/issues/192)). The reason for
-the non-citation is `erc.missing_tie`: it is a required rule for this item
-and it is **not computed** on this block's run, because declaring the
-well/substrate `ties[]` the rule needs collapses the layout into a single
-false-shorted electrical island (klayout-tools#2169). A citation that omits a
-required rule is not a partial `met`; `klt signoff` would have no basis to
-distinguish "computed and passing" from "never asked", so the item stays
-uncited rather than asserting a verdict the grader cannot actually check.
-Full detail — the negative control that proves the supply-short/unconnected
-rules do fire, and exactly what the drawn taps and their LVS coverage do and
-do not stand in for — is in
-[`layout/erc/README.md`](../layout/erc/README.md), "What is NOT verified
-here". **Read that file's own text for the current state, not this
-paragraph**, since a hand-restated summary is exactly the kind of copy this
-repo has already had to retire once (see "How this is kept from rotting"
-below).
+**Item 11 (power delivery, structural) is cited — a compound citation**
+(gf180-bandgap#526, 2026-11-20). It is the one T1 item no single artifact
+proves, so its manifest entry is a **list** of two envelopes, per
+`klt signoff`'s compound shape (klayout-tools#2025): the `klt erc`
+supply-spec run (`layout/erc/erc-supply-spec.json` — which since #526
+declares the well/substrate `ties[]`, so `erc.missing_tie` is computed and
+zero from checks that ran) and the same LVS report item 4 grades (its
+`net_correspondence` carries `vdd`/`vss` paired to `VDD`/`VSS` in a
+`match` — a participation test gated on item 4 passing, which it is, at
+the same pinned GDS hash). Both parts pin the GDS hash in
+`pinned-inputs.json`, so a layout regeneration flips the item to
+`stale_evidence` until re-run: **the citation is against the pre-DR-0007
+layout, and [#204](https://github.com/2AMLogic/gf180-bandgap/issues/204)
+re-mints it — the re-run stays tracked by
+[#358](https://github.com/2AMLogic/gf180-bandgap/issues/358).** Two
+committed negative controls make the zeros readable (a rule that cannot
+fire produces the same zero as one that ran clean): the net control
+proves `erc.unconnected_net` fires, and the tie control — the signoff spec
+with each `ties[].net` flipped — proves `erc.missing_tie` fires for every
+tap class. Full detail, including the three-bias-class `ties[]`
+derivation, the `psub_tap` well-assertion caveat and the spec's
+layer-declaration disclosure, is in
+[`layout/erc/README.md`](../layout/erc/README.md). **Read that file's own
+text for the current state, not this paragraph**, since a hand-restated
+summary is exactly the kind of copy this repo has already had to retire
+once (see "How this is kept from rotting" below).
 
 ## Disclosures that travel with the claim (claimant-enforced, not graded)
 
