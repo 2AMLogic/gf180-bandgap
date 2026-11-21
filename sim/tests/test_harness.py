@@ -12,6 +12,7 @@ import os
 import stat
 import sys
 import tempfile
+import threading
 import unittest
 from pathlib import Path
 
@@ -1128,6 +1129,50 @@ class RecordRenderingTests(unittest.TestCase):
         self.assertIn(self.tb.netlist_sha256, path.read_text())
         with self.assertRaises(report.RecordExists):
             report.write_netlist_snapshot(self.tb, experiment, "20260729-153000-1a7ef75")
+
+
+class WriteMarkdownReportTests(unittest.TestCase):
+    """The shared Markdown report writer (#533): a same-second rerun or a
+    racing writer mints a fresh suffixed file instead of replacing one."""
+
+    STEM = "20261120-120000-deadbee"
+
+    def test_three_same_stem_writes_keep_all_three_payloads(self):
+        with tempfile.TemporaryDirectory() as d:
+            written = [
+                report.write_markdown_report(Path(d), self.STEM, f"payload {i}", "suite summary")
+                for i in range(3)
+            ]
+            self.assertEqual(
+                [p.name for p in written],
+                [f"{self.STEM}.md", f"{self.STEM}-1.md", f"{self.STEM}-2.md"],
+            )
+            for i, path in enumerate(written):
+                self.assertEqual(path.read_text(), f"payload {i}")
+
+    def test_an_occupied_suffix_is_skipped_not_reused(self):
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / f"{self.STEM}-1.md").write_text("kept")
+            first = report.write_markdown_report(Path(d), self.STEM, "new", "suite summary")
+            second = report.write_markdown_report(Path(d), self.STEM, "newer", "suite summary")
+            self.assertEqual(first.name, f"{self.STEM}.md")
+            self.assertEqual(second.name, f"{self.STEM}-2.md")
+            self.assertEqual((Path(d) / f"{self.STEM}-1.md").read_text(), "kept")
+
+    def test_concurrent_writers_each_keep_their_payload(self):
+        payloads = {f"writer {i}" for i in range(8)}
+        with tempfile.TemporaryDirectory() as d:
+            def one(text):
+                report.write_markdown_report(Path(d), self.STEM, text, "suite summary")
+
+            threads = [threading.Thread(target=one, args=(p,)) for p in payloads]
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join()
+            files = list(Path(d).iterdir())
+            self.assertEqual(len(files), len(payloads))
+            self.assertEqual({p.read_text() for p in files}, payloads)
 
 
 if __name__ == "__main__":

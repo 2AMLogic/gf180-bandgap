@@ -591,5 +591,64 @@ class CompletenessTests(unittest.TestCase):
         self.assertEqual(code, 1)
 
 
+class SummaryWriteTests(unittest.TestCase):
+    """The suite summary is append-only evidence (#533): same-second reruns
+    each keep their payload, and --no-write leaves nothing behind."""
+
+    TT = "tt_27c_3.30v"
+
+    def _run_main(self, payload: str, out_dir: Path, argv: list[str]) -> None:
+        import contextlib
+        import datetime as dt
+        import io
+        from unittest import mock
+
+        from harness import report as harness_report
+        from suite import cli
+
+        class _FrozenDateTime:
+            @staticmethod
+            def now(tz=None):
+                return dt.datetime(2026, 11, 20, 12, 0, 0, tzinfo=tz)
+
+        class _Frozen:
+            datetime = _FrozenDateTime
+            timezone = dt.timezone
+
+        def fake_run(slug, lines, extra, quiet=False, expected_corners=None):
+            samples = {self.TT: {"iq_ua": 40.0, "vref": 1.2}}
+            bench = BenchRun(slug=slug, lines=lines, status="ok", returncode=0,
+                             samples=samples, expected_corners=[self.TT])
+            bench.outcomes = [analysis.evaluate_line(l, samples, [self.TT]) for l in lines]
+            return bench
+
+        with mock.patch.object(cli, "run_bench", fake_run), \
+                mock.patch.object(cli, "render_summary", mock.Mock(return_value=payload)), \
+                mock.patch.object(cli, "SUMMARY_DIR", out_dir), \
+                mock.patch.object(cli, "REPO_ROOT", out_dir), \
+                mock.patch.object(cli, "_dt", _Frozen), \
+                mock.patch.object(harness_report, "git_provenance",
+                                  mock.Mock(return_value={"short": "deadbee"})), \
+                contextlib.redirect_stdout(io.StringIO()):
+            cli.main(argv)
+
+    def test_three_same_second_reruns_keep_every_summary(self):
+        with tempfile.TemporaryDirectory() as d:
+            for payload in ("PAYLOAD-A", "PAYLOAD-B", "PAYLOAD-C"):
+                self._run_main(payload, Path(d), ["--only", "iq", "--quiet"])
+            files = {p.name: p.read_text() for p in Path(d).iterdir()}
+        self.assertEqual(
+            set(files),
+            {"20261120-120000-deadbee.md", "20261120-120000-deadbee-1.md",
+             "20261120-120000-deadbee-2.md"},
+        )
+        self.assertEqual(set(files.values()), {"PAYLOAD-A", "PAYLOAD-B", "PAYLOAD-C"})
+
+    def test_no_write_leaves_no_summary_behind(self):
+        with tempfile.TemporaryDirectory() as d:
+            self._run_main("PAYLOAD-A", Path(d), ["--only", "iq", "--quiet", "--no-write"])
+            self.assertEqual(list(Path(d).iterdir()), [])
+
+
 if __name__ == "__main__":
     unittest.main()
