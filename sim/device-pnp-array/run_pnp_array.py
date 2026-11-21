@@ -41,6 +41,7 @@ sys.path.insert(0, str(SIM))
 sys.path.insert(0, str(SIM / "tools"))
 
 import mk_klt_device_request as req  # noqa: E402
+import fleet_common as fc  # noqa: E402
 from harness import corners as hcorners  # noqa: E402
 from harness import report as hreport  # noqa: E402
 
@@ -58,32 +59,54 @@ def a_eff(vbe_unit: float, vbe_other: float, temp_c: float) -> float:
 
 
 def parse_corner_id(cid: str) -> tuple[str, float]:
-    """'bjt_typical/novdd/-40C' -> ('bjt_typical', -40.0)."""
-    section, _supply, temp = cid.split("/")
-    return section, float(temp.rstrip("Cc"))
+    """'bjt_typical/novdd/-40C' -> ('bjt_typical', -40.0).
+
+    Parses with the fleet corner-id grammar (`fc.parse_klt_corner_id`) and
+    rejects a corner id that carries a supply axis: every branch of this
+    bench is current-source driven with no supply rail, so a supply in the
+    id is a wrong report, not a point to ingest.
+    """
+    section, supply, temp = fc.parse_klt_corner_id(cid)
+    if supply is not None:
+        raise ValueError(f"corner id {cid!r} carries supply {supply:g}V; this bench has no supply rail")
+    return section, temp
 
 
 def collect(report: dict, expected: list[tuple[str, float]]):
-    """Return (points, missing, failed).
+    """-> (points, missing, failed, problems); see `fleet_common.collect_units`.
 
     points: {(section, temp): {measurement name: value}} for passing corners
     carrying every declared measurement; missing: expected points absent from
-    the report or lacking a measurement; failed: points whose status != pass.
+    the report or lacking a measurement; failed: points whose execution the
+    fleet collector rejects, plus this bench's pass-only rule; problems:
+    report-level issues (duplicate / unexpected / rejected corner ids).
+
+    Device-bench additions over the shared collector:
+
+    * every corner id must be a no-supply id (`parse_corner_id` raises
+      otherwise); a rejected id is a report-level problem and its expected
+      point counts as missing, so the verdict is incomplete;
+    * pass-only: a `fail` verdict is a legitimate fleet result but not an
+      accepted measurement for this characterization (pinned by
+      `sim/tests/test_pnp_array.py`) -- demoted from points to failed.
     """
-    want = {m["name"] for m in req.measurements()}
-    points, failed, seen = {}, [], set()
+    required = [m["name"] for m in req.measurements()]
+    bad_ids, kept = [], []
     for c in report.get("corners", []):
-        key = parse_corner_id(c["corner_id"])
-        seen.add(key)
-        if c.get("status") != "pass":
-            failed.append((key, c.get("status")))
-            continue
-        vals = {m["name"]: m["value"] for m in c.get("measurements", []) if m.get("value") is not None}
-        if want - set(vals):
-            continue  # recorded as missing below
-        points[key] = vals
-    missing = [k for k in expected if k not in points and k not in {f[0] for f in failed}]
-    return points, missing, failed
+        try:
+            parse_corner_id(c["corner_id"])
+            kept.append(c)
+        except Exception as e:
+            bad_ids.append(f"rejected corner identity: {e}")
+    points, missing, failed, problems = fc.collect_units(
+        dict(report, corners=kept), expected, required, parse_corner_id
+    )
+    status_of = {parse_corner_id(c["corner_id"]): c.get("status") for c in kept}
+    for k in list(points):
+        if status_of.get(k) != "pass":
+            failed.append((k, status_of.get(k)))
+            del points[k]
+    return points, missing, failed, bad_ids + list(problems)
 
 
 def ratios(vals: dict, temp_c: float) -> dict:
@@ -121,10 +144,10 @@ def pct(x: float) -> str:
     return f"{x:.4f}"
 
 
-def build_record(record, stamp, report, points, missing, failed, cids) -> str:
+def build_record(record, stamp, report, points, missing, failed, problems, cids) -> str:
     L = []
     add = L.append
-    complete = not missing and not failed
+    complete = not missing and not failed and not problems
     env = report.get("environment", {})
     remote = env.get("remote", {})
     prov = report.get("provenance", {})
@@ -168,7 +191,8 @@ def build_record(record, stamp, report, points, missing, failed, cids) -> str:
         add(f"  - All {len(points)} of {len(cids)} points executed on the fleet and passed; all measurements present.")
     else:
         add("  - **INCOMPLETE.** Failed: " + (", ".join(f"{k} ({s})" for k, s in failed) or "none")
-            + ". Missing: " + (", ".join(map(str, missing)) or "none") + ".")
+            + ". Missing: " + (", ".join(f"{k} ({why})" for k, why in missing) or "none")
+            + ". Problems: " + ("; ".join(problems) or "none") + ".")
     add("")
     d = req.DESIGN_UA
     if points:
@@ -253,7 +277,7 @@ def main() -> int:
         dispatch(work)
     report = json.loads((work / "report.json").read_text())
     expected = req.expected_points()
-    points, missing, failed = collect(report, expected)
+    points, missing, failed, problems = collect(report, expected)
 
     git = hreport.git_provenance(hreport.REPO_ROOT) if hasattr(hreport, "REPO_ROOT") else hreport.git_provenance(SIM.parent)
     record = hreport.allocate_record_id(SIM.parent, HERE / "records", git=git)
@@ -262,10 +286,16 @@ def main() -> int:
 
     cdir = HERE / "corners" / record
     cdir.mkdir(parents=True, exist_ok=True)
+    written: set[str] = set()
     for c in report.get("corners", []):
-        sec, t = parse_corner_id(c["corner_id"])
+        try:
+            sec, t = parse_corner_id(c["corner_id"])
+        except ValueError:
+            continue  # report-level problem already; never write artifacts for a rejected id
         cid = hcorners.device_corner_id(sec, t)
-        art = c.get("artifacts") or {}
+        if cid in written:
+            continue  # duplicate id: the first entry owns the log (problem already recorded)
+        written.add(cid)
         src_dir = work / "out" / f"{sec}_novdd_{('n' + format(abs(t), 'g') if t < 0 else format(t, 'g'))}C"
         header = (f"* record-id : {record}\n* klt corner : {c['corner_id']} (status {c.get('status')})\n"
                   f"* supply    : n/a (no supply rail)\n")
@@ -283,10 +313,11 @@ def main() -> int:
     hreport.write_snapshot_text(HERE / "netlist-snapshots", record, body)
 
     path = hreport.device_write_record(
-        HERE / "records", record, build_record(record, stamp, report, points, missing, failed, cids)
+        HERE / "records", record,
+        build_record(record, stamp, report, points, missing, failed, problems, cids)
     )
-    print(f"wrote {path} ({len(points)}/{len(cids)} points; missing={missing} failed={failed})")
-    return 0 if not (missing or failed) else 2
+    print(f"wrote {path} ({len(points)}/{len(cids)} points; missing={missing} failed={failed} problems={problems})")
+    return 0 if not (missing or failed or problems) else 2
 
 
 if __name__ == "__main__":
