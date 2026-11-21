@@ -666,12 +666,12 @@ def main(argv: list[str] | None = None) -> int:
     print(summary)
 
     if not no_write:
-        SUMMARY_DIR.mkdir(parents=True, exist_ok=True)
-        name = f"{started.strftime('%Y%m%d-%H%M%S')}-{git.get('short', 'unknown')}.md"
-        path = SUMMARY_DIR / name
-        if path.exists():  # pragma: no cover - same second, same commit
-            path = SUMMARY_DIR / f"{path.stem}-1.md"
-        path.write_text(summary)
+        path = harness_report.write_markdown_report(
+            SUMMARY_DIR,
+            f"{started.strftime('%Y%m%d-%H%M%S')}-{git.get('short', 'unknown')}",
+            summary,
+            "suite summary",
+        )
         print(f"summary written to {path.relative_to(REPO_ROOT)}")
 
     return completeness.exit_code

@@ -108,9 +108,12 @@ def main(argv=None) -> int:
                              wrote_evidence=False, combined=combined, completeness=done)
     print(summary)
     if not a.no_write:
-        SUMMARY_DIR.mkdir(parents=True, exist_ok=True)
-        path = SUMMARY_DIR / f"{started.strftime('%Y%m%d-%H%M%S')}-{git.get('short', 'unknown')}.md"
-        path.write_text(summary)
+        path = harness_report.write_markdown_report(
+            SUMMARY_DIR,
+            f"{started.strftime('%Y%m%d-%H%M%S')}-{git.get('short', 'unknown')}",
+            summary,
+            "fleet suite summary",
+        )
         print(f"summary written to {path.relative_to(REPO)}")
     return done.exit_code
 

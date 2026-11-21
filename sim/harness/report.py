@@ -504,6 +504,29 @@ def _write_exclusive(path: Path, text: str | bytes, what: str) -> None:
         ) from None
 
 
+def write_markdown_report(directory: Path, stem: str, text: str, what: str) -> Path:
+    """Write a Markdown roll-up to ``directory/<stem>.md``, never overwriting.
+
+    Suite summaries and combined reports are named ``<timestamp>-<short-sha>``,
+    so two runs in the same second on the same commit -- a rerun, or the local
+    suite racing the fleet writer in their shared directory -- collide on the
+    base name. The first write keeps it; a collision retries
+    ``<stem>-<n>.md`` (n = 1, 2, ...) under :func:`_write_exclusive`'s atomic
+    create-or-refuse, so every writer mints a fresh file and no existing
+    report's bytes are ever touched. Returns the path actually written.
+    """
+    directory.mkdir(parents=True, exist_ok=True)
+    candidate = directory / f"{stem}.md"
+    suffix = 0
+    while True:
+        try:
+            _write_exclusive(candidate, text, what)
+            return candidate
+        except RecordExists:
+            suffix += 1
+            candidate = directory / f"{stem}-{suffix}.md"
+
+
 def write_netlist_snapshot(tb: Testbench, experiment_dir: Path, record_id: str) -> Path:
     """Freeze the DUT netlist for this record.
 

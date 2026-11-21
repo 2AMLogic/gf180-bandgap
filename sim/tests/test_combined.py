@@ -650,5 +650,56 @@ class CommittedEvidenceTests(unittest.TestCase):
             self.assertAlmostEqual(corner.high_v - corner.low_v, 6 * leg.sigma_v, places=9)
 
 
+class ReportWriteTests(unittest.TestCase):
+    """Combined reports are append-only (#533): same-second reruns each keep
+    their payload, and --no-write leaves nothing behind."""
+
+    def _run_main(self, payload: str, out_dir: Path, argv: list[str]) -> int:
+        import contextlib
+        import datetime as dt
+        import io
+        from types import SimpleNamespace
+        from unittest import mock
+
+        from harness import report as harness_report
+
+        class _FrozenDateTime:
+            @staticmethod
+            def now(tz=None):
+                return dt.datetime(2026, 11, 20, 12, 0, 0, tzinfo=tz)
+
+        class _Frozen:
+            datetime = _FrozenDateTime
+            timezone = dt.timezone
+
+        verdict = SimpleNamespace(status="PASS")
+        with mock.patch.object(combined, "REPORT_DIR", out_dir), \
+                mock.patch.object(combined, "REPO_ROOT", out_dir), \
+                mock.patch.object(combined, "_dt", _Frozen), \
+                mock.patch.object(combined, "load", mock.Mock(return_value=verdict)), \
+                mock.patch.object(combined, "render", mock.Mock(return_value=payload)), \
+                mock.patch.object(harness_report, "git_provenance",
+                                  mock.Mock(return_value={"short": "deadbee"})), \
+                contextlib.redirect_stdout(io.StringIO()):
+            return combined.main(argv)
+
+    def test_three_same_second_reruns_keep_every_report(self):
+        with tempfile.TemporaryDirectory() as d:
+            for payload in ("REPORT-A", "REPORT-B", "REPORT-C"):
+                self.assertEqual(self._run_main(payload, Path(d), []), 0)
+            files = {p.name: p.read_text() for p in Path(d).iterdir()}
+        self.assertEqual(
+            set(files),
+            {"20261120-120000-deadbee.md", "20261120-120000-deadbee-1.md",
+             "20261120-120000-deadbee-2.md"},
+        )
+        self.assertEqual(set(files.values()), {"REPORT-A", "REPORT-B", "REPORT-C"})
+
+    def test_no_write_leaves_no_report_behind(self):
+        with tempfile.TemporaryDirectory() as d:
+            self.assertEqual(self._run_main("REPORT-A", Path(d), ["--no-write"]), 0)
+            self.assertEqual(list(Path(d).iterdir()), [])
+
+
 if __name__ == "__main__":
     unittest.main()
