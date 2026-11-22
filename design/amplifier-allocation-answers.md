@@ -13,9 +13,8 @@ record.)
 
 **Amplifier slot.** This block keeps its in-tree `bandgap_amp`
 (telescopic-cascode OTA, #42 topology, #147/#151 sizings); `reuse.lock.json`
-carries the sibling `2AMLogic/gf180-opamp` at status `evaluate`. Every figure
-below is the requirement any amplifier occupying that slot must meet, whether
-the in-tree one or the sibling.
+carries the sibling `2AMLogic/gf180-opamp` at status `evaluate`. Any amplifier
+in this slot must meet the Q4 input-offset allocation for the untrimmed budget.
 
 ## Q4 — input-offset share of the untrimmed accuracy budget
 
