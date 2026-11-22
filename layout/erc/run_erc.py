@@ -21,7 +21,16 @@ on by default:
    some other stream that happened to be at that path.
 2. Under ``--expect supply-clean`` (the default): every ``nets[]`` entry
    declared ``"kind": "supply"`` is named by **zero** ``erc.unconnected_net``
-   findings and **zero** ``erc.supply_short`` findings.
+   findings and **zero** ``erc.supply_short`` findings, and every ``ties[]``
+   entry's ``erc.missing_tie`` check is **evidenced as computed**: its full
+   coverage ID (``erc.missing_tie:["<name>"]``, the one-element name array
+   JSON-encoded) appears in ``erc_coverage.checked`` and in no
+   ``erc_coverage.skipped`` record. A tie check the tool skipped, or a
+   report without the coverage block at all, fails the gate: without this,
+   a zero-findings report cannot tell "checked and clean" from "never
+   checked" (gf180-bandgap#537). Membership in
+   ``erc_coverage.checked_by_well_assertion`` alone supplies no evidence
+   the check ran.
 
    Under ``--expect findings``: at least one ERC finding was reported. This
    is what the negative control (``erc-supply-spec.negative-control.json``)
@@ -108,6 +117,89 @@ def declared_supplies(spec: dict) -> list[str]:
     ]
 
 
+def declared_ties(spec: dict) -> list[str]:
+    """Every ``ties[]`` entry's ``name``, in spec order."""
+    return [
+        tie["name"]
+        for tie in spec.get("ties", [])
+        if isinstance(tie, dict) and "name" in tie
+    ]
+
+
+def tie_check_id(name: str) -> str:
+    """The ``erc_coverage`` ID of a tie's missing-tie check.
+
+    klt builds the ID from the rule name plus the tie's one-element name
+    array JSON-encoded, e.g. ``erc.missing_tie:["psub_tap"]`` -- the JSON
+    encoding (not f-string splicing) is load-bearing for any name that
+    needs escaping.
+    """
+    return f"erc.missing_tie:{json.dumps([name])}"
+
+
+def tie_coverage_failures(payload: dict, tie_names: list[str]) -> list[str]:
+    """Failures for declared ties whose missing-tie check never ran.
+
+    Positive evidence for a tie is its full check ID (:func:`tie_check_id`)
+    appearing as a string in ``erc_coverage.checked``. A record in
+    ``erc_coverage.skipped`` -- a native object with an ``id`` -- is a
+    failure regardless of its reason, even when the ID is also in
+    ``checked``: a skipped check is not a verdict. Membership in
+    ``checked_by_well_assertion`` alone supplies no evidence the check was
+    computed, and a missing or non-dict ``erc_coverage`` block fails every
+    declared tie, so a report that omits the block cannot read as a clean
+    supply verdict (gf180-bandgap#537).
+    """
+    if not tie_names:
+        return []
+    coverage = payload.get("erc_coverage")
+    coverage = coverage if isinstance(coverage, dict) else {}
+    checked = {
+        entry for entry in (coverage.get("checked") or []) if isinstance(entry, str)
+    }
+    skipped: dict[str, str | None] = {}
+    for entry in coverage.get("skipped") or []:
+        if isinstance(entry, dict) and isinstance(entry.get("id"), str):
+            skipped[entry["id"]] = entry.get("reason")
+    asserted = {
+        entry
+        for entry in (coverage.get("checked_by_well_assertion") or [])
+        if isinstance(entry, str)
+    }
+    failures: list[str] = []
+    for name in tie_names:
+        check_id = tie_check_id(name)
+        if check_id in skipped:
+            reason = skipped[check_id]
+            failures.append(
+                f"--expect supply-clean: declared tie '{name}' was skipped, "
+                f"not computed: its check ID {check_id} is in "
+                "erc_coverage.skipped"
+                + (f" (reason: {reason})" if reason else "")
+                + ". A skip reason is diagnostic, not a pass: fix the "
+                "ties[] declaration so the check runs."
+            )
+            continue
+        if check_id in checked:
+            continue
+        detail = ""
+        if not coverage:
+            detail = " (the report carries no erc_coverage block at all)"
+        elif check_id in asserted:
+            detail = (
+                " even though it appears in "
+                "erc_coverage.checked_by_well_assertion, which is not "
+                "evidence the check was computed"
+            )
+        failures.append(
+            f"--expect supply-clean: declared tie '{name}' has no coverage "
+            f"evidence: its check ID {check_id} is missing from "
+            f"erc_coverage.checked{detail}. Zero erc.missing_tie findings "
+            "are a verdict only for ties the run actually checked."
+        )
+    return failures
+
+
 def supply_findings(payload: dict, supplies: list[str]) -> list[dict]:
     """Findings from :data:`SUPPLY_RULES` that name a declared supply.
 
@@ -177,7 +269,9 @@ def main(argv: list[str] | None = None) -> int:
         default="supply-clean",
         help=(
             "verdict gate: 'supply-clean' (default) requires zero "
-            "erc.unconnected_net/erc.supply_short naming a declared supply; "
+            "erc.unconnected_net/erc.supply_short naming a declared supply "
+            "AND every declared ties[] check evidenced in "
+            "erc_coverage.checked and none in erc_coverage.skipped; "
             "'findings' requires at least one finding (the controls); "
             "'any' gates on nothing"
         ),
@@ -245,6 +339,7 @@ def main(argv: list[str] | None = None) -> int:
     payload = json.loads(procs["json"].stdout)
     spec = json.loads(spec_path.read_text())
     supplies = declared_supplies(spec)
+    ties = declared_ties(spec)
 
     lines, failures = verdict_lines(payload, supplies, sha256_of(gds_path))
 
@@ -257,17 +352,21 @@ def main(argv: list[str] | None = None) -> int:
     print(f"findings      : {payload.get('erc_finding_count')}")
     for line in lines:
         print(line)
+    if ties:
+        print(f"ties          : {', '.join(ties)}")
     print(f"report (json) : {json_path.relative_to(REPO_ROOT)}")
     print(f"report (text) : {text_path.relative_to(REPO_ROOT)}")
 
     total = payload.get("erc_finding_count") or 0
-    if args.expect == "supply-clean" and supply_findings(payload, supplies):
-        failures.append(
-            "--expect supply-clean: a declared supply is named by an "
-            "erc.unconnected_net or erc.supply_short finding (listed above). "
-            "Per gf180-bandgap#192 this is a REAL FINDING about the layout -- "
-            "file it as its own issue; do not tune the spec until it passes."
-        )
+    if args.expect == "supply-clean":
+        if supply_findings(payload, supplies):
+            failures.append(
+                "--expect supply-clean: a declared supply is named by an "
+                "erc.unconnected_net or erc.supply_short finding (listed above). "
+                "Per gf180-bandgap#192 this is a REAL FINDING about the layout -- "
+                "file it as its own issue; do not tune the spec until it passes."
+            )
+        failures.extend(tie_coverage_failures(payload, ties))
     if args.expect == "findings" and total == 0:
         failures.append(
             "--expect findings: this control reported ZERO findings. It exists "

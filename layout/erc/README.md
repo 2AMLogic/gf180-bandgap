@@ -40,7 +40,10 @@ that is the primary documentation, not this file.
 ## Reproducing
 
 ```bash
-# 1. the item-11 signoff read (exits nonzero if the verdict regresses)
+# 1. the item-11 signoff read (exits nonzero if the verdict regresses:
+#    a supply finding, a GDS-hash mismatch, or a declared tie whose
+#    erc.missing_tie check is missing from erc_coverage.checked or
+#    listed in erc_coverage.skipped -- #537)
 python3 layout/erc/run_erc.py
 
 # 2. the net negative control -- a CLEAN result here is the regression
@@ -102,7 +105,7 @@ September runs below read the pre-2026-11-17 GDS,
 
 | Read | Report | Result |
 | --- | --- | --- |
-| Supply + ties (signoff) | `.erc.json` | 10 gate nets, `erc_finding_count: 0`, **zero** `erc.unconnected_net`, **zero** `erc.supply_short`, **zero** `erc.missing_tie`, all three tie checks **computed** (`erc_coverage.skipped` empty) |
+| Supply + ties (signoff) | `.erc.json` | 10 gate nets, `erc_finding_count: 0`, **zero** `erc.unconnected_net`, **zero** `erc.supply_short`, **zero** `erc.missing_tie`, all three tie check IDs in `erc_coverage.checked` with `skipped` empty — the coverage state `run_erc.py --expect supply-clean` enforces on every run: a declared tie whose check is omitted from `checked` or listed in `skipped[].id` fails the gate, because a zero is only a verdict for checks that ran (gf180-bandgap#537) |
 | Net negative control | `.erc-negative-control.json` | 1 finding — `erc.unconnected_net` on the bogus `no_such_rail`, and *only* on it |
 | `#2169` reproduction | `.erc-tie-known-gap.json` | design collapses to 1 gate net, 3 **false** shorts (kept as history; the collapse does not recur on the pin — see `*.erc-tie-pinned.*`) |
 | Tie probe (`#441`, historical) | `.erc-tie-classed.json` | same three ties, zero findings, on the 2026-11-13 GDS |
