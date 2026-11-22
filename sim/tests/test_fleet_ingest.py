@@ -9,7 +9,9 @@ and every klt report / waveform is synthesized.
 
 from __future__ import annotations
 
+import contextlib
 import copy
+import io
 import json
 import math
 import sys
@@ -690,6 +692,18 @@ class Startup(TmpCase):
 # ---------------------------------------------------------------- completeness (all benches)
 
 
+def ingest_from_disk(f: Fixture) -> tuple[dict, dict]:
+    """Assess a fixture's work dir the way ``fleet_ingest.main`` does: the fleet's
+    reports written next to the requests, everything read back by ``fc.load_work``.
+    -> ``(decks, result)``."""
+    for name, rep in f.reports.items():
+        (f.tmp / name / "report.json").write_text(json.dumps(rep))
+    plan, reports, decks, requests = fc.load_work(f.tmp)
+    res = fi.assess_bench(f.bench, f.tb, plan, reports, f.tmp, dut_sha=fc.sha256_file(DUT), decks=decks,
+                          requests=requests)
+    return decks, res
+
+
 class Fails(TmpCase):
     BENCHES = mk.BENCHES
 
@@ -884,6 +898,42 @@ class Fails(TmpCase):
             res = f.assess()
             self.assertEqual(res["overall"], "INCOMPLETE")
             self.assertTrue(any("no request_sha256" in p for p in res["problems"]), res["problems"])
+
+    def test_missing_body_spice_is_a_problem_not_a_matching_deck(self):
+        for f in self.each():
+            gone = self.first_request(f)
+            (f.tmp / gone / "body.spice").unlink()
+            decks, res = ingest_from_disk(f)
+            self.assertNotIn(gone, decks)  # load_work omits an absent file and keeps the rest
+            self.assertEqual(res["overall"], "INCOMPLETE")
+            missing = [p for p in res["problems"] if "body.spice missing" in p]
+            self.assertEqual(missing, [f"request {gone!r}: body.spice missing, cannot verify it against the plan"],
+                             res["problems"])
+
+    def test_empty_decks_from_load_work_verify_every_planned_request(self):
+        for f in self.each():
+            for r in f.plan["requests"]:
+                (f.tmp / r["name"] / "body.spice").unlink()
+            decks, res = ingest_from_disk(f)
+            self.assertEqual(decks, {})
+            self.assertEqual(res["overall"], "INCOMPLETE")
+            self.assertEqual([p for p in res["problems"] if "body.spice missing" in p],
+                             [f"request {r['name']!r}: body.spice missing, cannot verify it against the plan"
+                              for r in f.plan["requests"]], res["problems"])
+
+    def test_decks_and_requests_are_verified_without_dut_manifest_or_tb_sha(self):
+        for f in self.each():
+            n = self.first_request(f)
+            decks, reqs = f.decks(), f.requests()
+            decks[n] += "* tampered\n"
+            reqs[n] += " "
+            res = fi.assess_bench(f.bench, f.tb, f.plan, f.reports, f.tmp, decks=decks, requests=reqs)
+            self.assertEqual(res["overall"], "INCOMPLETE")
+            self.assertTrue(any(repr(n) in p and "deck sha256 differs" in p for p in res["problems"]), res["problems"])
+            self.assertTrue(any(repr(n) in p and "request.json sha256 differs" in p for p in res["problems"]),
+                            res["problems"])
+            # None still skips: a caller with no work dir gets no hash verdict at all
+            self.assertEqual(fi.assess_bench(f.bench, f.tb, f.plan, f.reports, f.tmp)["problems"], [])
 
     def test_duplicate_subckt_definition_in_deck(self):
         for f in self.each():
@@ -1550,6 +1600,17 @@ class SuiteIntegration(TmpCase):
                 fx = self.fx("line-regulation")
                 self._assert_rejected("line-regulation", fx, mut(fx))
 
+    def test_missing_decks_are_refused_before_anything_is_written(self):
+        for bench in mk.BENCHES:
+            with self.subTest(bench=bench):
+                self.setUp()
+                fx = self.fx(bench)
+                for r in fx.plan["requests"]:
+                    (self.tmp / r["name"] / "body.spice").unlink()
+                decks, res = ingest_from_disk(fx)
+                self.assertEqual(decks, {})
+                self._assert_rejected(bench, fx, res)
+
     def test_valid_spec_failure_is_still_recorded_as_fail(self):
         fx = self.fx("line-regulation", vals=lambda r, p, s, t: {
             "vref_min": 1.19, "vref_max": 1.2, "v_lo_check": 2.97, "v_hi_check": 3.63},
@@ -1572,6 +1633,52 @@ class SuiteIntegration(TmpCase):
 
 
 class SharedHelpers(unittest.TestCase):
+    PLAN = {"dut": {"sha256": "a"}, "tb_netlist_sha256": "b", "manifest_sha256": "c",
+            "requests": [{"name": "r", "deck_sha256": fc.sha256_bytes(b"deck"),
+                          "request_sha256": fc.sha256_bytes(b"req")}]}
+    INTACT = {"dut_sha": "a", "tb_sha": "b", "manifest_sha": "c", "decks": {"r": "deck"}, "requests": {"r": "req"}}
+
+    def test_hash_problems_none_skips_and_everything_else_is_compared(self):
+        hp = fc.hash_problems
+        self.assertEqual(hp(self.PLAN), [])  # no artifact supplied: nothing to compare
+        self.assertEqual(hp(self.PLAN, **self.INTACT), [])
+        self.assertEqual([hp(self.PLAN, dut_sha="x"), hp(self.PLAN, tb_sha="x"), hp(self.PLAN, manifest_sha="x")],
+                         [["DUT sha256 x differs from the plan's a"],
+                          ["testbench netlist changed since the request was generated"],
+                          ["tb.json changed since the request was generated"]])
+        self.assertEqual(hp(self.PLAN, **dict(self.INTACT, dut_sha="x", tb_sha="x", manifest_sha="x")),
+                         ["DUT sha256 x differs from the plan's a",
+                          "testbench netlist changed since the request was generated",
+                          "tb.json changed since the request was generated"])
+
+    def test_hash_problems_dict_verifies_and_an_empty_dict_is_not_a_skip(self):
+        hp = fc.hash_problems
+        decks = {"r": "deck"}
+        requests = {"r": "req"}
+        gone = {"deck_sha256": "request 'r': body.spice missing, cannot verify it against the plan",
+                "request_sha256": "request 'r': request.json missing, cannot verify it against the plan"}
+        edited = {"deck_sha256": "request 'r': deck sha256 differs from the plan (edited after generation?)",
+                  "request_sha256": "request 'r': request.json sha256 differs from the plan (edited after generation?)"}
+        unhashed = {"deck_sha256": "request 'r': plan has no deck_sha256 to verify body.spice against",
+                    "request_sha256": "request 'r': plan has no request_sha256 to verify request.json against"}
+        self.assertEqual(hp(self.PLAN, decks=decks, requests=requests), [])
+        # {} is what load_work returns when every file is absent: every planned request fails
+        self.assertEqual(hp(self.PLAN, decks={}), [gone["deck_sha256"]])
+        self.assertEqual(hp(self.PLAN, requests={}), [gone["request_sha256"]])
+        self.assertEqual(hp(self.PLAN, decks={"r": "decj"}), [edited["deck_sha256"]])
+        self.assertEqual(hp(self.PLAN, requests={"r": "req "}), [edited["request_sha256"]])
+        for key in ("deck_sha256", "request_sha256"):
+            plan = copy.deepcopy(self.PLAN)
+            del plan["requests"][0][key]
+            self.assertEqual(hp(plan, decks=decks, requests=requests), [unhashed[key]])
+        # one dict supplied does not imply the other, and neither is gated by the three file hashes
+        self.assertEqual(hp(self.PLAN, requests=requests), [])
+        self.assertEqual(hp(self.PLAN, decks=decks), [])
+        no_file_hashes = {"dut_sha": None, "tb_sha": None, "manifest_sha": None}
+        self.assertEqual(hp(self.PLAN, **no_file_hashes, decks=decks, requests=requests), [])
+        self.assertEqual(hp(self.PLAN, **no_file_hashes, decks={}), [gone["deck_sha256"]])
+        self.assertEqual(hp(self.PLAN, **no_file_hashes, requests={}), [gone["request_sha256"]])
+
     def test_tc_ingest_still_uses_the_shared_helpers(self):
         self.assertFalse(hasattr(ti, "sha256"))
         rep = {"corners": [{"corner_id": "tt/3.300V/27C", "status": "pass",
@@ -1868,6 +1975,36 @@ class IqIngest(TmpCase):
             run = bench_run_from("iq", cdir)
             done = completeness.assess([run], None, ["iq"], smoke=True)
             self.assertTrue(done.blocked)
+
+
+# ---------------------------------------------------------------- command line
+
+
+class CommandLine(unittest.TestCase):
+    """`fleet_ingest.py <bench> WORK --dry-run`: the exit code a caller scripts around."""
+
+    def dry_run(self, bench, *, drop_decks):
+        with tempfile.TemporaryDirectory() as td:
+            work = Path(td)
+            fx = Fixture(bench, work)
+            for name, rep in fx.reports.items():
+                (work / name / "report.json").write_text(json.dumps(rep))
+            if drop_decks:
+                for r in fx.plan["requests"]:
+                    (work / r["name"] / "body.spice").unlink()
+            out = io.StringIO()
+            argv = ["fleet_ingest.py", bench, td, "--dry-run"]
+            with mock.patch.object(sys, "argv", argv), contextlib.redirect_stdout(out):
+                return fi.main(), out.getvalue()
+
+    def test_dry_run_exits_nonzero_on_a_workdir_without_its_frozen_decks(self):
+        for bench in mk.BENCHES:
+            with self.subTest(bench=bench):
+                rc, out = self.dry_run(bench, drop_decks=False)
+                self.assertEqual((rc, "problem:" in out), (0, False), out)  # the same work dir, decks intact
+                rc, out = self.dry_run(bench, drop_decks=True)
+                self.assertEqual(rc, 2, out)
+                self.assertIn("body.spice missing, cannot verify it against the plan", out)
 
 
 if __name__ == "__main__":

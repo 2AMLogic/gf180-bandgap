@@ -9,13 +9,16 @@ file and every klt report / waveform is synthesized.
 
 from __future__ import annotations
 
+import contextlib
 import copy
+import io
 import json
 import math
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 SIM = Path(__file__).resolve().parents[1]
 REPO = SIM.parent
@@ -482,6 +485,29 @@ class Assess(TmpCase):
         self.assertEqual(res["overall"], "INCOMPLETE")
         self.assertTrue(any("no request_sha256" in p for p in res["problems"]), res["problems"])
 
+    def test_missing_body_spice_is_a_problem_not_a_matching_deck(self):
+        f = self.fx()
+        (self.tmp / "sweep" / "report.json").write_text(json.dumps(f.reports["sweep"]))
+        (self.tmp / "sweep" / "body.spice").unlink()
+        plan, reports, decks, requests = fc.load_work(self.tmp)
+        self.assertEqual(decks, {})
+        res = li.assess(f.tb, plan, reports, self.tmp, dut_sha=fc.sha256_file(DUT), dut_label=f.plan["dut"]["path"],
+                        decks=decks, requests=requests)
+        self.assertEqual(res["overall"], "INCOMPLETE")
+        self.assertIn("request 'sweep': body.spice missing, cannot verify it against the plan", res["problems"])
+
+    def test_decks_and_requests_are_verified_without_dut_manifest_or_tb_sha(self):
+        f = self.fx()
+        decks, reqs = f.decks(), f.requests()
+        decks["sweep"] += "* tampered\n"
+        reqs["sweep"] += " "
+        res = li.assess(f.tb, f.plan, f.reports, self.tmp, decks=decks, requests=reqs)
+        self.assertEqual(res["overall"], "INCOMPLETE")
+        self.assertTrue(any("deck sha256 differs" in p for p in res["problems"]), res["problems"])
+        self.assertTrue(any("request.json sha256 differs" in p for p in res["problems"]), res["problems"])
+        # None still skips: a caller with no work dir gets no hash verdict at all
+        self.assertEqual(li.assess(f.tb, f.plan, f.reports, self.tmp)["problems"], [])
+
     def test_klt_version_and_remote_provenance(self):
         f = self.fx()
         f.reports["sweep"]["environment"]["remote"]["runner_compatibility"] = "mismatch"
@@ -621,6 +647,43 @@ class Evidence(TmpCase):
             self.assertIn("sim/ is append-only", str(cm.exception))
             self.assertEqual(snap.read_bytes(), b"* earlier evidence -- must survive\n")
             self.assertFalse((exp / "records" / f"{rec_id}.md").exists())
+
+    def test_missing_decks_mint_nothing(self):
+        with tempfile.TemporaryDirectory() as td:
+            f = self.fx()
+            res = li.assess(f.tb, f.plan, f.reports, self.tmp, decks={})  # load_work with no body.spice on disk
+            self.assertEqual(res["overall"], "INCOMPLETE")
+            self.assertTrue(res["problems"])
+            exp = Path(td) / "sim" / BENCH
+            with self.assertRaises(ValueError):
+                li.write_evidence(exp, self.tmp, f.tb, f.plan, res, f.reports, issue=269, git=GIT, repo=Path(td))
+            self.assertFalse(exp.exists())  # no record-id, no corners/<record>/, no snapshot
+
+
+# ---------------------------------------------------------------- command line
+
+
+class CommandLine(unittest.TestCase):
+    """`load_ingest.py WORK --dry-run`: the exit code a caller scripts around."""
+
+    def dry_run(self, *, drop_deck):
+        with tempfile.TemporaryDirectory() as td:
+            work = Path(td)
+            fx = Fixture(work)
+            (work / "sweep" / "report.json").write_text(json.dumps(fx.reports["sweep"]))
+            if drop_deck:
+                (work / "sweep" / "body.spice").unlink()
+            out = io.StringIO()
+            argv = ["load_ingest.py", td, "--dry-run"]
+            with mock.patch.object(sys, "argv", argv), contextlib.redirect_stdout(out):
+                return li.main(), out.getvalue()
+
+    def test_dry_run_exits_nonzero_on_a_workdir_without_its_frozen_deck(self):
+        rc, out = self.dry_run(drop_deck=False)
+        self.assertEqual((rc, "problem:" in out), (0, False), out)  # the same work dir, deck intact
+        rc, out = self.dry_run(drop_deck=True)
+        self.assertEqual(rc, 2, out)
+        self.assertIn("body.spice missing, cannot verify it against the plan", out)
 
 
 if __name__ == "__main__":

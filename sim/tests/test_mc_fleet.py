@@ -9,7 +9,9 @@ every klt report is synthesized from the plan the real request builder wrote.
 
 from __future__ import annotations
 
+import contextlib
 import copy
+import io
 import json
 import math
 import random
@@ -18,6 +20,7 @@ import tempfile
 import unittest
 import zlib
 from pathlib import Path
+from unittest import mock
 
 SIM = Path(__file__).resolve().parents[1]
 REPO = SIM.parent
@@ -376,6 +379,43 @@ class Ingest(unittest.TestCase):
     def test_testbench_change_is_a_problem(self):
         self.assertTrue(any("testbench" in p for p in self.fx.assess(tb_sha="f" * 64)["problems"]))
 
+    def test_missing_body_spice_fails_closed(self):
+        res = self.fx.assess(decks={})  # what fc.load_work returns when every <request>/body.spice is absent
+        self.assertEqual(res["overall"], "INCOMPLETE")
+        self.assertEqual([p for p in res["problems"] if "body.spice missing" in p],
+                         [f"request {e['name']!r}: body.spice missing, cannot verify it against the plan"
+                          for e in self.fx.plan["requests"]], res["problems"])
+
+    def test_request_json_problems_tell_missing_tampered_and_unhashed_apart(self):
+        name = self.fx.entry("mm_all", 27.0)["name"]
+        reqs = dict(self.fx.requests)
+        del reqs[name]
+        probs = self.fx.assess(requests=reqs)["problems"]
+        self.assertIn(f"request {name!r}: request.json missing, cannot verify it against the plan", probs)
+        reqs = dict(self.fx.requests)
+        reqs[name] += " "
+        probs = self.fx.assess(requests=reqs)["problems"]
+        self.assertIn(f"request {name!r}: request.json sha256 differs from the plan (edited after generation?)", probs)
+        plan = copy.deepcopy(self.fx.plan)
+        next(e for e in plan["requests"] if e["name"] == name).pop("request_sha256")
+        probs = self.fx.assess(plan=plan)["problems"]
+        self.assertIn(f"request {name!r}: plan has no request_sha256 to verify request.json against", probs)
+
+    def test_request_of_an_unrecognized_group_is_still_hash_checked(self):
+        plan = copy.deepcopy(self.fx.plan)
+        stray = copy.deepcopy(plan["requests"][0])
+        stray["name"], stray["group"] = "mm_stray", "mm_stray"
+        plan["requests"].append(stray)
+        decks, reqs = dict(self.fx.decks), dict(self.fx.requests)
+        decks["mm_stray"], reqs["mm_stray"] = "* not the frozen deck\n", "{}"
+        res = self.fx.assess(plan=plan, decks=decks, requests=reqs)
+        self.assertEqual(res["overall"], "INCOMPLETE")
+        self.assertTrue(any("unexpected request" in p and "'mm_stray'" in p for p in res["problems"]), res["problems"])
+        self.assertIn("request 'mm_stray': deck sha256 differs from the plan (edited after generation?)",
+                      res["problems"])
+        self.assertIn("request 'mm_stray': request.json sha256 differs from the plan (edited after generation?)",
+                      res["problems"])
+
     # ---- malformed samples ---------------------------------------------
 
     def _first(self, group="mm_all", temp=27.0):
@@ -580,6 +620,17 @@ class Evidence(unittest.TestCase):
                                   dut_path=DUT, issue=238, git=GIT)
             self.assertFalse(exp.exists())
 
+    def test_missing_decks_mint_nothing(self):
+        fx = copy.deepcopy(self.fx)
+        res = fx.assess(decks={})  # what fc.load_work returns when every <request>/body.spice is absent
+        self.assertEqual(res["overall"], "INCOMPLETE")
+        with tempfile.TemporaryDirectory() as tmp:
+            exp = Path(tmp) / "mc-untrimmed"
+            with self.assertRaises(ValueError):
+                mi.write_evidence(RUN, exp, Path(tmp), fx.plan, res, fx.reports, {}, dut_label="x", dut_path=DUT,
+                                  issue=238, git=GIT)
+            self.assertFalse(exp.exists())  # no record-id, no corners/<record>/, no snapshot
+
     def test_occupied_snapshot_refuses_with_record_exists(self):
         """An occupied ``netlist-snapshots/<record>.spice`` aborts the ingest.
 
@@ -662,6 +713,28 @@ class CommandLine(unittest.TestCase):
             self.assertEqual(set(reports), set(fx.reports))
             res = mi.assess(RUN, plan, reports, dut_sha=fx.dut_sha, tb_sha=fx.tb_sha, decks=decks, requests=requests)
         self.assertEqual(res["overall"], "PASS")
+
+    def test_dry_run_exits_nonzero_on_a_workdir_without_its_frozen_decks(self):
+        fx = Fixture()
+        with tempfile.TemporaryDirectory() as tmp:
+            work = Path(tmp)
+            for rel, text in fx.files.items():
+                if rel.endswith("body.spice"):
+                    continue
+                p = work / rel
+                p.parent.mkdir(parents=True, exist_ok=True)
+                p.write_text(text)
+            for name, rep in fx.reports.items():
+                (work / name / "report.json").write_text(json.dumps(rep))
+            plan, reports, decks, requests = fc.load_work(work)
+            self.assertEqual(decks, {})
+            res = mi.assess(RUN, plan, reports, dut_sha=fx.dut_sha, tb_sha=fx.tb_sha, decks=decks, requests=requests)
+            self.assertEqual(res["overall"], "INCOMPLETE")
+            out = io.StringIO()
+            with mock.patch.object(sys, "argv", ["mc_fleet_ingest.py", tmp, "--dry-run"]), \
+                    contextlib.redirect_stdout(out):
+                self.assertEqual(mi.main(), 2)
+            self.assertIn("body.spice missing, cannot verify it against the plan", out.getvalue())
 
 
 if __name__ == "__main__":
