@@ -122,3 +122,7 @@ sim/*/.reservations/
 
 # Repo Skills Codex-side machine-local install metadata (never committed)
 .agents/skills/repo/.install-local.json
+
+# Daemon account-ranking state (accounts check --ranking); unignored it fails
+# check-main-clean.sh. Outside the managed block, which resync regenerates.
+.loom/account-ranking.*
