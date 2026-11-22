@@ -24,6 +24,7 @@ import io
 import json
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -366,6 +367,110 @@ class SupplyCleanCommandGateTests(unittest.TestCase):
         payload["erc_coverage"]["checked"].remove(PSUB_TAP_ID)
         code, _, _ = self._replay(payload, _committed_spec(), "--expect", "any")
         self.assertEqual(code, 0)
+
+
+class DualFormatFailClosedTests(unittest.TestCase):
+    """gf180-bandgap#548: ``main()``'s dual-format invocation must fail
+    closed. Before #548 both formats ran before either exit code was
+    checked, so a failing ``--format text`` pass exited 0 and committed its
+    possibly-empty report beside a real ``.json`` one, and a failing
+    ``--format json`` pass still launched the text run first. Driven end to
+    end over a stubbed ``subprocess.run`` (the module-global patch, so
+    ``report_id``'s ``git`` call is answered too), with reports redirected
+    to a scratch directory and ``--expect any`` so only the invocation
+    contract is under test.
+    """
+
+    class FakeErcKlt:
+        """A ``subprocess.run`` stand-in answering as ``klt erc`` would."""
+
+        def __init__(self, *, json_rc: int = 4, text_rc: int = 0) -> None:
+            #: 4 is the accepted non-zero exit every real gf180mcu run
+            #: produces (status "not_checked" -- see run_erc.py's docstring).
+            self.json_rc = json_rc
+            self.text_rc = text_rc
+            self.formats: list[str] = []
+            self.json_payload = json.dumps(
+                {
+                    "schema_version": 1,
+                    "status": "not_checked",
+                    "erc_finding_count": 0,
+                    "erc_findings": [],
+                    "provenance": {
+                        "input": {"content_hash": run_erc.sha256_of(COMMITTED_GDS)}
+                    },
+                }
+            )
+
+        def __call__(self, argv, **kwargs):  # noqa: ANN001 - subprocess.run signature
+            argv = [str(a) for a in argv]
+            if Path(argv[0]).name == "git":  # report_id.short_sha
+                return subprocess.CompletedProcess(argv, 0, "0123456789abcdef\n", "")
+            if not (Path(argv[0]).name == "klt" and argv[1] == "erc"):
+                raise AssertionError(f"unexpected subprocess: {argv}")
+            if argv[-2] != "--format" or argv[-1] not in ("json", "text"):
+                raise AssertionError(f"unexpected argv tail: {argv}")
+            self.formats.append(argv[-1])
+            if argv[-1] == "json":
+                return subprocess.CompletedProcess(argv, self.json_rc, self.json_payload, "")
+            return subprocess.CompletedProcess(argv, self.text_rc, "erc text report\n", "")
+
+    def _main(self, fake: "DualFormatFailClosedTests.FakeErcKlt") -> tuple[int, str, str, dict[str, str]]:
+        tmp = Path(tempfile.mkdtemp(prefix="erc-failclosed-")).resolve()
+        self.addCleanup(shutil.rmtree, tmp, ignore_errors=True)
+        root = tmp / "repo"
+        (root / "layout/bandgap_top").mkdir(parents=True)
+        (root / "layout/erc/reports").mkdir(parents=True)
+        shutil.copyfile(COMMITTED_GDS, root / "layout/bandgap_top/bandgap_top.gds")
+        shutil.copyfile(COMMITTED_SPEC, root / "layout/erc/erc-supply-spec.json")
+        out, err = io.StringIO(), io.StringIO()
+        with mock.patch.object(run_erc, "REPO_ROOT", root), \
+                mock.patch.object(run_erc, "REPORTS_ROOT", root / "layout/erc/reports"), \
+                mock.patch("subprocess.run", fake), \
+                contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = run_erc.main(
+                [
+                    str(root / "layout/bandgap_top/bandgap_top.gds"),
+                    "--spec", str(root / "layout/erc/erc-supply-spec.json"),
+                    "--fixture", "fail_closed",
+                    "--expect", "any",
+                ]
+            )
+        written = {
+            p.name: p.read_text() for p in (root / "layout/erc/reports/fail_closed").iterdir()
+        }
+        return code, out.getvalue(), err.getvalue(), written
+
+    def test_accepted_json_exit_and_text_success_files_both_reports(self) -> None:
+        """The control: json exit 4 (the accepted non-zero) plus a clean
+        text pass files the report pair and exits 0."""
+        code, _, err, written = self._main(self.FakeErcKlt(json_rc=4, text_rc=0))
+        self.assertEqual(code, 0, err)
+        self.assertEqual(len(written), 2)
+        json_name = next(n for n in written if n.endswith(".erc.json"))
+        text_name = next(n for n in written if n.endswith(".erc.txt"))
+        self.assertEqual(written[json_name], self.FakeErcKlt().json_payload)
+        self.assertEqual(written[text_name], "erc text report\n")
+
+    def test_failing_text_pass_returns_nonzero_and_writes_no_reports(self) -> None:
+        """The #548 regression: a failing text pass must write neither the
+        ``.txt`` nor the ``.json`` report (pre-#548: exit 0, both written)."""
+        fake = self.FakeErcKlt(json_rc=4, text_rc=1)
+        code, _, err, written = self._main(fake)
+        self.assertEqual(code, 1)
+        self.assertIn("klt erc --format text failed (exit 1)", err)
+        self.assertEqual(written, {})
+        self.assertEqual(fake.formats, ["json", "text"])
+
+    def test_failing_json_pass_short_circuits_the_text_run(self) -> None:
+        """The #548 regression: a failing json pass must fail immediately,
+        never launching the text pass (pre-#548: text still ran first)."""
+        fake = self.FakeErcKlt(json_rc=1, text_rc=0)
+        code, _, err, written = self._main(fake)
+        self.assertEqual(code, 1)
+        self.assertIn("klt erc failed (exit 1)", err)
+        self.assertEqual(written, {})
+        self.assertEqual(fake.formats, ["json"])
 
 
 if __name__ == "__main__":

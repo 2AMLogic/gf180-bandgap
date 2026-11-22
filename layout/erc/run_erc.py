@@ -75,14 +75,13 @@ import argparse
 import datetime as _dt
 import hashlib
 import json
-import shutil
-import subprocess
 import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "layout" / "common"))
 
+import klt_runner  # noqa: E402
 import report_id  # noqa: E402
 
 REPORTS_ROOT = Path(__file__).resolve().parent / "reports"
@@ -279,14 +278,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--top", help="top cell, when the stream has more than one")
     args = parser.parse_args(argv)
 
-    klt = shutil.which("klt")
+    klt = klt_runner.find_klt()
     if klt is None:
-        print(
-            "error: 'klt' not found on PATH. Install with:\n"
-            "  uv tool install klayout-tools==<pin in signoff/klt-pin.txt>\n"
-            "(see layout/README.md)",
-            file=sys.stderr,
-        )
         return 1
 
     def resolve(path: Path) -> Path:
@@ -314,29 +307,24 @@ def main(argv: list[str] | None = None) -> int:
     if args.top:
         base_cmd += ["--top", args.top]
 
-    procs = {
-        fmt: subprocess.run(
-            [*base_cmd, "--format", fmt],
-            cwd=REPO_ROOT,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        for fmt in ("json", "text")
-    }
-
-    if procs["json"].returncode not in OK_EXIT_CODES:
-        print(procs["json"].stdout)
-        print(procs["json"].stderr, file=sys.stderr)
-        print(f"error: klt erc failed (exit {procs['json'].returncode})", file=sys.stderr)
+    # OK_EXIT_CODES carries klt erc's exit-code contract; a failed pass of
+    # either format returns None and writes no report (#548).
+    procs = klt_runner.run_dual_format(
+        base_cmd,
+        cwd=REPO_ROOT,
+        ok_exit_codes=OK_EXIT_CODES,
+        label="klt erc",
+    )
+    if procs is None:
         return 1
+    json_proc, text_proc = procs
 
     json_path = reports_dir / f"{record_id}.{args.suffix}.json"
     text_path = reports_dir / f"{record_id}.{args.suffix}.txt"
-    json_path.write_text(procs["json"].stdout)
-    text_path.write_text(procs["text"].stdout)
+    json_path.write_text(json_proc.stdout)
+    text_path.write_text(text_proc.stdout)
 
-    payload = json.loads(procs["json"].stdout)
+    payload = json.loads(json_proc.stdout)
     spec = json.loads(spec_path.read_text())
     supplies = declared_supplies(spec)
     ties = declared_ties(spec)
@@ -346,7 +334,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"record id     : {record_id}")
     print(f"fixture       : {fixture}")
     print(f"spec          : {spec_rel}")
-    print(f"klt exit      : {procs['json'].returncode}")
+    print(f"klt exit      : {json_proc.returncode}")
     print(f"status        : {payload.get('status')}")
     print(f"gate_count    : {payload.get('gate_count')}")
     print(f"findings      : {payload.get('erc_finding_count')}")

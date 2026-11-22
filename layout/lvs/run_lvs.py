@@ -75,7 +75,6 @@ import argparse
 import datetime as _dt
 import json
 import os
-import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -83,6 +82,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "layout" / "common"))
 
+import klt_runner  # noqa: E402
 import report_id  # noqa: E402
 
 REPORTS_ROOT = Path(__file__).resolve().parent / "reports"
@@ -156,44 +156,36 @@ def _run_engine(
     request: dict,
     reports_dir: Path,
     record_id: str,
-) -> tuple[dict | None, str | None]:
+) -> dict | None:
     """Run ``klt lvs`` for one engine and record its verdict.
 
-    Returns ``(payload, None)`` on a completed comparison (match *or*
-    mismatch), or ``(None, message)`` when ``klt lvs`` itself failed. The
-    failure message carries `klt`'s own stdout/stderr verbatim: a missing
-    ``netgen`` binary is an actionable `klt lvs` error, and swallowing it in
-    favour of a generic "lvs failed" would defeat the point of asking for the
-    second engine in the first place.
+    Returns the parsed JSON payload on a completed comparison (match *or*
+    mismatch), or ``None`` when ``klt lvs`` itself failed -- after
+    ``klt_runner.run_dual_format`` has already echoed the failure verbatim to
+    the run's own stdout/stderr: a missing ``netgen`` binary is an
+    actionable ``klt lvs`` error, and swallowing it in favour of a generic
+    "lvs failed" would defeat the point of asking for the second engine in
+    the first place. Either format failing means no report file is written
+    for this engine (#548's fail-closed contract).
     """
     stem = _engine_stem(engine)
     request_path = reports_dir / f"{record_id}.{stem}-request.json"
     request_path.write_text(json.dumps(request, indent=2) + "\n")
     request_arg = str(request_path.relative_to(REPO_ROOT))
 
-    lvs_json = subprocess.run(
-        [klt, "lvs", request_arg, "--format", "json"],
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
     # exit 0 (match) and exit 3 (mismatch) are both successful runs.
-    if lvs_json.returncode not in (0, 3):
-        return None, (
-            f"{lvs_json.stdout}{lvs_json.stderr}\n"
-            f"error: klt lvs --engine {engine} failed (exit {lvs_json.returncode})"
-        )
-    lvs_text = subprocess.run(
-        [klt, "lvs", request_arg, "--format", "text"],
+    procs = klt_runner.run_dual_format(
+        [klt, "lvs", request_arg],
         cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-        check=False,
+        ok_exit_codes=(0, 3),
+        label=f"klt lvs --engine {engine}",
     )
+    if procs is None:
+        return None
+    lvs_json, lvs_text = procs
     (reports_dir / f"{record_id}.{stem}.json").write_text(lvs_json.stdout)
     (reports_dir / f"{record_id}.{stem}.txt").write_text(lvs_text.stdout)
-    return json.loads(lvs_json.stdout), None
+    return json.loads(lvs_json.stdout)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -228,14 +220,8 @@ def main() -> int:
     args = build_parser().parse_args()
     engines = ENGINES if args.engine == "both" else (args.engine,)
 
-    klt = shutil.which("klt")
+    klt = klt_runner.find_klt()
     if klt is None:
-        print(
-            "error: 'klt' not found on PATH. Install with:\n"
-            "  uv tool install klayout-tools==<pin in signoff/klt-pin.txt>\n"
-            "(see layout/README.md)",
-            file=sys.stderr,
-        )
         return 1
 
     gds_path = args.gds if args.gds.is_absolute() else (Path.cwd() / args.gds).resolve()
@@ -297,7 +283,7 @@ def main() -> int:
 
     verdicts: dict[str, str] = {}
     for engine in engines:
-        payload, error = _run_engine(
+        payload = _run_engine(
             klt=klt,
             engine=engine,
             request=_build_request(
@@ -311,8 +297,7 @@ def main() -> int:
             reports_dir=reports_dir,
             record_id=record_id,
         )
-        if error is not None or payload is None:
-            print(error, file=sys.stderr)
+        if payload is None:
             return 1
         verdicts[engine] = payload["status"]
         report = reports_dir / f"{record_id}.{_engine_stem(engine)}.json"
