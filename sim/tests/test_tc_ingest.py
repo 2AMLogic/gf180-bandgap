@@ -11,6 +11,7 @@ from __future__ import annotations
 import sys
 import tempfile
 import unittest
+from datetime import datetime
 from pathlib import Path
 
 SIM = Path(__file__).resolve().parents[1]
@@ -270,6 +271,40 @@ class Reconstruct(unittest.TestCase):
         want = ti.curve_of(vals(75500.0))
         for t in want:
             self.assertAlmostEqual(got[t], want[t], places=9)
+
+
+class RecordProvenance(unittest.TestCase):
+    """`build_record` classifies the DUT off its path (#553), not a hard-coded
+    `schematic`: an extracted or frozen `--dut` must report itself, and a
+    ` @ <rev>` suffix (from --dut-rev) must not change the class."""
+
+    REQ = {"measurements": [{"name": n} for n in
+                            ("vref_m40", "vref_27", "vref_125", "vref_box_min", "vref_box_max")],
+           "corners": {"process": [{"name": "tt", "sections": ["tt"]}]}}
+
+    def record_text(self, dut_label):
+        rep = report()
+        pts, miss, fail, prob = ti.collect(rep, EXPECTED)
+        verdict = ti.assess(pts, miss, fail, prob, TB)
+        return ti.build_record("20261122-120000-abc1234", datetime(2026, 11, 22, 12, 0, 0), rep, self.REQ,
+                               TB, EXPECTED, pts, miss, fail, prob, verdict, dut_label,
+                               "0" * 64, "0" * 64, "0" * 64, 209, None, None)
+
+    def test_schematic_dut_is_unchanged(self):
+        text = self.record_text("sim/dut/bandgap_top.spice")
+        self.assertIn("- **Netlist provenance**: schematic -- DUT `sim/dut/bandgap_top.spice`", text)
+
+    def test_extracted_dut_says_extracted_with_and_without_a_rev_suffix(self):
+        text = self.record_text("layout/netlist/bandgap_top_extracted.spice")
+        self.assertIn("- **Netlist provenance**: extracted -- DUT `layout/netlist/bandgap_top_extracted.spice`", text)
+        text = self.record_text("layout/netlist/bandgap_top_extracted.spice @ 3803845f")
+        self.assertIn("- **Netlist provenance**: extracted -- "
+                      "DUT `layout/netlist/bandgap_top_extracted.spice @ 3803845f`", text)
+
+    def test_frozen_dut_says_frozen_schematic(self):
+        text = self.record_text("sim/dut/frozen/bandgap_amp-20260801-issue10.spice")
+        self.assertIn("- **Netlist provenance**: frozen schematic -- "
+                      "DUT `sim/dut/frozen/bandgap_amp-20260801-issue10.spice`", text)
 
 
 if __name__ == "__main__":

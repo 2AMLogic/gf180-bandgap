@@ -34,6 +34,7 @@ from harness import evidence_lint  # noqa: E402
 from harness import report as hreport  # noqa: E402
 from suite import analysis, completeness, spec  # noqa: E402
 from suite.cli import BenchRun, expected_corner_ids  # noqa: E402
+from suite.combined import provenance_of_path  # noqa: E402
 
 DUT = REPO / "sim" / "dut" / "bandgap_top.spice"
 REMOTE = {
@@ -103,15 +104,17 @@ def tran_wave(supply, kind="clean", n=1000):
 class Fixture:
     """A synthetic work dir (plan, decks, reports, waveforms) for one bench."""
 
-    def __init__(self, bench, tmp: Path, *, wave=None, vals=None, include_wave=True):
+    def __init__(self, bench, tmp: Path, *, wave=None, vals=None, include_wave=True, dut=DUT,
+                 dut_rel="sim/dut/bandgap_top.spice"):
         self.bench, self.tmp = bench, tmp
         self.tb = fi.load_tb(bench)
+        self.dut, self.dut_rel = dut, dut_rel
         (tmp / "design.ngspice").write_text("* stub pdk include\n")
-        self.plan, files = mk.build_plan(
-            bench, self.tb, design_include=tmp / "design.ngspice", dut=DUT,
-            tb_netlist=SIM / bench / "testbench" / self.tb["netlist"], dut_rel="sim/dut/bandgap_top.spice",
+        self.plan, self.files = mk.build_plan(
+            bench, self.tb, design_include=tmp / "design.ngspice", dut=dut,
+            tb_netlist=SIM / bench / "testbench" / self.tb["netlist"], dut_rel=dut_rel,
             submitting_klt_version="0.7.0+gtest")
-        for rel, text in files.items():
+        for rel, text in self.files.items():
             p = tmp / rel
             p.parent.mkdir(parents=True, exist_ok=True)
             p.write_text(text)
@@ -180,10 +183,17 @@ class Fixture:
                 for r in self.plan["requests"] if (self.tmp / r["name"] / "request.json").exists()}
 
     def assess(self, **kw):
-        kw.setdefault("dut_sha", fc.sha256_file(DUT))
+        kw.setdefault("dut_sha", fc.sha256_file(self.dut))
         kw.setdefault("decks", self.decks())
         kw.setdefault("requests", self.requests())
         return fi.assess_bench(self.bench, self.tb, self.plan, self.reports, self.tmp, **kw)
+
+    def record(self, res, dut_label=None):
+        """build_record() in memory (#492): the bench render is part of the
+        reporting contract, so tests assert on it without writing evidence."""
+        return fi.build_record("20261115-120000-gtest", datetime(2026, 11, 15, 12, 0, 0), self.bench,
+                               self.tb, self.plan, res, self.reports,
+                               dut_label=dut_label or self.dut_rel, issue=492, supersedes=None, note=None)
 
     def corner(self, name, idx=0):
         return self.reports[name]["corners"][idx]
@@ -209,21 +219,7 @@ class NoiseFixture(Fixture):
     def __init__(self, bench, tmp, *, raw=None, docs=None, units=None, include_wave=True, dut=DUT,
                  dut_rel="sim/dut/bandgap_top.spice"):
         self.raw_override, self.docs_override, self.units_override = raw, docs, units
-        self.bench, self.tmp, self.include_wave = bench, tmp, include_wave
-        self.tb = fi.load_tb(bench)
-        self.dut = dut
-        (tmp / "design.ngspice").write_text("* stub pdk include\n")
-        self.plan, files = mk.build_plan(
-            bench, self.tb, design_include=tmp / "design.ngspice", dut=dut,
-            tb_netlist=SIM / bench / "testbench" / self.tb["netlist"], dut_rel=dut_rel,
-            submitting_klt_version="0.7.0+gtest")
-        self.files = files
-        for rel, text in files.items():
-            p = tmp / rel
-            p.parent.mkdir(parents=True, exist_ok=True)
-            p.write_text(text)
-        self.wave, self.vals = None, None
-        self.reports = {r["name"]: self.make_report(r) for r in self.plan["requests"]}
+        super().__init__(bench, tmp, include_wave=include_wave, dut=dut, dut_rel=dut_rel)
 
     # full-precision "true" values of one corner (index i over the report)
     def truth(self, r, i):
@@ -292,20 +288,6 @@ class NoiseFixture(Fixture):
                                 "netlist_sha256": r["deck_sha256"]},
                 "provenance": {"klt_version": "0.7.0+gtest", "pdk": {"name": "gf180mcuD", "version": "x"},
                                "input": {"content_hash": "sha256:" + r["deck_sha256"], "role": "netlist"}}}
-
-    def assess(self, **kw):
-        kw.setdefault("dut_sha", fc.sha256_file(self.dut))
-        kw.setdefault("decks", self.decks())
-        kw.setdefault("requests", self.requests())
-        return fi.assess_bench(self.bench, self.tb, self.plan, self.reports, self.tmp, **kw)
-
-    def record(self, res):
-        """build_record() in memory (#492): the bench render is part of the
-        reporting contract, so tests assert on it without writing evidence."""
-        return fi.build_record("20261115-120000-gtest", datetime(2026, 11, 15, 12, 0, 0), self.bench,
-                               self.tb, self.plan, res, self.reports,
-                               dut_label="sim/dut/bandgap_top.spice", issue=492, supersedes=None, note=None)
-
 
 class TmpCase(unittest.TestCase):
     def setUp(self):
@@ -1975,6 +1957,65 @@ class IqIngest(TmpCase):
             run = bench_run_from("iq", cdir)
             done = completeness.assess([run], None, ["iq"], smoke=True)
             self.assertTrue(done.blocked)
+
+
+# ---------------------------------------------------------------- DUT provenance (#553)
+
+
+class DutProvenance(TmpCase):
+    """One classifier feeds every fleet plan and record: the canonical DUT's
+    plans/records stay byte-identical (key-less `plan["dut"]`, `Canonical`
+    wording), a supplied DUT states its class, and the suite reads it back."""
+
+    EXTRACTED = "layout/netlist/bandgap_top_extracted.spice"
+
+    def extracted_fixture(self, bench):
+        dut = self.tmp / "layout" / "netlist" / "bandgap_top_extracted.spice"
+        dut.parent.mkdir(parents=True, exist_ok=True)
+        dut.write_text(DUT.read_text())  # a stand-in extracted netlist: same class, offline
+        return self.fx(bench, dut=dut, dut_rel=self.EXTRACTED)
+
+    def test_canonical_dut_plans_and_records_are_byte_stable(self):
+        for bench in ("psrr-dc", "line-regulation", "iq"):
+            with self.subTest(bench=bench):
+                f = self.fx(bench)
+                self.assertNotIn("provenance_class", f.plan["dut"])
+                text = f.record(f.assess())
+                self.assertIn("**Netlist provenance**: schematic. Canonical DUT `sim/dut/bandgap_top.spice`", text)
+        f = self.fx("output-noise")
+        self.assertEqual(f.plan["dut"]["provenance_class"], "schematic")  # unconditional since #237/#268
+        self.assertIn("**Netlist provenance**: schematic. Supplied DUT `sim/dut/bandgap_top.spice`",
+                      f.record(f.assess()))
+
+    def test_extracted_dut_states_its_class_on_every_bench(self):
+        for bench in ("psrr-dc", "line-regulation", "iq", "output-noise"):
+            with self.subTest(bench=bench):
+                f = self.extracted_fixture(bench)
+                self.assertEqual(f.plan["dut"]["provenance_class"], "extracted")
+                res = f.assess()
+                self.assertIn(res["overall"], ("PASS", fi.MEASURED))
+                p = self.tmp / f"record-{bench}.md"
+                p.write_text(f.record(res))
+                self.assertIn(f"**Netlist provenance**: extracted. Supplied DUT `{self.EXTRACTED}`", p.read_text())
+                self.assertEqual(provenance_of_path(p), "extracted")  # the suite/postlayout reader
+
+    def test_startup_embedded_core_stays_schematic(self):
+        f = self.fx("startup")
+        self.assertTrue(f.plan["embedded_core"])
+        self.assertNotIn("provenance_class", f.plan["dut"])
+        f = self.extracted_fixture("startup")
+        self.assertEqual(f.plan["dut"]["provenance_class"], "schematic")  # the deck simulates the embedded core
+        self.assertIn("**Netlist provenance**: schematic. Supplied DUT", f.record(f.assess()))
+
+    def test_plan_problems_flags_a_mismatched_class(self):
+        f = self.fx("iq")
+        f.plan["dut"]["provenance_class"] = "extracted"  # path says schematic
+        self.assertTrue(any("provenance class" in p for p in fi.plan_problems("iq", f.tb, f.plan)))
+        del f.plan["dut"]["provenance_class"]  # older plans predate the key: still valid
+        self.assertEqual(fi.plan_problems("iq", f.tb, f.plan), [])
+        f = self.fx("startup")
+        f.plan["dut"]["provenance_class"] = "extracted"  # embedded core must stay schematic
+        self.assertTrue(any("provenance class" in p for p in fi.plan_problems("startup", f.tb, f.plan)))
 
 
 # ---------------------------------------------------------------- command line
