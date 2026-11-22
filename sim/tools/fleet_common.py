@@ -290,35 +290,54 @@ def provenance_problems(report: dict, plan: dict | None, *, require_remote: bool
     return probs
 
 
-def hash_problems(plan: dict, *, dut_sha: str | None, tb_sha: str, manifest_sha: str, deck_sha: dict,
+#: The per-request files a plan freezes: plan key -> (file in the work dir, what
+#: the "differs" problem calls it).
+_FROZEN_FILES = {"deck_sha256": ("body.spice", "deck"), "request_sha256": ("request.json", "request.json")}
+
+
+def _frozen_problems(on_disk: dict[str, str], name: str, frozen: str | None, key: str) -> list[str]:
+    """Why request ``name``'s frozen file cannot be shown to be the bytes the plan froze.
+
+    ``on_disk`` maps request name -> the file's exact text as found in the work
+    dir; ``frozen`` is the plan's ``key`` for it. Three distinct problems, never
+    one: the plan froze no hash, the file is absent, or its bytes differ."""
+    fname, label = _FROZEN_FILES[key]
+    if not frozen:
+        return [f"request {name!r}: plan has no {key} to verify {fname} against"]
+    if name not in on_disk:
+        return [f"request {name!r}: {fname} missing, cannot verify it against the plan"]
+    if sha256_bytes(on_disk[name].encode()) != frozen:
+        return [f"request {name!r}: {label} sha256 differs from the plan (edited after generation?)"]
+    return []
+
+
+def hash_problems(plan: dict, *, dut_sha: str | None = None, tb_sha: str | None = None,
+                  manifest_sha: str | None = None, decks: dict[str, str] | None = None,
                   requests: dict[str, str] | None = None) -> list[str]:
     """Hash mismatches between what the plan froze and what is on disk now.
 
-    ``deck_sha`` maps request name -> sha256 of the body.spice that is
-    actually in the work dir (what the fleet was handed). ``requests`` maps
-    request name -> exact text of its request.json; when supplied every
-    planned request must be present and byte-identical to its frozen
-    ``request_sha256`` (None skips the check, for callers with no work dir)."""
+    One contract for every argument: ``None`` skips that check (a caller
+    without that artifact, or without a work dir); anything else is compared
+    against the plan and never defaulted from it. ``dut_sha``, ``tb_sha`` and
+    ``manifest_sha`` are the sha256 of the DUT file, the testbench netlist and
+    ``tb.json`` on disk. ``decks`` maps request name -> text of the
+    ``body.spice`` actually in the work dir (what the fleet was handed) and
+    ``requests`` maps request name -> exact text of its ``request.json``; when
+    either dict is supplied -- ``{}`` included, which is what :func:`load_work`
+    returns when every file is absent -- every planned request must carry its
+    frozen hash, be present in the dict, and hash-match it."""
     probs = []
     if dut_sha is not None and plan.get("dut", {}).get("sha256") != dut_sha:
         probs.append(f"DUT sha256 {dut_sha[:12]} differs from the plan's {str(plan.get('dut', {}).get('sha256'))[:12]}")
-    if plan.get("tb_netlist_sha256") != tb_sha:
+    if tb_sha is not None and plan.get("tb_netlist_sha256") != tb_sha:
         probs.append("testbench netlist changed since the request was generated")
-    if plan.get("manifest_sha256") != manifest_sha:
+    if manifest_sha is not None and plan.get("manifest_sha256") != manifest_sha:
         probs.append("tb.json changed since the request was generated")
     for r in plan.get("requests", []):
-        got = deck_sha.get(r["name"])
-        if got != r.get("deck_sha256"):
-            probs.append(f"request {r['name']!r}: deck sha256 differs from the plan (edited after generation?)")
-        if requests is None:
-            continue
-        want = r.get("request_sha256")
-        if not want:
-            probs.append(f"request {r['name']!r}: plan has no request_sha256 to verify request.json against")
-        elif r["name"] not in requests:
-            probs.append(f"request {r['name']!r}: request.json missing, cannot verify it against the plan")
-        elif sha256_bytes(requests[r["name"]].encode()) != want:
-            probs.append(f"request {r['name']!r}: request.json sha256 differs from the plan (edited after generation?)")
+        if decks is not None:
+            probs += _frozen_problems(decks, r["name"], r.get("deck_sha256"), "deck_sha256")
+        if requests is not None:
+            probs += _frozen_problems(requests, r["name"], r.get("request_sha256"), "request_sha256")
     return probs
 
 

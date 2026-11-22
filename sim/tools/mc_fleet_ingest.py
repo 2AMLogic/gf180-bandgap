@@ -30,7 +30,6 @@ against the ratified +/-2 % window.
 from __future__ import annotations
 
 import argparse
-import json
 import math
 import sys
 from datetime import datetime
@@ -97,10 +96,7 @@ def plan_problems(run, plan: dict, *, dut_sha: str | None, tb_sha: str, decks: d
     if plan.get("definition_sha256") != mk.definition_sha256(defn) or plan.get("definition") != defn:
         probs.append("the group / temperature / section definition in run_mc_untrimmed.py changed since the "
                      "request was generated (or the plan was edited)")
-    if dut_sha is not None and plan.get("dut", {}).get("sha256") != dut_sha:
-        probs.append(f"DUT sha256 {dut_sha[:12]} differs from the plan's {str(plan.get('dut', {}).get('sha256'))[:12]}")
-    if plan.get("tb_netlist_sha256") != tb_sha:
-        probs.append("testbench netlist changed since the request was generated")
+    probs += fc.hash_problems(plan, dut_sha=dut_sha, tb_sha=tb_sha, decks=decks, requests=requests)
     want = [(g, float(t)) for g in run.GROUPS for t in run.TEMPS]
     have = [(r.get("group"), float(r.get("temp_c"))) for r in plan.get("requests", [])]
     for gt in want:
@@ -118,10 +114,6 @@ def plan_problems(run, plan: dict, *, dut_sha: str | None, tb_sha: str, decks: d
             probs.append(f"request {r['name']!r}: n={r.get('n')!r} differs from the plan's {n!r}")
         if (r.get("sw_stat_mismatch"), r.get("dut_variant")) != (cfg["sw_stat_mismatch"], cfg["dut"]):
             probs.append(f"request {r['name']!r}: group switches differ from run_mc_untrimmed.GROUPS")
-        if fc.sha256_bytes(decks.get(r["name"], "").encode()) != r.get("deck_sha256") or r["name"] not in decks:
-            probs.append(f"request {r['name']!r}: deck sha256 differs from the plan (edited after generation?)")
-        if requests is not None and fc.sha256_bytes(requests.get(r["name"], "").encode()) != r.get("request_sha256"):
-            probs.append(f"request {r['name']!r}: request.json sha256 differs from the plan")
     return probs
 
 

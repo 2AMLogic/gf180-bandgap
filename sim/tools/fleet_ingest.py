@@ -643,19 +643,15 @@ def assess_bench(bench: str, tb: dict, plan: dict, reports: dict, work: Path, *,
 
     Never raises on bad evidence: every defect lands in ``problems`` /
     ``missing`` / ``failed`` / ``invalid`` and keeps the verdict out of PASS.
+    ``decks`` / ``requests`` (``{request name: file text}``, as `fc.load_work`
+    returns) are verified against the plan's frozen hashes when supplied -- an
+    empty dict fails closed; ``None`` skips, for callers with no work dir.
     """
     grid = expected_grid(tb)
     problems = plan_problems(bench, tb, plan)
-    decks = decks or {}
-    if dut_sha is not None or manifest_sha or tb_sha:
-        problems += fc.hash_problems(
-            plan, dut_sha=dut_sha, tb_sha=tb_sha or plan.get("tb_netlist_sha256"),
-            manifest_sha=manifest_sha or plan.get("manifest_sha256"),
-            deck_sha={n: fc.sha256_bytes(t.encode()) for n, t in decks.items()} or
-                     {r["name"]: r["deck_sha256"] for r in plan.get("requests", [])},
-            requests=requests,
-        )
-    for n, text in decks.items():
+    problems += fc.hash_problems(plan, dut_sha=dut_sha, tb_sha=tb_sha, manifest_sha=manifest_sha, decks=decks,
+                                 requests=requests)
+    for n, text in (decks or {}).items():
         problems += deck_problems(bench, plan, text, n)
 
     missing: list = []
