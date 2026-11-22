@@ -426,6 +426,7 @@ class DualFormatFailClosedTests(unittest.TestCase):
         out, err = io.StringIO(), io.StringIO()
         with mock.patch.object(run_erc, "REPO_ROOT", root), \
                 mock.patch.object(run_erc, "REPORTS_ROOT", root / "layout/erc/reports"), \
+                mock.patch.object(run_erc.klt_runner, "find_klt", return_value="/fake/klt"), \
                 mock.patch("subprocess.run", fake), \
                 contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
             code = run_erc.main(
