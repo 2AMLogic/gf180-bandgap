@@ -19,16 +19,18 @@ layout/erc/
   README.md                            this file
   run_erc.py                           regenerates every report below
   test_run_erc.py                      unit tests for run_erc.py's verdict helpers
-  erc-supply-spec.json                 the supply read           <- SIGNOFF
-  erc-supply-spec.negative-control.json  proves the rules fire   <- control
+  erc-supply-spec.json                 the supply + ties read    <- SIGNOFF
+  erc-supply-spec.negative-control.json  proves the net rules fire <- control
   erc-tie-spec.known-gap.json          reproduces klayout-tools#2169 <- control
-  erc-tie-spec.pinned.json             the ties[] the PIN computes   <- probe
+  erc-tie-spec.pinned.json             the ties[] derivation probe (#441) <- probe
+  erc-tie-spec.negative-control.json   proves the tie rule fires <- control
   reports/bandgap_top/
     <record-id>.erc.{json,txt}                    the signoff report
-    <record-id>.erc-negative-control.{json,txt}   the control's report
+    <record-id>.erc-negative-control.{json,txt}   the net control's report
     <record-id>.erc-tie-known-gap.{json,txt}      the #2169 reproduction
     <record-id>.erc-tie-pinned.{json,txt}         known-gap.json re-run on the pin
     <record-id>.erc-tie-classed.{json,txt}        pinned.json on the pin
+    <record-id>.erc-tie-negative-control.{json,txt} the tie control's report
 ```
 
 Each spec's own `_comment` block justifies every `stackup` entry, every
@@ -38,10 +40,13 @@ that is the primary documentation, not this file.
 ## Reproducing
 
 ```bash
-# 1. the item-11 signoff read (exits nonzero if the verdict regresses)
+# 1. the item-11 signoff read (exits nonzero if the verdict regresses:
+#    a supply finding, a GDS-hash mismatch, or a declared tie whose
+#    erc.missing_tie check is missing from erc_coverage.checked or
+#    listed in erc_coverage.skipped -- #537)
 python3 layout/erc/run_erc.py
 
-# 2. the negative control -- a CLEAN result here is the regression
+# 2. the net negative control -- a CLEAN result here is the regression
 python3 layout/erc/run_erc.py \
     --spec layout/erc/erc-supply-spec.negative-control.json \
     --suffix erc-negative-control --expect findings
@@ -52,13 +57,18 @@ python3 layout/erc/run_erc.py \
     --suffix erc-tie-known-gap --expect findings
 
 # 4. the pinned-klt tie probe -- records what the PIN computes (#441).
-#    Not signoff evidence: it reads the pre-DR-0007 GDS. See "What is NOT
-#    verified here" below.
+#    Historical: this is the run that derived the ties[] the signoff
+#    spec now carries. See "The tie negative control" below.
 python3 layout/erc/run_erc.py \
     --spec layout/erc/erc-tie-spec.pinned.json \
     --suffix erc-tie-classed --expect any
 
-# 5. run_erc.py's own unit tests
+# 5. the tie negative control -- a CLEAN result here is the regression
+python3 layout/erc/run_erc.py \
+    --spec layout/erc/erc-tie-spec.negative-control.json \
+    --suffix erc-tie-negative-control --expect findings
+
+# 6. run_erc.py's own unit tests
 python3 -m unittest discover -s layout/erc -t layout/erc -v
 ```
 
@@ -82,19 +92,24 @@ record id and never overwrites an existing one.
 
 ## The run
 
-`klt 0.5.0+gd5893304afc2` (klayout-tools `d589330`), `klayout 0.30.12`,
-gf180mcu layer numbers from `gf180mcuD` (`open_pdks
+`klt 0.8.0` (klayout-tools PyPI pin in `signoff/klt-pin.txt`), `klayout
+0.30.13`, gf180mcu layer numbers from `gf180mcuD` (`open_pdks
 f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7`). Input
 `layout/bandgap_top/bandgap_top.gds`,
-`sha256:3e1af18ef32dd461172a9d9d00a62ade323725de9a0f90ded08161237dcc1ae0`
+`sha256:e2004ef6f909d8391078f2aaa48bcddd0af378aff08fd307ebd625d25a16660a`
 — pinned in every report's own `provenance.input.content_hash` and
-re-checked against the file on disk by `run_erc.py` on every run.
+re-checked against the file on disk by `run_erc.py` on every run. (The
+September runs below read the pre-2026-11-17 GDS,
+`sha256:3e1af18e…dcc1ae0`; the #441 probe runs read
+`sha256:97944732…edf055c` — each report's own provenance says which.)
 
 | Read | Report | Result |
 | --- | --- | --- |
-| Supply read (signoff) | `.erc.json` | 10 gate nets, `erc_finding_count: 0`, **zero** `erc.unconnected_net`, **zero** `erc.supply_short` |
-| Negative control | `.erc-negative-control.json` | 1 finding — `erc.unconnected_net` on the bogus `no_such_rail`, and *only* on it |
-| `#2169` reproduction | `.erc-tie-known-gap.json` | design collapses to 1 gate net, 3 **false** shorts |
+| Supply + ties (signoff) | `.erc.json` | 10 gate nets, `erc_finding_count: 0`, **zero** `erc.unconnected_net`, **zero** `erc.supply_short`, **zero** `erc.missing_tie`, all three tie check IDs in `erc_coverage.checked` with `skipped` empty — the coverage state `run_erc.py --expect supply-clean` enforces on every run: a declared tie whose check is omitted from `checked` or listed in `skipped[].id` fails the gate, because a zero is only a verdict for checks that ran (gf180-bandgap#537) |
+| Net negative control | `.erc-negative-control.json` | 1 finding — `erc.unconnected_net` on the bogus `no_such_rail`, and *only* on it |
+| `#2169` reproduction | `.erc-tie-known-gap.json` | design collapses to 1 gate net, 3 **false** shorts (kept as history; the collapse does not recur on the pin — see `*.erc-tie-pinned.*`) |
+| Tie probe (`#441`, historical) | `.erc-tie-classed.json` | same three ties, zero findings, on the 2026-11-13 GDS |
+| Tie negative control | `.erc-tie-negative-control.json` | 10 findings — `erc.missing_tie` for **every** tap class (`nwell_tap_pmos` 1×, `nwell_base_pnp` 8×, `psub_tap` 1×), and nothing else |
 
 ### Reading the supply verdict
 
@@ -111,9 +126,10 @@ which is what item 11 asks for.
 produced identically by "the rule ran and found nothing" and by "the rule
 never ran" (a dropped `nets[]` section, a `label_layer` that resolves to
 nothing, a schema change). `erc-supply-spec.negative-control.json` is the
-signoff spec verbatim plus one rail that does not exist, and it comes back
-with exactly one `erc.unconnected_net` naming that rail and nothing else.
-The rules fire; the zero means what it says.
+signoff spec's `nets[]` half plus one rail that does not exist, and it
+comes back with exactly one `erc.unconnected_net` naming that rail and
+nothing else. The rules fire; the zero means what it says. (`ties[]` has
+its own control — see "The tie negative control" below.)
 
 ### Why the report's `status` is `not_checked`, and why that is not a failure
 
@@ -139,34 +155,39 @@ Item 11's Analog column additionally requires item 4's own LVS report to
 have carried the supplies, *"so the supplies were part of the compare
 rather than absent from it: every declared supply net appears in that
 report's `net_correspondence` paired to a reference-side net"*. It does —
-`layout/lvs/reports/bandgap_top/20260819-070132-1e66285.lvs.json`:
+the report the manifest cites for both items,
+`layout/lvs/reports/bandgap_top/20261117-162205-92475fa.lvs.json`:
 
 | `net_correspondence` | layout | reference | `pin` |
 | --- | --- | --- | --- |
 | supply | `vdd` | `VDD` | `true` |
 | supply | `vss` | `VSS` | `true` |
-| substrate | `vsubs` | `VSUBS` | `true` |
 | output | `vref` | `VREF` | `true` |
 
-with `status: "match"` over 92/92 nets, 164/164 devices and 4/4 pins. The
+with `status: "match"` over 82/82 nets, 164/164 devices and 3/3 pins. The
 reference is a SPICE netlist (`layout/lvs/bandgap_top.ref.spice`), which
 satisfies this clause by construction — it is the signal-only
 `gate-level-verilog` reference that does not, which is why the Digital
-column asks for `power_connectivity` instead.
+column asks for `power_connectivity` instead. Read it as a *participation
+test, not a second opinion* (klayout-tools issue #2495): the pairing is
+implied by any `match` and destroyed by any `mismatch`, and it is gated on
+item 4 passing — which it is, at the same pinned GDS hash.
 
-## What is NOT verified here: `erc.missing_tie`
+## What is and is NOT verified here
 
-**`erc.missing_tie` is NOT COMPUTED by the signoff report.**
-`erc-supply-spec.json` deliberately declares no `ties[]`, and klayout-tools
-`docs/cli/erc.md` is explicit that omitting the section means the rule is
-never computed. Its zero count in that report is an **absence of evidence,
-not evidence of absence**, and must not be cited as a well-tie verdict.
-That is still true of the signoff report, and is what this section is about.
+**`erc.missing_tie` IS computed by the signoff report, and it is zero from
+checks that actually ran.** That is the state since gf180-bandgap#526
+(2026-11-20): `erc-supply-spec.json` carries the `ties[]` declaration,
+`erc_coverage.skipped` is empty in the committed report, and the item-11
+citation in `signoff/block-manifest.json` rests on exactly that report.
+Before #526 the spec declared no `ties[]` at all, which made the rule's
+zero an absence of evidence rather than a verdict; before #441
+(2026-11-13) the tool could not have computed it honestly at all.
 
-**Both historical reasons for omitting `ties[]` are now gone at the pin,
-measured** (gf180-bandgap#441, 2026-11-13, `klt 0.8.0` / `klayout 0.30.13`).
-They are recorded here because the *next* question — whether this block
-actually passes a tie check — is gf180-bandgap#358's, after #204.
+### How the ties got here (the #441 derivation)
+
+Both historical reasons for omitting `ties[]` are gone at the pin,
+measured (gf180-bandgap#441, `klt 0.8.0` / `klayout 0.30.13`):
 
 1. **klayout-tools#2169 is fixed.** It used to collapse the whole design
    into one electrical island on any `ties[]` entry and report **false**
@@ -175,136 +196,102 @@ actually passes a tie check — is gf180-bandgap#358's, after #204.
    byte-for-byte as history. Re-running **that same file unchanged** on the
    pin — report `*.erc-tie-pinned.*` — gives `gate_count` **10**, each
    declared net on **exactly one** island, and **zero** `erc.supply_short`.
-   The collapse does not recur. (First isolated in `gf180-drone-fc`'s
-   FRICTION F-034 on a routed *standard-cell* design; this block is
-   hand-drawn analog with no standard cells and no PDN, and used to
-   collapse the same way.)
-2. **A p-substrate tie can now be expressed.** It previously could not at
-   all: `ties[].well_layer` needs a *drawn* well/tub layer, and this block
-   sits in the native p-substrate with no `LVPWELL` (204/0) anywhere in the
-   GDS. `klt 0.8.0`'s `ties[].well_complement_of` (klayout-tools#3750)
-   names the substrate as *the top-cell extent minus* `Nwell`, which
-   follows the layout instead of going stale — so the substrate half is
-   expressible without a drawn tub layer.
+   The collapse does not recur.
+2. **A p-substrate tie can be expressed.** `ties[].well_layer` needs a
+   *drawn* well/tub layer, and this block sits in the native p-substrate
+   with no `LVPWELL` (204/0) anywhere in the GDS. `klt 0.8.0`'s
+   `ties[].well_complement_of` (klayout-tools#3750) names the substrate as
+   *the top-cell extent minus* `Nwell`, which follows the layout instead of
+   going stale.
 
-### What the pin computes, and what it says
+Two corrections the declaration needed, both discovered by measurement and
+both the tool's documented schema working as designed:
 
-`erc-tie-spec.known-gap.json` re-run unchanged still does **not** yield a
-tie check — but no longer because of the collapse. `klt 0.8.0` reports it as
-`erc_coverage.skipped` with reason **`degenerate_tap_declaration`**: that
-file declares `tap_layer: "32/0"` (`Nplus` alone), which narrows nothing out
-of the drawn layer, so the check would be satisfied by any contact anywhere
-and klt refuses to answer rather than returning an unfalsifiable pass. The 8
-`erc.missing_tie` findings it emits alongside are part of that refusal and
-are **not** a verdict.
-
-`erc-tie-spec.pinned.json` is the declaration that does compute. Two things
-it has to get right, both discovered by measurement:
-
-- **The tap must be narrowed.** `tap_layer: "22/0"` (`Comp`) plus
-  `tap_requires` (klayout-tools#2169's own fix) — `Comp ∩ Nplus` for an
-  n-well tap, `Comp ∩ Pplus` for a substrate tap. gf180mcu has no dedicated
-  tap layer, so `tap_is_dedicated` is deliberately not affirmed.
+- **The tap must be narrowed** — `tap_layer: "22/0"` (`Comp`) plus
+  `tap_requires`: `Comp ∩ Nplus` for an n-well tap, `Comp ∩ Pplus` for a
+  substrate tap. gf180mcu has no dedicated tap layer; declaring the implant
+  alone (`tap_layer: "32/0"`) narrows nothing and klt 0.8.0 correctly
+  refuses it as `erc_coverage.skipped` reason `degenerate_tap_declaration`.
 - **`Nwell` carries two bias classes here, and one `ties[]` entry claims
   every shape on its well layer.** Declaring a single n-well tie to `vdd`
   reports **8** `erc.missing_tie` findings, and all 8 are the
-  vertical-PNP base islands — one per `PnpItem` in `plan.py`'s `PNP` row,
-  each the 10.40 µm square `generate.draw_pnp` draws, every one declaring
-  `base_net: "vss"`. The `Nwell` *is* the PNP base terminal, so tying it to
-  `vdd` would be the defect; the findings are correct about the geometry and
-  wrong only about which net was claimed. Splitting the classes on the
-  `DRC_BJT` (127/5) marker `draw_pnp` already draws — `well_excludes` for
-  the PMOS band, `well_requires` for the PNP bases — is what klt's own rule
-  asks for ("each bias class is declared as its own `ties[]` entry with its
-  own `net`").
+  vertical-PNP base islands (`PnpItem` in `plan.py`, each a 10.40 µm
+  square, every one declaring `base_net: "vss"` — the `Nwell` *is* the PNP
+  base terminal, so tying it to `vdd` would be the defect). Splitting the
+  classes on the `DRC_BJT` (127/5) marker `draw_pnp` already draws —
+  `well_excludes` for the PMOS band, `well_requires` for the PNP bases —
+  is what klt's own rule asks for ("each bias class is declared as its own
+  `ties[]` entry with its own `net`").
 
-With those two corrections, report `*.erc-tie-classed.*`:
+`erc-tie-spec.pinned.json` is that derivation frozen as a probe, with its
+own committed reports (`*.erc-tie-classed.*`). **#526 merged its `ties[]`
+into `erc-supply-spec.json` rather than making the probe file the signoff
+spec** — the smaller diff, since every consumer (run_erc.py's default,
+the manifest's history, this README) already names the supply spec — which
+is the choice the curator asked to have recorded here. The probe file
+stays unchanged as history.
 
-| | |
-| --- | --- |
-| `gate_count` | 10 (no collapse) |
-| `erc_coverage.skipped` | **empty** — all three ties **computed** |
-| `erc.missing_tie:["nwell_tap_pmos"]` | checked |
-| `erc.missing_tie:["nwell_base_pnp"]` | checked |
-| `erc.missing_tie:["psub_tap"]` | checked |
-| `erc_finding_count` | **0** |
-| `erc.supply_short` / `erc.unconnected_net` | 0 / 0 |
-| declared-net islands | `vdd` 1, `vss` 1, `vref` 1 |
+### The tie negative control
 
-`status: "not_checked"` / exit 4 on that report is the gf180mcu
-antenna-coverage artefact described above, not a tie result.
+A zero `erc.missing_tie` is only meaningful if the rule that produces it
+can fire. `erc-tie-spec.negative-control.json` is the signoff spec
+verbatim with each of the three `ties[].net` values flipped (`vdd` ↔
+`vss`); the taps drawn in this layout strap each well class to its real
+rail, so asking for the other rail must report every class untied. The
+committed report does exactly that — 10 findings, all
+`erc.missing_tie`, naming each class in its `layer` field:
 
-**Three things that report is NOT:**
+| class | net asked for | findings |
+| --- | --- | --- |
+| `nwell_tap_pmos` | `vss` (flipped) | 1 — the one PMOS-band well region |
+| `nwell_base_pnp` | `vdd` (flipped) | 8 — one per vertical-PNP base island |
+| `psub_tap` | `vdd` (flipped) | 1 — the one substrate region |
 
-1. **Not the item 11 citation.** Citing item 11 and touching
-   `signoff/block-manifest.json` is gf180-bandgap#358's scope, after #204.
-   This directory's signoff spec is unchanged and still declares no
-   `ties[]`; replacing it was explicitly out of scope for #441.
-2. **Made on the pre-DR-0007 GDS.** It reads the currently committed
-   `layout/bandgap_top/bandgap_top.gds`,
-   `sha256:97944732…edf055c` — *not* the layout #204 will regenerate. Every
-   number above has to be re-measured on the regenerated GDS before it can
-   be cited.
-3. **`psub_tap` is weaker evidence than the other two.** The report itself
-   says so, listing it under `erc_coverage.checked_by_well_assertion`:
-   its region is *derived* by complement rather than read off drawn
-   geometry. That is still a computed check with a falsifiable region — but
-   it is not the same as a drawn tub layer, and should be stated that way
+and nothing else: zero `erc.supply_short`, zero `erc.unconnected_net` —
+the supply-island verdicts hold while the tie question fails, which is
+what keeps the two halves of the item separately legible. If a class ever
+stops firing in this control, the signoff report's zero for that class has
+stopped meaning anything and the item-11 claim must be withdrawn until
+explained. The unconnected-net control
+(`erc-supply-spec.negative-control.json`) keeps proving the supply rules
+fire; it covers the `nets[]` half the same way this one covers `ties[]`.
+
+### What is still NOT verified here
+
+1. **The citation is against the pre-DR-0007 layout.** The signoff report
+   reads the committed GDS (`sha256:e2004ef6…16660a`), *not* the layout
+   [#204](https://github.com/2AMLogic/gf180-bandgap/issues/204) will
+   regenerate. The manifest pins the GDS hash, so the moment #204 lands,
+   `klt signoff` renders the citation `stale_evidence` and item 11 drops
+   back to `unmet` until the report is re-minted — the re-run that
+   [#358](https://github.com/2AMLogic/gf180-bandgap/issues/358) keeps.
+2. **`psub_tap` is weaker evidence than the other two classes.** The
+   report itself says so, listing it under
+   `erc_coverage.checked_by_well_assertion` and in the graded citation's
+   `power_delivery.ties_checked_by_well_assertion`: its region is
+   *derived* by complement (top-cell extent minus `Nwell`) rather than
+   read off drawn geometry. That is a computed check with a falsifiable
+   region — the negative control fires it like any other class — but it
+   is not the same as a drawn tub layer, and should be stated that way
    rather than flattened into "the substrate is verified".
-
-### What stands in for it, and how far that reaches
-
-Nothing here is a substitute *verdict*. These are the admissible facts:
-
-1. **The taps are drawn, and are generated rather than hand-placed.**
-   `layout/bandgap_top/plan.py` declares four explicit `TapItem` bars — two
-   `psub` taps (`ptap.nbias`, `ptap.ampn`, Comp under Pplus) strapped to
-   `vss`, and two `nwell` taps (`ntap.pbias`, `ntap.top`, Comp under Nplus
-   inside the PMOS band's Nwell) strapped to `vdd` — plus a p+ guard ring
-   around the whole block tied to `vss` (`layout/floorplan.md` §9).
-   `generate.py` draws each as Comp + implant + a Contact row + a Metal1
-   bar, byte-for-byte deterministically.
-2. **Those tap straps are on the supply islands the ERC read resolved.**
-   The Metal1 bar of every tap is part of the same connectivity graph this
-   directory's signoff report traces, and that report resolves `vdd` and
-   `vss` to exactly one island each. So the tap *straps* provably reach
-   their declared supply.
-3. **DRC is clean** against the current gf180mcu deck
-   (`layout/drc/reports/bandgap_top/`), which covers the Nwell / Comp /
-   Pplus / Nplus / Contact rules the taps are drawn under — the tap
-   geometry is DRM-legal.
-
-**And the honest limit, which is the important part:** the LVS report does
-**not** stand in for `erc.missing_tie` here, and this repo must not claim
-it does. That same report carries two `device.body_unverified` warnings
-saying so in its own words —
-
-> *"42 NMOS device body terminal(s) were compared against the 'vsubs'
-> deck-synthesized substrate net, not a real schematic net — no drawn
-> substrate-tap geometry resolved these device(s)' body terminal to a real
-> net"*
->
-> *"47 PMOS device body terminal(s) were compared against an anonymous,
-> deck-synthesized well net, not a real schematic net — this deck has no
-> distinct well-tap layer"*
-
-— i.e. the LVS compare matched bulk terminals against nets the extraction
-*synthesized*, not against nets it traced from the drawn taps. The
-`vsubs`↔`VSUBS` pin correspondence in the table above is a pin-list match,
-not a tie verdict.
-
-So: **the signoff report in this directory still returns no
-well/substrate-tie verdict for this block.** Items (1)–(3) say the taps
-exist, are legal, and are strapped onto the right rails; none of them says
-every well and every substrate region *reaches* one.
-
-What has changed is that the *tool* no longer blocks that verdict. At the
-pin, `erc-tie-spec.pinned.json` computes all three tie checks and comes back
-with zero findings (table above) — including the substrate half, via
-`well_complement_of`, which is the capability this section previously said
-`ties[]` would have to grow. Converting that into item 11 evidence means
-re-measuring it on the regenerated GDS and citing it in the manifest, which
-is **gf180-bandgap#358**, after **#204**.
+3. **The spec's own layer coverage is partial, disclosed here rather than
+   graded.** `erc_coverage.layers_in_stream_without_declaration` in the
+   cited report names six drawn layers the spec declares nowhere:
+   `49/0` (`SAB`), `62/0` (`RESISTOR_MK`), `75/0` (`FuseTop`), `110/5`
+   (`RES_MK`), `117/5` (`CAP_MK`), `117/10` (`MIM_MK`) — the salicide,
+   resistor and capacitor recognition markers, plus the MIM top plate.
+   None is a routing level (the supply lives on Metal1–Metal3, all
+   declared; every layer the `ties[]` and stackup name is counted as
+   declared), so the connectivity model is not silently narrower than the
+   supply's routing — but a future edit that *moves* supply routing onto
+   an undeclared level would grade clean from a narrower model, so this
+   list travels with the claim (klayout-tools issue #2389 makes it
+   claimant-enforced, exactly like item 3's deck-scope disclosure).
+4. **What the LVS half is not.** Item 11's LVS clause is a *participation
+   test* on item 4's own report (the supplies appear, paired, in
+   `net_correspondence` of a `match`) — not an independent tie verdict and
+   not a substitute for `erc.missing_tie`. The MOS-body question is item
+   4's own subject (`body_verification` in the cited envelope).
 
 ## Friction filed
 

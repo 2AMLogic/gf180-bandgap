@@ -36,17 +36,33 @@ def build_report(manifest_evidence: dict, count: int = 11) -> dict:
     for item_id in range(1, count + 1):
         entry = manifest_evidence.get(str(item_id))
         if entry:
+            parts = entry if isinstance(entry, list) else [entry]
+            first = parts[0]
+            citation = {
+                "file": first["file"],
+                "command": "cmd",
+                "kind": "sim",
+                "check_status": "pass",
+                "content_hash": first["content_hash"],
+                "coverage": {"corners": 3},
+                "body_bias": {"vbs": 0},
+            }
+            if isinstance(entry, list):
+                # klt's compound citation: the top-level fields mirror the
+                # first part, `parts[]` carries every cited envelope.
+                citation["parts"] = [
+                    {
+                        "file": part["file"],
+                        "command": "cmd",
+                        "kind": "sim",
+                        "check_status": "pass",
+                        "content_hash": part["content_hash"],
+                    }
+                    for part in parts
+                ]
             items.append({
                 "tier": "T1", "id": item_id, "status": "met", "reason": "ok",
-                "citation": {
-                    "file": entry["file"],
-                    "command": "cmd",
-                    "kind": "sim",
-                    "check_status": "pass",
-                    "content_hash": entry["content_hash"],
-                    "coverage": {"corners": 3},
-                    "body_bias": {"vbs": 0},
-                },
+                "citation": citation,
             })
         else:
             items.append({"tier": "T1", "id": item_id,
@@ -145,6 +161,30 @@ class ManifestTests(QuietCase):
         self.manifest["kind"] = "mixed-signal"
         self.assertFalse(self.check())
 
+    def test_compound_entry_accepted_for_item_11(self):
+        self.manifest["evidence"]["11"] = [
+            {"file": ENVELOPE, "content_hash": self.pin},
+            {"file": ENVELOPE, "content_hash": self.pin},
+        ]
+        self.assertFalse(self.check())
+
+    def test_compound_entry_rejected_for_other_items(self):
+        self.manifest["evidence"]["1"] = [
+            {"file": ENVELOPE, "content_hash": self.pin}]
+        self.assertFails(self.check(), "compound citation")
+
+    def test_compound_part_problems_are_flagged_per_part(self):
+        self.manifest["evidence"]["11"] = [
+            {"file": ENVELOPE, "content_hash": self.pin},
+            {"file": "evidence/gone.json"},
+        ]
+        self.assertFails(self.check(), "part 1", "pins no `content_hash`",
+                         "missing file")
+
+    def test_empty_compound_list_cites_nothing(self):
+        self.manifest["evidence"]["11"] = []
+        self.assertFails(self.check(), "empty list")
+
     def test_bad_block_and_kind(self):
         self.manifest["block"] = "  "
         self.manifest["kind"] = "quantum"
@@ -198,6 +238,25 @@ class PinTests(QuietCase):
         self.inputs["inputs"] = {}
         self.write_all()
         self.assertFails(self.check(), "no artifact recorded")
+
+    def test_compound_pin_broadcasts_single_artifact(self):
+        self.manifest["evidence"]["11"] = [
+            {"file": ENVELOPE, "content_hash": self.pin},
+            {"file": ENVELOPE, "content_hash": self.pin},
+        ]
+        self.inputs["inputs"]["11"] = "evidence/layout.gds"
+        self.write_all()
+        self.assertFalse(self.check())
+
+    def test_compound_pin_changed_artifact_fails(self):
+        self.manifest["evidence"]["11"] = [
+            {"file": ENVELOPE, "content_hash": self.pin},
+            {"file": ENVELOPE, "content_hash": self.pin},
+        ]
+        self.inputs["inputs"]["11"] = "evidence/layout.gds"
+        self.write_all()
+        self.artifact.write_bytes(b"regenerated")
+        self.assertFails(self.check(), "has changed since", "part 1")
 
     def test_missing_artifact_fails(self):
         self.artifact.unlink()
@@ -309,6 +368,34 @@ class ReportConsistencyTests(QuietCase):
         cite["content_hash"] = "sha256:dead"
         self.assertFails(self.check(), "cites 'evidence/other.json'",
                          "citation hash 'sha256:dead'")
+
+    def test_compound_citation_consistent_passes(self):
+        self.manifest["evidence"]["11"] = [
+            {"file": ENVELOPE, "content_hash": self.pin},
+            {"file": ENVELOPE, "content_hash": self.pin},
+        ]
+        self.report = build_report(self.manifest["evidence"])
+        self.assertFalse(self.check())
+
+    def test_compound_citation_part_mismatch_fails(self):
+        self.manifest["evidence"]["11"] = [
+            {"file": ENVELOPE, "content_hash": self.pin},
+            {"file": ENVELOPE, "content_hash": self.pin},
+        ]
+        self.report = build_report(self.manifest["evidence"])
+        self.report["items"][10]["citation"]["parts"][1]["file"] = \
+            "evidence/other.json"
+        self.assertFails(self.check(), "citation part 1",
+                         "'evidence/other.json'")
+
+    def test_compound_citation_wrong_part_count_fails(self):
+        self.manifest["evidence"]["11"] = [
+            {"file": ENVELOPE, "content_hash": self.pin},
+            {"file": ENVELOPE, "content_hash": self.pin},
+        ]
+        self.report = build_report(self.manifest["evidence"])
+        del self.report["items"][10]["citation"]["parts"]
+        self.assertFails(self.check(), "carries 0 parts", "manifest cites 2")
 
     def test_main_reports_inconsistent_record(self):
         self.report["t1_met_count"] = 0

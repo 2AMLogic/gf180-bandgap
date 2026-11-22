@@ -17,17 +17,43 @@ them (``README.md``).
 
 from __future__ import annotations
 
+import contextlib
+import copy
 import hashlib
+import io
+import json
+import os
+import shutil
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 # Load-bearing: sys.path[0] is this file's dir only under `python3 file.py`.
 # Under the documented `python3 -m <dotted.module>` form it is the CWD. #479
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import run_erc  # noqa: E402
+
+HERE = Path(__file__).resolve().parent
+#: The committed signoff report and spec -- the passing control every #537
+#: fixture starts from, so the tests exercise native report shapes rather
+#: than hand-built lookalikes.
+COMMITTED_REPORT = HERE / "reports/bandgap_top/20261120-210525-e0893ec.erc.json"
+COMMITTED_SPEC = HERE / "erc-supply-spec.json"
+COMMITTED_GDS = HERE.parent / "bandgap_top/bandgap_top.gds"
+#: Hand-written (not implementation-derived) IDs, matching what `klt erc`
+#: emits -- see the committed report's own erc_coverage.checked.
+PSUB_TAP_ID = 'erc.missing_tie:["psub_tap"]'
+
+
+def _committed_payload() -> dict:
+    return json.loads(COMMITTED_REPORT.read_text())
+
+
+def _committed_spec() -> dict:
+    return json.loads(COMMITTED_SPEC.read_text())
 
 
 def _finding(rule: str, net: str | None, other: str | None = None) -> dict:
@@ -145,6 +171,201 @@ class ExitCodeContractTests(unittest.TestCase):
         self.assertIn(3, run_erc.OK_EXIT_CODES)
         self.assertNotIn(1, run_erc.OK_EXIT_CODES)
         self.assertNotIn(2, run_erc.OK_EXIT_CODES)
+
+
+class DeclaredTiesTests(unittest.TestCase):
+    def test_committed_spec_declares_three_ties_in_order(self) -> None:
+        self.assertEqual(
+            run_erc.declared_ties(_committed_spec()),
+            ["nwell_tap_pmos", "nwell_base_pnp", "psub_tap"],
+        )
+
+    def test_no_ties_section(self) -> None:
+        self.assertEqual(run_erc.declared_ties({"nets": []}), [])
+
+
+class TieCheckIdTests(unittest.TestCase):
+    def test_matches_the_committed_report_ids(self) -> None:
+        """The expected IDs must be byte-identical to what klt actually
+        emitted into the committed report's erc_coverage.checked."""
+        checked = _committed_payload()["erc_coverage"]["checked"]
+        for name in ("nwell_tap_pmos", "nwell_base_pnp", "psub_tap"):
+            self.assertIn(run_erc.tie_check_id(name), checked)
+
+    def test_json_encodes_the_name_array(self) -> None:
+        """klt JSON-encodes the one-element name array inside the ID, so a
+        name needing escaping must be escaped -- an f-string splice would
+        look for an ID the tool never emits."""
+        self.assertEqual(
+            run_erc.tie_check_id('tie"name'), 'erc.missing_tie:["tie\\"name"]'
+        )
+
+
+class TieCoverageFailuresTests(unittest.TestCase):
+    """The #537 gate helper: every declared tie must be evidenced as a
+    computed check before a zero-findings report can read as a verdict."""
+
+    TIES = ["nwell_tap_pmos", "nwell_base_pnp", "psub_tap"]
+
+    def setUp(self) -> None:
+        self.payload = copy.deepcopy(_committed_payload())
+
+    def test_committed_report_has_no_failures(self) -> None:
+        self.assertEqual(run_erc.tie_coverage_failures(self.payload, self.TIES), [])
+
+    def test_omitted_tie_fails_and_names_it(self) -> None:
+        """The #537 reproduction: only psub_tap's ID leaves checked. It
+        stays in checked_by_well_assertion in the committed report, so a
+        helper that reads a well assertion as evidence the check ran
+        passes this fixture -- and must not."""
+        self.payload["erc_coverage"]["checked"].remove(PSUB_TAP_ID)
+        self.assertIn(
+            PSUB_TAP_ID, self.payload["erc_coverage"]["checked_by_well_assertion"]
+        )
+        failures = run_erc.tie_coverage_failures(self.payload, self.TIES)
+        self.assertEqual(len(failures), 1)
+        self.assertIn("psub_tap", failures[0])
+
+    def test_skipped_tie_fails_even_when_also_checked(self) -> None:
+        """The second independent fixture: every ID stays in checked and a
+        native skip record appears for psub_tap. Membership in both
+        collections must still fail -- a skip is not a verdict."""
+        self.payload["erc_coverage"]["skipped"].append(
+            {"id": PSUB_TAP_ID, "reason": "degenerate_tap_declaration"}
+        )
+        self.assertIn(PSUB_TAP_ID, self.payload["erc_coverage"]["checked"])
+        failures = run_erc.tie_coverage_failures(self.payload, self.TIES)
+        self.assertEqual(len(failures), 1)
+        self.assertIn("psub_tap", failures[0])
+        self.assertIn("degenerate_tap_declaration", failures[0])
+
+    def test_missing_coverage_block_fails_every_declared_tie(self) -> None:
+        del self.payload["erc_coverage"]
+        failures = run_erc.tie_coverage_failures(self.payload, self.TIES)
+        self.assertEqual(len(failures), len(self.TIES))
+        for name in self.TIES:
+            self.assertTrue(any(name in failure for failure in failures), name)
+
+    def test_no_declared_ties_is_never_a_coverage_failure(self) -> None:
+        """A spec without ties[] keeps its existing supply checks and gains
+        no tie gate -- so a payload without any coverage block at all must
+        not fail it."""
+        del self.payload["erc_coverage"]
+        self.assertEqual(run_erc.tie_coverage_failures(self.payload, []), [])
+
+    def test_escaped_name_passes_when_properly_encoded(self) -> None:
+        payload = {"erc_coverage": {"checked": ['erc.missing_tie:["tie\\"name"]'], "skipped": []}}
+        self.assertEqual(run_erc.tie_coverage_failures(payload, ['tie"name']), [])
+
+    def test_escaped_name_fails_when_only_naively_spliced(self) -> None:
+        """An ID built by f-string splicing (no backslash escape) is not
+        what klt emits, so matching it must not satisfy the gate."""
+        payload = {"erc_coverage": {"checked": ['erc.missing_tie:["tie"name"]'], "skipped": []}}
+        failures = run_erc.tie_coverage_failures(payload, ['tie"name'])
+        self.assertEqual(len(failures), 1)
+
+
+class SupplyCleanCommandGateTests(unittest.TestCase):
+    """The same gate, exercised through ``main()`` itself (#537).
+
+    A helper that is correct but never called by the command is exactly
+    the failure these tests exist to catch, so every case here drives
+    ``run_erc.main()`` end to end: the spec and a copy of the committed
+    GDS are staged in a scratch repo root, a stub ``klt`` on ``PATH``
+    replays a canned report (the committed signoff report with exactly one
+    coverage entry changed, zero findings throughout), and the exit code
+    and stderr are asserted.
+    """
+
+    def _replay(self, payload: dict, spec: dict, *extra: str) -> tuple[int, str, str]:
+        tmp = Path(tempfile.mkdtemp(prefix="erc-gate-")).resolve()
+        self.addCleanup(shutil.rmtree, tmp, ignore_errors=True)
+        root = tmp / "repo"
+        (root / "layout/bandgap_top").mkdir(parents=True)
+        (root / "layout/erc/reports").mkdir(parents=True)
+        (root / "bin").mkdir()
+        shutil.copyfile(COMMITTED_GDS, root / "layout/bandgap_top/bandgap_top.gds")
+        (root / "layout/erc/erc-supply-spec.json").write_text(json.dumps(spec))
+        replay = root / "replay.json"
+        replay.write_text(json.dumps(payload))
+        klt = root / "bin" / "klt"
+        klt.write_text(
+            "#!/bin/sh\n"
+            "# test stub: replay a canned klt erc report and exit 0\n"
+            'cat "$ERC_REPLAY_JSON"\n'
+            "exit 0\n"
+        )
+        klt.chmod(0o755)
+        out_buf, err_buf = io.StringIO(), io.StringIO()
+        with mock.patch.dict(
+            os.environ,
+            {
+                "PATH": f"{root / 'bin'}{os.pathsep}{os.environ.get('PATH', '')}",
+                "ERC_REPLAY_JSON": str(replay),
+            },
+        ), mock.patch.object(run_erc, "REPO_ROOT", root), mock.patch.object(
+            run_erc, "REPORTS_ROOT", root / "layout/erc/reports"
+        ), contextlib.redirect_stdout(out_buf), contextlib.redirect_stderr(err_buf):
+            code = run_erc.main(
+                [
+                    str(root / "layout/bandgap_top/bandgap_top.gds"),
+                    "--spec", str(root / "layout/erc/erc-supply-spec.json"),
+                    *extra,
+                ]
+            )
+        return code, out_buf.getvalue(), err_buf.getvalue()
+
+    def test_committed_report_passes_the_supply_clean_gate(self) -> None:
+        code, _, _ = self._replay(_committed_payload(), _committed_spec())
+        self.assertEqual(code, 0)
+
+    def test_omitted_tie_fails_the_command_and_names_it(self) -> None:
+        payload = copy.deepcopy(_committed_payload())
+        payload["erc_coverage"]["checked"].remove(PSUB_TAP_ID)
+        code, _, err = self._replay(payload, _committed_spec())
+        self.assertEqual(code, 1)
+        self.assertIn("psub_tap", err)
+        self.assertNotIn("nwell_tap_pmos", err)
+
+    def test_skipped_tie_fails_the_command_and_names_it(self) -> None:
+        payload = copy.deepcopy(_committed_payload())
+        payload["erc_coverage"]["skipped"].append(
+            {"id": PSUB_TAP_ID, "reason": "degenerate_tap_declaration"}
+        )
+        code, _, err = self._replay(payload, _committed_spec())
+        self.assertEqual(code, 1)
+        self.assertIn("psub_tap", err)
+        self.assertNotIn("nwell_tap_pmos", err)
+
+    def test_missing_coverage_block_fails_the_command_for_every_tie(self) -> None:
+        payload = copy.deepcopy(_committed_payload())
+        del payload["erc_coverage"]
+        code, _, err = self._replay(payload, _committed_spec())
+        self.assertEqual(code, 1)
+        for name in ("nwell_tap_pmos", "nwell_base_pnp", "psub_tap"):
+            self.assertIn(name, err)
+
+    def test_spec_without_ties_keeps_its_supply_checks(self) -> None:
+        spec = _committed_spec()
+        del spec["ties"]
+        code, _, _ = self._replay(_committed_payload(), spec)
+        self.assertEqual(code, 0)
+
+    def test_findings_mode_keeps_its_own_gate(self) -> None:
+        """--expect findings must keep failing the clean report for its own
+        reason (zero findings), not for tie coverage."""
+        code, _, err = self._replay(
+            _committed_payload(), _committed_spec(), "--expect", "findings"
+        )
+        self.assertEqual(code, 1)
+        self.assertIn("ZERO findings", err)
+        self.assertNotIn("psub_tap", err)
+
+    def test_any_mode_still_gates_on_nothing(self) -> None:
+        payload = copy.deepcopy(_committed_payload())
+        payload["erc_coverage"]["checked"].remove(PSUB_TAP_ID)
+        code, _, _ = self._replay(payload, _committed_spec(), "--expect", "any")
+        self.assertEqual(code, 0)
 
 
 if __name__ == "__main__":
