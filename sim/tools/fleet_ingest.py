@@ -64,6 +64,7 @@ sys.path.insert(0, str(HERE))
 
 import fleet_common as fc  # noqa: E402
 from harness import corners as hc  # noqa: E402
+from harness.testbench import dut_provenance_class  # noqa: E402
 
 BENCHES = ("psrr-dc", "line-regulation", "startup", "iq")
 NOISE_BENCH = "output-noise"
@@ -560,6 +561,14 @@ def plan_problems(bench: str, tb: dict, plan: dict) -> list[str]:
     if plan.get("schema") != "gf180-bandgap/fleet-plan/1" or plan.get("bench") != bench:
         probs.append("plan is not a fleet plan for this bench")
         return probs
+    pdut = plan.get("dut", {})
+    if "provenance_class" in pdut:
+        # Absent stays valid (older plans predate the key); a stated class must
+        # match the path -- or stay `schematic` on the embedded-core bench,
+        # whose deck simulates its own core rather than the DUT (#553).
+        want = "schematic" if plan.get("embedded_core") else dut_provenance_class(str(pdut.get("path", "")))
+        if pdut["provenance_class"] != want:
+            probs.append("plan DUT provenance class does not match its path")
     from mk_klt_fleet_request import expected_units, iq_temp_points, iq_units
 
     vdds = hc.supply_points(tb["nominal_supply_v"], tb.get("supply_tolerance", 0.0))
@@ -902,7 +911,13 @@ def build_record(record: str, stamp: datetime, bench: str, tb: dict, plan: dict,
         + f" Fleet (`klt sim`) evidence for issue #{issue}."
         + ("" if overall != "INCOMPLETE" else " **INCOMPLETE -- see Result: no verdict is claimed.**"))
     emb = plan.get("embedded_core")
-    add(f"- **Netlist provenance**: {plan['dut'].get('provenance_class', 'schematic')}. "
+    pclass = plan["dut"].get("provenance_class")
+    if pclass is None:
+        # Plans that predate the key (or were hand-edited): classify off the
+        # recorded DUT path / label instead of asserting `schematic` (#553).
+        # The Canonical/Supplied wording below is unchanged by design.
+        pclass = "schematic" if emb else dut_provenance_class(plan["dut"].get("path") or dut_label)
+    add(f"- **Netlist provenance**: {pclass}. "
         f"{'Canonical' if 'provenance_class' not in plan['dut'] else 'Supplied'} DUT `{dut_label}` sha256 `{plan['dut']['sha256']}`; "
         f"testbench sha256 `{plan['tb_netlist_sha256']}`; tb.json sha256 `{plan['manifest_sha256']}`.")
     if emb:

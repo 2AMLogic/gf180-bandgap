@@ -64,6 +64,26 @@ FORBIDDEN_DUT_DIRECTIVES = (".control", ".endc", ".end", ".lib", ".temp")
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
+def dut_provenance_class(path: str | Path | None) -> str:
+    """``schematic`` / ``extracted`` / ``frozen schematic``, read off a DUT path.
+
+    ``sim/dut/README.md`` fixes the one path-based rule for the **Netlist
+    provenance** field on the write side: paths under the layout directory
+    are post-layout ``extracted`` netlists, a ``frozen`` directory segment is
+    a frozen schematic copy, anything else is the schematic netlist -- so a
+    post-layout re-run (#17) reports itself correctly with no flag to forget.
+    Repo-internal absolute paths are normalized via ``_repo_relative`` first.
+    """
+    if path is None:
+        return "schematic"
+    text = _repo_relative(path) if Path(path).is_absolute() else str(path)
+    if text.startswith("layout/"):
+        return "extracted"
+    if "/frozen/" in text:
+        return "frozen schematic"
+    return "schematic"
+
+
 @dataclass
 class Testbench:
     directory: Path
@@ -117,22 +137,10 @@ class Testbench:
 
     @property
     def dut_provenance_class(self) -> str:
-        """``schematic`` / ``extracted`` / ``frozen`` -- read off the DUT path.
-
-        ``sim/README.md`` requires every record to say whether it was taken
-        against the schematic netlist or a post-layout extracted one. The
-        classification follows the directory the DUT lives in so that a
-        post-layout re-run (#17) reports itself correctly with no flag to
-        forget: anything under ``layout/`` is extracted.
+        """``schematic`` / ``extracted`` / ``frozen`` -- read off the DUT path
+        via the one path-based classifier, :func:`dut_provenance_class`.
         """
-        if self.dut is None:
-            return "schematic"
-        path = self.dut_path
-        if path.startswith("layout/"):
-            return "extracted"
-        if "/frozen/" in path:
-            return "frozen schematic"
-        return "schematic"
+        return dut_provenance_class(None if self.dut is None else self.dut_path)
 
     def provenance(self) -> dict:
         return {

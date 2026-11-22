@@ -112,6 +112,7 @@ from harness import pdk as harness_pdk  # noqa: E402
 from harness import report as harness_report  # noqa: E402
 from harness import stats as harness_stats  # noqa: E402
 from harness.runner import ngspice_version  # noqa: E402
+from harness.testbench import dut_provenance_class  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Run parameters
@@ -550,29 +551,9 @@ RUN_CONTEXT = {
 }
 
 
-def provenance_class(relative: Path) -> str:
-    """``schematic`` / ``extracted`` / ``frozen schematic``, read off the path.
-
-    `sim/README.md` requires every record to say whether it was taken against
-    the schematic netlist or a post-layout extracted one, and
-    `sim/dut/README.md` fixes the rule: the class follows the directory the
-    DUT lives in, so a post-layout re-run (#17) reports itself correctly with
-    no flag anyone can forget to pass. This bench predates `--dut` carrying an
-    extracted netlist and used to hard-code `schematic`, which would have made
-    an extracted-netlist MC record assert the wrong provenance -- the one
-    field that distinguishes the two record sets from each other.
-    """
-    text = str(relative)
-    if text.startswith("layout/"):
-        return "extracted"
-    if "/frozen/" in text:
-        return "frozen schematic"
-    return "schematic"
-
-
 def provenance_origin(relative: Path) -> str:
     """The parenthetical that says where a DUT of this class came from."""
-    klass = provenance_class(relative)
+    klass = dut_provenance_class(relative)
     if klass == "extracted":
         return (
             ", from `layout/bandgap_top/bandgap_top.gds` via "
@@ -628,7 +609,7 @@ def build_record(
     add(f"  - {RUN_CONTEXT['netlist_caveat']}")
     relative = dut_path.relative_to(harness_pdk.REPO_ROOT)
     add(
-        f"- **Netlist provenance**: {provenance_class(relative)} "
+        f"- **Netlist provenance**: {dut_provenance_class(relative)} "
         f"(`{relative}`{provenance_origin(relative)}), with the "
         "resistor-mismatch injection described below applied "
         "to a copy for the `mm_res`/`mm_all` groups (see **Statistical "

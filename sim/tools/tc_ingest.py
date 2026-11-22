@@ -45,6 +45,7 @@ sys.path.insert(0, str(HERE))
 
 import fleet_common as fc  # noqa: E402
 from harness import corners as hc  # noqa: E402
+from harness.testbench import dut_provenance_class  # noqa: E402
 
 EXPERIMENT = "output-voltage-tc"
 TB_JSON = SIM / EXPERIMENT / "testbench" / "tb.json"
@@ -269,7 +270,11 @@ def build_record(record, stamp, report, req, tb, expected, points, missing, fail
         + f" Evidence for issue #{issue} (DR-0007 retuning of canonical R2/R1): untrimmed (trim code 32)"
         " deterministic corner result, no Monte Carlo/mismatch claim (later suite child)."
         + ("" if overall != "INCOMPLETE" else " **INCOMPLETE -- see Result: missing/failed points; no verdict is claimed.**"))
-    add(f"- **Netlist provenance**: schematic -- DUT `{dut_rel}` (sha256 `{dut_sha}`), "
+    # The class follows the DUT path (`--dut`), not a hard-coded `schematic`:
+    # an extracted or frozen `--dut` must report itself (#553). `dut_rel` here
+    # is the label main() built; strip a trailing ` @ <rev>` (from --dut-rev)
+    # so the class is read off the underlying path.
+    add(f"- **Netlist provenance**: {dut_provenance_class(dut_rel.rsplit(' @ ', 1)[0])} -- DUT `{dut_rel}` (sha256 `{dut_sha}`), "
         f"driven by `sim/output-voltage-tc/testbench/tb_output_voltage_tc.spice` (sha256 `{tb_sha}`); "
         f"frozen self-contained fleet deck sha256 `{deck_sha}` (`netlist-snapshots/{record}.spice`). "
         "The deck is frozen in the snapshot, so the result is reproducible from it regardless of tree state "

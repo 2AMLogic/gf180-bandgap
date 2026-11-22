@@ -250,14 +250,21 @@ class SharedConstruction(unittest.TestCase):
 
 
 class ProvenanceClass(unittest.TestCase):
+    def test_record_path_uses_the_shared_classifier(self):
+        # The local copy is gone (#553): the bench classifies through the one
+        # harness helper, same as the fleet request / ingest tools.
+        from harness.testbench import dut_provenance_class
+
+        self.assertIs(run.dut_provenance_class, dut_provenance_class)
+
     def test_classes(self):
         P = Path
-        self.assertEqual(run.provenance_class(P("layout/netlist/x.spice")), "extracted")
+        self.assertEqual(run.dut_provenance_class(P("layout/netlist/x.spice")), "extracted")
         self.assertEqual(
-            run.provenance_class(P("sim/dut/frozen/x.spice")), "frozen schematic"
+            run.dut_provenance_class(P("sim/dut/frozen/x.spice")), "frozen schematic"
         )
         self.assertEqual(
-            run.provenance_class(P("design/netlist/bandgap_top.spice")), "schematic"
+            run.dut_provenance_class(P("design/netlist/bandgap_top.spice")), "schematic"
         )
 
 

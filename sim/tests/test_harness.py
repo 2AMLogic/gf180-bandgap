@@ -198,6 +198,28 @@ class DutTests(unittest.TestCase):
                 )
                 self.assertEqual(tb.dut_provenance_class, expected)
 
+    def test_module_level_classifier_matches_the_rule(self):
+        # #553: the one writer-side classifier every ingestor shares.
+        for path, expected in (
+            ("sim/dut/bandgap_top.spice", "schematic"),
+            (Path("sim/dut/frozen/x.spice"), "frozen schematic"),
+            (Path("layout/netlist/bandgap_top_extracted.spice"), "extracted"),
+            (None, "schematic"),
+            ("", "schematic"),
+        ):
+            with self.subTest(path=path):
+                self.assertEqual(testbench.dut_provenance_class(path), expected)
+
+    def test_module_level_classifier_normalizes_repo_absolute_paths(self):
+        for absolute, expected in (
+            (testbench.REPO_ROOT / "layout" / "netlist" / "x.spice", "extracted"),
+            (testbench.REPO_ROOT / "sim" / "dut" / "x.spice", "schematic"),
+        ):
+            with self.subTest(path=absolute):
+                self.assertEqual(testbench.dut_provenance_class(absolute), expected)
+        # a path outside the repo keeps its literal form and classifies by it
+        self.assertEqual(testbench.dut_provenance_class("/tmp/somewhere/x.spice"), "schematic")
+
     def test_the_repo_dut_is_a_valid_fragment_for_every_bench_this_issue_owns(self):
         for slug in ("output-voltage-tc", "psrr-dc", "line-regulation", "iq"):
             with self.subTest(slug=slug):

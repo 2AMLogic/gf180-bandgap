@@ -130,10 +130,15 @@ sys.path.insert(0, str(HERE))
 
 import fleet_common as fc  # noqa: E402
 from harness import corners as hc  # noqa: E402
+from harness.testbench import dut_provenance_class  # noqa: E402
 
 GENERATOR = "sim/tools/mk_klt_fleet_request.py"
 SUPPLY_SOURCE = "vsup"
 PLAN_SCHEMA = "gf180-bandgap/fleet-plan/1"
+#: The canonical schematic DUT (``--dut``'s default). Canonical plans for
+#: psrr-dc / line-regulation / iq / startup carry no ``provenance_class`` key
+#: so their plan.json and record wording stay byte-identical (#553).
+CANONICAL_DUT = "sim/dut/bandgap_top.spice"
 BENCHES = ("psrr-dc", "line-regulation", "startup", "iq")
 #: Benches that characterize rather than verify: no ratified row, no spec
 #: check, never PASS/FAIL. Kept apart from BENCHES so nothing that grades
@@ -238,16 +243,6 @@ def expected_units(tb: dict, supplies: list[float | None]) -> list[list]:
     """[[process, supply|None, temp], ...] -- harness grid order."""
     names = [c.name for c in hc.resolve_corners(tb["corners"])]
     return [[n, s, float(t)] for n in names for t in tb["temperatures_c"] for s in supplies]
-
-
-def dut_provenance_class(dut_rel: str) -> str:
-    """``schematic`` / ``frozen schematic`` / ``extracted`` from the DUT path
-    (the rule `harness.testbench.Testbench.dut_provenance_class` applies)."""
-    if dut_rel.startswith("layout/"):
-        return "extracted"
-    if "/frozen/" in dut_rel:
-        return "frozen schematic"
-    return "schematic"
 
 
 def temp_tag(t: float) -> str:
@@ -642,6 +637,12 @@ def build_plan(bench: str, tb: dict, *, design_include: Path, dut: Path, tb_netl
         "supplies_v": vdds,
         "requests": requests,
     }
+    if not generic and load_spec is None and nspec is None and dut_rel != CANONICAL_DUT:
+        # psrr-dc / line-regulation / iq / startup with a supplied (non-canonical)
+        # DUT: state its class so the record no longer asserts `schematic` for an
+        # extracted or frozen netlist (#553). `startup` simulates its embedded
+        # schematic core rather than inlining the DUT, so it stays `schematic`.
+        plan["dut"]["provenance_class"] = "schematic" if embedded else dut_provenance_class(dut_rel)
     if load_spec is not None:
         plan["dut"]["provenance_class"] = dut_provenance_class(dut_rel)
         plan["scope"] = ("characterization-only: output-load sensitivity of the DUT named above; exploratory "
@@ -659,7 +660,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("bench", choices=SUPPORTED)
     ap.add_argument("outdir")
-    ap.add_argument("--dut", default="sim/dut/bandgap_top.spice",
+    ap.add_argument("--dut", default=CANONICAL_DUT,
                     help="DUT to inline (repo-relative), e.g. a regenerated extracted netlist under layout/")
     ap.add_argument("--klt-version", default=None,
                     help="record this as the submitting klt version instead of `klt --version` "
