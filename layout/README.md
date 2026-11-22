@@ -36,7 +36,10 @@ layout/
   common/
     report_id.py      shared <record-id> minting (_git/short_sha/record_id) for
                        run_drc.py, run_lvs.py, run_extract.py (#138)
+    klt_runner.py     shared klt lookup + fail-closed dual-format (--format
+                       json/text) invocation for the run_*.py scripts (#548)
     test_report_id.py  unit tests for report_id.py
+    test_klt_runner.py  unit tests for klt_runner.py
   drc/
     run_drc.py        reproducible klt drc invocation -> committed report
     fixtures/trivial_poly_res/   DRC bring-up proof fixture (#15)

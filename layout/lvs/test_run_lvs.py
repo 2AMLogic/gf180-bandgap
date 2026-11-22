@@ -77,10 +77,15 @@ class FakeKlt:
     ) + "\n"
 
     def __init__(self, repo_root: Path, *, netgen_missing: bool = False,
-                 netgen_status: str = "match") -> None:
+                 netgen_status: str = "match",
+                 lvs_text_rc: int | None = None) -> None:
         self.repo_root = repo_root
         self.netgen_missing = netgen_missing
         self.netgen_status = netgen_status
+        #: When set, every `klt lvs --format text` pass exits with this code
+        #: instead of the engine's own verdict code -- the #548 fail-closed
+        #: regression shape (json pass succeeds, text pass fails).
+        self.lvs_text_rc = lvs_text_rc
         self.calls: list[list[str]] = []
         self.requests: list[dict] = []
 
@@ -116,8 +121,11 @@ class FakeKlt:
                 argv, 0 if status == "match" else 3,
                 json.dumps(_lvs_payload(engine, status)), "",
             )
+        text_rc = self.lvs_text_rc if self.lvs_text_rc is not None else (
+            0 if status == "match" else 3
+        )
         return subprocess.CompletedProcess(
-            argv, 0 if status == "match" else 3, f"lvs {engine}: {status}\n", "",
+            argv, text_rc, f"lvs {engine}: {status}\n", "",
         )
 
 
@@ -210,12 +218,15 @@ class MainFlowTests(unittest.TestCase):
     def _run(self, extra_argv: list[str], fake: FakeKlt) -> tuple[int, str, str]:
         argv = ["run_lvs.py", str(self.gds), *extra_argv]
         out, err = io.StringIO(), io.StringIO()
+        # The klt lookup lives in layout/common/klt_runner.py (#548); patch the
+        # module-global shutil.which (not run_lvs's own binding, which the
+        # refactor removed) so every call site sees the stub.
         with mock.patch.object(run_lvs, "REPO_ROOT", self.repo_root), \
                 mock.patch.object(run_lvs, "REPORTS_ROOT", self.reports_root), \
                 mock.patch.object(run_lvs, "REFERENCE",
                                   self.repo_root / "layout/lvs/bandgap_top.ref.spice"), \
                 mock.patch.object(run_lvs.subprocess, "run", fake), \
-                mock.patch.object(run_lvs.shutil, "which", return_value="/usr/bin/klt"), \
+                mock.patch("shutil.which", return_value="/usr/bin/klt"), \
                 mock.patch.object(sys, "argv", argv), \
                 contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
             code = run_lvs.main()
@@ -302,6 +313,22 @@ class MainFlowTests(unittest.TestCase):
             {n.split(".", 1)[1] for n in self._report_names()},
             {"extract.json", "lvs-netgen-request.json"},
         )
+
+    def test_failing_text_pass_fails_closed_without_writing_reports(self) -> None:
+        """gf180-bandgap#548: a ``--format text`` failure after a successful
+        json pass must exit non-zero and leave *neither* report on disk.
+        Before #548 the text pass's exit code was never checked: this exact
+        scenario exited 0 and committed the text report beside a json report
+        the failing pass never truly produced."""
+        fake = FakeKlt(self.repo_root, lvs_text_rc=1)
+        code, out, err = self._run([], fake)
+        self.assertEqual(code, 1)
+        self.assertIn("klt lvs --engine klayout --format text failed (exit 1)", err)
+        self.assertEqual(
+            {n.split(".", 1)[1] for n in self._report_names()},
+            {"extract.json", "lvs-request.json"},
+        )
+        self.assertNotIn("lvs status", out)
 
     def test_missing_netgen_binary_aborts_a_both_run_after_klayout(self) -> None:
         fake = FakeKlt(self.repo_root, netgen_missing=True)

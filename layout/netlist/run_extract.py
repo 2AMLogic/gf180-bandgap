@@ -51,7 +51,6 @@ from __future__ import annotations
 import argparse
 import datetime as _dt
 import json
-import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -59,6 +58,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "layout" / "common"))
 
+import klt_runner  # noqa: E402
 import report_id  # noqa: E402
 
 REPORTS_ROOT = Path(__file__).resolve().parent / "reports"
@@ -79,14 +79,8 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    klt = shutil.which("klt")
+    klt = klt_runner.find_klt()
     if klt is None:
-        print(
-            "error: 'klt' not found on PATH. Install with:\n"
-            "  uv tool install klayout-tools==<pin in signoff/klt-pin.txt>\n"
-            "(see layout/README.md)",
-            file=sys.stderr,
-        )
         return 1
 
     gds_path = args.gds if args.gds.is_absolute() else (Path.cwd() / args.gds).resolve()

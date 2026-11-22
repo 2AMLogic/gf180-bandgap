@@ -89,12 +89,15 @@ layout/common/klayout_builder.py
 # distinguish a missing insert from a missing klayout -- plus the #507
 # via-landing guard, `base unittest` like test_klayout_builder: it also
 # imports klayout.db inside try/except and skips cleanly on a bare runner.
-EXPECTED_SITES=24
+# The 25th is #548's layout.common.test_klt_runner, registered with the same
+# own-directory insert pattern when the shared klt runner landed.
+EXPECTED_SITES=25
 SITES='
 base    unittest layout.bandgap_top.test_plan            layout/bandgap_top/test_plan.py
 base    unittest layout.bandgap_top.test_routing_budget  layout/bandgap_top/test_routing_budget.py
 base    unittest layout.bandgap_top.test_via_landing     layout/bandgap_top/test_via_landing.py
 base    unittest layout.common.test_klayout_builder      layout/common/test_klayout_builder.py
+base    unittest layout.common.test_klt_runner           layout/common/test_klt_runner.py
 base    unittest layout.common.test_report_id            layout/common/test_report_id.py
 base    unittest layout.erc.test_run_erc                 layout/erc/test_run_erc.py
 base    unittest layout.lvs.test_make_reference          layout/lvs/test_make_reference.py
