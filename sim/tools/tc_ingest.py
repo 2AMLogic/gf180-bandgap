@@ -255,7 +255,8 @@ def corner_id(process: str, vdd: float) -> str:
 
 
 def build_record(record, stamp, report, req, tb, expected, points, missing, failed, problems,
-                 verdict, dut_rel, dut_sha, tb_sha, deck_sha, issue, supersedes, note, git=None) -> str:
+                 verdict, dut_path, dut_rel, dut_sha, tb_sha, deck_sha, issue, supersedes, note,
+                 git=None) -> str:
     rows = verdict["rows"]
     env = report.get("environment", {})
     remote = env.get("remote", {}) or {}
@@ -270,11 +271,11 @@ def build_record(record, stamp, report, req, tb, expected, points, missing, fail
         + f" Evidence for issue #{issue} (DR-0007 retuning of canonical R2/R1): untrimmed (trim code 32)"
         " deterministic corner result, no Monte Carlo/mismatch claim (later suite child)."
         + ("" if overall != "INCOMPLETE" else " **INCOMPLETE -- see Result: missing/failed points; no verdict is claimed.**"))
-    # The class follows the DUT path (`--dut`), not a hard-coded `schematic`:
-    # an extracted or frozen `--dut` must report itself (#553). `dut_rel` here
-    # is the label main() built; strip a trailing ` @ <rev>` (from --dut-rev)
-    # so the class is read off the underlying path.
-    add(f"- **Netlist provenance**: {dut_provenance_class(dut_rel.rsplit(' @ ', 1)[0])} -- DUT `{dut_rel}` (sha256 `{dut_sha}`), "
+    # The class follows the DUT path (`--dut`), never the display label
+    # (#553, #555): `dut_rel` is what main() built for display (the path, a
+    # ` @ <rev>` suffix from --dut-rev, or free-form --dut-label prose), so
+    # classify `dut_path` and keep `dut_rel` purely as text.
+    add(f"- **Netlist provenance**: {dut_provenance_class(dut_path)} -- DUT `{dut_rel}` (sha256 `{dut_sha}`), "
         f"driven by `sim/output-voltage-tc/testbench/tb_output_voltage_tc.spice` (sha256 `{tb_sha}`); "
         f"frozen self-contained fleet deck sha256 `{deck_sha}` (`netlist-snapshots/{record}.spice`). "
         "The deck is frozen in the snapshot, so the result is reproducible from it regardless of tree state "
@@ -479,7 +480,8 @@ def main() -> int:
     dut_label = a.dut_label or (f"{a.dut} @ {a.dut_rev}" if a.dut_rev else a.dut)
     text = build_record(
         record, stamp, report, req, tb, expected, points, missing, failed, problems, verdict,
-        dut_label, dut_sha, fc.sha256_file(exp_dir / "testbench" / tb["netlist"]), fc.sha256_file(work / "body.spice"),
+        a.dut, dut_label, dut_sha, fc.sha256_file(exp_dir / "testbench" / tb["netlist"]),
+        fc.sha256_file(work / "body.spice"),
         a.issue, a.supersedes, a.note, git,
     )
     path = hreport.device_write_record(exp_dir / "records", record, text)
