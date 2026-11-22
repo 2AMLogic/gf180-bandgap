@@ -17,6 +17,7 @@ import tempfile
 import unittest
 from datetime import datetime
 from pathlib import Path
+from unittest import mock
 
 SIM = Path(__file__).resolve().parents[1]
 REPO = SIM.parent
@@ -1071,6 +1072,29 @@ class NoiseIngest(TmpCase):
         row = res["rows"][res["grid"][0]]
         self.assertEqual(row["spec"], {})  # no ratified threshold: nothing is graded as spec
         self.assertTrue(all(row["sanity"].values()))
+
+    def test_each_waveform_file_is_read_once(self):
+        """#545: the request loop read every output-noise waveform twice -- the
+        column reader whose value the noise/op_point branches discard, then the
+        document reader they actually use. One read per artifact must carry the
+        same clean assessment."""
+        f = self.fx("output-noise")
+        wave_paths = {Path(c["artifacts"]["waveform"]).resolve()
+                      for rep in f.reports.values() for c in rep["corners"]}
+        self.assertEqual(len(wave_paths), 243)  # 81 corners x 3 requests
+        reads = {}
+        real = Path.read_text
+
+        def counting(self, *args, **kwargs):
+            reads[self.resolve()] = reads.get(self.resolve(), 0) + 1
+            return real(self, *args, **kwargs)
+
+        with mock.patch.object(Path, "read_text", counting):
+            res = f.assess()
+        self.assertEqual({p: reads.get(p, 0) for p in sorted(wave_paths)}, {p: 1 for p in sorted(wave_paths)})
+        self.assertEqual(res["overall"], fi.MEASURED)
+        self.assertEqual(res["invalid"], {})
+        self.assertEqual(res["problems"], [])
 
     def test_corrected_conversions_scale_only(self):
         # Known-resistor values from the #252 unit probe: amplitude mode, so

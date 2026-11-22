@@ -685,14 +685,14 @@ def assess_bench(bench: str, tb: dict, plan: dict, reports: dict, work: Path, *,
             except Exception:
                 pass
         for k in list(p):
-            w = read_waveform_for(corners_of.get((r["name"], k)), work)
+            c = corners_of.get((r["name"], k))
             if r["role"] in ("ac", "sweep", "tran"):
-                waves[(r["name"], k)] = w
+                waves[(r["name"], k)] = read_waveform_for(c, work)
             elif r["role"] in ("noise", "op_point"):
-                docs[(r["name"], k)] = read_waveform_doc_for(corners_of.get((r["name"], k)), work)
+                docs[(r["name"], k)] = read_waveform_doc_for(c, work)
             elif r["role"] == "op":
                 try:
-                    p[k] = op_values(w, plan["supplies_v"])
+                    p[k] = op_values(read_waveform_for(c, work), plan["supplies_v"])
                 except ValueError as exc:
                     del p[k]
                     missing.append(((r["name"],) + k, f"operating-point companion unusable: {exc}"))
