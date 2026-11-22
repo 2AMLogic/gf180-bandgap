@@ -274,20 +274,22 @@ class Reconstruct(unittest.TestCase):
 
 
 class RecordProvenance(unittest.TestCase):
-    """`build_record` classifies the DUT off its path (#553), not a hard-coded
-    `schematic`: an extracted or frozen `--dut` must report itself, and a
-    ` @ <rev>` suffix (from --dut-rev) must not change the class."""
+    """`build_record` classifies the DUT off its path (#553, #555), not a
+    hard-coded `schematic` and not the display label: an extracted or frozen
+    `--dut` must report itself, and neither a ` @ <rev>` suffix (from
+    --dut-rev) nor a free-form `--dut-label` may change the class."""
 
     REQ = {"measurements": [{"name": n} for n in
                             ("vref_m40", "vref_27", "vref_125", "vref_box_min", "vref_box_max")],
            "corners": {"process": [{"name": "tt", "sections": ["tt"]}]}}
 
-    def record_text(self, dut_label):
+    def record_text(self, dut_path, dut_label=None):
         rep = report()
         pts, miss, fail, prob = ti.collect(rep, EXPECTED)
         verdict = ti.assess(pts, miss, fail, prob, TB)
         return ti.build_record("20261122-120000-abc1234", datetime(2026, 11, 22, 12, 0, 0), rep, self.REQ,
-                               TB, EXPECTED, pts, miss, fail, prob, verdict, dut_label,
+                               TB, EXPECTED, pts, miss, fail, prob, verdict, dut_path,
+                               dut_path if dut_label is None else dut_label,
                                "0" * 64, "0" * 64, "0" * 64, 209, None, None)
 
     def test_schematic_dut_is_unchanged(self):
@@ -297,7 +299,8 @@ class RecordProvenance(unittest.TestCase):
     def test_extracted_dut_says_extracted_with_and_without_a_rev_suffix(self):
         text = self.record_text("layout/netlist/bandgap_top_extracted.spice")
         self.assertIn("- **Netlist provenance**: extracted -- DUT `layout/netlist/bandgap_top_extracted.spice`", text)
-        text = self.record_text("layout/netlist/bandgap_top_extracted.spice @ 3803845f")
+        text = self.record_text("layout/netlist/bandgap_top_extracted.spice",
+                                "layout/netlist/bandgap_top_extracted.spice @ 3803845f")
         self.assertIn("- **Netlist provenance**: extracted -- "
                       "DUT `layout/netlist/bandgap_top_extracted.spice @ 3803845f`", text)
 
@@ -305,6 +308,28 @@ class RecordProvenance(unittest.TestCase):
         text = self.record_text("sim/dut/frozen/bandgap_amp-20260801-issue10.spice")
         self.assertIn("- **Netlist provenance**: frozen schematic -- "
                       "DUT `sim/dut/frozen/bandgap_amp-20260801-issue10.spice`", text)
+        text = self.record_text("sim/dut/frozen/bandgap_amp-20260801-issue10.spice",
+                                "sim/dut/frozen/bandgap_amp-20260801-issue10.spice @ 3803845f")
+        self.assertIn("- **Netlist provenance**: frozen schematic -- "
+                      "DUT `sim/dut/frozen/bandgap_amp-20260801-issue10.spice @ 3803845f`", text)
+
+    def test_prose_dut_label_cannot_override_the_class(self):
+        text = self.record_text("layout/netlist/bandgap_top_extracted.spice",
+                                "extracted netlist (rev X)")
+        self.assertIn("- **Netlist provenance**: extracted -- DUT `extracted netlist (rev X)`", text)
+        text = self.record_text("layout/netlist/bandgap_top_extracted.spice",
+                                "bandgap_top_extracted.spice (post-layout)")
+        self.assertIn("- **Netlist provenance**: extracted -- "
+                      "DUT `bandgap_top_extracted.spice (post-layout)`", text)
+
+    def test_schematic_dut_with_extracted_prose_label_stays_schematic(self):
+        text = self.record_text("sim/dut/bandgap_top.spice", "extracted netlist regenerated 2026-11-22")
+        self.assertIn("- **Netlist provenance**: schematic -- "
+                      "DUT `extracted netlist regenerated 2026-11-22`", text)
+
+    def test_prose_label_containing_rev_separator_is_display_only(self):
+        text = self.record_text("sim/dut/bandgap_top.spice", "retune baseline @ 3803845f")
+        self.assertIn("- **Netlist provenance**: schematic -- DUT `retune baseline @ 3803845f`", text)
 
 
 if __name__ == "__main__":
