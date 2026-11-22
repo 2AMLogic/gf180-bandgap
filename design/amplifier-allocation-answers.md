@@ -22,7 +22,7 @@ in this slot must meet the Q4 input-offset allocation for the untrimmed budget.
 |---|---|---|---|
 | Input-referred random offset | **0.5319 mV (3σ)** (σ = 0.1773 mV) | budget figure, historical schematic | `design/bandgap_error_budget.md` §2.2 (post-#151) |
 | At VREF | **8.58 mV (3σ)** = 0.5319 mV × 16.13 V/V | same | §2.2, §2.7b `#151` column — the budget table in force |
-| Systematic reserve | **+2.00 mV** (3σ-equivalent, unverified placeholder) | same | §2.3 |
+| Systematic reserve | **+2.00 mV at VREF** (3σ-equivalent, unverified placeholder; input-referred equivalent ≈ 0.124 mV at 16.13 V/V) | same | §2.3 — reserve stated at Vref, added linearly after the random RSS |
 | Offset-to-VREF gain (DC) | **16.13 V/V** mean, 16.02–16.21 over 81 PVT corners | **historical DUT** (clean run, #42-era core) | §2.4; record `sim/amp-offset-sensitivity/records/20260801-073817-a7fd16a.md` (mean 16.1293) |
 | Later gain re-run | 16.0979 V/V mean, 16.0473–16.1354, 81 corners | **historical DUT**, dirty working tree | record `sim/amp-offset-sensitivity/records/20260816-183233-0acc856.md` (#151 mirror sizing; flags itself "not citable as a clean-tree result") |
 | ±0.5 % trimmed budget | **not budgeted** | — | `design/bandgap_error_budget.md` allocates the untrimmed ±2 % budget only |

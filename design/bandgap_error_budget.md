@@ -377,11 +377,16 @@ a deliberate interdigitated common-centroid *pair* of separate instances —
 #16's job, not credited here). `sigma_M1M2` above uses the full drawn gate
 area (W×L = 800 µm²) as a single device, with no √nf bonus assumed.
 
-### 2.3 Input-referred offset — systematic component
+### 2.3 Systematic offset — reserve stated at Vref (3σ-equivalent)
 
-Not independently simulated (no layout exists yet — #16). A conservative
-**2 mV (3σ-equivalent) reserve** is carried for this line pending #16's
-common-centroid layout and post-layout extracted verification. It is
+Not independently simulated (no layout exists yet — #16): this reserve is
+an **unverified placeholder**. A conservative **2.00 mV (3σ-equivalent)
+reserve at Vref** is carried for this line pending #16's common-centroid
+layout and post-layout extracted verification — in the Vref domain the
+Section 2.7 budget tables carry it in (the "3σ contribution to Vref"
+column, added linearly after the random RSS). Its input-referred
+equivalent, at Section 2.4's mean offset-to-Vref sensitivity of 16.13 V/V,
+is **≈ 0.124 mV** at the amplifier input (2.00 mV / 16.13 V/V). It is
 carried at #10's value deliberately, even though #42's PMOS cascode removes
 the one systematic mirror term that *was* identifiable at schematic level
 (the `Vsd(M3) ≠ Vsd(M4)` mirror-ratio error, now 4 µV — Section 2.1): the
@@ -747,7 +752,7 @@ Three things this table settles that were previously open:
 | Resistor mismatch (R1, R2, independent) | 3.92 mV | 3.92 mV | 3.92 mV | Section 2.5 — **assumed** coefficient, PDK cannot verify |
 | PNP mismatch (Q1/Q2 pair) | 2.06 mV | 2.06 mV | 2.06 mV | Section 2.6 — record `20260731-040850-187a336` |
 | **RSS of random terms** | 31.80 mV | 23.53 mV | **15.19 mV** | `sqrt(13.06^2 + 6.36^2 + 3.92^2 + 2.06^2)` |
-| Amplifier offset, systematic (reserve, unverified) | +2.00 mV | +2.00 mV | +2.00 mV | Section 2.3 — placeholder pending #16 layout |
+| Amplifier offset, systematic (reserve, unverified) | +2.00 mV | +2.00 mV | +2.00 mV | Section 2.3 — reserve stated at Vref (3σ-equivalent), unverified placeholder pending #16 layout |
 | **Total (RSS random + systematic reserve)** | 33.80 mV | 25.53 mV | **17.19 mV** | |
 | **Ratified untrimmed target (3σ)** | 24.0 mV (±2 % of 1.20 V) | 24.0 mV | 24.0 mV | `README.md`, DR-0003 |
 | **Margin** | −41 % (over) | −6 % (over) | **+40 % (72 % of budget used)** | |
@@ -762,7 +767,7 @@ Three things this table settles that were previously open:
 | Resistor mismatch (R1, R2, trim ladder) | 3.92 mV | 3.92 mV | Section 2.5 — **assumed** coefficient, unchanged (no resistor geometry moved) |
 | PNP mismatch (Q1/Q2 pair) | 2.06 mV | 2.06 mV | Section 2.6 — unchanged |
 | **RSS of random terms** | **16.26 mV** | **12.19 mV** | |
-| Amplifier offset, systematic (reserve) | +2.00 mV | +2.00 mV | Section 2.3 — unchanged placeholder pending #16 |
+| Amplifier offset, systematic (reserve) | +2.00 mV | +2.00 mV | Section 2.3 — unchanged, reserve stated at Vref (3σ-equivalent), unverified placeholder pending #16 |
 | **Total** | **18.26 mV** | **14.19 mV** | |
 | **Measured** (`mm_all` 3σ, −40/27/125 °C) | 15.56 / 15.70 / 16.13 mV | **11.85 / 12.03 / 12.54 mV** | `sim/mc-untrimmed/` records [`20260807-204001-1c8f58d`](../sim/mc-untrimmed/records/20260807-204001-1c8f58d.md) → [`20260816-142716-1ca1c95`](../sim/mc-untrimmed/records/20260816-142716-1ca1c95.md) |
 | **Ratified untrimmed target (3σ)** | 24.0 mV | 24.0 mV | `README.md`, DR-0003 |
@@ -801,7 +806,7 @@ The amplifier's own random offset is again the largest single term (13.06 of
 | Resistor mismatch (R1, R2, trim ladder) | 3.92 mV | 3.92 mV | Section 2.5 — unchanged |
 | PNP mismatch (Q1/Q2 pair) | 2.06 mV | 2.06 mV | Section 2.6 — unchanged |
 | **RSS of random terms** | **12.19 mV** | **11.42 mV** | |
-| Amplifier offset, systematic (reserve) | +2.00 mV | +2.00 mV | Section 2.3 — unchanged placeholder pending #16 |
+| Amplifier offset, systematic (reserve) | +2.00 mV | +2.00 mV | Section 2.3 — unchanged, reserve stated at Vref (3σ-equivalent), unverified placeholder pending #16 |
 | **Total** | **14.19 mV** | **13.42 mV** | |
 | **Measured** (`mm_all` 3σ, −40/27/125 °C) | 11.85 / 12.03 / 12.54 mV | **10.64 / 10.83 / 11.28 mV** | `sim/mc-untrimmed/` records [`20260816-142716-1ca1c95`](../sim/mc-untrimmed/records/20260816-142716-1ca1c95.md) → [`20260816-183305-0acc856`](../sim/mc-untrimmed/records/20260816-183305-0acc856.md) |
 | **Ratified untrimmed target (3σ)** | 24.0 mV | 24.0 mV | `README.md`, DR-0003 |
