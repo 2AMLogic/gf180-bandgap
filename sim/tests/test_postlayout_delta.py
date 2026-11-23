@@ -171,25 +171,63 @@ class DeltaTests(unittest.TestCase):
         self.assertEqual(pld._delta(2.5, 0.0), "+2.5")
 
 
-class VerdictTests(unittest.TestCase):
-    def test_pass_then_fail_transition(self) -> None:
-        line = spec_line("Output reference")
-        good = make_record({"a": {"vref": 1.2}, "b": {"vref": 1.19}}, "schematic")
-        bad = make_record({"a": {"vref": 1.2}, "b": {"vref": 1.17}}, "extracted")
-        self.assertEqual(pld.verdict(good, line), "PASS")
-        self.assertEqual(pld.verdict(bad, line), "FAIL")
+class CoverageTests(unittest.TestCase):
+    """Missing measurements read NO DATA, never PASS (#535).
 
-    def test_max_limit_failure(self) -> None:
-        line = spec_line("Temp coefficient (-40..125 degC)")
-        self.assertEqual(pld.verdict(make_record({"a": {"tc_ppm": 50.0}}, "s"), line), "PASS")
-        self.assertEqual(pld.verdict(make_record({"a": {"tc_ppm": 50.1}}, "s"), line), "FAIL")
+    Each side's verdict comes from the suite evaluator
+    (``sim/suite/analysis.py:evaluate_line``), judged over the corners
+    present in that side's record: a limit missing at any corner would be a
+    claim about an unmeasured corner, so the side reads NO DATA. These pin
+    that rule -- and the dashes that keep an unmeasured row visible --
+    through ``render()``.
+    """
 
-    def test_worst_picks_furthest_into_violation(self) -> None:
-        rec = make_record({"a": {"vref": 1.2}, "b": {"vref": 1.19}}, "s")
-        lo, hi = spec_line("Output reference").limits
-        self.assertEqual(pld.worst(rec, lo), ("b", 1.19))
-        self.assertEqual(pld.worst(rec, hi), ("a", 1.2))
-        self.assertIsNone(pld.worst(make_record({"a": {}}, "s"), lo))
+    def render(self, schematic: dict, extracted: dict) -> str:
+        pair = {
+            SLUG: (
+                make_record(schematic, "schematic"),
+                make_record(extracted, "extracted"),
+            )
+        }
+        with mock.patch.object(
+            pld.harness_report, "_git", side_effect=lambda *a, **k: "fixed-" + a[-1]
+        ):
+            return pld.render(pair, "")
+
+    def vref_row(self, text: str, bound: str) -> str:
+        return next(
+            line
+            for line in text.splitlines()
+            if line.startswith("| Output reference |") and f"`vref {bound}" in line
+        )
+
+    def test_partial_record_reads_no_data_not_pass(self) -> None:
+        """#535's reproduction: the old local verdict said PASS/PASS here."""
+        text = self.render(
+            {"c1": {"vref": 1.20}, "c2": {"vref": 1.21}},
+            {"c1": {"vref": 1.20}, "c2": {}},
+        )
+        row = self.vref_row(text, ">= 1.176 V")
+        self.assertTrue(row.endswith("| PASS | **NO DATA** |"), row)
+        # the measured corner still names its worst, and the row stays visible
+        self.assertIn("1.2 (`c1`) | 1.2 (`c1`)", row)
+
+    def test_absent_on_entire_side_keeps_row_visible_with_dashes(self) -> None:
+        text = self.render({"c1": {"vref": 1.20}}, {"c1": {}})
+        rows = [line for line in text.splitlines() if line.startswith("| Output reference |")]
+        self.assertEqual(len(rows), 2)  # both vref limits stay visible
+        for row in rows:
+            self.assertTrue(row.endswith("| PASS | **NO DATA** |"), row)
+        self.assertIn("1.2 (`c1`) | — | —", rows[0])
+
+    def test_measured_violation_fails_even_with_a_missing_corner(self) -> None:
+        text = self.render(
+            {"c1": {"vref": 1.20}},
+            {"c1": {"vref": 1.17}, "c2": {}},
+        )
+        row = self.vref_row(text, ">= 1.176 V")
+        self.assertTrue(row.endswith("| PASS | **FAIL** |"), row)
+        self.assertIn("1.17 (`c1`)", row)
 
 
 class RenderTests(unittest.TestCase):
