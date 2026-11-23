@@ -88,7 +88,7 @@ collect() {
   done < <(git ls-files -z -- "$1" ':!:.loom/**' ':!:.claude/**' ':!:loom.sh')
 }
 
-echo "== 1/10 shellcheck (shell scripts) =="
+echo "== 1/11 shellcheck (shell scripts) =="
 collect '*.sh'
 if [ "${#files[@]}" -eq 0 ]; then
   echo "no shell scripts tracked"
@@ -106,7 +106,7 @@ else
 fi
 
 echo
-echo "== 2/10 python syntax =="
+echo "== 2/11 python syntax =="
 collect '*.py'
 if [ "${#files[@]}" -eq 0 ]; then
   echo "no python files tracked"
@@ -121,7 +121,7 @@ else
 fi
 
 echo
-echo "== 3/10 json well-formedness =="
+echo "== 3/11 json well-formedness =="
 collect '*.json'
 if [ "${#files[@]}" -eq 0 ]; then
   echo "no json files tracked"
@@ -150,7 +150,7 @@ sys.exit(1 if bad else 0)
 fi
 
 echo
-echo "== 4/10 evidence records (sim/*/records) =="
+echo "== 4/11 evidence records (sim/*/records) =="
 # The schema in sim/README.md -- nine required fields, <record-id> naming, the
 # corner-id grammar, and the append-only rule -- enforced instead of merely
 # documented. Tracked files only, same as collect() above; the append-only half
@@ -162,7 +162,7 @@ if ! python3 sim/check_records.py ${EVIDENCE_ARGS[@]+"${EVIDENCE_ARGS[@]}"}; the
 fi
 
 echo
-echo "== 5/10 DUT freshness (sim/dut/bandgap_top.spice) =="
+echo "== 5/11 DUT freshness (sim/dut/bandgap_top.spice) =="
 # sim/dut/bandgap_top.spice is generated from design/netlist/bandgap_top.spice
 # (sim/dut/README.md) and every spec-line bench simulates it via each tb.json's
 # "dut" key. Nothing else re-derives it, so a schematic edit that lands
@@ -181,7 +181,27 @@ else
 fi
 
 echo
-echo "== 6/10 T1 signoff manifest (signoff/) =="
+echo "== 6/11 block netlists vs top export (design/netlist/) =="
+# The four per-block exports (bandgap_{core,amp,startup,trim}.spice) are read
+# by reviewers and cited as provenance by sim/*/netlist-snapshots/, but only
+# bandgap_top.spice feeds the benches (step 5) -- so nothing regenerated the
+# blocks, and bandgap_core.spice drifted ten device statements away from the
+# schematic (#475). This step compares each block's cell against the
+# same-named .subckt in the top export, committed files alone (no xschem, no
+# PDK). A drifted block is regenerated with:
+#   klt netlist design/bandgap_<block>.sch -o design/netlist/bandgap_<block>.spice \
+#     --rcfile design/xschemrc --relative-paths
+if [ -f design/netlist/bandgap_top.spice ]; then
+  if ! python3 sim/tools/check_block_netlists.py; then
+    echo "FAIL: a block netlist disagrees with design/netlist/bandgap_top.spice"
+    status=1
+  fi
+else
+  echo "SKIP: design/netlist/bandgap_top.spice not present"
+fi
+
+echo
+echo "== 7/11 T1 signoff manifest (signoff/) =="
 # signoff/block-manifest.json is what `klt signoff --manifest` grades, and
 # signoff/reports/<record-id>.signoff.json is the committed verdict of record
 # (signoff/README.md). Both are static, so both rot: a pinned content_hash
@@ -196,7 +216,7 @@ if ! python3 signoff/check_signoff.py; then
 fi
 
 echo
-echo "== 7/10 decision records (spec/decision-records) =="
+echo "== 8/11 decision records (spec/decision-records) =="
 # Status vocabulary, README index consistency, and immutability of records
 # ratified on the merge base (spec/README.md). Same --require-append-only
 # semantics as step 4.
@@ -206,7 +226,7 @@ if ! python3 spec/check_decision_records.py ${EVIDENCE_ARGS[@]+"${EVIDENCE_ARGS[
 fi
 
 echo
-echo "== 8/10 spec limits vs README (sim/suite/spec.py) =="
+echo "== 9/11 spec limits vs README (sim/suite/spec.py) =="
 # spec.py claims its limits are the ratified README numbers; its only other
 # drift guard compares it to the tb.json copies (also under sim/). This parses
 # the README Target specification table and fails on any disagreement (#262).
@@ -216,7 +236,7 @@ if ! python3 sim/check_spec_limits.py; then
 fi
 
 echo
-echo "== 9/10 testbench manifests load (sim/run_corners.py --list) =="
+echo "== 10/11 testbench manifests load (sim/run_corners.py --list) =="
 # `--list` deliberately keeps listing after a bad manifest, printing `!!`
 # instead of exiting non-zero, so grep for that marker: a malformed tb.json
 # must fail the PR (and `npm run check:ci`), not surface at simulation time.
@@ -234,7 +254,7 @@ else
 fi
 
 echo
-echo "== 10/10 artifact-store manifests (manifests/artifacts) =="
+echo "== 11/11 artifact-store manifests (manifests/artifacts) =="
 # New sim evidence is manifest-forward (sim/harness/evidence_store.py): the raw
 # bytes live in the artifact store and git carries only the manifest. Fails on
 # a bad schema, a non-`artifact:` URI, or stored bytes that are also tracked.
