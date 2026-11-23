@@ -16,7 +16,7 @@
 #
 # What is pinned here:
 #   - both empty spellings exit 1 with the non-empty-value message, before
-#     any check runs (stdout carries no `== N/10` banner);
+#     any check runs (stdout carries no `== <step>/<total>` banner);
 #   - the pre-existing missing-value error (`--base-ref` as the last
 #     argument) still fires;
 #   - a non-empty value is forwarded to the evidence gate, pinned by the
@@ -112,7 +112,7 @@ check_forwarded '--base-ref=HEAD' --base-ref=HEAD
 run_lint --base-ref " "
 if grep -q 'needs a non-empty value' "${err}"; then
   fail '--base-ref " ": rejected as empty -- a whitespace-only value is non-empty; the gate it reaches decides, not the parser'
-elif ! grep -q '^== 1/10' "${out}"; then
+elif ! grep -Eq '^== 1/[0-9]+ shellcheck ' "${out}"; then
   fail '--base-ref " ": checks did not run'
 else
   echo '   ok --base-ref " ": accepted by the parser, checks ran'
