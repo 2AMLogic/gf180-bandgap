@@ -61,7 +61,9 @@ Trim-ladder switch resistors are included in the reference stack.
 
 `python3 sim/tools/check_embedded_cores.py` now covers 10 benches (the six
 from #227 plus these four) and additionally asserts the startup-instance
-presence per bench (enabled: present; disabled control: absent).
+presence per bench (enabled: present; disabled control: absent). It also
+sha256-compares the fast- and slow-ramp decks byte-for-byte (#477), so their
+declared identity is enforced rather than remembered.
 `sim/tests/test_embedded_cores.py` proves it fails on a deliberately stale Q2,
 stale R2 and a pasted 446u R1 in each of the four startup benches, and that
 the topology flag matches. Result: 10/10 in sync; unit tests pass.

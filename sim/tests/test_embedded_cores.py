@@ -89,6 +89,21 @@ class EmbeddedCores(unittest.TestCase):
         errs = chk.check_core(bench(rel), CANON, "explicit")
         self.assertTrue(any("realization" in e for e in errs))
 
+    def test_startup_deck_pair_byte_identical(self):
+        a_rel, b_rel = chk.IDENTICAL_DECK_PAIR
+        self.assertEqual(chk.check_identical((REPO / a_rel).read_bytes(),
+                                             (REPO / b_rel).read_bytes()), [])
+
+    def test_startup_deck_pair_one_byte_divergence_detected(self):
+        a_rel, b_rel = chk.IDENTICAL_DECK_PAIR
+        a = (REPO / a_rel).read_bytes()
+        b = (REPO / b_rel).read_bytes()
+        drifted = b[:100] + bytes([b[100] ^ 0x01]) + b[101:]
+        self.assertNotEqual(drifted, b)
+        errs = chk.check_identical(a, drifted)
+        self.assertTrue(errs)
+        self.assertIn("sha256", errs[0])
+
 
 if __name__ == "__main__":
     unittest.main()

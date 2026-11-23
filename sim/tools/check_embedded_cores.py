@@ -20,11 +20,16 @@ against sim/dut/bandgap_top.spice:
 
 Pure text, stdlib only, no PDK or ngspice. Exit 0 = in sync.
 
+Also enforces the declared byte-identity of the two startup ramp decks
+(fast vs slow ramp share one deck verbatim; only tb.json params differ,
+#477) — see IDENTICAL_DECK_PAIR.
+
     python3 sim/tools/check_embedded_cores.py
 """
 
 from __future__ import annotations
 
+import hashlib
 import re
 import sys
 from pathlib import Path
@@ -61,6 +66,14 @@ STARTUP_INSTANCE = {
     "sim/startup-state-search/testbench/bandgap_startup_state_search.spice": True,
     "sim/startup-disabled-control/testbench/bandgap_startup_disabled.spice": False,
 }
+
+#: Decks declared byte-identical by their own header (~line 75): the fast and
+#: slow startup ramps differ only through tb.json params, so silent drift here
+#: would make the two experiments' records non-comparable (#477).
+IDENTICAL_DECK_PAIR = (
+    "sim/startup/testbench/bandgap_startup_ramp.spice",
+    "sim/startup-slow-ramp/testbench/bandgap_startup_ramp.spice",
+)
 
 
 def has_startup_instance(text: str) -> bool:
@@ -146,6 +159,19 @@ def check_core(text: str, canon: dict, expected_real: str, lumped_len: str = LUM
     return errs
 
 
+def check_identical(a: bytes, b: bytes) -> list[str]:
+    """Return human-readable mismatches (empty = byte-identical) for a deck
+    pair declared identical (see IDENTICAL_DECK_PAIR)."""
+    ha = hashlib.sha256(a).hexdigest()
+    hb = hashlib.sha256(b).hexdigest()
+    if ha != hb:
+        return [
+            f"sha256 {ha} != {hb} — declared byte-identical pair has drifted; "
+            "the decks must be edited together (only tb.json params may differ)"
+        ]
+    return []
+
+
 def main() -> int:
     canon = parse_core(CANONICAL.read_text())
     failed = 0
@@ -159,8 +185,14 @@ def main() -> int:
         for e in errs:
             print(f"        - {e}")
         failed += bool(errs)
+    a_rel, b_rel = IDENTICAL_DECK_PAIR
+    ident_errs = check_identical((REPO / a_rel).read_bytes(), (REPO / b_rel).read_bytes())
+    status = "ok" if not ident_errs else "STALE"
+    print(f"{status:5s} {a_rel} == {b_rel}")
+    for e in ident_errs:
+        print(f"        - {e}")
     print(f"{len(BENCHES) - failed}/{len(BENCHES)} embedded cores in sync with {CANONICAL.relative_to(REPO)}")
-    return 1 if failed else 0
+    return 1 if (failed or ident_errs) else 0
 
 
 if __name__ == "__main__":
