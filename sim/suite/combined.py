@@ -1563,12 +1563,12 @@ def main(argv: list[str] | None = None) -> int:
     print(text)
 
     if not args.no_write:
-        REPORT_DIR.mkdir(parents=True, exist_ok=True)
-        name = f"{started.strftime('%Y%m%d-%H%M%S')}-{git.get('short', 'unknown')}.md"
-        path = REPORT_DIR / name
-        if path.exists():  # pragma: no cover - same second, same commit
-            path = REPORT_DIR / f"{path.stem}-1.md"
-        path.write_text(text)
+        path = harness_report.write_markdown_report(
+            REPORT_DIR,
+            f"{started.strftime('%Y%m%d-%H%M%S')}-{git.get('short', 'unknown')}",
+            text,
+            "combined report",
+        )
         print(f"report written to {path.relative_to(REPO_ROOT)}")
 
     if combined.status == "PASS":
