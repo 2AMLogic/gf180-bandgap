@@ -389,7 +389,13 @@ class ReviewGaps(unittest.TestCase):
             proc = subprocess.run(
                 ["bash", str(root / ".github" / "scripts" / "lint.sh"), "--base-ref", "HEAD"],
                 cwd=root, capture_output=True, text=True, timeout=120)
-        step6 = proc.stdout.split("== 6/11", 1)[1].split("== 7/11", 1)[0]
+        # Anchor on the step name, not its index/total, so adding a lint step
+        # does not break this test.
+        m = re.search(
+            r"^== \d+/\d+ block netlists vs top export.*?(?=^== \d+/\d+ |\Z)",
+            proc.stdout, re.M | re.S)
+        self.assertIsNotNone(m, proc.stdout)
+        step6 = m.group(0)
         self.assertIn("FAIL: design/netlist/bandgap_top.spice not present", step6)
         self.assertNotEqual(proc.returncode, 0)
         self.assertNotIn("PASS: lint clean", proc.stdout)
