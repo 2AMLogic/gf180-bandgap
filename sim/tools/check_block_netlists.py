@@ -13,8 +13,10 @@ failure, comparing -- from the committed files alone, no xschem, no PDK:
 
   * each block export exists and carries its own cell.  xschem comments the
     netlisted-top wrapper to ``**.subckt``/``**.ends`` (the same form
-    mk_dut.py uncomments), so both the wrapper and a plain ``.subckt``
-    count as a cell;
+    mk_dut.py uncomments); only the file's *own* top cell may use that form
+    -- every other (expanded) definition must have active ``.subckt``/
+    ``.ends`` lines, and a cell left open at end of input is an error.
+    bandgap_core.spice must carry its expanded bandgap_trim;
   * the ordered pin list matches the same-named ``.subckt`` in the top
     export;
   * the ordered device statements match once ``+`` continuation lines are
@@ -55,7 +57,66 @@ COMMENTED_WRAPPER_RE = re.compile(r"^\*\*(\.(?:subckt|ends)\b.*)$", re.IGNORECAS
 SUBCKT_RE = re.compile(r"^\.subckt\s+(\S+)\s*(.*)$", re.IGNORECASE)
 ENDS_RE = re.compile(r"^\.ends\b", re.IGNORECASE)
 PARAM_RE = re.compile(r"^\.param\b\s*(.*)$", re.IGNORECASE)
-ASSIGN_RE = re.compile(r"([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(\S+)")
+ASSIGN_NAME_RE = re.compile(r"\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*")
+
+#: Cells an export must carry besides its own (xschem expands them in place).
+EXPANDED = {"core": ("bandgap_trim",)}
+
+
+def strip_inline_comment(line: str) -> str:
+    """Drop a SPICE ``$`` end-of-line comment (outside quotes and braces)."""
+    quote = ""
+    depth = 0
+    for i, ch in enumerate(line):
+        if quote:
+            if ch == quote:
+                quote = ""
+        elif ch in "'\"":
+            quote = ch
+        elif ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth = max(depth - 1, 0)
+        elif ch == "$" and depth == 0 and (i == 0 or line[i - 1].isspace()):
+            return line[:i].rstrip()
+    return line
+
+
+def parse_assigns(text: str) -> dict[str, str] | None:
+    """``name=value`` pairs; a value is kept through its closing delimiter
+    (``{...}``, ``'...'``, ``"..."`` or a bare token).  None = unparsable."""
+    out: dict[str, str] = {}
+    pos = 0
+    while pos < len(text) and text[pos:].strip():
+        m = ASSIGN_NAME_RE.match(text, pos)
+        if not m:
+            return None
+        pos = m.end()
+        if pos >= len(text):
+            return None
+        opener = text[pos]
+        if opener in "'\"":
+            end = text.find(opener, pos + 1)
+            if end < 0:
+                return None
+            end += 1
+        elif opener == "{":
+            depth = 0
+            end = pos
+            while end < len(text):
+                depth += (text[end] == "{") - (text[end] == "}")
+                end += 1
+                if depth == 0:
+                    break
+            if depth != 0:
+                return None
+        else:
+            end = pos
+            while end < len(text) and not text[end].isspace():
+                end += 1
+        out[m.group(1)] = " ".join(text[pos:end].split())
+        pos = end
+    return out
 
 
 class Cell:
@@ -74,24 +135,30 @@ class Cell:
         return merged
 
 
-def parse_export(text: str) -> tuple[dict[str, Cell], dict[str, str], list[str]]:
+def parse_export(text: str, own: str | None = None
+                 ) -> tuple[dict[str, Cell], dict[str, str], list[str]]:
     """Parse one xschem export into ``(cells, file_params, problems)``.
+
+    ``own`` names the file's own top cell: only its ``**.subckt``/``**.ends``
+    wrapper is a boundary; any other commented boundary is a plain comment,
+    so a definition that lost its active lines is seen as missing.
 
     ``cells`` is insertion-ordered (file order).  ``file_params`` are the
     ``.param`` assignments outside any cell -- xschem hoists the netlisted
     top's architecture code there (the standalone trim's trim_code default).
     ``problems`` are structural failures in their own right: an orphan
     continuation, a device outside any cell, nested or unbalanced subckts,
-    duplicate cell names.
+    duplicate cell names, a cell still open at end of input.
     """
     cells: dict[str, Cell] = {}
     file_params: dict[str, str] = {}
     problems: list[str] = []
     current: Cell | None = None
+    current_wrapper = False
     logical: list[tuple[int, str]] = []
 
     for lineno, raw in enumerate(text.splitlines(), start=1):
-        line = raw.strip()
+        line = strip_inline_comment(raw.strip())
         if not line:
             continue
         if line.startswith("+"):
@@ -102,12 +169,21 @@ def parse_export(text: str) -> tuple[dict[str, Cell], dict[str, str], list[str]]
             continue
         wrapper = COMMENTED_WRAPPER_RE.match(line)
         if wrapper:
-            line = wrapper.group(1).strip()
-        elif line.startswith("*"):
+            inner = wrapper.group(1).strip()
+            sub = SUBCKT_RE.match(inner)
+            if sub and sub.group(1) == own:
+                logical.append((lineno, "\0W" + inner))  # own wrapper open
+            elif ENDS_RE.match(inner):
+                logical.append((lineno, "\0W" + inner))  # judged in context
+            continue  # any other commented boundary is just a comment
+        if line.startswith("*"):
             continue  # any other comment: dropped, never compared
         logical.append((lineno, line))
 
     for lineno, stmt in logical:
+        wrapped = stmt.startswith("\0W")
+        if wrapped:
+            stmt = stmt[2:]
         subckt = SUBCKT_RE.match(stmt)
         if subckt:
             name = subckt.group(1)
@@ -118,16 +194,26 @@ def parse_export(text: str) -> tuple[dict[str, Cell], dict[str, str], list[str]]
                 problems.append(f"line {lineno}: duplicate .subckt {name}")
                 continue
             current = Cell(name, subckt.group(2).split())
+            current_wrapper = wrapped
             cells[name] = current
             continue
         if ENDS_RE.match(stmt):
             if current is None:
-                problems.append(f"line {lineno}: .ends with no open .subckt")
-            current = None
+                if not wrapped:
+                    problems.append(f"line {lineno}: .ends with no open .subckt")
+            elif wrapped != current_wrapper:
+                problems.append(
+                    f"line {lineno}: {'commented' if wrapped else 'active'} .ends closes "
+                    f"{'an active' if wrapped else 'the commented'} .subckt {current.name}")
+                current = None
+            else:
+                current = None
+            continue
+        if wrapped:
             continue
         param = PARAM_RE.match(stmt)
         if param:
-            assigns = dict(ASSIGN_RE.findall(param.group(1)))
+            assigns = parse_assigns(param.group(1))
             if not assigns:
                 problems.append(f"line {lineno}: unparsable .param: {stmt[:60]}")
                 continue
@@ -142,6 +228,8 @@ def parse_export(text: str) -> tuple[dict[str, Cell], dict[str, str], list[str]]
             problems.append(f"line {lineno}: device outside any cell: {stmt[:60]}")
             continue
         current.devices.append(tuple(stmt.split()))
+    if current is not None:
+        problems.append(f"end of input: .subckt {current.name} never closed")
     return cells, file_params, problems
 
 
@@ -196,11 +284,14 @@ def check_export(top: Path, top_cells: dict[str, Cell], top_file_params: dict[st
     rel = _rel(export)
     if not export.is_file():
         return [f"{rel}: block export missing"]
-    cells, file_params, problems = parse_export(export.read_text())
-    errs = [f"{rel}: {p}" for p in problems]
     expected = f"bandgap_{block}"
+    cells, file_params, problems = parse_export(export.read_text(), own=expected)
+    errs = [f"{rel}: {p}" for p in problems]
     if expected not in cells:
         errs.append(f"{rel}: no {expected} cell ({expected} wrapper) in this export")
+    for extra in EXPANDED.get(block, ()):
+        if extra not in cells:
+            errs.append(f"{rel}: no expanded {extra} definition in this export")
     for name, cell in cells.items():
         top_cell = top_cells.get(name)
         if top_cell is None:
@@ -218,7 +309,7 @@ def check(top: Path, export_dir: Path, blocks: tuple[str, ...] = BLOCKS) -> list
     """All errors across every block export (empty = everything in sync)."""
     if not top.is_file():
         return [f"{_rel(top)}: top export missing"]
-    top_cells, top_file_params, problems = parse_export(top.read_text())
+    top_cells, top_file_params, problems = parse_export(top.read_text(), own="bandgap_top")
     errs = [f"{_rel(top)}: {p}" for p in problems]
     for block in blocks:
         export = export_dir / f"bandgap_{block}.spice"
@@ -228,7 +319,10 @@ def check(top: Path, export_dir: Path, blocks: tuple[str, ...] = BLOCKS) -> list
 
 def main() -> int:
     top = TOP_DEFAULT
-    top_cells, top_file_params, problems = parse_export(top.read_text())
+    if not top.is_file():
+        print(f"FAIL: {_rel(top)}: top export missing")
+        return 1
+    top_cells, top_file_params, problems = parse_export(top.read_text(), own="bandgap_top")
     status = 0
     for block in BLOCKS:
         export = EXPORT_DIR_DEFAULT / f"bandgap_{block}.spice"

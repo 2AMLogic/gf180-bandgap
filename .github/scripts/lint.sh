@@ -197,7 +197,8 @@ if [ -f design/netlist/bandgap_top.spice ]; then
     status=1
   fi
 else
-  echo "SKIP: design/netlist/bandgap_top.spice not present"
+  echo "FAIL: design/netlist/bandgap_top.spice not present -- the canonical export every block is compared against"
+  status=1
 fi
 
 echo

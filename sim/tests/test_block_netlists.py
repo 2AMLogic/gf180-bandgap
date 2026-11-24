@@ -7,6 +7,8 @@
 from __future__ import annotations
 
 import re
+import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -151,7 +153,7 @@ def flagged(errors: list[str], needle: str) -> list[str]:
 
 class Parse(unittest.TestCase):
     def test_continuation_joined_and_comments_dropped(self):
-        cells, file_params, problems = cbn.parse_export(SYN_CORE)
+        cells, file_params, problems = cbn.parse_export(SYN_CORE, own="bandgap_core")
         self.assertEqual(problems, [])
         self.assertEqual(file_params, {})
         self.assertEqual(list(cells), ["bandgap_trim", "bandgap_core"])
@@ -162,7 +164,7 @@ class Parse(unittest.TestCase):
         self.assertEqual(len(core.devices), 3)
 
     def test_file_level_param_captured(self):
-        _, file_params, problems = cbn.parse_export(SYN_TRIM)
+        _, file_params, problems = cbn.parse_export(SYN_TRIM, own="bandgap_trim")
         self.assertEqual(problems, [])
         self.assertEqual(file_params, {"trim_code": "32"})
 
@@ -303,3 +305,91 @@ class Drift(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def _read(name: str) -> str:
+    return (NETLIST_DIR / f"bandgap_{name}.spice").read_text()
+
+
+class ReviewGaps(unittest.TestCase):
+    """Mutations the first round of the checker let through (#558 review)."""
+
+    def _errs(self, **overrides: str) -> list[str]:
+        with tempfile.TemporaryDirectory() as tmp:
+            top = committed_tree(Path(tmp), **overrides)
+            return cbn.check(top, Path(tmp))
+
+    def test_core_missing_expanded_trim_definition(self):
+        errs = self._errs(core=drop_cell(_read("core"), "bandgap_trim"))
+        self.assertTrue(flagged(errs, "no expanded bandgap_trim"), errs)
+
+    def test_commented_boundaries_of_top_definitions_are_not_cells(self):
+        for name in ("core", "amp", "startup", "trim"):
+            text = _read("top")
+            for old in (f".subckt bandgap_{name} ", ):
+                text = replace_once(text, "\n" + old, "\n**" + old)
+            # the matching terminator: first '.ends' after that definition
+            head, tail = text.split(f"**.subckt bandgap_{name} ", 1)
+            tail = tail.replace("\n.ends", "\n**.ends", 1)
+            text = head + f"**.subckt bandgap_{name} " + tail
+            errs = self._errs(top=text)
+            self.assertTrue(errs, f"commenting top's bandgap_{name} boundaries passed")
+
+    def test_commented_expanded_trim_boundaries_in_core(self):
+        text = _read("core")
+        text = replace_once(text, "\n.subckt bandgap_trim ", "\n**.subckt bandgap_trim ")
+        head, tail = text.split("**.subckt bandgap_trim ", 1)
+        text = head + "**.subckt bandgap_trim " + tail.replace("\n.ends", "\n**.ends", 1)
+        self.assertTrue(self._errs(core=text))
+
+    def test_cell_open_at_end_of_input(self):
+        for name in ("top", "core", "amp", "startup", "trim"):
+            text = _read(name)
+            lines = text.splitlines()
+            last = max(i for i, l in enumerate(lines) if re.match(r"^\**\.ends\b", l.strip()))
+            del lines[last]
+            errs = self._errs(**{name: "\n".join(lines) + "\n"})
+            self.assertTrue(flagged(errs, "never closed"), (name, errs))
+
+    def test_whole_trim_default_expression_compared(self):
+        top = replace_once(_read("top"), ".param trim_code=32", ".param trim_code={30 + 2}")
+        trim = replace_once(_read("trim"), ".param trim_code=32", ".param trim_code={30 + 3}")
+        errs = self._errs(top=top, trim=trim)
+        self.assertTrue(flagged(errs, ".param trim_code"), errs)
+
+    def test_param_expression_equal_passes(self):
+        top = replace_once(_read("top"), ".param trim_code=32", ".param trim_code={30 + 2}")
+        trim = replace_once(_read("trim"), ".param trim_code=32", ".param trim_code={30 + 2}")
+        core = replace_once(_read("core"), ".param trim_code=32", ".param trim_code={30 + 2}")
+        self.assertEqual(self._errs(top=top, trim=trim, core=core), [])
+
+    def test_unparsable_param_is_reported(self):
+        top = replace_once(_read("top"), ".param trim_code=32", ".param trim_code={30 + 2")
+        self.assertTrue(flagged(self._errs(top=top), "unparsable .param"))
+
+    def test_inline_comment_ignored_alongside_full_line_comment(self):
+        core = replace_once(_read("core"), "\nXXTRIM tn0 vref vss bandgap_trim\n",
+                            "\n* full-line note\nXXTRIM tn0 vref vss bandgap_trim $ note\n")
+        self.assertEqual(self._errs(core=core), [])
+
+    def test_inline_comment_keeps_dollar_inside_quotes_and_braces(self):
+        self.assertEqual(cbn.strip_inline_comment("R1 a b {x$y} $ c"), "R1 a b {x$y}")
+        self.assertEqual(cbn.strip_inline_comment("R1 a b 'x $ y'"), "R1 a b 'x $ y'")
+
+    def test_lint_fails_when_top_export_missing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / ".github" / "scripts").mkdir(parents=True)
+            shutil.copy(REPO / ".github" / "scripts" / "lint.sh",
+                        root / ".github" / "scripts" / "lint.sh")
+            (root / "sim" / "tools").mkdir(parents=True)
+            shutil.copy(SIM / "tools" / "check_block_netlists.py",
+                        root / "sim" / "tools" / "check_block_netlists.py")
+            (root / "design" / "netlist").mkdir(parents=True)
+            proc = subprocess.run(
+                ["bash", str(root / ".github" / "scripts" / "lint.sh"), "--base-ref", "HEAD"],
+                cwd=root, capture_output=True, text=True, timeout=120)
+        step6 = proc.stdout.split("== 6/11", 1)[1].split("== 7/11", 1)[0]
+        self.assertIn("FAIL: design/netlist/bandgap_top.spice not present", step6)
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertNotIn("PASS: lint clean", proc.stdout)
