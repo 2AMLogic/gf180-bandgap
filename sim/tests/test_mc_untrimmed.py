@@ -13,6 +13,7 @@ import math
 import re
 import sys
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 
 SIM = Path(__file__).resolve().parents[1]
@@ -265,6 +266,95 @@ class ProvenanceClass(unittest.TestCase):
         )
         self.assertEqual(
             run.dut_provenance_class(P("design/netlist/bandgap_top.spice")), "schematic"
+        )
+
+
+class BuildRecordRunContext(unittest.TestCase):
+    """#561: the five per-run metadata fields are invocation state passed to
+    `build_record`, not module state -- two renders in one process cannot
+    contaminate each other."""
+
+    RECORD = "20261125-000000-abc1234"
+    STAMP = datetime(2026, 11, 25, tzinfo=timezone.utc)
+
+    class _Pdk:
+        variant = "gf180mcuD"
+        path = "/pdk/stub"
+
+    @classmethod
+    def setUpClass(cls):
+        cls.dut = REPO / "design" / "netlist" / "bandgap_top.spice"
+        _variants, cls.injected = run.prepare_dut_variants(run.unwrap_top_subckt(NETLIST))
+        base = {"mm_ctrl": 1.20200, "mm_res": 1.20210, "mm_fetbjt": 1.20440, "mm_all": 1.20460}
+        sig = {"mm_ctrl": 0.0, "mm_res": 0.0009, "mm_fetbjt": 0.0033, "mm_all": 0.0035}
+        cls.results = {}
+        for group, mean0 in base.items():
+            cls.results[group] = {}
+            for temp in run.TEMPS:
+                mean = mean0 + 0.001 * (temp - 27.0) / 100.0
+                cls.results[group][temp] = {
+                    "n": run.N_SAMPLES,
+                    "mean": mean,
+                    "sigma": sig[group],
+                    "min": mean - 4 * sig[group],
+                    "max": mean + 4 * sig[group],
+                    "isup_mean": 2.0e-5,
+                    "degenerate_count": 0,
+                    "degenerate_indices": [],
+                }
+
+    def render(self, run_context=None):
+        return run.build_record(
+            self.RECORD, self.STAMP, self._Pdk(), "46", self.dut,
+            self.injected, self.results, run_context=run_context,
+        )
+
+    def test_overridden_then_default_renders_each_run_its_own_metadata(self):
+        first = self.render(run_context={
+            "issue": "123",
+            "supersedes": "20260101-000000-deadbee",
+            "netlist_caveat": "CAVEAT-X (test override).",
+            "miss_note": "NOTE-X (test override).",
+            "author": "agent-fleet",
+        })
+        second = self.render()
+        self.assertIn("agent-fleet (issue #123)", first)
+        self.assertIn("- **Supersedes**: 20260101-000000-deadbee", first)
+        self.assertIn("CAVEAT-X (test override).", first)
+        self.assertIn("NOTE-X (test override).", first)
+        self.assertIn("agent-builder (issue #13)", second)
+        self.assertIn("- **Supersedes**: (none -- first record for this claim)", second)
+        self.assertIn("Provisional-amp caveat", second)
+        self.assertIn("feeds directly into #14's", second)
+        for leaked in ("issue #123", "agent-fleet", "deadbee", "CAVEAT-X", "NOTE-X"):
+            self.assertNotIn(leaked, second)
+
+    def test_partial_context_keeps_the_historical_defaults(self):
+        text = self.render(run_context={
+            "issue": "239",
+            "supersedes": "(none)",
+            "netlist_caveat": "FLEET-CAVEAT.",
+            "miss_note": "FLEET-NOTE.",
+        })
+        self.assertIn("agent-builder (issue #239)", text)
+        self.assertIn("FLEET-CAVEAT.", text)
+        self.assertIn("FLEET-NOTE.", text)
+        self.assertNotIn("Provisional-amp caveat", text)
+
+    def test_unknown_context_field_is_rejected(self):
+        with self.assertRaises(ValueError):
+            self.render(run_context={"issue": "1", "issu": "2"})
+
+    def test_defaults_are_the_historical_first_run_values(self):
+        self.assertEqual(
+            run.default_run_context(),
+            {
+                "issue": "13",
+                "supersedes": "(none -- first record for this claim)",
+                "netlist_caveat": run.DEFAULT_NETLIST_CAVEAT,
+                "miss_note": run.DEFAULT_MISS_NOTE,
+                "author": run.DEFAULT_AUTHOR,
+            },
         )
 
 

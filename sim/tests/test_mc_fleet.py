@@ -560,7 +560,7 @@ class Evidence(unittest.TestCase):
     def setUpClass(cls):
         cls.fx = Fixture()
 
-    def mint(self, root: Path):
+    def mint(self, root: Path, *, issue=238, supersedes=None):
         fx = self.fx
         res = fx.assess()
         self.assertEqual(res["overall"], "PASS")
@@ -571,8 +571,24 @@ class Evidence(unittest.TestCase):
             p.write_text(text)
         exp = root / "sim" / "mc-untrimmed"
         rec = mi.write_evidence(RUN, exp, work, fx.plan, res, fx.reports, fx.decks, dut_label="sim/dut/bandgap_top.spice",
-                                dut_path=DUT, issue=238, git=GIT)
+                                dut_path=DUT, issue=issue, supersedes=supersedes, git=GIT)
         return res, exp, rec
+
+    def test_two_mints_in_one_process_credit_their_own_run(self):
+        """#561: the ingestor passes its metadata per call; nothing module
+        level survives between two mints in one process."""
+        with tempfile.TemporaryDirectory() as tmp1, tempfile.TemporaryDirectory() as tmp2:
+            _res1, _exp1, rec1 = self.mint(Path(tmp1), issue=238)
+            _res2, _exp2, rec2 = self.mint(
+                Path(tmp2), issue=240, supersedes="20260101-000000-deadbee"
+            )
+            first, second = rec1.read_text(), rec2.read_text()
+        self.assertIn("agent-builder (issue #238)", first)
+        self.assertIn("- **Supersedes**: (none)", first)
+        self.assertIn("agent-builder (issue #240)", second)
+        self.assertIn("- **Supersedes**: 20260101-000000-deadbee", second)
+        self.assertNotIn("issue #238", second)
+        self.assertNotIn("deadbee", first)
 
     def test_logs_round_trip_through_combined_reader(self):
         with tempfile.TemporaryDirectory() as tmp:

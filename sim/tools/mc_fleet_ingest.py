@@ -302,25 +302,20 @@ FLEET_MISS_NOTE = (
 
 
 def build_evidence_record(run, plan, result, reports, record, stamp, dut_label, dut_path, issue, supersedes) -> str:
-    saved = dict(run.RUN_CONTEXT)
-    run.RUN_CONTEXT.update({
-        "issue": str(issue), "supersedes": supersedes or "(none)",
-        "netlist_caveat": FLEET_NETLIST_CAVEAT, "miss_note": FLEET_MISS_NOTE,
-    })
-    try:
-        return run.build_record(
-            record, stamp, _PdkStub(), "fleet", dut_path, plan["injected"], result["stats"],
-            seed_clause=seed_clause(plan), identity_lines=identity_lines(plan, dut_label),
-            link_lines=[
-                "  - Fleet request adapter: `sim/tools/mk_klt_mc_request.py`; ingestion: `sim/tools/mc_fleet_ingest.py`",
-                f"  - Plan, requests and reports: `sim/mc-untrimmed/corners/{record}/` "
-                "(`plan.json`, `request-<name>.json`, `report-<name>.json`, `deck-<name>.spice`)",
-            ] + [_execution_line(n, rep) for n, rep in reports.items()],
-            pdk_line=_pdk_line(reports),
-        )
-    finally:
-        run.RUN_CONTEXT.clear()
-        run.RUN_CONTEXT.update(saved)
+    return run.build_record(
+        record, stamp, _PdkStub(), "fleet", dut_path, plan["injected"], result["stats"],
+        run_context={
+            "issue": str(issue), "supersedes": supersedes or "(none)",
+            "netlist_caveat": FLEET_NETLIST_CAVEAT, "miss_note": FLEET_MISS_NOTE,
+        },
+        seed_clause=seed_clause(plan), identity_lines=identity_lines(plan, dut_label),
+        link_lines=[
+            "  - Fleet request adapter: `sim/tools/mk_klt_mc_request.py`; ingestion: `sim/tools/mc_fleet_ingest.py`",
+            f"  - Plan, requests and reports: `sim/mc-untrimmed/corners/{record}/` "
+            "(`plan.json`, `request-<name>.json`, `report-<name>.json`, `deck-<name>.spice`)",
+        ] + [_execution_line(n, rep) for n, rep in reports.items()],
+        pdk_line=_pdk_line(reports),
+    )
 
 
 def _execution_line(name: str, rep: dict) -> str:
