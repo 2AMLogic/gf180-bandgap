@@ -542,13 +542,22 @@ DEFAULT_MISS_NOTE = (
 #: stale author claim (the same reasoning `--netlist-caveat`/`--miss-note`
 #: already apply to the caveat prose).
 DEFAULT_AUTHOR = "agent-builder"
-RUN_CONTEXT = {
-    "issue": "13",
-    "supersedes": "(none -- first record for this claim)",
-    "netlist_caveat": DEFAULT_NETLIST_CAVEAT,
-    "miss_note": DEFAULT_MISS_NOTE,
-    "author": DEFAULT_AUTHOR,
-}
+DEFAULT_ISSUE = "13"
+DEFAULT_SUPERSEDES = "(none -- first record for this claim)"
+
+
+def default_run_context() -> dict:
+    """Fresh per-run record metadata (#561): the five fields that describe
+    an individual run, historically the module-level ``RUN_CONTEXT``. A new
+    dict per call, so one invocation's overrides cannot leak into another
+    render in the same process."""
+    return {
+        "issue": DEFAULT_ISSUE,
+        "supersedes": DEFAULT_SUPERSEDES,
+        "netlist_caveat": DEFAULT_NETLIST_CAVEAT,
+        "miss_note": DEFAULT_MISS_NOTE,
+        "author": DEFAULT_AUTHOR,
+    }
 
 
 def provenance_origin(relative: Path) -> str:
@@ -573,6 +582,7 @@ def build_record(
     injected: list[dict],
     results: dict,
     *,
+    run_context: dict | None = None,
     seed_clause: str | None = None,
     identity_lines: list[str] | None = None,
     link_lines: list[str] | None = None,
@@ -580,8 +590,19 @@ def build_record(
 ) -> str:
     """Render the record. The keyword arguments are the fleet path's hooks
     (`sim/tools/mc_fleet_ingest.py`); left unset, the output is byte-identical
-    to what this bench has always written.
+    to what this bench has always written. ``run_context`` carries this
+    run's metadata (see `default_run_context`); keys it omits fall back to
+    the historical defaults.
     """
+    ctx = default_run_context()
+    if run_context:
+        unknown = set(run_context) - set(ctx)
+        if unknown:
+            raise ValueError(
+                f"unknown run-context field(s) {sorted(unknown)}; "
+                f"expected any of {sorted(ctx)}"
+            )
+        ctx.update(run_context)
     lines: list[str] = []
     add = lines.append
 
@@ -606,7 +627,7 @@ def build_record(
         "(resistor vs. MOS+BJT mismatch) feeds the trim-network sizing "
         "(#14) and the layout matching plan (#16)."
     )
-    add(f"  - {RUN_CONTEXT['netlist_caveat']}")
+    add(f"  - {ctx['netlist_caveat']}")
     relative = dut_path.relative_to(harness_pdk.REPO_ROOT)
     add(
         f"- **Netlist provenance**: {dut_provenance_class(relative)} "
@@ -774,7 +795,7 @@ def build_record(
         "  **No spec relaxation**: the numbers above are reported as "
         "measured, whatever they say against the ratified +/-2% window; "
         "CLAUDE.md does not permit adjusting this record's pass/fail "
-        "threshold to make it pass. " + RUN_CONTEXT["miss_note"]
+        "threshold to make it pass. " + ctx["miss_note"]
     )
     add("")
     add(f"  **Overall (mismatch-MC leg): {'FAIL' if overall_fail else 'PASS'}** "
@@ -863,9 +884,9 @@ def build_record(
     )
     add(
         f"- **Timestamp / author**: {stamp:%Y-%m-%dT%H:%M:%SZ}, "
-        f"{RUN_CONTEXT['author']} (issue #{RUN_CONTEXT['issue']})"
+        f"{ctx['author']} (issue #{ctx['issue']})"
     )
-    add(f"- **Supersedes**: {RUN_CONTEXT['supersedes']}")
+    add(f"- **Supersedes**: {ctx['supersedes']}")
     add("")
     return "\n".join(lines)
 
@@ -881,7 +902,7 @@ def main() -> int:
     )
     ap.add_argument(
         "--issue",
-        default=RUN_CONTEXT["issue"],
+        default=DEFAULT_ISSUE,
         help="issue number credited in the record's author field "
         "(default: %(default)s, the issue this bench was written for).",
     )
@@ -924,14 +945,13 @@ def main() -> int:
     )
     args = ap.parse_args()
 
-    RUN_CONTEXT["issue"] = args.issue
-    if args.supersedes:
-        RUN_CONTEXT["supersedes"] = args.supersedes
-    if args.netlist_caveat:
-        RUN_CONTEXT["netlist_caveat"] = args.netlist_caveat
-    if args.miss_note:
-        RUN_CONTEXT["miss_note"] = args.miss_note
-    RUN_CONTEXT["author"] = args.author
+    ctx = {
+        "issue": args.issue,
+        "supersedes": args.supersedes or DEFAULT_SUPERSEDES,
+        "netlist_caveat": args.netlist_caveat or DEFAULT_NETLIST_CAVEAT,
+        "miss_note": args.miss_note or DEFAULT_MISS_NOTE,
+        "author": args.author,
+    }
 
     pdk = harness_pdk.find_pdk()
     root = harness_pdk.REPO_ROOT
@@ -1008,7 +1028,10 @@ def main() -> int:
     path = harness_report.device_write_stored_record(
         HERE / "records",
         record,
-        build_record(record, stamp, pdk, ngspice, dut_path, injected, results),
+        build_record(
+            record, stamp, pdk, ngspice, dut_path, injected, results,
+            run_context=ctx,
+        ),
         evidence,
     )
     print(f"wrote {path}")
