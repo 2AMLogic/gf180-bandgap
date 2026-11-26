@@ -18,16 +18,21 @@ from __future__ import annotations
 
 import math
 import re
+import sys
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
 
 from .spec import Limit, SpecLine
 
-#: ``<process>_<temp>c_<supply>`` -- the corner-id grammar ratified in
-#: sim/README.md. Split on the last two underscores: the process field may
-#: itself contain one (``bjt_ff``, ``res_typical``).
-CORNER_ID_RE = re.compile(r"^(?P<process>.+)_(?P<temp>-?\d+(?:\.\d+)?)c_(?P<supply>.+)$")
+# The corner-id grammar is shared with the evidence checker, so it lives in
+# neither package: sim/corner_id_grammar.py. Every known caller of this module
+# inserts SIM_DIR onto sys.path before importing suite.analysis (see
+# suite.combined's identical note, issue #154); the insert keeps that true
+# under `python3 -m sim.suite.<module>` too, where sys.path[0] is the CWD.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from corner_id_grammar import CornerKey as CornerKey  # noqa: E402  (needs sys.path)
+from corner_id_grammar import parse_corner_id  # noqa: E402  (needs sys.path)
 
 #: ``print`` output for a length-1 vector: "m_vref = 1.2291153728e+00".
 MEASUREMENT_RE = re.compile(r"^\s*m_(\w+)\s*=\s*([-+]?[0-9.]+(?:[eE][-+]?[0-9]+)?)\s*$")
@@ -41,30 +46,6 @@ INVALID_POINT_MARKER = "*** sim/harness: INVALID POINT"
 
 #: Ratified box-method temperature span, -40..125 degC.
 BOX_SPAN_C = 165.0
-
-
-@dataclass(frozen=True)
-class CornerKey:
-    """A parsed ``<corner-id>``."""
-
-    process: str
-    temp_c: float
-    supply: str
-
-    @property
-    def corner_id(self) -> str:
-        return f"{self.process}_{self.temp_c:g}c_{self.supply}"
-
-
-def parse_corner_id(corner_id: str) -> CornerKey | None:
-    match = CORNER_ID_RE.match(corner_id)
-    if not match:
-        return None
-    return CornerKey(
-        process=match.group("process"),
-        temp_c=float(match.group("temp")),
-        supply=match.group("supply"),
-    )
 
 
 def parse_log(text: str) -> dict[str, float]:

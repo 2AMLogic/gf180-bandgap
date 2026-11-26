@@ -55,6 +55,7 @@ import datetime as _dt
 import os
 import re
 import subprocess
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -95,23 +96,13 @@ FIELD_RE = re.compile(r"^- \*\*(?P<name>[^*]+?)\*\*:(?P<value>.*)$")
 #: Values that mean "this record supersedes nothing".
 _NO_SUPERSESSION_RE = re.compile(r"^\(?\s*(none|n/?a)\b", re.IGNORECASE)
 
-# --- corner-id grammar (sim/README.md) --------------------------------------
-#
-# `<process>_<temp>c_<supply>`, split on the *last two* underscores so the
-# process field may itself carry a device-family prefix (`bjt_ff`,
-# `res_typical`). The process vocabulary is deliberately open: gf180mcu names
-# a model section per device family, so a device-level testbench selects
-# `typical` / `bjt_ff` / `res_ss` rather than one of the harness's five MOS
-# corner names.
-_PROCESS_TOKEN_RE = re.compile(r"^[a-z][a-z0-9]*$")
-#: Signed junction temperature in degrees C: `-40c`, `27c`, `125c`.
-_TEMP_RE = re.compile(r"^-?\d+(?:\.\d+)?c$")
-#: `2.97v`, or `nwell2p97v` when the swept rail needs naming (`p` stands in
-#: for the decimal point so the field stays a single underscore-free token).
-_SUPPLY_RE = re.compile(r"^(?P<node>[a-z]+)?(?P<volts>\d+(?:[.p]\d+)?)v$")
-#: A testbench with no supply rail to sweep (device testbenches drive the DUT
-#: from an ideal source). The record's Corner matrix run field must say why.
-NO_SUPPLY = "nosupply"
+# The corner-id grammar is shared with the suite's reader (sim/suite/analysis.py),
+# so it lives in neither package: sim/corner_id_grammar.py. Its parent directory
+# is the one that makes `harness` itself importable; the insert keeps this
+# module runnable on its own (`python3 sim/harness/evidence_lint.py`, or
+# `python3 -m sim.harness.evidence_lint`, where sys.path[0] is the CWD).
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from corner_id_grammar import corner_id_problem  # noqa: E402  (needs sys.path)
 
 #: ``sim/<slug>/<evidence-dir>/<rest>``.
 EVIDENCE_PATH_RE = re.compile(
@@ -211,39 +202,10 @@ def validate_record_id(record_id: str) -> str | None:
 def parse_corner_id(corner_id: str) -> str | None:
     """``None`` if ``corner_id`` parses, else why it does not.
 
-    The grammar is the one documented in ``sim/README.md``::
-
-        <corner-id> ::= <process> "_" <temp> "c" "_" <supply>
-        <process>   ::= token ("_" token)*        # tt, ss, bjt_ff, res_typical
-        <temp>      ::= "-"? digits ("." digits)? # -40c, 27c, 125c
-        <supply>    ::= "nosupply" | node? volts "v"   # 2.97v, nwell2p97v
-
-    Splitting on the *last two* underscores is what lets the process field
-    carry a device-family prefix; neither temp nor supply may contain one.
+    The grammar is the one documented in ``sim/README.md``, parsed for both
+    this checker and the suite's reader by ``sim/corner_id_grammar.py``.
     """
-    parts = corner_id.split("_")
-    if len(parts) < 3:
-        return (
-            f"{corner_id!r} does not parse as <process>_<temp>c_<supply> "
-            "(see the corner-id grammar in sim/README.md)"
-        )
-    process, temp, supply = parts[:-2], parts[-2], parts[-1]
-    if not all(_PROCESS_TOKEN_RE.match(token) for token in process):
-        return (
-            f"{corner_id!r}: process field {'_'.join(process)!r} is not one or more "
-            "lowercase alphanumeric tokens (tt, ss, bjt_ff, res_typical, ...)"
-        )
-    if not _TEMP_RE.match(temp):
-        return (
-            f"{corner_id!r}: temperature field {temp!r} is not a signed number "
-            "followed by 'c' (-40c, 27c, 125c)"
-        )
-    if supply != NO_SUPPLY and not _SUPPLY_RE.match(supply):
-        return (
-            f"{corner_id!r}: supply field {supply!r} is neither <volts>v / "
-            f"<node><volts>v (2.97v, nwell2p97v) nor the literal {NO_SUPPLY!r}"
-        )
-    return None
+    return corner_id_problem(corner_id)
 
 
 # --- collection -------------------------------------------------------------
