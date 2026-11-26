@@ -320,33 +320,55 @@ EX_REVIEW_GATE_COLLISION=6
 # superseded-target check should consult. With no such branch, or a branch
 # number absent from the body's references, the last match applies as above.
 #
-# Quoted evidence (#15404): a body that cites another PR's closing line -- an
-# inline-code span (`` `Closes #396` ``) or a double-quoted citation
-# (`"closed #396"`) in an evidence/verification table cell -- is prose about
-# that PR's reference, never this PR's own declaration, so it supplies no
-# candidate. GitHub's own auto-close parser ignores code spans for the same
-# reason. The filter below strips both span kinds per line BEFORE the
-# extraction, so both guards (review gate and superseded-target) see the same
-# candidates and a quoted `#396` can no longer win the closing leg whenever
-# the body's real reference is partial or absent (the reported refusal on
-# `feature/issue-1378`). Line-local pairing: an unbalanced quote or backtick
-# matches no span and its text survives, so ordinary prose -- including prose
-# containing a genuine inline reference -- is never over-removed.
+# Both guards ignore examples in fenced blocks, inline code and quoted prose
+# (#15404, #15415). Mask each span with punctuation so removing evidence
+# between a keyword and a number cannot manufacture a reference.
 _cpr_body_ref_issue() {
   # $1 = keyword alternation, e.g. 'close[sd]?|closing|fix(e[sd])?|resolve[sd]?'
   local refs branch_n body
-  # #15404: strip quoted evidence (inline code + double-quoted citations)
-  # before extracting, so the selection rules below only ever see genuine
-  # references. See the comment block above for the rationale.
-  # Backtick runs pair with a run of the SAME length (longest first), so
-  # ``Closes #396`` is one span, not two empty ones. Each span becomes " ; ",
-  # a boundary that a keyword-to-number match cannot cross (`closes `x` #396`
-  # must not collapse into `closes #396`).
-  body="$(sed -E \
-    -e 's/```([^`]|`[^`]|``[^`])*```/ ; /g' \
-    -e 's/``([^`]|`[^`])*``/ ; /g' \
-    -e 's/`[^`]*`/ ; /g' \
-    -e 's/"[^"]*"/ ; /g' <<< "$BODY")"
+  body="$(awk -v quote="'" '
+    # Pair straight quotes within a line. An apostrophe inside a word can
+    # neither open nor close a citation. Keep unmatched quotes verbatim.
+    function mask_quotes(line,    parts, count, i, result, opening) {
+      count = split(line, parts, quote)
+      result = parts[1]
+      for (i = 2; i <= count; i++) {
+        if (opening && parts[i-1] ~ /[^[:space:]]$/ && parts[i] !~ /^[[:alnum:]_]/) {
+          result = substr(result, 1, opening - 1) " ; "
+          opening = 0
+        } else {
+          if (parts[i-1] !~ /[[:alnum:]_]$/ && parts[i] ~ /^[^[:space:]]/)
+            opening = length(result) + 1
+          result = result quote
+        }
+        result = result parts[i]
+      }
+      return result
+    }
+    # Fence lines allow up to three leading spaces. A backtick in a
+    # backtick info string instead makes this an ordinary line
+    # (e.g. a same-line inline code span).
+    match($0, /^ ? ? ?(```+|~~~+)/) {
+      run = substr($0, 1, RLENGTH)
+      rest = substr($0, RLENGTH + 1)
+      sub(/^ */, "", run)
+      if (fence && index(run, fence) == 1 && rest ~ /^[[:space:]]*$/) {
+        fence = ""
+        print " ; "
+        next
+      }
+      if (!fence && (run ~ /^~/ || rest !~ /`/))
+        fence = run
+    }
+    fence { print " ; "; next }
+    {
+      gsub(/```([^`]|`[^`]|``[^`])*```/, " ; ")
+      gsub(/``([^`]|`[^`])*``/, " ; ")
+      gsub(/`[^`]*`/, " ; ")
+      gsub(/"[^"]*"/, " ; ")
+      print mask_quotes($0)
+    }
+  ' <<< "$BODY")"
   # One number per match: each match ends in `#<digits>`, so the trailing
   # digit run is the reference itself (never an earlier digit-token prefix).
   refs="$(grep -ioE "((^[[:space:]]*)|((^|[[:space:]])[^#[:space:]]*[0-9][[:space:]]+)|([^#0-9][[:space:]]+)|([^[:alnum:]_#[:space:]]))($1)[[:space:]]+#[0-9]+" <<< "$body" \

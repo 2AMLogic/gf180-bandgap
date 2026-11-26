@@ -1394,7 +1394,6 @@ transition.
 | `fleet.<condition>` (`dispatch-halted`, `roles-persistent`, `output-missing`; `star-backlog` retired by #11510, `capacity-limited` by #12406) | `fleet_alert` | condition started (and each reminder) / cleared |
 | `daemon.down` (critical) | the watchdog, a separate process | recovery exhausted / any tick ending the outage |
 | `watchdog.peer-coord-degraded` (critical) | the watchdog (see note below) | coordination degraded / green |
-| `safehouse.unreachable` (critical) | narration sink state | unreachable over 5 minutes / reconnected |
 | `fleet.floor-unsatisfiable` | `auto_update` | the floor ERROR line / floor met |
 | `fleet.floor-malformed` | fleet-sync pass | `loom_min_version` malformed / a valid (or no) floor |
 | `fleet.sync-error` | fleet-sync pass | 3 erroring passes in a row / a clean pass |
@@ -1433,7 +1432,7 @@ an upgraded daemon finds them), so a restarted daemon resolves one
 the previous process opened once it finds the condition gone, and keeps one
 open (and its heartbeat going) while its failure count (process memory)
 builds up again; a daemon that finds the output off removes those files. The
-single-key watches (safehouse, breaker, llm-monitor) send one `resolved` on
+single-key watches (breaker, llm-monitor) send one `resolved` on
 their first healthy sample instead. Alerts raised before the output starts
 (credential preflight, the fleet-sync startup pass) are held (at most 256) and
 go out once the exporters are up. llm-monitor's quota step-change alert is not
@@ -1477,7 +1476,7 @@ Guards: `kind_producer.rs` fails when a kind loses its last producer; `kind_expo
 | `roster.change` | fleet_sync/roster_clone.rs | daemon | logs |  |
 | `issue.estimate` | telemetry/kinds/issue_estimate/observe.rs | daemon | logs | Observed from curated issues by the intake pass (#12118). |
 | `stage.work_started` | observability/work_started.rs | daemon | logs |  |
-| `completion.narrated` | safehouse/completion_runtime.rs | daemon | logs |  |
+| `completion.narrated` | *(none: no longer emitted since #13946)* | daemon | logs |  |
 | `write_scope.refused` | write_scope.rs | daemon | logs |  |
 | `daemon.exit` | observability/daemon_exit.rs | daemon | logs |  |
 | `daemon.run_state_request` | observability/run_state_request.rs | daemon | logs |  |

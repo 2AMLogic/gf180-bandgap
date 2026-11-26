@@ -13,15 +13,32 @@ and nothing else writes that file, so work dispatched on OpenCode produced **no*
 2026-09-21 GLM-5.3 trial merged 46 PRs whose completions carried nothing
 identifying the model, the provider, or even the runtime.
 
-Two independent fixes, because they fail independently:
+Two independent fixes, because they fail independently. Both ride the run's
+telemetry record: `sweep.outcome` for a sweep, and `role_tick.outcome` for a
+role tick or a step (the same record, with `source = "step"`). The field
+reference for both is [`telemetry-schema.md`](telemetry-schema.md).
 
 1. **Labels.** `runtime` / `provider` / `profile` are now first-class fields on
-   `sweep.outcome`, `role_tick.outcome` and the `completion-v1` meta, read off
-   the launch's own `# LOOM_LAUNCH` record. They carry no token counts, so a
-   completion is identifiable **even when no usage numbers exist anywhere**.
-2. **Numbers.** The per-model token lookup is dispatched on that `runtime`
-   through `loom-daemon/src/usage_source.rs`, so an OpenCode launch reads
-   OpenCode's own session store instead of transcripts it never wrote.
+   `sweep.outcome` and `role_tick.outcome`, read off the launch's own
+   `# LOOM_LAUNCH` record. They are launch facts, not token counts, so an
+   outcome is identifiable **even when no usage numbers exist anywhere**.
+2. **Numbers.** `tokens_by_model` is a separate, **optional** field on the
+   same two records. The per-model token lookup is dispatched on that
+   `runtime` through `loom-daemon/src/usage_source.rs`, so an OpenCode launch
+   reads OpenCode's own session store instead of transcripts it never wrote.
+   When nothing attributable is found the field is omitted — never `[]`, never
+   a fabricated `0` — and the three labels, which do not depend on it, are
+   unaffected.
+
+**The Safehouse room is not a source for either.** The `completion-v1`
+envelope is **historical**: until #13946 retired the narration sink, that
+envelope's `meta` repeated the same three launch labels and its own optional
+`tokens_by_model`, so an older fleet-feed record may still carry them.
+Nothing writes it now. A merge reaches the room only as a `chat` line,
+`merged ✓ owner/repo#N · <title> · <url>`, which names the merged PR by
+repository, number, optional title (dropped when the PR has none) and URL
+and carries no runtime, provider, profile or token usage — see
+[`safehouse.md` → What gets reported](safehouse.md#what-gets-reported).
 
 ## Where each value comes from
 

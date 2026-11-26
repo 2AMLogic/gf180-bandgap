@@ -379,63 +379,12 @@ For detailed worktree workflows, see **builder-worktree.md**.
 - Use `./.loom/scripts/worktree.sh <issue-number>` to create worktrees
 - Work in `.loom/worktrees/issue-N` directories
 
-### Never use bare `git stash` for ad-hoc WIP (#4821)
-
-`refs/stash` is **one stack shared across every linked worktree of the
-repo** — not per-worktree. If you `git stash` / `git stash pop` /
-`git stash drop` to temporarily shelve WIP, a concurrent builder in a
-*different* worktree doing the same thing can pop or drop **your** stash
-entry (or you can pop theirs), silently swapping or discarding uncommitted
-work. This is not hypothetical — it happened in production (kicad-tools PRs
-#4524/#4526).
-
-**Use `./.loom/scripts/worktree.sh snapshot <issue-number>` instead** — it
-writes your WIP as a patch file under
-`<worktree-root>/.snapshots/issue-<N>-<timestamp>.patch`, scoped to your own
-worktree, so there is no shared stack to collide on.
-
-**For a "clean baseline vs. my diff" comparison** — temporarily clearing your
-WIP to run a clippy/shellcheck/test baseline, then restoring it — `snapshot`
-is *not* enough (it captures a patch but does not reset the working tree).
-Use the clean-and-restore pair instead of `git stash` / `git stash pop`
-(#5217):
-
-```bash
-./.loom/scripts/worktree.sh stash-push <issue-number>   # capture WIP, reset to clean HEAD
-<run the baseline check>                                # e.g. cargo clippy > /tmp/baseline.txt
-./.loom/scripts/worktree.sh stash-pop <issue-number>    # restore exactly what was captured
-```
-
-It anchors your WIP to a **per-issue** ref (`refs/loom/stash-baseline/issue-<N>`),
-never `refs/stash`, so another builder's concurrent stash cannot land "in
-between" your push and pop. Add `--include-untracked` to move untracked files
-out too. Because it never runs `git stash pop|drop|clear`, it does not trip
-the `stash-scope` ask that would stall a headless sweep — whereas raw
-`git stash pop` from a worktree still asks, correctly, and always will.
-
-**This is enforced, not merely advised (#5754).** Inside a managed worktree,
-while a second managed worktree is active, a raw stash *create* — `git stash`,
-`git stash push`, `git stash save` — is **denied** by the guard, and the deny
-message names the exact `snapshot` / `stash-push` / `stash-pop` command with
-your issue number already substituted in. The deny is lossless: nothing ran,
-your working tree is untouched, so just rerun with the command it hands you.
-`git stash pop` / `drop` / `clear` stay an *ask* rather than a deny on
-purpose — once WIP is on `refs/stash`, popping it is the only way to get it
-back, so a deny there would strand work instead of protecting it.
-
-Neither of these applies to the `check-main-clean.sh --quarantine` recovery
-flow below (§"If it exits 3…") — that flow's use of `git stash` operates on
-the **main checkout** (where the create-side deny deliberately does not fire),
-is single-writer by construction (only one agent's mistaken edits land in main
-at a time), and is a distinct, legitimate use case (rescuing contamination,
-not shelving your own WIP). **Recover a quarantined entry by replaying it into
-the owning issue worktree** — `git stash show -p <ref> | git -C
-.loom/worktrees/issue-<N> apply -` — never by `git stash pop`-ing it back into
-the primary clone: that pop is an unanswerable `stash-scope:main-checkout` ask
-in a headless run, and a successful one just re-contaminates main. If you
-need a *clean baseline* in the primary clone itself, the pair now has a main
-target too: `./.loom/scripts/worktree.sh stash-push main` …
-`stash-pop main` (#6076).
+Linked worktrees share one `git stash` stack. A concurrent Builder can pop or
+drop your work. Use `./.loom/scripts/worktree.sh snapshot <issue-number>` for
+a patch that leaves your edits in place. For a clean baseline, run
+`./.loom/scripts/worktree.sh stash-push <issue-number>`, run the check in that
+worktree, then restore with `./.loom/scripts/worktree.sh stash-pop <issue-number>`.
+See the [worktree guide for shelving and recovery](../loom-builder-worktree/SKILL.md#shelving-work-and-recovering-edits).
 
 ## CRITICAL: Never Work on Main Branch
 
@@ -509,11 +458,11 @@ git -C "<WORKTREE_ABS>" status        # your changes should appear HERE
 walk the offending paths with `git checkout -- <path>` / `rm <path>`; a
 half-restored main checkout is worse than either extreme. Re-run the check with
 `--quarantine` to move every offending path (tracked *and* untracked) into a
-stash rescue ref in one operation, then replay that diff inside your worktree:
+stash rescue ref in one operation. After exit 4, follow the worktree guide to
+[replay the rescue commit into the owning issue worktree](../loom-builder-worktree/SKILL.md#replay-quarantined-edits).
 
 ```bash
 ./.loom/scripts/check-main-clean.sh --quarantine --allow-no-baseline --label "issue=<N>"   # exit 4 ⇒ quarantined (--allow-no-baseline can also sweep up operator-owned untracked files)
-git -C "<MAIN_ROOT>" stash show -p stash@{0}                           # nothing was discarded
 ```
 
 **If your working directory does NOT contain `.loom/worktrees/issue-`:**

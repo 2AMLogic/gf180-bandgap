@@ -541,6 +541,27 @@ Part of #1378" --head "feature/issue-1378"
   assert_not_contains "$(cat "$STUB_DIR/gh-calls.log")" "issue view 396" "Span between keyword and number -> #396 never looked up"
 done
 
+# Verify freshness lookups directly, including the no-closing-reference case.
+check_freshness_target() {
+  local description="$1" body="$2" expected="$3"
+  reset_fixtures
+  echo "CLOSED" > "$STUB_DIR/issue-396-state.txt"
+  echo "OPEN" > "$STUB_DIR/issue-1378-state.txt"
+  run_create_pr --title "fix: something" --body "$body" --head "feature/issue-1378"
+  assert_eq "$expected" "$(awk '/^issue view / {print $3}' "$STUB_DIR/gh-calls.log")" "$description: freshness lookup"
+  assert_eq "0" "$EXIT_CODE" "$description: exit status"
+  assert_eq "1" "$(created_count)" "$description: created PR"
+}
+
+for citation in $'Reproduction:\n```\nCloses #396\n```' "| Evidence | PR #414 says 'Closes #396'. |"; do
+  check_freshness_target "$citation alone" "$citation" ""
+  check_freshness_target "$citation with partial footer" "$citation"$'\nPart of #1378' ""
+  check_freshness_target "$citation with closing footer" "$citation"$'\nCloses #1378' 1378
+done
+
+check_freshness_target "word-internal apostrophes" "The worker's patch closes #1378 in today's build." 1378
+check_freshness_target "tilde fence with longer closer" $'  ~~~sh\nCloses #396\n  ~~~~  \nFixes #1378' 1378
+
 # --- Summary ---
 echo ""
 echo "────────────────────────────────"

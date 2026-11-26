@@ -457,6 +457,32 @@ Part of #1378" --head "feature/issue-1378"
   assert_not_contains "$(cat "$STUB_DIR/daemon-forge-calls.log")" "396" "Guard never consulted #396 across a span gap"
 done
 
+# Fences and bounded single quotes can cite a closing line (#15415).
+check_review_target() {
+  local description="$1" body="$2" expected="${3:+forge check-open-pr $3}"
+  reset_fixtures
+  run_create_pr --title "fix: something" --body "$body" --head "feature/issue-1378"
+  assert_eq "$expected" "$(cat "$STUB_DIR/daemon-forge-calls.log")" "$description: review lookup"
+  assert_eq "0" "$EXIT_CODE" "$description: exit status"
+  assert_eq "1" "$(created_count)" "$description: created PR"
+}
+
+for citation in $'Reproduction:\n```\nCloses #396\n```' "| Evidence | PR #414 says 'Closes #396'. |"; do
+  check_review_target "$citation alone" "$citation" ""
+  check_review_target "$citation with partial footer" "$citation"$'\nPart of #1378' 1378
+  check_review_target "$citation with closing footer" "$citation"$'\nCloses #1378' 1378
+done
+
+for example in $'````md\n```\n~~~~\nCloses #396\n````' $'~~~~md\n~~~\n````\nCloses #396\n~~~~'; do
+  check_review_target "shorter runs and opposite markers in $example" "$example"$'\nPart of #1378' 1378
+done
+
+check_review_target "word-internal apostrophes" "The worker's patch closes #1378 in today's build." 1378
+check_review_target "unmatched quote" "The log says 'pending. This closes #1378." 1378
+check_review_target "apostrophe inside citation" "The log says 'the worker's patch closes #396'." ""
+check_review_target "single-quoted span between keyword and number" "Worker closes 'socket' #396." ""
+check_review_target "inline code at line start" $'```Closes #396```\nPart of #1378' 1378
+
 # --- Summary ---
 echo ""
 echo "────────────────────────────────"

@@ -22,6 +22,7 @@
 - [Delegated daemon administration (`daemon.delegatedTo`, #5345)](#delegated-daemon-administration-daemondelegatedto-5345)
 - [Fleet — operator-triggered multi-host worker fanout (`fleet`, #4340)](#fleet--operator-triggered-multi-host-worker-fanout-fleet-4340)
 - [Fleet store — `fleet-config` (`fleet.repo`)](#fleet-store--fleet-config-fleetrepo)
+- [Changing a bundled model profile's model (`runtimes.modelProfileOverrides`, #15252)](#changing-a-bundled-model-profiles-model-runtimesmodelprofileoverrides-15252)
 - [Fleet model A/B — `sweep-experiment plan` (#8055 phase 1)](#fleet-model-ab--sweep-experiment-plan-8055-phase-1)
 - [Token pool provisioning for managed repos (#3938)](#token-pool-provisioning-for-managed-repos-3938)
 - [Per-repo status breakdown + per-repo main-health gate (#3930 — phase d)](#per-repo-status-breakdown--per-repo-main-health-gate-3930--phase-d)
@@ -290,10 +291,9 @@ delivery half of #9244/#9301). Its first publisher, the star-liveness pass,
 was removed by #11104; today it is published by the
 [fleet-degraded operator alert](#fleet-degraded-operator-alert-autonomousfleetalert-10164)
 (issue `0`, one event per condition key, a `resolved: true` event when it
-clears). Consumer: the Safehouse narration sink, which renders it as a
-`handoff` envelope into the signal room. Room routing, the
-`safehouse.operatorMention` ping and the rendered line are documented in
-[`safehouse.md` → Operator escalations](safehouse.md#operator-escalations-9321).
+clears). It is no longer rendered into Matrix: the Safehouse narration sink
+that did so (#9321) was retired by #13946, so the ask reaches the human as the
+forge comment and the pinned hold digest.
 
 **`Generic`-topic rule.** A `Generic` topic is allowed only while it (a) is
 listed in this inventory, (b) carries a `source` field naming its producing
@@ -1299,7 +1299,7 @@ cancel`'s SIGTERM→grace→SIGKILL), plus the three deltas teardown needs:
    normally in the meantime (no longer `loom:building`) is left alone.
 3. **Safehoused flush verification is a documented stub pending #3998.** No
    invocable key-backup steady-state check exists in this repo yet (only the
-   narration-sink/completion-dedup client seams in `safehouse.rs`) — rather than block
+   merged-PR reporter's client in `safehouse.rs`) — rather than block
    every drain on #3998, this phase degrades honestly: `safehouse.enabled ==
    false` skips cleanly (no room keys in play); `safehouse.enabled == true`
    still lets the drain complete (workspace/roster cleanup proceed — loom never
@@ -6439,10 +6439,8 @@ knobs not yet audited here.
 | `autonomous.watchdog.staleSweep` | `LOOM_SWEEP_STALE_SWEEP` | `true` | Stale-untracked-sweep backstop on/off (#7529). Runs in the same tick as the other three, but acts only on entries none of them can reach (see below) |
 | `autonomous.watchdog.staleSweepAgeSecs` | `LOOM_SWEEP_STALE_AGE_SECS` | `10800` (3h, 4× `reviewStallTimeoutSecs`) | Age sanity ceiling before an untracked, log-silent sweep is reaped |
 | `autonomous.collisionDetection.enabled` | `LOOM_DETECT_COLLISIONS` | `false` | Cross-host dispatch-collision detection and enforcement (#4085, upgraded from detection-only by #5789). Off by default — adds one extra `gh issue view --json labels` round-trip per dispatch. When enabled, a confirmed pre-flip collision backs off the dispatch instead of only logging/counting it |
-| `safehouse.enabled` | `LOOM_SAFEHOUSE_ENABLED` | `false` | Enables safehouse fleet-comms (#3997) **and** cross-host soft-claim coordination (#4028). Off by default — a byte-for-byte no-op (no socket, no coordination task) when unset |
-| `safehouse.rooms.signal` | `LOOM_SAFEHOUSE_ROOM_SIGNAL` | *(falls back to `safehouse.room`)* | Attention-class routing (#4225): the **signal** room id (`loom-fleet`) — operator conversation, every `handoff`, terminal `ack`/`completion`. Absent **and** no `byRepo` ⇒ single-room mode, byte-identical to pre-#4225 |
-| `safehouse.rooms.byRepo` | `LOOM_SAFEHOUSE_ROOMS_BY_REPO` (`repo=room,…`) | `{}` | Attention-class routing (#4225): per-repo **firehose** room ids keyed by workspace-root basename — `task`/`chat` narration. A repo absent from the map is created lazily as `fleet-<repo>`; a refused creation degrades that repo to the signal room with one `warn!`. The env form replaces the whole map |
-| `safehouse.rooms.alerts` | `LOOM_SAFEHOUSE_ROOM_ALERTS` | *(unset)* | Optional alerts room (#13070): when set, `handoff` envelopes (fleet-degraded edges and `Cleared`, BLOCKED, crashed) go only here; dispatch, phase, ack and completion stay in the main room. Unset ⇒ behavior unchanged. Does not enable attention-class routing |
+| `safehouse.enabled` | `LOOM_SAFEHOUSE_ENABLED` | `false` | Enables the safehouse merged-PR report (#13946): one line per merged PR in the fleet room. Off by default — a byte-for-byte no-op (no socket, no bus subscription) when unset |
+| `safehouse.rooms.signal` | `LOOM_SAFEHOUSE_ROOM_SIGNAL` | *(falls back to `safehouse.room`)* | The fleet room id (`loom-fleet`) the merged-PR line is posted to and read back from |
 | `safehouse.claimReconcileIntervalSecs` | `LOOM_CLAIM_RECONCILE_INTERVAL_SECS` | `1800` when `safehouse.enabled`, else `600` | Periodic `loom:building`/PR-claim reconciliation cadence (#4431). The 30-minute safehouse default dates from when peer claims carried the fast in-flight signal (retired in #13945; the cadence is unchanged). Env wins on any host; floored at 60s |
 | `fleet.hostId` (machine tier only) | `LOOM_HOST_ID` | the persisted `~/.loom/host-id` → `unknown-host` | This host's identity string (`host.id`), used in telemetry, collision log records (#4085) **and** self-recognition in the completion dedup (#6352). **Config wins over env** here, and there is no hostname fallback (#11530); see [Host identity](#host-identity-loom-daemon-host-id-11530) |
 | `autonomous.autoUpdate.enabled` | `LOOM_AUTO_UPDATE` | `false` | Autonomous self-update loop on/off (#4055) **on a host with no fleet store only**. **Opt-in** there (it rebuilds + restarts the daemon process). On a fleet host (`fleet.repo` set) it governs nothing: the loop runs whatever it says, for the fleet floor and for a workspace that needs a newer daemon, and never chases the newest release (#10954, see [The fleet floor drives rolls](#the-fleet-floor-drives-rolls-no-roll-windows-10885)). Exactly one loop per daemon, not a per-workspace fan-out. See [Autonomous self-update loop](#autonomous-self-update-loop-4055) below |
@@ -7545,11 +7543,10 @@ The machine is **Closed ⇄ Cooldown**, with no sustain counter, because a rate-
   safehouse's forge lookups, report rate-limited failures too (#8997), so the
   first authoritative failure trips the breaker; their probe runs off-thread.
 - While cooling, the work-finder, claim/quarantine reconciliation, epic
-  supervisor, role-runner ticks and safehouse lookups (title enrichment,
-  merge verification, merge reconciliation) **skip entirely** — zero gh
-  calls, zero doomed role spawns; safehouse keeps narrating with what it has,
-  and an unverified completion is reconciled after release. Running sweeps
-  are never touched.
+  supervisor, role-runner ticks and safehouse lookups (merge verification,
+  the captain's catch-up scan) **skip entirely** — zero gh calls, zero doomed
+  role spawns; a merge the reporter could not verify is picked up by the
+  captain's catch-up scan after release. Running sweeps are never touched.
 - The breaker **releases itself** on the first tick past the reset. Edges are
   logged once each way and published as `daemon.rate_limit_breaker.state`
   events; `loom-daemon status` shows the phase, the tripping loop, the resume
@@ -8596,38 +8593,17 @@ collisions. Enabling roster mode must not raise that counter above its
 static-ring baseline; if it does, the fence is not holding and the fleet
 should fall back to the static env pair while it is investigated.
 
-### Completion narration → public fleet feed (#4426)
+### Merged-PR report in the fleet room (#13946)
 
-When a sweep exits, the narration sink additionally asks the forge whether that
-issue's PR actually **merged** (`gh pr list --head feature/issue-N --state
-merged`, in the event's workspace root). If it did, the sink emits a second
-envelope of type **`completion`** carrying a `completion-v1` `meta`
-(`{schema, agent, repo, ref, result, started_at, completed_at, issue,
-tokens?, title?, additions?, deletions?}`) alongside the human `ack`.
-safehoused's egress mirrors well-formed `completion` envelopes out of allowlisted
-rooms to its `sink_url` — that is what fills the public fleet feed. Notes:
-
-- **`repo` is the forge `owner/repo` slug** (`gh repo view --json nameWithOwner`,
-  cached per workspace), not the path-basename narration convention (#4201);
-  `ref` is the PR URL.
-- **Display fields (#4497)** back the feed's
-  `<repo>#<issue>: <title> +A −D · <dur> · <tokens> tok` rows.
-  `title`/`additions`/`deletions` come from the *same* `gh pr list` call that
-  verifies the merge (zero extra round-trips) and degrade per-field; `tokens` is
-  a best-effort input+output total from the in-process activity DB's per-issue
-  rollup, whose attribution is knowingly imperfect (bare issue number, no repo
-  column; only linked samples counted) but consistent enough for a cost trend.
-  All four are optional — absent, the envelope is identical to the pre-#4497 one.
-- **Exit 0 ≠ merged.** No merged PR ⇒ no completion, so `result: "success"` is
-  never claimed for unmerged work. `result: "failure"` is not emitted in v1 —
-  `completion-v1` requires a `ref`, and a sweep with no merged PR has no
-  meaningful one (the wire support exists for a follow-up).
-- **At most one per merge**, deduped on `(workspace, issue)` for the daemon's
-  lifetime; downstream ingest is additionally idempotent on `event_id`.
-- **No new config and no new event-bus topic** — this rides the existing
-  `SweepExited` event and the `safehouse.*` block. Same degradation contract as
-  all narration: a failed/absent/slow `gh`, invalid `meta`, or an unreachable
-  safehoused drops the completion silently and never touches the sweep.
+Safehouse carries exactly one thing from the daemon: a slim
+`merged ✓ owner/repo#N · <title> · <url>` line per merged PR. The host that ran
+the merge posts it after confirming the PR named by the sweep merge phase or
+Champion merge verdict, and on the fleet captain a bounded catch-up scan
+posts the merges no host reported. Delivery is best effort: a lost reply is
+followed by a room read-back and a re-send only when the PR's line is absent.
+The `completion-v1` envelope, its token/title/diffstat payload and the
+completion-ad dedup were removed. Tuning, the delivery rule and the retired keys:
+[`safehouse.md` → What gets reported](safehouse.md#what-gets-reported).
 
 ### Cross-host soft claim over safehouse (retired, #13945)
 
@@ -8637,8 +8613,9 @@ the `loom-daemon peer-claims` command — was removed (operator ruling
 2026-11-15, #13920). The fleet runs on captain assignment plus forge leases; the
 local ledgers stay as the fallback path's own. A leftover `rooms.claims`,
 `peerClaimTtlSecs`, `LOOM_SAFEHOUSE_ROOM_CLAIMS` or `LOOM_PEER_CLAIM_TTL_SECS`
-is ignored and named in one startup warning. What remains on the room is the
-completion dedup: [`safehouse.md` → Completion dedup](safehouse.md#completion-dedup-the-one-cross-host-ad-left-6352).
+is ignored and named in one startup warning. The completion dedup that outlived
+it was removed by #13946; the room now carries only the
+[merged-PR report](safehouse.md#what-gets-reported).
 
 ### Prerequisite: a fresh token ranking (#3894, self-refreshed by the daemon since #3969)
 
@@ -13789,11 +13766,16 @@ loom-daemon restart --abort-drain                 # cancel an in-progress drain,
   only a one-shot note: `status --json`'s `drain.roll` object (`null` when no
   drain is active) carries `roll_pending`, `started_at`, `paused_secs`,
   `budget_secs`, `refusals`, `in_flight`, `target`, `then_exit`, `origin`,
-  `timed_out`, `startup_hold` and `pause`. **Since #10831** `roll_pending` is
-  always `false` and `refusals` always `0` (no roll is retained across a
-  deadline; both stay in the object so older readers still parse it),
+  `timed_out`, `startup_hold`, `fleet_hold` and `pause`. **Since #10831**
+  `roll_pending` is always `false` and `refusals` always `0` (no roll is
+  retained across a deadline; both stay in the object so older readers still
+  parse it),
   `budget_secs` is the pause budget for a `pause-roll` drain and `0` otherwise,
-  and `origin` reads `operator` or `pause-roll`. `pause` is `null` except during
+  and `origin` reads `operator` or `pause-roll`. **Since #15300** `fleet_hold`
+  is `true` when the hold came from the fleet store's `paused` state (#9598)
+  rather than a local operator stop (#9588) or a drain; always accompanied by
+  `startup_hold`. It is `#[serde(default)]`, so a current reader defaults the
+  field to `false` when an older daemon omits it. `pause` is `null` except during
   a pause roll, when it carries the H4 `step` (1-10), `stopped` (whether an
   abort is still possible), `budget_secs`, `min_resumable_age_secs`,
   `manifest_id`, `target_source`, `to_version`, `items`, `paused`, `exited`,
@@ -14754,7 +14736,7 @@ wiring in `main.rs`:
 - **Collector** (`observability::collector`) — a pure [`EventBus`](#event-taxonomy-frozen-for-v0100)
   subscriber (`sweep.global.dispatch` + `sweep.issue.*`, adding **no new emit
   call sites** anywhere else in the daemon, the same design
-  [safehouse](#completion-narration--public-fleet-feed-4426) narration
+  [safehouse](#merged-pr-report-in-the-fleet-room-13946)'s merged-PR reporter
   uses) that maps lifecycle events to the versioned
   `loom-daemon/src/telemetry/` schema (#4703) — `sweep.started` /
   `sweep.phase` / `sweep.completed` / `sweep.outcome` — resolves the emitting
