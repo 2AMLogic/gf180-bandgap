@@ -74,6 +74,11 @@ sim/
       testbench referred to its own source node and driven by an ideal
       source). This is one of the subset justifications the record's **Corner
       matrix run** field is required to spell out.
+- **The corner-id grammar has one parser.** `sim/corner_id_grammar.py` is
+  the single implementation of `<corner-id>`: the evidence checker
+  (`sim/harness/evidence_lint.py`) and the suite's reader
+  (`sim/suite/analysis.py`) both import it, so neither derives the grammar
+  for itself. A new reader of corner log names imports it too.
 - **`testbench/`** is not versioned per record — it holds the current
   testbench netlist(s)/xschem export(s) used to generate records. If the
   testbench itself changes in a way that could affect comparability across

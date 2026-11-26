@@ -140,6 +140,12 @@ class LogReadingTests(unittest.TestCase):
         self.assertEqual(key.corner_id, "bjt_ss_-40c_2.97v")
         self.assertIsNone(analysis.parse_corner_id("nonsense"))
 
+    def test_corner_ids_the_checker_rejects_do_not_parse(self):
+        """The suite is held to sim/README.md's grammar, not only to its shape."""
+        for corner_id in ("tt_27c_nominal", "TT_27c_3.30v", "bjt__ff_27c_3.30v"):
+            with self.subTest(corner_id=corner_id):
+                self.assertIsNone(analysis.parse_corner_id(corner_id))
+
 
 class VerdictTests(unittest.TestCase):
     def setUp(self):
@@ -260,6 +266,31 @@ class CrossCheckTests(unittest.TestCase):
         check = analysis.cross_check_temperature_axes(samples)
         self.assertFalse(check.consistent)
         self.assertEqual(check.worst_at, "tt_-40c_3.30v")
+
+    def test_a_malformed_corner_id_contributes_no_temperature_comparison(self):
+        for corner_id in (
+            "tt_27c_nominal",
+            "TT_27c_3.30v",
+            "bjt__ff_27c_3.30v",
+            "bjt_ff\n_27c_3.30v",
+            "tt_27c\n_3.30v",
+            "tt_27c_3.30v\n",
+        ):
+            with self.subTest(corner_id=corner_id):
+                samples = {corner_id: {"vref": 1.2291, "vref_27": 1.2291}}
+                check = analysis.cross_check_temperature_axes(samples)
+                self.assertEqual(check.n_compared, 0)
+                self.assertFalse(check.consistent)
+
+    def test_a_passive_skew_corner_contributes_one_temperature_comparison(self):
+        for corner in ("res_ff", "res_ss", "bjt_ff", "bjt_ss"):
+            with self.subTest(corner=corner):
+                corner_id = f"{corner}_27c_3.30v"
+                samples = {corner_id: {"vref": 1.22910, "vref_27": 1.22911}}
+                check = analysis.cross_check_temperature_axes(samples)
+                self.assertEqual(check.n_compared, 1)
+                self.assertEqual(check.worst_at, corner_id)
+                self.assertTrue(check.consistent)
 
 
 class SummaryTests(unittest.TestCase):
