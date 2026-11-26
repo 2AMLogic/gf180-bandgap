@@ -120,37 +120,14 @@ def _run_corner(deck: Path, pdk: harness_pdk.Pdk, section: str, temp_c: float) -
 
 
 def extract(log: str) -> dict[str, dict[str, float]]:
-    samples = harness_stats.parse_op_series(log)
-    if len(samples) != N_SAMPLES:
-        raise RuntimeError(
-            f"expected {N_SAMPLES} Monte Carlo samples in the log, parsed "
-            f"{len(samples)} -- testbench control loop and N_SAMPLES disagree?"
-        )
-    out: dict[str, dict[str, float]] = {}
-    for key in PAIRS:
-        values = [s[key] for s in samples]
-        mean = harness_stats.mean(values)
-        sigma = harness_stats.stdev(values)
-        if sigma <= SIGMA_FLOOR_V:
-            raise RuntimeError(
-                f"pair {key!r}: sigma={sigma * 1e3:.6f} mV is at or below the "
-                f"{SIGMA_FLOOR_V * 1e3:g} mV floor -- the Monte Carlo draw does "
-                "not appear to be re-randomizing (sw_stat_mismatch ignored?)"
-            )
-        if key in ZERO_MEAN_PAIRS:
-            bound = MEAN_K * sigma / math.sqrt(N_SAMPLES)
-            if abs(mean) > bound:
-                raise RuntimeError(
-                    f"pair {key!r}: mean={mean * 1e3:+.6f} mV exceeds {MEAN_K}x "
-                    f"its expected standard error ({bound * 1e3:.6f} mV) -- the "
-                    "draw may not be centered at zero / re-randomizing correctly"
-                )
-        out[key] = {
-            "mean": mean,
-            "sigma": sigma,
-            "max_abs": max(abs(v) for v in values),
-        }
-    return out
+    return harness_stats.pair_stats(
+        log,
+        PAIRS,
+        n_samples=N_SAMPLES,
+        sigma_floor_v=SIGMA_FLOOR_V,
+        mean_k=MEAN_K,
+        zero_mean_pairs=ZERO_MEAN_PAIRS,
+    )
 
 
 def build_record(record, stamp, pdk, ngspice, results) -> str:
