@@ -3,7 +3,7 @@
 This roadmap is generated from the current GitHub label state by the Loom Guide role.
 
 <!-- guide:plan-body:start -->
-_Generated: 2026-11-26T08:50:00Z (snapshot; compare against live labels)_
+_Generated: 2026-11-26T10:50:08Z (snapshot; compare against live labels)_
 ## Operator Attention: Merge-Risk-Hold Pileup
 
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
@@ -28,20 +28,19 @@ _None._
 
 Human-approved issues ready for implementation (`loom:issue`).
 
-_None._
+- **#568**: create-pr.sh exits 126: config resolver passes the private defaults tier as one jq argument
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
-- **#566**: Use one corner log filename parser for evidence lint and suite analysis
-- **#568**: create-pr.sh exits 126: config resolver passes the private defaults tier as one jq argument
+- **#570**: Unify waveform readers so a malformed row yields an incomplete fleet verdict
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
-- **#567**: fix(sim): use one corner-id grammar for evidence lint and suite
+- **#572**: fix: isolate malformed fleet waveforms to their corners
 
 ## Approved (Awaiting Merge)
 
@@ -58,10 +57,11 @@ Issues carrying `loom:curated`.
 - **#239**: DR-0007: execute final-DUT fleet suite and mismatch evidence run *(curated)* *(held)*
 - **#308**: ci: fail when committed bandgap_top.gds differs from generate.py output *(curated)* *(held)*
 - **#358**: T1 item 11: declare ERC well/substrate ties now that klayout-tools#2169 is fixed, then cite item 11 *(curated)* *(held)*
+- **#568**: create-pr.sh exits 126: config resolver passes the private defaults tier as one jq argument *(curated)*
 
 ## Proposed (Architect / Hermit)
 
-- **#540**: Draw bandgap device rows once and reuse their terminal positions *(hermit)*
+- **#540**: Draw bandgap device rows once and reuse their terminal positions *(hermit)* *(held)*
 - **#564**: Remove the default PNP emitter area from extracted DUT generation *(hermit)* *(held)*
 
 ## Epics
@@ -77,11 +77,11 @@ Issues carrying `loom:curated`.
 | Operator merge-risk holds | 0 |
 | Very important | 0 |
 | Important | 3 |
-| Ready (`loom:issue`) | 0 |
-| In Progress (`loom:building`) | 2 |
+| Ready (`loom:issue`) | 1 |
+| In Progress (`loom:building`) | 1 |
 | PRs awaiting review | 1 |
 | Approved PRs awaiting merge | 0 |
-| Curated | 5 |
+| Curated | 6 |
 | Architect / Hermit proposals | 2 |
 | Active epics | 3 |
 <!-- guide:plan-body:end -->
