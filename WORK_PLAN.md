@@ -60,7 +60,8 @@ Issues carrying `loom:curated`.
 
 ## Proposed (Architect / Hermit)
 
-- **#540**: Draw bandgap device rows once and reuse their terminal positions *(hermit)* *(held)*
+- **#540**: Draw bandgap device rows once and reuse their terminal positions *(hermit)*
+- **#564**: Remove the default PNP emitter area from extracted DUT generation *(hermit)*
 
 ## Epics
 
@@ -80,6 +81,6 @@ Issues carrying `loom:curated`.
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 0 |
 | Curated | 5 |
-| Architect / Hermit proposals | 1 |
+| Architect / Hermit proposals | 2 |
 | Active epics | 3 |
 <!-- guide:plan-body:end -->
