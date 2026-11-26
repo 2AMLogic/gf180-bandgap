@@ -3,7 +3,7 @@
 This roadmap is generated from the current GitHub label state by the Loom Guide role.
 
 <!-- guide:plan-body:start -->
-_Generated: 2026-11-26T10:50:08Z (snapshot; compare against live labels)_
+_Generated: 2026-11-26T15:22:11Z (snapshot; compare against live labels)_
 ## Operator Attention: Merge-Risk-Hold Pileup
 
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
@@ -28,19 +28,19 @@ _None._
 
 Human-approved issues ready for implementation (`loom:issue`).
 
-- **#568**: create-pr.sh exits 126: config resolver passes the private defaults tier as one jq argument
+_None._
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
-- **#570**: Unify waveform readers so a malformed row yields an incomplete fleet verdict
+- **#568**: create-pr.sh exits 126: config resolver passes the private defaults tier as one jq argument
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
-- **#572**: fix: isolate malformed fleet waveforms to their corners
+_None._
 
 ## Approved (Awaiting Merge)
 
@@ -77,9 +77,9 @@ Issues carrying `loom:curated`.
 | Operator merge-risk holds | 0 |
 | Very important | 0 |
 | Important | 3 |
-| Ready (`loom:issue`) | 1 |
+| Ready (`loom:issue`) | 0 |
 | In Progress (`loom:building`) | 1 |
-| PRs awaiting review | 1 |
+| PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 0 |
 | Curated | 6 |
 | Architect / Hermit proposals | 2 |
