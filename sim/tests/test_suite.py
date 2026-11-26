@@ -268,7 +268,14 @@ class CrossCheckTests(unittest.TestCase):
         self.assertEqual(check.worst_at, "tt_-40c_3.30v")
 
     def test_a_malformed_corner_id_contributes_no_temperature_comparison(self):
-        for corner_id in ("tt_27c_nominal", "TT_27c_3.30v", "bjt__ff_27c_3.30v"):
+        for corner_id in (
+            "tt_27c_nominal",
+            "TT_27c_3.30v",
+            "bjt__ff_27c_3.30v",
+            "bjt_ff\n_27c_3.30v",
+            "tt_27c\n_3.30v",
+            "tt_27c_3.30v\n",
+        ):
             with self.subTest(corner_id=corner_id):
                 samples = {corner_id: {"vref": 1.2291, "vref_27": 1.2291}}
                 check = analysis.cross_check_temperature_axes(samples)

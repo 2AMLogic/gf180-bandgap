@@ -30,12 +30,12 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-_PROCESS_TOKEN_RE = re.compile(r"^[a-z][a-z0-9]*$")
+_PROCESS_TOKEN_RE = re.compile(r"[a-z][a-z0-9]*")
 #: Signed junction temperature in degrees C: `-40c`, `27c`, `125c`.
-_TEMP_RE = re.compile(r"^(?P<temp>-?\d+(?:\.\d+)?)c$")
+_TEMP_RE = re.compile(r"-?\d+(?:\.\d+)?c")
 #: `2.97v`, or `nwell2p97v` when the swept rail needs naming (`p` stands in
 #: for the decimal point so the field stays a single underscore-free token).
-_SUPPLY_RE = re.compile(r"^(?P<node>[a-z]+)?(?P<volts>\d+(?:[.p]\d+)?)v$")
+_SUPPLY_RE = re.compile(r"[a-z]*\d+(?:[.p]\d+)?v")
 #: A testbench with no supply rail to sweep (device testbenches drive the DUT
 #: from an ideal source). The record's Corner matrix run field must say why.
 NO_SUPPLY = "nosupply"
@@ -63,17 +63,17 @@ def corner_id_problem(corner_id: str) -> str | None:
             "(see the corner-id grammar in sim/README.md)"
         )
     process, temp, supply = parts[:-2], parts[-2], parts[-1]
-    if not all(_PROCESS_TOKEN_RE.match(token) for token in process):
+    if not all(_PROCESS_TOKEN_RE.fullmatch(token) for token in process):
         return (
             f"{corner_id!r}: process field {'_'.join(process)!r} is not one or more "
             "lowercase alphanumeric tokens (tt, ss, bjt_ff, res_typical, ...)"
         )
-    if not _TEMP_RE.match(temp):
+    if not _TEMP_RE.fullmatch(temp):
         return (
             f"{corner_id!r}: temperature field {temp!r} is not a signed number "
             "followed by 'c' (-40c, 27c, 125c)"
         )
-    if supply != NO_SUPPLY and not _SUPPLY_RE.match(supply):
+    if supply != NO_SUPPLY and not _SUPPLY_RE.fullmatch(supply):
         return (
             f"{corner_id!r}: supply field {supply!r} is neither <volts>v / "
             f"<node><volts>v (2.97v, nwell2p97v) nor the literal {NO_SUPPLY!r}"
@@ -92,6 +92,6 @@ def parse_corner_id(corner_id: str) -> CornerKey | None:
     process, temp, supply = corner_id.rsplit("_", 2)
     return CornerKey(
         process=process,
-        temp_c=float(_TEMP_RE.match(temp).group("temp")),
+        temp_c=float(temp[:-1]),
         supply=supply,
     )

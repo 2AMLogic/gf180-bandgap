@@ -22,15 +22,19 @@ REPO_ROOT = SIM_DIR.parent
 sys.path.insert(0, str(SIM_DIR))
 
 import corner_id_grammar as grammar  # noqa: E402
-import test_evidence_lint as lint_tests  # noqa: E402
 from harness import evidence_lint  # noqa: E402
 from suite import analysis  # noqa: E402
+
+if __package__:  # Dotted unittest invocation imports this module as a package member.
+    from .test_evidence_lint import CORPUS_CORNER_IDS
+else:  # Discovery from sim/tests imports the test modules as siblings.
+    from test_evidence_lint import CORPUS_CORNER_IDS
 
 #: Valid names beyond the corpus shapes the linter's tests enumerate: the
 #: bare ``<volts>v`` supply form they pin as accepted.
 EXTRA_VALID_CORNER_IDS = ("tt_27c_3v",)
 
-VALID_CORNER_IDS = (*lint_tests.CORPUS_CORNER_IDS, *EXTRA_VALID_CORNER_IDS)
+VALID_CORNER_IDS = (*CORPUS_CORNER_IDS, *EXTRA_VALID_CORNER_IDS)
 
 #: The malformed names the readers' own tests use (``test_evidence_lint.py``
 #: and ``test_suite.py``), each with the words its diagnostic must carry.
@@ -44,6 +48,9 @@ MALFORMED_CORNER_IDS = {
     "tt_27c_nominal": "supply field",
     "TT_27c_3.30v": "process field",
     "bjt__ff_27c_3.30v": "process field",
+    "bjt_ff\n_27c_3.30v": "process field",
+    "tt_27c\n_3.30v": "temperature field",
+    "tt_27c_3.30v\n": "supply field",
 }
 
 
@@ -156,6 +163,12 @@ class StandaloneImportTests(unittest.TestCase):
 
     def test_the_checker_module_still_runs_as_a_script(self):
         self.python(str(SIM_DIR / "harness" / "evidence_lint.py"), "--help")
+
+    def test_corpus_imports_under_dotted_unittest_invocation(self):
+        self.python(
+            "-m", "unittest", "sim.tests.test_corner_id_grammar.SharedParserTests",
+            cwd=REPO_ROOT,
+        )
 
 
 if __name__ == "__main__":
