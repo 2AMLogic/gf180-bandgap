@@ -6,6 +6,11 @@ Chronological record of recently merged pull requests and closed issues, maintai
 
 - [2026-09](work_log/WORK_LOG_2026-09.md)
 
+### 2026-11-26
+
+- **Issue #566** (closed): Use one corner log filename parser for evidence lint and suite analysis
+- **PR #567**: fix(sim): use one corner-id grammar for evidence lint and suite
+
 ### 2026-11-25
 
 - **Issue #561** (closed): Pass Monte Carlo record metadata per run and remove the mutable RUN_CONTEXT
