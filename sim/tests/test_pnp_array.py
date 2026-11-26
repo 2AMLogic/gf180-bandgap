@@ -166,14 +166,14 @@ class Extraction(unittest.TestCase):
             run.parse_corner_id("bjt_typical/novdd/27C/mc3")
 
     def test_complete_report(self):
-        pts, missing, failed, problems = run.collect(fake_report(), req.expected_points())
+        pts, missing, failed, problems, _ = run.collect(fake_report(), req.expected_points())
         self.assertEqual((len(pts), missing, failed, problems), (9, [], [], []))
         r = run.ratios(pts[("bjt_ff", 125.0)], 125.0)[req.DESIGN_UA]
         self.assertAlmostEqual(r["array"], 4.02, 6)
         self.assertAlmostEqual(r["mono"], 3.63, 6)
 
     def test_missing_corner_rejected(self):
-        pts, missing, failed, _ = run.collect(
+        pts, missing, failed, _, _ = run.collect(
             fake_report(skip={("bjt_ss", -40.0)}), req.expected_points()
         )
         self.assertEqual([k for k, _ in missing], [("bjt_ss", -40.0)])
@@ -181,7 +181,7 @@ class Extraction(unittest.TestCase):
         self.assertEqual(len(pts), 8)
 
     def test_failed_corner_surfaced(self):
-        pts, missing, failed, _ = run.collect(
+        pts, missing, failed, _, _ = run.collect(
             fake_report(fail={("bjt_ff", 27.0)}), req.expected_points()
         )
         self.assertEqual(failed, [(("bjt_ff", 27.0), "fail")])
@@ -191,7 +191,7 @@ class Extraction(unittest.TestCase):
     def test_missing_measurement_is_missing(self):
         rep = fake_report()
         rep["corners"][0]["measurements"].pop()
-        _, missing, _, _ = run.collect(rep, req.expected_points())
+        _, missing, _, _, _ = run.collect(rep, req.expected_points())
         self.assertEqual(len(missing), 1)
 
     def test_local_backend_refused(self):
@@ -219,7 +219,7 @@ class FleetCollection(unittest.TestCase):
     def test_duplicate_corner_is_a_problem(self):
         rep = fake_report()
         rep["corners"].append(dict(rep["corners"][0]))  # same corner twice
-        pts, missing, failed, problems = run.collect(rep, req.expected_points())
+        pts, missing, failed, problems, _ = run.collect(rep, req.expected_points())
         self.assertEqual(problems, ["duplicate corner ('bjt_ss', -40.0)"])
         self.assertEqual((missing, failed), ([], []))
         self.assertEqual(len(pts), 9)  # measurements retained; verdict incomplete via problems
@@ -227,7 +227,7 @@ class FleetCollection(unittest.TestCase):
     def test_duplicate_measurement_name_rejects_corner(self):
         rep = fake_report()
         rep["corners"][0]["measurements"].append(dict(rep["corners"][0]["measurements"][0]))
-        pts, missing, failed, problems = run.collect(rep, req.expected_points())
+        pts, missing, failed, problems, _ = run.collect(rep, req.expected_points())
         self.assertNotIn(("bjt_ss", -40.0), pts)
         self.assertEqual([k for k, _ in failed], [("bjt_ss", -40.0)])
         self.assertIn("duplicate measurement name", failed[0][1])
@@ -236,7 +236,7 @@ class FleetCollection(unittest.TestCase):
     def test_error_diagnostic_rejects_passing_corner(self):
         rep = fake_report()
         rep["corners"][0]["diagnostics"] = [{"severity": "error", "code": "x", "message": "m"}]
-        pts, missing, failed, problems = run.collect(rep, req.expected_points())
+        pts, missing, failed, problems, _ = run.collect(rep, req.expected_points())
         self.assertNotIn(("bjt_ss", -40.0), pts)
         self.assertEqual([k for k, _ in failed], [("bjt_ss", -40.0)])
         self.assertIn("error diagnostic", failed[0][1])
@@ -245,7 +245,7 @@ class FleetCollection(unittest.TestCase):
     def test_supply_corner_id_rejected(self):
         rep = fake_report()
         rep["corners"][0]["corner_id"] = "bjt_ss/3.300V/-40C"  # this bench has no rail
-        pts, missing, failed, problems = run.collect(rep, req.expected_points())
+        pts, missing, failed, problems, _ = run.collect(rep, req.expected_points())
         self.assertEqual(len(problems), 1)
         self.assertIn("rejected corner identity", problems[0])
         self.assertIn("supply", problems[0])
@@ -288,25 +288,44 @@ class Cli(unittest.TestCase):
 
     def test_duplicate_corner_exits_nonzero_writes_one_log(self):
         rep = fake_report()
-        rep["corners"].append(dict(rep["corners"][0]))
+        rep["corners"].append(dict(rep["corners"][0], status="fail"))
         rc, here = self.run_cli(rep)
-        self.assertNotEqual(rc, 0)
+        self.assertEqual(rc, 2)
         rec = self.record_text(here)
         self.assertIn("INCOMPLETE", rec)
         self.assertIn("duplicate corner", rec)
-        logs = sorted(p.name for p in next((here / "corners").iterdir()).glob("*.log"))
-        self.assertEqual(len(logs), 9)  # the repeated id owns exactly one log
-        self.assertEqual(logs.count("bjt_ss_-40c_nosupply.log"), 1)
+        cdir = next((here / "corners").iterdir())
+        self.assertEqual(len(list(cdir.glob("*.log"))), 9)
+        self.assertIn("(status pass)", (cdir / "bjt_ss_-40c_nosupply.log").read_text())
 
-    def test_supply_corner_exits_nonzero_writes_no_artifact(self):
-        rep = fake_report()
-        rep["corners"][0]["corner_id"] = "bjt_ss/3.300V/-40C"
-        rc, here = self.run_cli(rep)
-        self.assertNotEqual(rc, 0)
-        self.assertIn("rejected corner identity", self.record_text(here))
-        logs = sorted(p.name for p in next((here / "corners").iterdir()).glob("*.log"))
-        self.assertEqual(len(logs), 8)  # rejected id: no artifact for it
-        self.assertNotIn("bjt_ss_-40c_nosupply.log", logs)
+    def test_failed_corner_keeps_diagnostic_log(self):
+        rc, here = self.run_cli(fake_report(fail={("bjt_ss", -40.0)}))
+        self.assertEqual(rc, 2)
+        cdir = next((here / "corners").iterdir())
+        self.assertIn("(status fail)", (cdir / "bjt_ss_-40c_nosupply.log").read_text())
+
+    def test_rejected_identity_writes_incomplete_record_and_valid_logs(self):
+        for identity in ({}, {"corner_id": None}, {"corner_id": "bjt_ss/3.300V/-40C"}):
+            with self.subTest(identity=identity):
+                rep = fake_report()
+                first = rep["corners"][0]
+                del first["corner_id"]
+                first.update(identity)
+                rc, here = self.run_cli(rep)
+                self.assertEqual(rc, 2)
+                record = self.record_text(here)
+                self.assertIn("INCOMPLETE", record)
+                self.assertIn("rejected corner identity", record)
+                self.assertIn("Missing: ('bjt_ss', -40.0)", record)
+                cdir = next((here / "corners").iterdir())
+                self.assertEqual(
+                    {p.name for p in cdir.glob("*.log")},
+                    {
+                        f"{sec}_{t:g}c_nosupply.log"
+                        for sec, t in req.expected_points()
+                        if (sec, t) != ("bjt_ss", -40.0)
+                    },
+                )
 
 
 if __name__ == "__main__":
