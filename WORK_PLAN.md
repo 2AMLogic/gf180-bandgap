@@ -3,7 +3,7 @@
 This roadmap is generated from the current GitHub label state by the Loom Guide role.
 
 <!-- guide:plan-body:start -->
-_Generated: 2026-11-26T05:31:30Z (snapshot; compare against live labels)_
+_Generated: 2026-11-26T08:50:00Z (snapshot; compare against live labels)_
 ## Operator Attention: Merge-Risk-Hold Pileup
 
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
@@ -34,13 +34,14 @@ _None._
 
 Issues currently being built (`loom:building`).
 
-_None._
+- **#566**: Use one corner log filename parser for evidence lint and suite analysis
+- **#568**: create-pr.sh exits 126: config resolver passes the private defaults tier as one jq argument
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
-_None._
+- **#567**: fix(sim): use one corner-id grammar for evidence lint and suite
 
 ## Approved (Awaiting Merge)
 
@@ -77,8 +78,8 @@ Issues carrying `loom:curated`.
 | Very important | 0 |
 | Important | 3 |
 | Ready (`loom:issue`) | 0 |
-| In Progress (`loom:building`) | 0 |
-| PRs awaiting review | 0 |
+| In Progress (`loom:building`) | 2 |
+| PRs awaiting review | 1 |
 | Approved PRs awaiting merge | 0 |
 | Curated | 5 |
 | Architect / Hermit proposals | 2 |
