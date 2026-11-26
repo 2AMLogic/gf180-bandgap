@@ -8,6 +8,8 @@ Chronological record of recently merged pull requests and closed issues, maintai
 
 ### 2026-11-26
 
+- **Issue #578** (closed): Share the pair statistics loop in the MOS and PNP mismatch benches
+- **PR #579**: refactor: share the mismatch pair-statistics loop in harness.stats
 - **Issue #575** (closed): Reuse validated Q2 corner IDs when writing logs so incomplete reports are saved
 - **PR #576**: fix: write Q2 corner logs from validated report rows
 - **Issue #570** (closed): Unify waveform readers so a malformed row yields an incomplete fleet verdict
