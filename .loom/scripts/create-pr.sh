@@ -69,7 +69,10 @@
 # Flags are a subset of `gh pr create`'s, chosen so a role prompt's existing
 # invocation can be switched over by changing the command name:
 #   --title, -t TITLE     PR title (required).
-#   --body, -b BODY       PR body as literal text.
+#   --body, -b BODY       PR body as literal text. A value that is a lone
+#                         `@path` / `@-` token is refused (exit 2, nothing
+#                         created): `gh` would post it literally, not read
+#                         it from a file -- use --body-file instead.
 #   --body-file, -F PATH  Read the body from PATH ("-" = stdin). Mutually
 #                         exclusive with --body.
 #   --label, -l LABEL     Label to apply at creation. Repeatable. A single
@@ -112,7 +115,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 source "$SCRIPT_DIR/lib/forge-helpers.sh"
 
 usage() {
-  sed -n '2,84p' "${BASH_SOURCE[0]:-$0}" | sed 's/^# \{0,1\}//'
+  sed -n '2,109p' "${BASH_SOURCE[0]:-$0}" | sed 's/^# \{0,1\}//'
 }
 
 TITLE=""
@@ -169,6 +172,23 @@ if [[ -n "$BODY_FILE" ]]; then
     echo "create-pr.sh: cannot read --body-file: $BODY_FILE" >&2
     exit 2
   fi
+fi
+
+# --- Lone `@path` body guard (#14161) ---------------------------------------
+#
+# `gh pr create --body @path` posts the literal string `@path`; the same
+# pitfall documented for `gh pr comment` / `gh api -f body=@path` (#9258,
+# comment-body-literal-path.md) and refused by post-verdict.sh. The body is
+# never read from the file, so the PR loses its Test Plan, rationale and
+# closing keyword (`Closes #N`) -- and the target issue orphans on merge --
+# silently: the create still exits 0 and prints the URL. Refuse before any
+# forge call when the ENTIRE `--body` value is one `@`-token; a body that
+# merely CONTAINS `@` (a mention, an email-shaped token, a line starting
+# with `@` inside a longer body) passes, and `--body-file` content is the
+# author's own text, never inspected.
+if [[ "$HAVE_BODY" == "true" && "$BODY" =~ ^[[:space:]]*@[^[:space:]]*[[:space:]]*$ ]]; then
+  echo "create-pr.sh: refusing --body '${BODY:0:80}': a lone '@' token is posted literally, not read from a file. Use --body-file <path> (or --body-file -). Nothing was created." >&2
+  exit 2
 fi
 
 forge_detect
@@ -259,9 +279,96 @@ fi
 # authority -- this is a defense-in-depth pre-check, not the only gate.
 EX_REVIEW_GATE_COLLISION=6
 
+# One keyword-reference extractor shared by the review-gate lookup (#9453
+# phase 5) and the superseded-target lookup (#6277) below, so the two cannot
+# drift (#13939). LAST-match semantics (#14255): the declared reference is the
+# trailing one (builder-pr.md puts `Closes #N` / `Part of #N` last), so a
+# narrated keyword earlier in the body (`v1.2 fixed #123, and this PR
+# Closes #456`, `PR #14082 (which fixes #13939)`) must not outrank it.
+#
+# The leading-guard alternation skips a keyword whose immediately preceding
+# token is a PR/issue reference: `PR #605 fixed #597` narrates history, it
+# does not close #597, so it must not win over the real trailing
+# `Closes #N` (#13939). The guard branches:
+#   ^[[:space:]]*                keyword opens the line, optionally indented
+#                                -- a one-space/one-tab prefix satisfies no
+#                                branch under the bare `^` of #13939, so
+#                                ` Closes #N` extracted nothing and both
+#                                guards were skipped (#14157)
+#   (^|[[:space:]])[^#[:space:]]*[0-9][[:space:]]+
+#                                a whitespace-delimited token that ENDS in a
+#                                digit and contains no `#` (`Phase 3`,
+#                                `v1.2`, `ADR-0015`) -- the #13939 prose
+#                                branch rejected ANY digit before the
+#                                whitespace run, over-rejecting these; the
+#                                no-`#` class keeps `PR #605 fixed #597`
+#                                narration unmatched
+#   [^#0-9][[:space:]]+          ordinary prose before the keyword -- a
+#                                digit/`#` right before the whitespace run
+#                                is the `#N`-reference narration signature
+#   [^[:alnum:]_#[:space:]]      punctuation attached with no space, the
+#                                `**Fixes #1**` / `(closes #1)` shapes the
+#                                old bare `\b` also admitted
+# Only the digit-ending-token branch can put a number run in the match
+# before the trailing `#N`, so the extraction takes the LAST number run of
+# the LAST match -- for every other branch first and last coincide.
+#
+# Multi-reference bodies (#14351): when the body declares several references
+# (`Closes #14059` / `Closes #14052` on consecutive lines), the one named by
+# the head branch's `feature/issue-N` wins -- the branch records the issue the
+# Builder actually claimed, which is what the review gate and the
+# superseded-target check should consult. With no such branch, or a branch
+# number absent from the body's references, the last match applies as above.
+#
+# Quoted evidence (#15404): a body that cites another PR's closing line -- an
+# inline-code span (`` `Closes #396` ``) or a double-quoted citation
+# (`"closed #396"`) in an evidence/verification table cell -- is prose about
+# that PR's reference, never this PR's own declaration, so it supplies no
+# candidate. GitHub's own auto-close parser ignores code spans for the same
+# reason. The filter below strips both span kinds per line BEFORE the
+# extraction, so both guards (review gate and superseded-target) see the same
+# candidates and a quoted `#396` can no longer win the closing leg whenever
+# the body's real reference is partial or absent (the reported refusal on
+# `feature/issue-1378`). Line-local pairing: an unbalanced quote or backtick
+# matches no span and its text survives, so ordinary prose -- including prose
+# containing a genuine inline reference -- is never over-removed.
+_cpr_body_ref_issue() {
+  # $1 = keyword alternation, e.g. 'close[sd]?|closing|fix(e[sd])?|resolve[sd]?'
+  local refs branch_n body
+  # #15404: strip quoted evidence (inline code + double-quoted citations)
+  # before extracting, so the selection rules below only ever see genuine
+  # references. See the comment block above for the rationale.
+  # Backtick runs pair with a run of the SAME length (longest first), so
+  # ``Closes #396`` is one span, not two empty ones. Each span becomes " ; ",
+  # a boundary that a keyword-to-number match cannot cross (`closes `x` #396`
+  # must not collapse into `closes #396`).
+  body="$(sed -E \
+    -e 's/```([^`]|`[^`]|``[^`])*```/ ; /g' \
+    -e 's/``([^`]|`[^`])*``/ ; /g' \
+    -e 's/`[^`]*`/ ; /g' \
+    -e 's/"[^"]*"/ ; /g' <<< "$BODY")"
+  # One number per match: each match ends in `#<digits>`, so the trailing
+  # digit run is the reference itself (never an earlier digit-token prefix).
+  refs="$(grep -ioE "((^[[:space:]]*)|((^|[[:space:]])[^#[:space:]]*[0-9][[:space:]]+)|([^#0-9][[:space:]]+)|([^[:alnum:]_#[:space:]]))($1)[[:space:]]+#[0-9]+" <<< "$body" \
+    | grep -oE '[0-9]+$' || true)"
+  [[ -n "$refs" ]] || return 0
+  if [[ "$HEAD_BRANCH" =~ ^feature/issue-([0-9]+)($|[^0-9]) ]]; then
+    branch_n="${BASH_REMATCH[1]}"
+    if grep -qxF "$branch_n" <<< "$refs"; then
+      echo "$branch_n"
+      return 0
+    fi
+  fi
+  tail -1 <<< "$refs"
+}
+
 # An empty body matches nothing (grep's no-match is absorbed by `|| true`).
-TARGET_ISSUE="$(grep -ioE '\b(close[sd]?|closing|fix(e[sd])?|resolve[sd]?|part of|contributes to)[[:space:]]+#[0-9]+' <<< "$BODY" \
-  | head -1 | grep -oE '[0-9]+' || true)"
+# A closing reference outranks a partial one regardless of order (#14255): with
+# `Closes #A` ... `Part of #B` the PR's target is A, and the review gate must
+# not consult B (a family/epic that routinely has open sibling PRs). Only when
+# the body has no closing reference does the last partial reference apply.
+CLOSES_ISSUE="$(_cpr_body_ref_issue 'close[sd]?|closing|fix(e[sd])?|resolve[sd]?')"
+TARGET_ISSUE="${CLOSES_ISSUE:-$(_cpr_body_ref_issue 'part of|contributes to')}"
 
 # One daemon resolution, shared by every daemon call below (#10518).
 # shellcheck source=./lib/locate-daemon-bin.sh
@@ -313,8 +420,7 @@ fi
 # partial-increment references for a family/epic issue that intentionally
 # stays open across multiple PRs -- never match this pattern, so those PRs
 # are exempt by construction; no separate carve-out is needed.
-CLOSES_ISSUE="$(grep -ioE '\b(close[sd]?|closing|fix(e[sd])?|resolve[sd]?)[[:space:]]+#[0-9]+' <<< "$BODY" \
-  | head -1 | grep -oE '[0-9]+' || true)"
+# (CLOSES_ISSUE is computed once above, alongside TARGET_ISSUE.)
 
 if [[ -n "$CLOSES_ISSUE" ]]; then
   # shellcheck disable=SC2054  # the comma is inside a single --json value, not an array separator
@@ -341,13 +447,21 @@ if [[ -n "$CLOSES_ISSUE" ]]; then
     # If the closing PR IS this branch (re-running after our own PR already
     # merged the issue closed), this is not a supersede -- fall through.
     if [[ -z "$SUPERSEDING_PR_NUMBER" || "$SUPERSEDING_HEAD" != "$HEAD_BRANCH" ]]; then
+      # #15404: the recovery advice must be survivable on a false positive.
+      # A body whose reference is quoted evidence (a citation of another PR's
+      # closing line) should be corrected and retried, not discarded -- and
+      # "discard this branch's work" steered a builder with a perfectly good
+      # branch toward deleting it. Keep the branch, inspect the matched
+      # reference, fix it if it cited another issue, re-run.
       echo "create-pr.sh: target issue #$CLOSES_ISSUE is already CLOSED\
 ${SUPERSEDING_PR_NUMBER:+ by #$SUPERSEDING_PR_NUMBER}\
 ${SUPERSEDING_PR_URL:+ ($SUPERSEDING_PR_URL)} -- refusing to open a \
 duplicate PR for $HEAD_BRANCH. Your commits are already pushed; do NOT push \
-further and do NOT delete the branch. Rebase onto the superseding PR, \
-retarget this PR at a different issue, or discard this branch's work as \
-redundant." >&2
+further and keep the branch (do NOT delete it). Inspect the PR body's \
+reference to #$CLOSES_ISSUE: if it merely cites another PR's closing line \
+as evidence rather than declaring this PR's own target, correct that \
+reference and re-run this script to retry; otherwise rebase onto the \
+superseding PR or retarget this PR at a different issue." >&2
       exit 1
     fi
   fi
