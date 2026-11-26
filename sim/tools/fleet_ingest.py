@@ -150,11 +150,33 @@ def check_ok(spec: dict, value: float) -> bool:
 # --------------------------------------------------------------------------
 
 
+def _read_waveform_artifact(path: Path) -> tuple[dict, dict[str, list]]:
+    """Read the klt document and build its validated column mapping once."""
+    doc = json.loads(Path(path).read_text())
+    return doc, wave_columns(doc)
+
+
 def read_waveform(path: Path) -> dict[str, list[float]]:
     """{variable name: [values]} from klt's waveform JSON (``variables`` +
-    row-major ``points``). Raises ValueError on a malformed file; non-finite
-    values are rejected by the callers for the columns they use."""
-    return wave_columns(json.loads(Path(path).read_text()))
+    row-major ``points``). Callers reject non-finite values in the columns they use."""
+    _, columns = _read_waveform_artifact(path)
+    return columns
+
+
+def _waveform_artifact_for(
+    c: dict | None, work: Path
+) -> tuple[dict | None, dict | None]:
+    """The document and columns for a reported corner, or (None, None) if unavailable."""
+    try:
+        path = (c or {})["artifacts"]["waveform"]
+        return _read_waveform_artifact(work / path)
+    except (OSError, ValueError, KeyError, TypeError):
+        return None, None
+
+
+def read_waveform_for(c: dict | None, work: Path) -> dict | None:
+    _, columns = _waveform_artifact_for(c, work)
+    return columns
 
 
 def column(wave: dict, *candidates: str) -> list[float]:
@@ -421,19 +443,6 @@ def wave_columns(doc: dict) -> dict[str, list]:
     return {n: [r[i] for r in pts] for i, n in enumerate(names)}
 
 
-def read_waveform_doc_for(c: dict, work: Path) -> dict | None:
-    """The raw klt waveform document (plot name and variable types kept), or None."""
-    p = ((c or {}).get("artifacts") or {}).get("waveform")
-    if not p or not (work / p).exists():
-        return None
-    try:
-        doc = json.loads((work / p).read_text())
-        wave_columns(doc)
-        return doc
-    except (ValueError, KeyError, TypeError, json.JSONDecodeError):
-        return None
-
-
 def reported_units(c: dict | None) -> dict:
     return {m.get("name"): m.get("unit") for m in (c or {}).get("measurements", []) or []}
 
@@ -460,11 +469,10 @@ def noise_unit_problems(doc: dict | None) -> list[str]:
     return errs
 
 
-def _full_precision(doc: dict | None, vector: str) -> float:
+def _full_precision(wave: dict | None, vector: str) -> float:
     """The single-point value of ``vector`` (``v(x)`` or ``onoise_total``) from an op / integrated-noise waveform."""
-    if doc is None:
+    if wave is None:
         raise ValueError("no waveform returned")
-    wave = wave_columns(doc)
     bare = vector[2:-1] if vector.startswith("v(") else vector
     col = column(wave, f"v({bare})", bare)
     if len(col) != 1:
@@ -480,11 +488,11 @@ def noise_request_units(nspec: dict, rname: str) -> dict:
     return out
 
 
-def derive_noise(nspec: dict, vals: dict, docs: dict, units: dict):
+def derive_noise(nspec: dict, vals: dict, waveforms: dict, units: dict):
     """-> (measures, errs) for one PVT corner.
 
-    ``vals`` / ``docs`` / ``units``: request name -> that corner's finite klt
-    values / waveform document / reported measurement units. Every measure
+    ``vals`` / ``waveforms`` / ``units``: request name -> that corner's finite klt
+    values / (waveform document, validated columns) / reported measurement units. Every measure
     is tb.json's own expression evaluated by ngspice on the worker (plot
     renumbered, scale stripped) times tb.json's scale. Single-point vectors
     (the integrated total, the operating point) come from the full-precision
@@ -506,13 +514,15 @@ def derive_noise(nspec: dict, vals: dict, docs: dict, units: dict):
         if v.get("n_points") != rq["n_points"]:
             errs.append(f"{rname}: noise sweep has {v.get('n_points')} points, `{rq['analysis']['args']}` "
                         f"implies {rq['n_points']}")
-        errs += [f"{rname}: {e}" for e in noise_unit_problems(docs.get(rname))]
+        doc, _ = waveforms[rname]
+        errs += [f"{rname}: {e}" for e in noise_unit_problems(doc)]
     m: dict[str, float] = {}
     for name, s in nspec["measures"].items():
         raw = vals[s["request"]][f"raw_{name}"]
         if s["kind"] in ("total", "op"):
             try:
-                full = _full_precision(docs.get(s["request"]), s["vector"])
+                _, columns = waveforms[s["request"]]
+                full = _full_precision(columns, s["vector"])
             except ValueError as exc:
                 errs.append(f"{name}: full-precision {s['vector']} unavailable ({exc})")
             else:
@@ -631,20 +641,6 @@ def _expected_keys(r: dict) -> list[tuple]:
     return [(p, None if (s is None and sup is None) else round(sup if s is None else s, 4), t) for p, s, t in r["expected_units"]]
 
 
-def read_waveform_for(c: dict, work: Path):
-    art = (c or {}).get("artifacts") or {}
-    p = art.get("waveform")
-    if not p:
-        return None
-    path = work / p
-    if not path.exists():
-        return None
-    try:
-        return read_waveform(path)
-    except (ValueError, KeyError, json.JSONDecodeError):
-        return None
-
-
 def assess_bench(bench: str, tb: dict, plan: dict, reports: dict, work: Path, *, dut_sha: str | None = None,
                  decks: dict | None = None, manifest_sha: str | None = None, tb_sha: str | None = None,
                  require_remote: bool = True, requests: dict | None = None) -> dict:
@@ -667,7 +663,7 @@ def assess_bench(bench: str, tb: dict, plan: dict, reports: dict, work: Path, *,
     failed: list = []
     pts: dict[str, dict] = {}
     waves: dict[tuple, dict] = {}  # (request, unit key) -> waveform
-    docs: dict[tuple, dict | None] = {}  # (request, unit key) -> raw waveform document (output-noise)
+    noise_waveforms: dict[tuple, tuple[dict | None, dict | None]] = {}
     corners_of: dict[tuple, dict] = {}
     for r in plan.get("requests", []):
         rep = reports.get(r["name"])
@@ -694,7 +690,7 @@ def assess_bench(bench: str, tb: dict, plan: dict, reports: dict, work: Path, *,
             if r["role"] in ("ac", "sweep", "tran"):
                 waves[(r["name"], k)] = read_waveform_for(c, work)
             elif r["role"] in ("noise", "op_point"):
-                docs[(r["name"], k)] = read_waveform_doc_for(c, work)
+                noise_waveforms[(r["name"], k)] = _waveform_artifact_for(c, work)
             elif r["role"] == "op":
                 try:
                     p[k] = op_values(read_waveform_for(c, work), plan["supplies_v"])
@@ -759,8 +755,9 @@ def assess_bench(bench: str, tb: dict, plan: dict, reports: dict, work: Path, *,
                 if absent or not vals:
                     errs.append("unit unavailable in request(s) " + (", ".join(absent) or "(plan has no noise contract)"))
                 else:
-                    derived, e = derive_noise(nspec, vals, {n: docs.get((n, ukey)) for n in vals},
-                                              {n: reported_units(corners_of.get((n, ukey))) for n in vals})
+                    waveforms = {n: noise_waveforms.get((n, ukey), (None, None)) for n in vals}
+                    units = {n: reported_units(corners_of.get((n, ukey))) for n in vals}
+                    derived, e = derive_noise(nspec, vals, waveforms, units)
                     errs += e
             else:
                 rname = next((n for n, r in req.items() if r["supply_v"] is not None and abs(r["supply_v"] - sup) < 1e-6), None)

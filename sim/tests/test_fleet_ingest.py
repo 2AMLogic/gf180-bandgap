@@ -558,6 +558,26 @@ class LineReg(TmpCase):
         res = self.fx("line-regulation", wave=lambda r, p, s, t: dc_wave(n=67)).assess()  # wrong count
         self.assertEqual(res["overall"], "INCOMPLETE")
 
+    def test_malformed_waveform_row_invalidates_only_its_corner(self):
+        f = self.fx("line-regulation")
+        clean = f.assess()
+        self.assertEqual(clean["overall"], "PASS")
+
+        corner = f.corner("sweep")
+        proc, supply, temp = fc.parse_klt_corner_id(corner["corner_id"])
+        bad_key = fi.harness_key(proc, temp, supply)
+        path = Path(corner["artifacts"]["waveform"])
+        doc = json.loads(path.read_text())
+        doc["points"][0] = None
+        path.write_text(json.dumps(doc))
+
+        res = f.assess()
+        self.assertEqual(res["overall"], "INCOMPLETE")
+        self.assertEqual(set(res["invalid"]), {bad_key})
+        for key, row in clean["rows"].items():
+            if key != bad_key:
+                self.assertEqual(res["rows"][key], row, key)
+
     def test_meas_vs_waveform_disagreement_is_incomplete(self):
         def vals(r, p, s, t):
             return {"vref_min": 1.2, "vref_max": 1.3, "v_lo_check": 2.97, "v_hi_check": 3.63}

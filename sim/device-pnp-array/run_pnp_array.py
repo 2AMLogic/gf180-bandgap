@@ -73,13 +73,15 @@ def parse_corner_id(cid: str) -> tuple[str, float]:
 
 
 def collect(report: dict, expected: list[tuple[str, float]]):
-    """-> (points, missing, failed, problems); see `fleet_common.collect_units`.
+    """-> (points, missing, failed, problems, keyed_rows); see `fleet_common.collect_units`.
 
     points: {(section, temp): {measurement name: value}} for passing corners
     carrying every declared measurement; missing: expected points absent from
     the report or lacking a measurement; failed: points whose execution the
     fleet collector rejects, plus this bench's pass-only rule; problems:
     report-level issues (duplicate / unexpected / rejected corner ids).
+    keyed_rows: (parsed key, original row) pairs in report order for logging,
+    including identifiable rows whose measurements or execution failed.
 
     Device-bench additions over the shared collector:
 
@@ -91,22 +93,26 @@ def collect(report: dict, expected: list[tuple[str, float]]):
       `sim/tests/test_pnp_array.py`) -- demoted from points to failed.
     """
     required = [m["name"] for m in req.measurements()]
-    bad_ids, kept = [], []
+    bad_ids, keyed_rows = [], []
+    key_by_id = {}
     for c in report.get("corners", []):
         try:
-            parse_corner_id(c["corner_id"])
-            kept.append(c)
+            cid = c["corner_id"]
+            key = parse_corner_id(cid)
         except Exception as e:
             bad_ids.append(f"rejected corner identity: {e}")
+            continue
+        key_by_id[cid] = key
+        keyed_rows.append((key, c))
     points, missing, failed, problems = fc.collect_units(
-        dict(report, corners=kept), expected, required, parse_corner_id
+        {"corners": [c for _, c in keyed_rows]}, expected, required, key_by_id.__getitem__
     )
-    status_of = {parse_corner_id(c["corner_id"]): c.get("status") for c in kept}
+    status_of = {key: c.get("status") for key, c in keyed_rows}
     for k in list(points):
         if status_of.get(k) != "pass":
             failed.append((k, status_of.get(k)))
             del points[k]
-    return points, missing, failed, bad_ids + list(problems)
+    return points, missing, failed, bad_ids + problems, keyed_rows
 
 
 def ratios(vals: dict, temp_c: float) -> dict:
@@ -277,7 +283,7 @@ def main() -> int:
         dispatch(work)
     report = json.loads((work / "report.json").read_text())
     expected = req.expected_points()
-    points, missing, failed, problems = collect(report, expected)
+    points, missing, failed, problems, keyed_rows = collect(report, expected)
 
     git = hreport.git_provenance(hreport.REPO_ROOT) if hasattr(hreport, "REPO_ROOT") else hreport.git_provenance(SIM.parent)
     record = hreport.allocate_record_id(SIM.parent, HERE / "records", git=git)
@@ -287,11 +293,7 @@ def main() -> int:
     cdir = HERE / "corners" / record
     cdir.mkdir(parents=True, exist_ok=True)
     written: set[str] = set()
-    for c in report.get("corners", []):
-        try:
-            sec, t = parse_corner_id(c["corner_id"])
-        except ValueError:
-            continue  # report-level problem already; never write artifacts for a rejected id
+    for (sec, t), c in keyed_rows:
         cid = hcorners.device_corner_id(sec, t)
         if cid in written:
             continue  # duplicate id: the first entry owns the log (problem already recorded)
