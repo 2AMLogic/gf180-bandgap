@@ -6,8 +6,69 @@ Chronological record of recently merged pull requests and closed issues, maintai
 
 - [2026-09](work_log/WORK_LOG_2026-09.md)
 
+### 2026-11-25
+
+- **Issue #561** (closed): Pass Monte Carlo record metadata per run and remove the mutable RUN_CONTEXT
+- **PR #562**: sim: pass MC record metadata per run, drop the mutable RUN_CONTEXT
+
+### 2026-11-24
+
+- **Issue #559** (closed): test_block_netlists pins literal lint step numbers (== 6/11), the brittleness that broke test_lint_args
+- **PR #560**: test: anchor lint block-netlists step extraction on step name
+- **Issue #475** (closed): Refresh the GF180 block netlists and lint all four against bandgap_top.spice
+- **PR #558**: Refresh stale block netlists and lint all four against bandgap_top.spice
+
+### 2026-11-23
+
+- **Issue #535** (closed): Reuse the suite evaluator for post-layout deltas so missing measurements cannot pass
+- **PR #536**: fix(sim): judge post-layout deltas with the suite evaluator so missing measurements read NO DATA
+- **Issue #477** (closed): Deduplicate the startup ramp deck: 183 lines declared byte-identical across sim/startup and sim/startup-slow-ramp, with nothing enforcing it
+- **PR #557**: feat: hash-enforce byte-identity of the fast/slow startup ramp decks
+- **Issue #527** (closed): Share the Monte Carlo sample-grouping loop used by the combined accuracy report
+- **Issue #533** (closed): Consolidate suite report writers to preserve same-second reruns
+- **PR #542**: fix: keep same-second markdown report reruns via an exclusive writer
+- **Issue #531** (closed): Reuse fleet corner validation in the Q2 PNP array bench
+- **PR #538**: refactor: collect Q2 array corners with the shared fleet collector
+- **Issue #539** (closed): Remove the empty-index fallback from artifact manifest validation
+- **PR #541**: fix: fail artifact-manifest check on git inventory errors
+- **Issue #386** (closed): Prepare the revised par_r resistor-mismatch model-risk assessment and validation plan (part of #239)
+- **PR #387**: docs: propose DR-0008 par_r model-risk successor and validation plan
+
+### 2026-11-22
+
+- **Issue #555** (closed): tc_ingest: --dut-label overrides the provenance class it is classified from
+- **PR #556**: fix: classify tc_ingest provenance from the --dut path, not the record label
+- **Issue #553** (closed): Derive DUT Netlist provenance through one function across harness and fleet ingestors
+- **PR #554**: fix: derive DUT netlist provenance through one shared classifier
+- **Issue #551** (closed): Consolidate fleet plan hash checks and remove the empty-decks fallback
+- **PR #552**: fix: fleet ingest fails closed on missing decks via one shared hash check
+- **Issue #548** (closed): Consolidate layout klt runner boilerplate and fail closed on --format text errors
+- **PR #549**: fix: fail closed on klt --format text errors via shared klt_runner helper
+- **Issue #547** (closed): bandgap_error_budget.md states the amplifier systematic offset reserve in two different domains (§2.3 input-referred vs §2.7b at VREF)
+- **PR #550**: docs: state the systematic offset reserve's Vref domain in the error budget
+- **Issue #528** (closed): Compile the amplifier offset, noise and common-mode allocation answers (Q4 to Q6) requested by gf180-opamp DR-0007
+- **PR #534**: docs(design): add amplifier allocation answers (Q4-Q6) for gf180-opamp DR-0007
+- **Issue #545** (closed): Read each output-noise waveform once during fleet ingest
+- **PR #546**: perf: read each output-noise waveform once during fleet ingest
+- **Issue #529** (closed): daemon account-ranking state (.loom/account-ranking.*) is unignored: check-main-clean false-positives for every builder
+- **PR #544**: fix: ignore .loom/account-ranking.* to keep check-main-clean.sh clean
+- **Issue #537** (closed): Require checked ERC coverage for every declared tie in the item-11 supply-clean run
+- **PR #543**: fix: fail erc supply-clean gate when a declared tie check is omitted or skipped
+
+### 2026-11-21
+
+- **Issue #526** (closed): T1 item 11: cite the ERC supply-and-tie run on the committed layout now, with a tie negative control (carve-out of #358; re-mint after #204)
+- **PR #532**: feat(signoff): cite T1 item 11 from the ERC supply+tie run, with a tie negative control
+- **Issue #530** (closed): EE-key ratification verdict on PR #387 was posted truncated — remediation list lost
+
+### 2026-11-20
+
+- **Issue #525** (closed): Release PR #387 to Judge: its "Part of #239" link phrase inherits #239's operator hold
+
 ### 2026-11-18
 
+- **Issue #522** (closed): test_lint_args.sh case 3 says "both gates" but observes only one
+- **PR #523**: docs: narrow test_lint_args.sh case 3 wording to the gate it observes
 - **PR #521**: fix: fail closed on an empty --base-ref value in lint.sh
 - **Issue #518** (closed): lint.sh: an empty --base-ref value is silently dropped instead of failing closed
 - **PR #517**: ci: report on merge-queue trial merges via merge_group and an explicit base
@@ -293,27 +354,4 @@ Chronological record of recently merged pull requests and closed issues, maintai
 ### 2026-10-03
 
 - **PR #201**: design: Q2 as 4x unit PNP array, rescale R2, ratify DR-0007 (#87)
-
-### 2026-09-24
-
-- **Issue #156** (closed): bandgap_top.gds is 58.5% over the ratified 0.05 mm^2 area budget (stale committed GDS masked it)
-- **PR #177**: spec: narrow interim area ceiling to 0.066mm² (DR-0006, ratification-via-PR)
-- **Issue #191** (closed): main worktree stuck dirty: uncommitted resync (0.19.172) diverged from origin's merged resync (0.19.168)
-
-### 2026-09-23
-
-- **Issue #200** (closed): README: embed the fleet burndown chart (one line)
-
-### 2026-09-22
-
-- **Issue #193** (closed): Commit a klt signoff block manifest so this block's T1 state is graded, not hand-read
-- **Issue #196** (closed): Decide: does signoff/ (PR #194) supersede, coexist with, or fold into docs/t1-gap.md (merged via #195)?
-- **PR #194**: feat(signoff): commit a klt signoff block manifest as the T1 verdict of record
-- **Issue #197** (closed): 2am: reuse rule 9 — in-tree bandgap amplifier duplicates sibling canary gf180-opamp — add reuse.lock.json in_tree entry (evaluate), then adopt or record
-- **PR #199**: chore(reuse): record bandgap_amp in_tree entry against sibling gf180-opamp
-
-### 2026-09-20
-
-- **Issue #192** (closed): T1 item 11 (power delivery, structural): no klt erc supply spec or report in this repo
-- **PR #195**: feat(erc): add the klt erc supply read for structural power delivery
 

@@ -3,7 +3,7 @@
 This roadmap is generated from the current GitHub label state by the Loom Guide role.
 
 <!-- guide:plan-body:start -->
-_Generated: 2026-11-18T13:22:51Z (snapshot; compare against live labels)_
+_Generated: 2026-11-26T01:00:34Z (snapshot; compare against live labels)_
 ## Operator Attention: Merge-Risk-Hold Pileup
 
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
@@ -23,34 +23,30 @@ _None._
 - **#203**: DR-0007 phase A: measure array ratio and finalize schematic PVT evidence
 - **#204**: DR-0007 phase B: regenerate layout and record pinned extracted verification *(held)*
 - **#239**: DR-0007: execute final-DUT fleet suite and mismatch evidence run *(held)*
-- **#386**: Prepare the revised par_r resistor-mismatch model-risk assessment and validation plan (part of #239)
 
 ## Ready
 
 Human-approved issues ready for implementation (`loom:issue`).
 
-- **#386**: Prepare the revised par_r resistor-mismatch model-risk assessment and validation plan (part of #239)
-
+_None._
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
-- **#518**: lint.sh: an empty --base-ref value is silently dropped instead of failing closed
-
+_None._
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
-- **#387**: docs: propose DR-0008 par_r model-risk successor and validation plan
+_None._
 
 ## Approved (Awaiting Merge)
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
 _None._
-
 
 ## Proposed
 
@@ -61,13 +57,10 @@ Issues carrying `loom:curated`.
 - **#239**: DR-0007: execute final-DUT fleet suite and mismatch evidence run *(curated)* *(held)*
 - **#308**: ci: fail when committed bandgap_top.gds differs from generate.py output *(curated)* *(held)*
 - **#358**: T1 item 11: declare ERC well/substrate ties now that klayout-tools#2169 is fixed, then cite item 11 *(curated)* *(held)*
-- **#386**: Prepare the revised par_r resistor-mismatch model-risk assessment and validation plan (part of #239) *(curated)*
-
 
 ## Proposed (Architect / Hermit)
 
-- **#477**: Deduplicate the startup ramp deck: 183 lines declared byte-identical across sim/startup and sim/startup-slow-ramp, with nothing enforcing it *(hermit)* *(held)*
-- **#475**: Remove three unconsumed block netlists from design/netlist: bandgap_core.spice is stale against the schematic *(hermit)* *(held)*
+- **#540**: Draw bandgap device rows once and reuse their terminal positions *(hermit)* *(held)*
 
 ## Epics
 
@@ -81,12 +74,12 @@ Issues carrying `loom:curated`.
 |------|-------|
 | Operator merge-risk holds | 0 |
 | Very important | 0 |
-| Important | 4 |
-| Ready (`loom:issue`) | 1 |
-| In Progress (`loom:building`) | 1 |
-| PRs awaiting review | 1 |
+| Important | 3 |
+| Ready (`loom:issue`) | 0 |
+| In Progress (`loom:building`) | 0 |
+| PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 0 |
-| Curated | 6 |
-| Architect / Hermit proposals | 2 |
+| Curated | 5 |
+| Architect / Hermit proposals | 1 |
 | Active epics | 3 |
 <!-- guide:plan-body:end -->
