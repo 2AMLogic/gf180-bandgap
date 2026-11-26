@@ -3,7 +3,7 @@
 This roadmap is generated from the current GitHub label state by the Loom Guide role.
 
 <!-- guide:plan-body:start -->
-_Generated: 2026-11-26T01:00:34Z (snapshot; compare against live labels)_
+_Generated: 2026-11-26T05:31:30Z (snapshot; compare against live labels)_
 ## Operator Attention: Merge-Risk-Hold Pileup
 
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
@@ -60,7 +60,8 @@ Issues carrying `loom:curated`.
 
 ## Proposed (Architect / Hermit)
 
-- **#540**: Draw bandgap device rows once and reuse their terminal positions *(hermit)* *(held)*
+- **#540**: Draw bandgap device rows once and reuse their terminal positions *(hermit)*
+- **#564**: Remove the default PNP emitter area from extracted DUT generation *(hermit)* *(held)*
 
 ## Epics
 
@@ -80,6 +81,6 @@ Issues carrying `loom:curated`.
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 0 |
 | Curated | 5 |
-| Architect / Hermit proposals | 1 |
+| Architect / Hermit proposals | 2 |
 | Active epics | 3 |
 <!-- guide:plan-body:end -->
