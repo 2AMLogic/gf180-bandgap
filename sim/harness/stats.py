@@ -6,13 +6,16 @@ Shared by the device-level mismatch Monte Carlo benches
 mismatch bench (`sim/mc-untrimmed/run_mc_untrimmed.py`), plus
 `sim/suite/combined.py`'s own summary stats over that bench's raw logs.
 These were byte-identical/near-identical private copies in each file
-(issue #154); this module is the single implementation.
+(issue #154); this module is the single implementation. `pair_stats` is
+likewise the one per-pair extraction loop shared by the two device mismatch
+benches (issue #578).
 """
 
 from __future__ import annotations
 
 import math
 import re
+from collections.abc import Collection, Iterable
 
 #: ``<name> = <scalar>`` as ngspice's ``print`` writes it inside a Monte Carlo
 #: ``dowhile``/``reset``/``op`` loop (e.g. ``"dn1 = -1.234567e-03"``).
@@ -58,3 +61,54 @@ def stdev(values: list[float]) -> float:
         return 0.0
     mean_v = mean(values)
     return math.sqrt(math.fsum((v - mean_v) ** 2 for v in values) / (n - 1))
+
+
+def pair_stats(
+    log: str,
+    pairs: Iterable[str],
+    *,
+    n_samples: int,
+    sigma_floor_v: float,
+    mean_k: float,
+    zero_mean_pairs: Collection[str],
+) -> dict[str, dict[str, float]]:
+    """Summarise a Monte Carlo `op` log per pair, rejecting a suspect draw.
+
+    Requires exactly `n_samples` samples, then returns one `{"mean", "sigma",
+    "max_abs"}` entry per name in `pairs`, in that order. Two guards reject
+    the whole log with `RuntimeError`: a pair whose sigma is at or below
+    `sigma_floor_v` is not re-randomizing, and a pair in `zero_mean_pairs`
+    whose |mean| exceeds `mean_k * sigma / sqrt(n_samples)` is not centered
+    at zero. A pair outside `zero_mean_pairs` may carry a physical offset.
+    """
+    samples = parse_op_series(log)
+    if len(samples) != n_samples:
+        raise RuntimeError(
+            f"expected {n_samples} Monte Carlo samples in the log, parsed "
+            f"{len(samples)} -- testbench control loop and N_SAMPLES disagree?"
+        )
+    out: dict[str, dict[str, float]] = {}
+    for key in pairs:
+        values = [s[key] for s in samples]
+        mean_v = mean(values)
+        sigma = stdev(values)
+        if sigma <= sigma_floor_v:
+            raise RuntimeError(
+                f"pair {key!r}: sigma={sigma * 1e3:.6f} mV is at or below the "
+                f"{sigma_floor_v * 1e3:g} mV floor -- the Monte Carlo draw does "
+                "not appear to be re-randomizing (sw_stat_mismatch ignored?)"
+            )
+        if key in zero_mean_pairs:
+            bound = mean_k * sigma / math.sqrt(n_samples)
+            if abs(mean_v) > bound:
+                raise RuntimeError(
+                    f"pair {key!r}: mean={mean_v * 1e3:+.6f} mV exceeds {mean_k}x "
+                    f"its expected standard error ({bound * 1e3:.6f} mV) -- the "
+                    "draw may not be centered at zero / re-randomizing correctly"
+                )
+        out[key] = {
+            "mean": mean_v,
+            "sigma": sigma,
+            "max_abs": max(abs(v) for v in values),
+        }
+    return out
