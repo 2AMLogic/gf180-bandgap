@@ -8,6 +8,10 @@ Chronological record of recently merged pull requests and closed issues, maintai
 
 ### 2026-11-26
 
+- **Issue #575** (closed): Reuse validated Q2 corner IDs when writing logs so incomplete reports are saved
+- **PR #576**: fix: write Q2 corner logs from validated report rows
+- **Issue #570** (closed): Unify waveform readers so a malformed row yields an incomplete fleet verdict
+- **PR #572**: fix: isolate malformed fleet waveforms to their corners
 - **Issue #566** (closed): Use one corner log filename parser for evidence lint and suite analysis
 - **PR #567**: fix(sim): use one corner-id grammar for evidence lint and suite
 
